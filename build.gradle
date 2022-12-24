@@ -1,0 +1,35 @@
+plugins {
+  id 'maven-publish'
+}
+
+allprojects {
+  repositories {
+    mavenLocal()
+    maven {
+      url = "${nexus_repo_base}/${nexus_pull_repo_m2}"
+      credentials {
+        username = project.nexus_username
+        password = project.nexus_password
+      }
+    }
+  }
+}
+
+subprojects { subproject ->
+  subproject.plugins.apply('maven-publish')
+
+  subproject.publishing {
+    repositories {
+      if (project.hasProperty('nexus_push_username')) {
+        maven {
+          name = 'nexus'
+          url = "${nexus_repo_base}/${nexus_push_repo_m2}"
+          credentials {
+            username = project.nexus_push_username
+            password = project.nexus_push_password
+          }
+        }
+      }
+    }
+  }
+}

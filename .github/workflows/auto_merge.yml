@@ -1,0 +1,81 @@
+---
+name: Auto Merge Double Commit PRs
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+    branches:
+      - 'main'
+      - 'rel-*'
+
+jobs:
+  auto-merge:
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    if: contains(github.event.pull_request.head.ref, 'double_commit')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          fetch-depth: 0          
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+          
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Auto approve
+        uses: juliangruber/approve-pull-request-action@v1
+        with:
+          github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
+          number: "${{ github.event.number }}"
+
+      - name: Enable Auto Merge
+        uses: peter-evans/enable-pull-request-automerge@v1
+        with:
+          token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          pull-request-number: "${{ github.event.number }}"
+          merge-method: squash
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+        if: failure()
+        
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+      
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+        
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: auto-merge
+    with:
+      subject: ${{ needs.auto-merge.outputs.mail_subject_output }}
+      body: ${{ needs.auto-merge.outputs.mail_body_output }} 
+      to: ${{ needs.auto-merge.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}

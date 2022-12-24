@@ -1,0 +1,154 @@
+---
+###################################################################################
+# GitHub workflow to automatically create a PR against all forward active branches,
+# when there is a PR on 'rel-*' branch created.
+#
+# 1. It checks if the PR already exist and if so, does not create one.
+# 2. In future we can enhance it to read the branch name from Jira label or
+#    equivalent and then create PR. This way we can extend it to multiple
+#    forward merges.
+###################################################################################
+name: Create PR for double merge
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'rel-*'
+
+jobs:
+  create-pr-for-double-merge:
+    if: github.event.pull_request.merged == true
+    runs-on: self-hosted
+    env:
+       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          fetch-depth: 0
+
+      - name: Get all the release branches
+        run: |
+          branches+=("$(git branch -r | sed 's/^ *//g'| grep 'rel-')")
+          for branch in $branches; do br_arr+=($branch); done
+          echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
+          echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
+        id: all_branches
+
+      - name: Pull Create
+        id: create_dc
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            // Get base branch minor version of the PR
+            const prBaseBranch = "${{ github.event.pull_request.base.ref }}"
+            const prBaseBranchMinVer = prBaseBranch.split('.')[1]
+            // get pr source branch
+            const prSrcBranch = "${{ github.event.pull_request.head.ref }}"
+            // check if this itself is a double commit.
+            // then we don't need to create another one from this.
+            if (prSrcBranch.includes("double_commit")) {
+              console.log("This branch " + prSrcBranch + " is itself a double commit branch")
+              process.exit(0);
+            }
+
+            // check if NODC is set
+            if (`"${{ github.event.pull_request.title }}"`.endsWith('::NODC::')) {
+              console.log("NODC set, aborting..")
+              process.exit(0);
+            }
+
+            // create rel branches array
+            const branches = "${{ env.BRANCHES }}".split(' ')
+            // add 'main' branch to the list
+            branches.push("main")
+            // loop through the available active branches to create DC
+            console.log("prBaseBranch: " + prBaseBranch)
+            console.log("prBaseBranchMinVer: " + prBaseBranchMinVer)
+            console.log("prSrcBranch: " + prSrcBranch);
+            for (branch in branches) {
+              // if the branch is empty, iterate with next element
+              if (branches[branch] == "") {
+                continue
+              }
+              console.log(" Iterating " + branches[branch])
+              dstBranch = branches[branch].trim()
+              console.log("dstBranch:" + dstBranch)
+              // check if its a forward active branch
+              if (dstBranch != "main") {
+                // remove the 'origin' from the remote branch name
+                dstBranch = dstBranch.split('/')[1]
+
+                // No need to create PR for branches not starting with 'rel-'
+                if (!dstBranch.startsWith('rel-')) {
+                   continue
+                }
+
+                // dst branch minor version
+                dstBranchMinVer = dstBranch.split('.')[1]
+                // if minor version is more than the current branch, its a latest release and
+                // we need to create DC
+                if (parseInt(dstBranchMinVer) <= parseInt(prBaseBranchMinVer)) {
+                  continue
+                }
+              }
+              // new branch name
+              prBranchName = [prSrcBranch, dstBranch, "double_commit"].join("-")
+              const { exec } = require('child_process');
+              const util = require('util');
+              const execPromise = util.promisify(exec);
+              command = 'git checkout -b ' + prBranchName + ' origin/' + dstBranch
+              try {
+                // wait for exec to complete
+                const result = await execPromise(command);
+                console.log("stdout: " + result.stdout);
+                console.log("stderr: " + result.stderr);
+              } catch (error) {
+                console.log(error);
+              }
+
+              command = 'git cherry-pick ' + "${{ github.sha }}"
+              try {
+                // wait for exec to complete
+                const result = await execPromise(command);
+                console.log("stdout: " + result.stdout);
+                console.log("stderr: " + result.stderr);
+              } catch (error) {
+                console.log(error);
+                try {
+                  command = "find . -type f -name index.lock | xargs rm -rf "
+                  const result = await execPromise(command);
+                  console.log("stdout: " + result.stdout);
+                  console.log("stderr: " + result.stderr);
+                  command = "git add . ; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
+                  result = await execPromise(command);
+                  console.log("stdout: " + result.stdout);
+                  console.log("stderr: " + result.stderr);
+                } catch (error2) {
+                  console.log("Error during rm and find.")
+                  console.log(error2)
+                }
+              }
+              command = 'git push -u -f origin ' + prBranchName
+              result = await execPromise(command);
+              console.log("stdout: " + result.stdout);
+              console.log("stderr: " + result.stderr);
+              // create pull request
+              pullCreateResponse = await github.rest.pulls.create({
+                  owner: "${{ github.repository_owner }}",
+                  title: "Double Commit: " + `"${{ github.event.pull_request.title }}"`,
+                  repo: "${{  github.repository }}".split('/')[1],
+                  head: prBranchName,
+                  base: dstBranch
+              });
+              console.log(pullCreateResponse)
+            }
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+        if: failure()
