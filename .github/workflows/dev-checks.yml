@@ -1,10 +1,7 @@
-# This is a basic workflow to help you get started with Actions
+---
 name: Best Practices Check
-
-# Controls when the workflow will run
 on:
-  workflow_call:
-
+  
 
 jobs:
   dev-checks:
@@ -43,11 +40,6 @@ jobs:
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
-      
-      - name: check if source branch is main 
-        if: ${{ github.event_name == 'pull_request' && env.SOURCE_BRANCH == 'main' }}
-        run: |
-          echo "Please change source branch from main";exit 1;
 
       - name: Check for merge conflict in PR
         run: |
@@ -90,7 +82,19 @@ jobs:
                  core.setFailed("modifying version.txt is not allowed ")
             }
             });
-            var terraform_file = [] 
+            version_updated = false
+             response.data.files.forEach(function(file_entry) {
+               if (file_entry.filename == 'gradle.properties') {
+                   console.log(file_entry.patch)
+                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                       version_updated = true
+                   }
+               }
+             });
+             if (version_updated == false) {
+                  core.setFailed("Tessell Libraries must update the version in gradle.properties file")
+             }
+             var terraform_file = [] 
             response.data.files.forEach(function(file_entry) {
               if (file_entry.filename.endsWith(".tf")) {
                 console.log(file_entry.filename);
@@ -103,9 +107,9 @@ jobs:
 
       - name: check for terraform version
         if: steps.check_db_migration.outputs.terraform_file
-        run: |
-            terraform_version_check ${{ steps.check_db_migration.outputs.terraform_file }};
-
+        run:
+          terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
+      
       - name: Jira number validation
         run: |
           jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
@@ -120,8 +124,7 @@ jobs:
             echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
           fi
           done
-
-
+             
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
@@ -135,4 +138,14 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+        
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: dev-checks
+    with:
+      subject: ${{ needs.dev-checks.outputs.mail_subject_output }}
+      body: ${{ needs.dev-checks.outputs.mail_body_output }} 
+      to: ${{ needs.dev-checks.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         
