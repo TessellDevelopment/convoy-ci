@@ -1,6 +1,7 @@
 ---
 name: Best Practices Check
 on:
+  workflow_call:
   
 
 jobs:
