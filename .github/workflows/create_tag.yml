@@ -10,11 +10,7 @@
 ###################################################################################
 name: Create tag on release branch
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - 'rel-*'
-      - 'main'
+  workflow_call:
 
 jobs:
   create-tag-on-merge:
