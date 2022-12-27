@@ -1,0 +1,122 @@
+# This is a basic workflow to help you get started with Actions
+name: Tessell Pipelines Code Build
+
+# Controls when the workflow will run
+on:
+  '
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Set Pull repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
+
+      - name: Create pip conf
+        run: |
+          # Create pip.conf and copy to /etc; 
+          # The --extra_index_url option of pip install does not work with username/password
+          # Also pip does not have separate option to specify creds.
+          echo "[global]" > pip.conf
+          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+          sudo cp pip.conf /etc/pip.conf
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then python3 -m pip install -r requirements.txt; fi
+
+      - name: Lint with flake8
+        run: |
+          export PATH=/opt/tessell/python/install/bin:$PATH
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Test with pytest
+        if: false
+        run: |
+          export PATH=/opt/tessell/python/install/bin:$PATH
+          pytest
+
+      - name: Build Wheel
+        if: ${{ startsWith(env.SOURCE_BRANCH,'TS-') }}
+        run: |
+          export PATH=/opt/tessell/python/install/bin:$PATH
+          ./gradlew pythonWheel --console plain \
+            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+
+      - name: Build and push
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          export PATH=/opt/tessell/python/install/bin:$PATH
+          ./gradlew twineUpload --console plain \
+            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
+            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}"
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+        
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: build
+    with:
+      subject: ${{ needs.build.outputs.mail_subject_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
+      to: ${{ needs.build.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+            
