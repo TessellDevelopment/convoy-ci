@@ -10,10 +10,7 @@
 ###################################################################################
 name: Create PR for double merge
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - 'rel-*'
+  workflow_call:
 
 jobs:
   create-pr-for-double-merge:
