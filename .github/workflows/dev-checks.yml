@@ -191,6 +191,7 @@ jobs:
               });
               if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
+              }
            
       - name: check for terraform (code)
         if : github.event_name == 'pull_request'
