@@ -75,6 +75,7 @@ jobs:
       # if : ${{ github.event.inputs.check_branch_name == true &&  !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
           echo ${{ github.event.inputs.check_branch_name == true }}
+          echo ${{ github.event.inputs.check_branch_name is true }}
           echo ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
