@@ -75,12 +75,7 @@ jobs:
         if : ${{ inputs.check_branch_name == 'true' && !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
-          exit 1
-          
-      - name: Jira number validation
-        if :  ${{ inputs.check_valid_jira == 'true' }}
-        run: |
-         jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'    
+          exit 1  
       
 
       - name: Check for merge conflict in PR
@@ -124,19 +119,27 @@ jobs:
                  core.setFailed("modifying version.txt is not allowed ")
             }
             });
-            version_updated = false
-             response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'gradle.properties') {
-                   console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
-                       version_updated = true
-                   }
-               }
-             });
-             if (version_updated == false) {
-                  core.setFailed("Tessell Libraries must update the version in gradle.properties file")
+            
+      - name: check for version
+        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
+        script: |
+          version_updated = false
+           response.data.files.forEach(function(file_entry) {
+             if (file_entry.filename == 'gradle.properties') {
+                 console.log(file_entry.patch)
+                 if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                     version_updated = true
+                 }
              }
-             var terraform_file = [] 
+           });
+           if (version_updated == false) {
+                core.setFailed("Tessell Libraries must update the version in gradle.properties file")
+           }
+           
+      - name: check for version
+        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
+        script: |
+            var terraform_file = [] 
             response.data.files.forEach(function(file_entry) {
               if (file_entry.filename.endsWith(".tf")) {
                 console.log(file_entry.filename);
@@ -146,9 +149,17 @@ jobs:
               }
             });
             core.setOutput('terraform_file' , terraform_file.join(','));
+            
+            
+      - name: Check Version sequence of DB Scripts
+        id: check_db_version_seq
+        if: steps.check_db_migration.outputs.db_migration_dir && ${{ inputs.check_sql_update == 'true' }}
+        run:
+          python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
+      
 
       - name: check for terraform version
-        if: steps.check_db_migration.outputs.terraform_file
+        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
         run:
           terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
       
@@ -158,7 +169,7 @@ jobs:
           jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
 
       - name: check to verify same branch is exist
-        if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
+        if: ${{ inputs.check_existing_branch_name == 'true' && startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
         run: |
           branch_to_check=${{ env.SOURCE_BRANCH }}-main-double_commit
           list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
