@@ -231,7 +231,7 @@ jobs:
             
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
-        if: steps.check_db_migration.outputs.db_migration_dir && ${{ inputs.check_sql_update == 'true' }}
+        if: ${{ inputs.check_sql_update == 'true' && steps.check_db_migration.outputs.db_migration_dir }}
         run:
           python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
       
