@@ -80,7 +80,7 @@ jobs:
       - name: Jira number validation
         if :  ${{ inputs.check_valid_jira == 'true' }}
         run: |
-          jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'    
+         jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'    
       
 
       - name: Check for merge conflict in PR
