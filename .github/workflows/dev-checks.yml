@@ -76,6 +76,12 @@ jobs:
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
+          
+      - name: Jira number validation
+        if :  ${{ inputs.check_valid_jira == 'true' }}
+        run: |
+          jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'    
+      
 
       - name: Check for merge conflict in PR
         run: |
