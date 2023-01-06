@@ -22,7 +22,7 @@ on:
         description: 'This is the Receiver of Email'
         required: true
         type: boolean
-        default: true
+        default: false
       check_existing_branch_name:
         description: 'This is the Receiver of Email'
         required: true
