@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       check_version_in_gradle_properties:
-        description: 'This is used to check gradle_properties version '
+        description: 'This is used to check gradle_properties version'
         required: true
         type: string
         default: 'false'
       check_version_in_version_txt:
-        description: 'This is used to check version in version.txt '
+        description: 'This is used to check version in version.txt'
         required: true
         type: string
         default: 'false'
@@ -119,36 +119,61 @@ jobs:
                  core.setFailed("modifying version.txt is not allowed ")
             }
             });
+
             
-      - name: check for version
-        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
-        script: |
-          version_updated = false
-           response.data.files.forEach(function(file_entry) {
-             if (file_entry.filename == 'gradle.properties') {
-                 console.log(file_entry.patch)
-                 if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
-                     version_updated = true
-                 }
+      - name: check for gradle properties version
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} && github.event_name == 'pull_request'
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            version_updated = false
+             response.data.files.forEach(function(file_entry) {
+               if (file_entry.filename == 'gradle.properties') {
+                   console.log(file_entry.patch)
+                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                       version_updated = true
+                   }
+               }
+             });
+             if (version_updated == false) {
+                  core.setFailed("Tessell Libraries must update the version in gradle.properties file")
              }
-           });
-           if (version_updated == false) {
-                core.setFailed("Tessell Libraries must update the version in gradle.properties file")
-           }
+      
+      - name: check for version in version_txt
+        if:  ${{ inputs.check_version_in_version_txt == 'true' }}
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            version_updated = false
+              response.data.files.forEach(function(file_entry) {
+                if (file_entry.filename == 'version.txt') {
+                    console.log(file_entry.patch)
+                    if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                         version_updated = true
+                    }
+                }
+              });
+              if (version_updated == false) {
+                  core.setFailed("Tessell Libraries must update the version in version.txt file")
            
-      - name: check for version
-        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
-        script: |
-            var terraform_file = [] 
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename.endsWith(".tf")) {
-                console.log(file_entry.filename);
-                console.log(file_entry.status);
-                terraform_file.push(file_entry.filename)
-                console.log(terraform_file) ;
-              }
-            });
-            core.setOutput('terraform_file' , terraform_file.join(','));
+      - name: check for terraform (code)
+        id: terraform_check
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+              var terraform_file = [] 
+              response.data.files.forEach(function(file_entry) {
+                if (file_entry.filename.endsWith(".tf")) {
+                  console.log(file_entry.filename);
+                  console.log(file_entry.status);
+                  terraform_file.push(file_entry.filename)
+                  console.log(terraform_file) ;
+                }
+              });
+              core.setOutput('terraform_file' , terraform_file.join(','));
             
             
       - name: Check Version sequence of DB Scripts
@@ -159,7 +184,7 @@ jobs:
       
 
       - name: check for terraform version
-        if: steps.check_db_migration.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
+        if: steps.terraform_check.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
         run:
           terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
       
