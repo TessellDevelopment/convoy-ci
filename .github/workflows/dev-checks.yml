@@ -74,7 +74,6 @@ jobs:
       - name: Check branch name
         if : ${{ inputs.check_branch_name }} &&  ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
-          echo ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
 
