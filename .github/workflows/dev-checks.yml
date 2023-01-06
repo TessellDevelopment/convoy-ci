@@ -158,7 +158,7 @@ jobs:
              }
       
       - name: check for version in version_txt
-        if:  ${{ inputs.check_version_in_version_txt == 'true' }} && github.event_name == 'pull_request'
+        if:  ${{ inputs.check_version_in_version_txt == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
