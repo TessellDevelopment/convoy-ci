@@ -237,7 +237,7 @@ jobs:
       
 
       - name: check for terraform version
-        if: steps.terraform_check.outputs.terraform_file &&  ${{ inputs.check_terraform_provider_version == 'true' }}
+        if:  ${{ inputs.check_terraform_provider_version == 'true' && steps.terraform_check.outputs.terraform_file }}
         run:
           terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
       
