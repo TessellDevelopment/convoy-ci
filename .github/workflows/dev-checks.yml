@@ -7,12 +7,12 @@ on:
         description: 'This is used to check gradle_properties version'
         required: true
         type: string
-        default: 'false'
+        default: 'true'
       check_version_in_version_txt:
         description: 'This is used to check version in version.txt'
         required: true
         type: string
-        default: 'false'
+        default: 'true'
       check_sql_update:
         description: 'This is used to check if the sql files has any changes'
         required: true
