@@ -24,17 +24,17 @@ on:
         type: string
         default: 'true'
       check_existing_branch_name:
-        description: 'This is the Receiver of Email'
+        description: 'This is used to check whether same branch is existing or no'
         required: true
         type: string
         default: 'true'
       check_valid_jira:
-        description: 'This is used to check if we are using a valid jira or not '
+        description: 'This is used to check if we are using a valid jira or not'
         required: true
         type: string
         default: 'true'
       check_terraform_provider_version:
-        description: 'This is used to check terraform provider version in terraform files '
+        description: 'This is used to check terraform provider version in terraform files'
         required: true
         type: string
         default: 'true'
@@ -158,11 +158,28 @@ jobs:
              }
       
       - name: check for version in version_txt
-        if:  ${{ inputs.check_version_in_version_txt == 'true' }}
+        if:  ${{ inputs.check_version_in_version_txt == 'true' }} && github.event_name == 'pull_request'
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
             version_updated = false
               response.data.files.forEach(function(file_entry) {
                 if (file_entry.filename == 'version.txt') {
@@ -176,21 +193,39 @@ jobs:
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
            
       - name: check for terraform (code)
+        if : github.event_name == 'pull_request'
         id: terraform_check
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
-              var terraform_file = [] 
-              response.data.files.forEach(function(file_entry) {
-                if (file_entry.filename.endsWith(".tf")) {
-                  console.log(file_entry.filename);
-                  console.log(file_entry.status);
-                  terraform_file.push(file_entry.filename)
-                  console.log(terraform_file) ;
-                }
-              });
-              core.setOutput('terraform_file' , terraform_file.join(','));
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
+            var terraform_file = [] 
+            response.data.files.forEach(function(file_entry) {
+              if (file_entry.filename.endsWith(".tf")) {
+                console.log(file_entry.filename);
+                console.log(file_entry.status);
+                terraform_file.push(file_entry.filename)
+                console.log(terraform_file) ;
+              }
+            });
+            core.setOutput('terraform_file' , terraform_file.join(','));
             
             
       - name: Check Version sequence of DB Scripts
