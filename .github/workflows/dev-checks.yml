@@ -2,6 +2,44 @@
 name: Best Practices Check
 on:
   workflow_call:
+    inputs:
+      check_version_in_gradle_properties:
+        description: 'Email subject that is passed from the caller worflow'
+        required: true
+        type: boolean
+        default: False
+      check_version_in_version_txt:
+        description: 'Body of Email that is passed from the caller workflow'
+        required: true
+        type: boolean
+        default: False
+      check_sql_update:
+        description: 'This is the Receiver of Email'
+        required: true
+        type: boolean
+        default: True
+      check_branch_name:
+        description: 'This is the Receiver of Email'
+        required: true
+        type: boolean
+        default: True
+      check_existing_branch_name:
+        description: 'This is the Receiver of Email'
+        required: true
+        type: boolean
+        default: True
+      check_valid_jira:
+        description: 'This is used to check if we are using a valid jira or not '
+        required: true
+        type: boolean
+        default: True
+      check_terraform_provider_version:
+        description: 'This is used to check terraform provider version in terraform files '
+        required: true
+        type: boolean
+        default: True
+
+  
   
 
 jobs:
@@ -37,7 +75,7 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
         
       - name: Check branch name
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }}
+        if: ${{ inputs.check_branch_name }} == True && ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
