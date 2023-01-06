@@ -4,43 +4,40 @@ on:
   workflow_call:
     inputs:
       check_version_in_gradle_properties:
-        description: 'Email subject that is passed from the caller worflow'
-        required: true
-        type: boolean
-        default: False
-      check_version_in_version_txt:
-        description: 'Body of Email that is passed from the caller workflow'
-        required: true
-        type: boolean
-        default: False
-      check_sql_update:
-        description: 'This is the Receiver of Email'
-        required: true
-        type: boolean
-        default: True
-      check_branch_name:
-        description: 'This is the Receiver of Email'
+        description: 'This is used to check gradle_properties version '
         required: true
         type: boolean
         default: false
+      check_version_in_version_txt:
+        description: 'This is used to check version in version.txt '
+        required: true
+        type: boolean
+        default: false
+      check_sql_update:
+        description: 'This is used to check if the sql files has any changes'
+        required: true
+        type: boolean
+        default: true
+      check_branch_name:
+        description: 'This is used to check branch name starts with TS-'
+        required: true
+        type: boolean
+        default: true
       check_existing_branch_name:
         description: 'This is the Receiver of Email'
         required: true
         type: boolean
-        default: True
+        default: true
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not '
         required: true
         type: boolean
-        default: True
+        default: true
       check_terraform_provider_version:
         description: 'This is used to check terraform provider version in terraform files '
         required: true
         type: boolean
-        default: True
-
-  
-  
+        default: true
 
 jobs:
   dev-checks:
