@@ -122,6 +122,7 @@ jobs:
 
             
       - name: check for gradle properties version
+        uses: actions/github-script@v6.3.3
         if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} && github.event_name == 'pull_request'
         script: |
           version_updated = false
