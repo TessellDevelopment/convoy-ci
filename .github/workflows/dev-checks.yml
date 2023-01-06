@@ -123,22 +123,19 @@ jobs:
             
       - name: check for gradle properties version
         if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} && github.event_name == 'pull_request'
-        uses: actions/github-script@v6.3.3
-        with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
-          script: |
-            version_updated = false
-             response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'gradle.properties') {
-                   console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
-                       version_updated = true
-                   }
-               }
-             });
-             if (version_updated == false) {
-                  core.setFailed("Tessell Libraries must update the version in gradle.properties file")
+        script: |
+          version_updated = false
+           response.data.files.forEach(function(file_entry) {
+             if (file_entry.filename == 'gradle.properties') {
+                 console.log(file_entry.patch)
+                 if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                     version_updated = true
+                 }
              }
+           });
+           if (version_updated == false) {
+                core.setFailed("Tessell Libraries must update the version in gradle.properties file")
+           }
       
       - name: check for version in version_txt
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
