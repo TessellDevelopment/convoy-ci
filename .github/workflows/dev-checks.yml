@@ -7,37 +7,37 @@ on:
         description: 'This is used to check gradle_properties version '
         required: true
         type: string
-        default: false
+        default: 'false'
       check_version_in_version_txt:
         description: 'This is used to check version in version.txt '
         required: true
         type: string
-        default: false
+        default: 'false'
       check_sql_update:
         description: 'This is used to check if the sql files has any changes'
         required: true
         type: string
-        default: true
+        default: 'true'
       check_branch_name:
         description: 'This is used to check branch name starts with TS-'
         required: true
         type: string
-        default: true
+        default: 'true'
       check_existing_branch_name:
         description: 'This is the Receiver of Email'
         required: true
         type: string
-        default: true
+        default: 'true'
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not '
         required: true
         type: string
-        default: true
+        default: 'true'
       check_terraform_provider_version:
         description: 'This is used to check terraform provider version in terraform files '
         required: true
         type: string
-        default: true
+        default: 'true'
 
 jobs:
   dev-checks:
@@ -72,7 +72,7 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
         
       - name: Check branch name
-        if : ${{ inputs.check_branch_name && !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
+        if : ${{ inputs.check_branch_name == 'true' && !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1
