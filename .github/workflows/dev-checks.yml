@@ -125,7 +125,25 @@ jobs:
         uses: actions/github-script@v6.3.3
         if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} && github.event_name == 'pull_request'
         with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
             version_updated = false
              response.data.files.forEach(function(file_entry) {
                if (file_entry.filename == 'gradle.properties') {
