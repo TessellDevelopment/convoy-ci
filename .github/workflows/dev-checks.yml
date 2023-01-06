@@ -147,6 +147,7 @@ jobs:
           terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
       
       - name: Jira number validation
+        if :  ${{ inputs.check_valid_jira == 'true' }}
         run: |
           jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
 
