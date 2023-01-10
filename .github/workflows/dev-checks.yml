@@ -239,7 +239,7 @@ jobs:
       - name: check for terraform version
         if: steps.terraform_check.outputs.terraform_file 
         run:
-          terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
+          terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
       
       - name: Jira number validation
         run: |
