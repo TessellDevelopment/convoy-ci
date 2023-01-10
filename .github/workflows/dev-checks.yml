@@ -72,7 +72,7 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
         
       - name: Check branch name
-        if : ${{ inputs.check_branch_name == 'true' && !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
+        if : ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
           echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
           exit 1  
@@ -231,23 +231,22 @@ jobs:
             
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
-        if: ${{ inputs.check_sql_update == 'true' && steps.check_db_migration.outputs.db_migration_dir }}
+        if: steps.check_db_migration.outputs.db_migration_dir
         run:
           python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
       
 
       - name: check for terraform version
-        if:  ${{ inputs.check_terraform_provider_version == 'true' && steps.terraform_check.outputs.terraform_file }}
+        if: steps.terraform_check.outputs.terraform_file 
         run:
           terraform_version_check "${{ steps.check_db_migration.outputs.terraform_file }}"
       
       - name: Jira number validation
-        if :  ${{ inputs.check_valid_jira == 'true' }}
         run: |
           jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
 
       - name: check to verify same branch is exist
-        if: ${{ inputs.check_existing_branch_name == 'true' && startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
+        if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
         run: |
           branch_to_check=${{ env.SOURCE_BRANCH }}-main-double_commit
           list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
