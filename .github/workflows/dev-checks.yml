@@ -5,14 +5,14 @@ on:
     inputs:
       check_version_in_gradle_properties:
         description: 'This is used to check gradle_properties version'
-        required: false
+        required: true
         type: string
-        default: 'true'
+        default: 'false'
       check_version_in_version_txt:
         description: 'This is used to check version in version.txt'
-        required: false
+        required: true
         type: string
-        default: 'true'
+        default: 'false'
       check_sql_update:
         description: 'This is used to check if the sql files has any changes'
         required: false
