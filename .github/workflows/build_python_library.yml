@@ -21,7 +21,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
+      NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
+      NEXUS_PULL_REPOS_RAW: tessell-raw-development
 
     steps:
       - name: Checkout code
@@ -37,6 +39,7 @@ jobs:
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-component" >> $GITHUB_ENV
 
       - name: Create pip conf
         run: |
@@ -82,7 +85,9 @@ jobs:
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
-            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}"
+            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" \
+            -Pnexus_pull_repo_raw="${{ env.NEXUS_PULL_REPOS_RAW }}" \
+            -Pnexus_push_repo_raw="${{ env.NEXUS_PUSH_REPOS_RAW }}"
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
