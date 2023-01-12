@@ -83,27 +83,27 @@ jobs:
           sudo cp pip.conf /etc/pip.conf
         shell: bash
 
-      - name: Install dependencies
+      - name: Install dependencies for Mssql
         if: ${{ inputs.plugin_mssql == 'true' }}
         run: |
           if [ -f ./tessell-db-plugin-mssql/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-mssql/requirements.txt; fi
           
-      - name: Install dependencies
+      - name: Install dependencies for Mysql
         if: ${{ inputs.plugin_mysql == 'true' }}
         run: |
           if [ -f ./tessell-db-plugin-mysql/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-mysql/requirements.txt; fi  
           
-      - name: Install dependencies
+      - name: Install dependencies for Kafka
         if: ${{ inputs.plugin_kafka == 'true' }}
         run: |
           if [ -f ./tessell-db-plugin-kafka/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-kafka/requirements.txt; fi
           
-      - name: Install dependencies
+      - name: Install dependencies for Oracle
         if: ${{ inputs.plugin_oracle == 'true' }}
         run: |
           if [ -f ./tessell-db-plugin-oracle/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-oracle/requirements.txt; fi
           
-      - name: Install dependencies
+      - name: Install dependencies for Postgres
         if: ${{ inputs.plugin_postgres == 'true' }}
         run: |
           if [ -f ./tessell-db-plugin-postgres/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-postgres/requirements.txt; fi
