@@ -38,7 +38,7 @@ jobs:
       - name: Build
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          ./gradlew mavenPackage --console plain --stacktrace --refresh-dependencies \
+          ./gradlew mavenPackage --console plain --stacktrace \
             -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -47,7 +47,7 @@ jobs:
       - name: Build with Gradle
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          ./gradlew mavenDeploy --console plain --refresh-dependencies \
+          ./gradlew mavenDeploy --console plain  \
             -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
