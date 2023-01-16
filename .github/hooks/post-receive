@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# get the last commit
+LAST_COMMIT=$(git rev-parse --short HEAD)
+
+# get the commit message
+COMMIT_MSG=$(git rev-list --format=%B --max-count=1 $LAST_COMMIT)
+
+# have various checks to enforce policies
+python3 enforce_policies.py ${COMMIT_MSG}
