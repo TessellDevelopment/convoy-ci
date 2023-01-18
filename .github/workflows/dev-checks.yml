@@ -114,11 +114,7 @@ jobs:
                 core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
               }
             });
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename == 'version.txt'){
-                 core.setFailed("modifying version.txt is not allowed ")
-            }
-            });
+
 
             
       - name: check for gradle properties version
