@@ -5,31 +5,10 @@ name: Tessell Pipelines Code Build
 on:
   workflow_call:
     inputs:
-      plugin_oracle:
-        description: 'This is used to check gradle_properties version'
-        required: false
+      plugin_base_dir:
+        description: 'plugin directory'
+        required: true
         type: string
-        default: 'false'
-      plugin_postgres:
-        description: 'This is used to check gradle_properties version'
-        required: false
-        type: string
-        default: 'false'
-      plugin_mysql:
-        description: 'This is used to check gradle_properties version'
-        required: false
-        type: string
-        default: 'false'
-      plugin_kafka:
-        description: 'This is used to check gradle_properties version'
-        required: false
-        type: string
-        default: 'false'
-      plugin_mssql:
-        description: 'This is used to check gradle_properties version'
-        required: false
-        type: string
-        default: 'false'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -83,30 +62,10 @@ jobs:
           sudo cp pip.conf /etc/pip.conf
         shell: bash
 
-      - name: Install dependencies for Mssql
-        if: ${{ inputs.plugin_mssql == 'true' }}
+      - name: Install dependencies ${{ inputs.plugin_base_dir }}
+        if: ${{ inputs.plugin_base_dir }}
         run: |
-          if [ -f ./tessell-db-plugin-mssql/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-mssql/requirements.txt; fi
-          
-      - name: Install dependencies for Mysql
-        if: ${{ inputs.plugin_mysql == 'true' }}
-        run: |
-          if [ -f ./tessell-db-plugin-mysql/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-mysql/requirements.txt; fi  
-          
-      - name: Install dependencies for Kafka
-        if: ${{ inputs.plugin_kafka == 'true' }}
-        run: |
-          if [ -f ./tessell-db-plugin-kafka/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-kafka/requirements.txt; fi
-          
-      - name: Install dependencies for Oracle
-        if: ${{ inputs.plugin_oracle == 'true' }}
-        run: |
-          if [ -f ./tessell-db-plugin-oracle/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-oracle/requirements.txt; fi
-          
-      - name: Install dependencies for Postgres
-        if: ${{ inputs.plugin_postgres == 'true' }}
-        run: |
-          if [ -f ./tessell-db-plugin-postgres/requirements.txt ]; then python3 -m pip install -r ./tessell-db-plugin-postgres/requirements.txt; fi
+          if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt; fi
        
 
       - name: Lint with flake8
