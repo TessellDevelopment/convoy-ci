@@ -23,7 +23,7 @@ jobs:
       NEXUS_PULL_REPOS_PY: tessell-py-development
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-      GROUP_NAME: "tessell.tsm.infra"
+      GROUP_NAME: "tessell.terraform_modules"
 
     steps:
       - name: Checkout code
