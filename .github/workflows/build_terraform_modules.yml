@@ -19,9 +19,10 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      ACCESS_KEY: ${{ secrets.ACCESS_KEY_DEVQA_INFRA  }}
-      SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY_DEVQA_INFRA  }}
-      GITHUB_TOKEN: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       GROUP_NAME: "tessell.tsm.infra"
 
     steps:
