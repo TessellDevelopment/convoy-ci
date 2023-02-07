@@ -103,7 +103,7 @@ jobs:
         run: |
           mkdir -p build/tools
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
-          ./gradlew dockerTagsPush --console plain --stacktrace  \
+          ./gradlew dockerTagsPush --console plain --stacktrace --debug \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
@@ -113,7 +113,7 @@ jobs:
         run: |
           mkdir -p build/tools
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
-          ./gradlew pythonWheel docker --console plain --stacktrace \
+          ./gradlew pythonWheel docker --console plain --stacktrace --debug \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
 
