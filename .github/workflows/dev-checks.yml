@@ -215,7 +215,7 @@ jobs:
             });
             var terraform_file = [] 
             response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename.endsWith(".tf")) {
+              if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
                 console.log(file_entry.filename);
                 console.log(file_entry.status);
                 terraform_file.push(file_entry.filename)
