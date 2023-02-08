@@ -123,6 +123,16 @@ jobs:
                   console.log(error2)
                 }
                 try {
+                  console.log("Running git status")
+                  command = "git status"
+                  result = await execPromise(command);
+                  console.log("stdout: " + result.stdout);
+                  console.log("stderr: " + result.stderr);
+                } catch (error_status) {
+                  console.log("Error during git status.")
+                  console.log(error2)
+                }
+                try {
                   command = "git add . ; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
                   result = await execPromise(command);
                   console.log("stdout: " + result.stdout);
@@ -132,13 +142,23 @@ jobs:
                   console.log(error2)
                   try {
                       console.log("Trying cherry-pick --continue")
-                      command = "git add . ; git cherry-pick --continue; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
+                      command = "git add . ; git cherry-pick --continue; git status"
                       result = await execPromise(command);
                       console.log("stdout: " + result.stdout);
                       console.log("stderr: " + result.stderr);
                   } catch (error4) {
                       console.log("Error during git add with cherry-pick --continue")
                       console.log(error4)
+                  }
+                  try {
+                      console.log("Amend the commit")
+                      command = "git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
+                      result = await execPromise(command);
+                      console.log("stdout: " + result.stdout);
+                      console.log("stderr: " + result.stderr);
+                  } catch (error5) {
+                      console.log("Failed during Amending the commit.")
+                      console.log(error5)
                   }
                 }
               }
