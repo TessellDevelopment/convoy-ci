@@ -130,7 +130,7 @@ jobs:
                   console.log("stderr: " + result.stderr);
                 } catch (error_status) {
                   console.log("Error during git status.")
-                  console.log(error2)
+                  console.log(error_status)
                 }
                 try {
                   command = "git add . ; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
@@ -139,7 +139,7 @@ jobs:
                   console.log("stderr: " + result.stderr);
                 } catch (error3) {
                   console.log("Error during git add.")
-                  console.log(error2)
+                  console.log(error3)
                   try {
                       console.log("Trying cherry-pick --continue")
                       command = "git add . ; git cherry-pick --continue; git status"
