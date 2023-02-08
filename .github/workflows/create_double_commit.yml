@@ -118,13 +118,28 @@ jobs:
                   const result = await execPromise(command);
                   console.log("stdout: " + result.stdout);
                   console.log("stderr: " + result.stderr);
+                } catch (error2) {
+                  console.log("Error during rm and find.")
+                  console.log(error2)
+                }
+                try {
                   command = "git add . ; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
                   result = await execPromise(command);
                   console.log("stdout: " + result.stdout);
                   console.log("stderr: " + result.stderr);
-                } catch (error2) {
-                  console.log("Error during rm and find.")
+                } catch (error3) {
+                  console.log("Error during git add.")
                   console.log(error2)
+                  try {
+                      console.log("Trying cherry-pick --continue")
+                      command = "git add . ; git cherry-pick --continue; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
+                      result = await execPromise(command);
+                      console.log("stdout: " + result.stdout);
+                      console.log("stderr: " + result.stderr);
+                  } catch (error4) {
+                      console.log("Error during git add with cherry-pick --continue")
+                      console.log(error4)
+                  }
                 }
               }
               command = 'git push -u -f origin ' + prBranchName
