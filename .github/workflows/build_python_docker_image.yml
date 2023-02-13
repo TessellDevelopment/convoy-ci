@@ -159,7 +159,7 @@ jobs:
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
         
   send-mail:
-    uses: .github/workflows/email_dc.yaml@main
+    uses: .github/workflows/email_dc.yaml
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
