@@ -42,7 +42,7 @@ on:
         description: 'This is used to check terraform modules directories version'
         required: false
         type: string
-        default: 'true'
+        default: 'false'
 
 jobs:
   dev-checks:
