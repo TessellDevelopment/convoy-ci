@@ -231,7 +231,7 @@ jobs:
                 dir_name = file_entry.filename.split("/")[0];
                 if (file_entry.filename.split("/")[1] == 'version.txt') {
                     console.log("Modifying version" + dir_name );
-                    if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                    if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
                          modifiedDirectories[dir_name] = true;
                     }
                 }
