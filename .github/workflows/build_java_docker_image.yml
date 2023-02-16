@@ -4,6 +4,13 @@ name: Tessell Pipelines Code Build
 # Controls when the workflow will run
 on:
   workflow_call:
+    inputs:
+      java_17:
+        description: 'Making runner to run this workflow on java-17'
+        required: false
+        type: string
+        default: 'false'
+        
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -37,14 +44,14 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
           
       - name: Set java home for java_17
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
         shell: bash
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
           echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           
       - name: check whether java varibale 
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
         shell: bash
         run: |
           echo $JAVA_HOME
