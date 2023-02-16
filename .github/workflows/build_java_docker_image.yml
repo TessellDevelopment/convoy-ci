@@ -44,14 +44,14 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
           
       - name: Set java home for java_17
-        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        if:  ${{ inputs.java_17 == 'true' }} 
         shell: bash
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
           echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           
       - name: check whether java varibale 
-        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        if:  ${{ inputs.java_17 == 'true' }} 
         shell: bash
         run: |
           echo $JAVA_HOME
