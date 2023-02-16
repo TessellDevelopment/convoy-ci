@@ -49,7 +49,6 @@ jobs:
         run: |
           echo $JAVA_HOME
           echo $PATH
-          whcih java
           java -version
 
       - name: Login to docker
