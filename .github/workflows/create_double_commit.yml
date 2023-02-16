@@ -142,7 +142,7 @@ jobs:
                   console.log(error3)
                   try {
                       console.log("Trying cherry-pick --continue")
-                      command = "git add . ; git cherry-pick --continue; git status"
+                      command = "git add . ; git -c core.editor=true cherry-pick --continue; git status"
                       result = await execPromise(command);
                       console.log("stdout: " + result.stdout);
                       console.log("stderr: " + result.stderr);
