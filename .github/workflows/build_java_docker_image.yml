@@ -35,6 +35,22 @@ jobs:
         run: |
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+          
+      - name: Set java home for java_17
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          echo "PATH=$JAVA_HOME/bin:$PATH" >> $GITHUB_ENV
+          
+      - name: check whether java varibale 
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo $JAVA_HOME
+          echo $PATH
+          whcih java
+          java -version
 
       - name: Login to docker
         uses: docker/login-action@v2.1.0
