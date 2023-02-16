@@ -42,7 +42,6 @@ jobs:
           BASE_DIR=$PWD
           BUILD_DIR=$BASE_DIR/build
           mkdir -p $BUILD_DIR
-          VERSION=$(cat version.txt | awk -F "=" {'print $2'})
           DIRECTORIES=$(ls -l | grep '^d' | awk {'print $9'})
           EXCLUDE_DIR=("build")
           for DIR in $DIRECTORIES
@@ -50,7 +49,7 @@ jobs:
             if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              # VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
               terraform_build $PWD $ARTIFACT_FILE
             fi
@@ -64,7 +63,6 @@ jobs:
           BASE_DIR=$PWD
           BUILD_DIR=$BASE_DIR/build
           mkdir -p $BUILD_DIR
-          VERSION=$(cat version.txt | awk -F "=" {'print $2'})
           DIRECTORIES=$(ls -l | grep '^d' | awk {'print $9'})
           EXCLUDE_DIR=("build")
           for DIR in $DIRECTORIES
@@ -72,7 +70,7 @@ jobs:
             if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              # VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
               terraform_build $PWD $ARTIFACT_FILE
 
