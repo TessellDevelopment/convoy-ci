@@ -1,0 +1,96 @@
+# This is a basic workflow to help you get started with Actions
+name: Tessell Pipelines Code Build
+
+# Controls when the workflow will run
+on:
+  workflow_call:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create pip conf
+        run: |
+          # Create pip.conf and copy to /etc; 
+          # The --extra_index_url option of pip install does not work with username/password
+          # Also pip does not have separate option to specify creds.
+          echo "[global]" > pip.conf
+          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+          sudo cp pip.conf /etc/pip.conf
+        shell: bash
+
+
+      - name: Setup environment
+        id: setup
+        shell: bash
+        run: |
+          INSTALL_DIR=/usr/local/bin
+          sudo mkdir -p $INSTALL_DIR/openapitools
+          curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+          sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
+          sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
+          sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+          wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+          sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+          sudo python3 -m pip install -r scripts/requirements.txt
+
+      - name: Make clients
+        id: make_clients
+        shell: bash
+        run: |
+          export PYTHONPATH=lib
+          export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
+          export GITHUB_TOKEN="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          cp configs/qarel.json config.json
+          make clients -B
+
+      - name: Dry run
+        id: dry_run_check
+        shell: bash
+        run: |
+          python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+        
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: build
+    with:
+      subject: ${{ needs.build.outputs.mail_subject_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
+      to: ${{ needs.build.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+            
+
