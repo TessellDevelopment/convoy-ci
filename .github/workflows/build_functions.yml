@@ -1,0 +1,168 @@
+# This is a basic workflow to help you get started with Actions
+name: Tessell Pipelines Code Build
+
+# Controls when the workflow will run
+on:
+  workflow_call:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      OS_NAMES: "linux windows"
+      CLOUD_NAMES: "aws azure"
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: create tar file 
+        run: |
+          cd tessell;
+          for OS in ${OS_NAMES[@]} ;do
+           for CLOUD in ${CLOUD_NAMES[@]}; do
+            make OS=$OS CLOUD=$CLOUD package
+           done
+          done
+          ls -l
+          
+      - name: Get tags
+        uses: nick-fields/retry@v2.8.1
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          timeout_seconds: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            git fetch --all
+            git tag --contains '${{ github.event.after }}'
+            latest_tags+=("$(git tag --contains '${{ github.event.after }}')")
+            if [[ "$latest_tags" == '' ]]; then 
+              echo " Tag is Empty"
+              exit 1
+            fi
+            echo "Tag is present: $latest_tags"       
+            for tag in $latest_tags; do tag_arr+=($tag); done
+            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+             
+            
+      - name: Find latest tag
+        uses: actions/github-script@v6.3.3
+        id: latest_tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            console.log("Tags are " + "${{ env.TAGS }}")
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              console.log("There is only one tag. Using it." + tags[0])
+              latest_tag = tags[0]
+            } else {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            console.log("Latest tag: " + latest_tag)
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+            core.setOutput('tag_ref', latest_tag)
+
+
+      - name: steps to upload tar files to nexus 
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          for OS in ${OS_NAMES[@]} ;do
+           for CLOUD in ${CLOUD_NAMES[@]}; do
+              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                  -DgroupId=tessell.functions -DartifactId=tessell-task-handler-$OS-$CLOUD -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                  -DgeneratePom=true -Dpackaging=tar \
+                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Dfile=./tessell/tessell-task-handler-$OS-$CLOUD.tar -DrepositoryId=nexus
+            done
+          done
+
+        
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+          
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: build
+    with:
+      subject: ${{ needs.build.outputs.mail_subject_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
+      to: ${{ needs.build.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
