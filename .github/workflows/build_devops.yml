@@ -37,8 +37,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
-          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
 
       - name: Create pip conf
         run: |
