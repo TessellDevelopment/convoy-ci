@@ -22,7 +22,6 @@ jobs:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
-      DOCKERHUB_ORG: "tesselldev"
 
     steps:
       - name: Checkout code
