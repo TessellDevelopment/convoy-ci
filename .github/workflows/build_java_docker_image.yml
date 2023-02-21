@@ -86,7 +86,7 @@ jobs:
       - name: Docker image scan
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         id: docker-image-scan
-        uses: azure/container-scan@v0
+        uses: azure/container-scan@v0.1
         continue-on-error: true
         with:
            image-name: ${{ env.DOCKER_IMAGE_NAME }}
