@@ -172,7 +172,7 @@ jobs:
                 }
               }
             }
-            latest_tag = '100.100.1'
+            latest_tag = '100.100.2'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -187,7 +187,7 @@ jobs:
           mkdir -p ./filebeat/build/distributions/ 
           PACKAGES_DIR=./filebeat/build/distributions/
           pwd
-          cp ./filebeat/filebeat.yml $PACKAGES_DIR
+          cp ./filebeat/tessell-filebeat.yml  $PACKAGES_DIR/filebeat.yml
           pwd
           cd $PACKAGES_DIR
           ls -l
