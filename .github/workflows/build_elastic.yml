@@ -183,6 +183,7 @@ jobs:
             
       - name: creating tar files
         run: |
+          mkdir -p ./filebeat/build/distributions/ 
           PACKAGES_DIR=./filebeat/build/distributions/
           pwd
           cp ./filebeat/filebeat.yml $PACKAGES_DIR
