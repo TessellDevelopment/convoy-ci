@@ -186,15 +186,14 @@ jobs:
         run: |
           mkdir -p ./filebeat/build/distributions/ 
           PACKAGES_DIR=./filebeat/build/distributions/
-          pwd
-          cp ./filebeat/tessell-filebeat.yml  $PACKAGES_DIR/filebeat.yml
-          pwd
-          cd $PACKAGES_DIR
-          ls -l
-          cat filebeat.yml
-          tar -zcvf filebeat-linux.tar.gz  filebeat.yml
-          tar -zcvf filebeat-windows.tar.gz  filebeat.yml
-          ls -l
+          cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+          pushd $PACKAGES_DIR
+          tar -zcvf filebeat-linux.tar.gz filebeat.yml
+          popd
+          cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+          pushd $PACKAGES_DIR
+          tar -zcvf filebeat-windows.tar.gz filebeat.yml
+          popd
           
             
       - name: steps to upload tar files to nexus
