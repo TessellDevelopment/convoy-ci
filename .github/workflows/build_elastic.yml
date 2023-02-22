@@ -185,8 +185,11 @@ jobs:
         run: |
           PACKAGES_DIR=./filebeat/build/distributions/
           cp ./filebeat/filebeat.yml $PACKAGES_DIR
+          pwd
           cd $PACKAGES_DIR
+          pwd
           ls -l
+          cat filebeat.yml
           tar -zcvf filebeat-linux.tar.gz  filebeat.yml
           tar -zcvf filebeat-windows.tar.gz  filebeat.yml
           ls -l
