@@ -217,7 +217,7 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.github'];
+              const excludedDirectories = ['.github','.gitignore'];
               const modifiedFiles = response.data.files;
               const modifiedDirectories = {};
               response.data.files.forEach(file => {
