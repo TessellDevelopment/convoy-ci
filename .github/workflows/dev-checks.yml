@@ -79,7 +79,7 @@ jobs:
       - name: Check branch name
         if : ${{ (!startsWith(env.SOURCE_BRANCH,'TS-') || startsWith(env.SOURCE_BRANCH,'TS-')) && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
-          if [ echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-'] ; then
+          if  echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' ; then
             echo "Branch name starts with 'TS-'"
             else
             echo "Branch name does not start with 'TS-'"
