@@ -173,6 +173,7 @@ jobs:
           if [ -d "flyway" ]; then
             echo "The 'flyway' directory exists in the repository."
             echo "DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration" >> $GITHUB_ENV
+          fi
             
       - name: Flyway Docker Image push
         if: steps.flyway_push
