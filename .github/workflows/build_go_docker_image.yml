@@ -164,6 +164,20 @@ jobs:
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          
+      - name: check for flyway
+        id: flyway_push
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          if [ -d "flyway" ]; then
+            echo "The 'flyway' directory exists in the repository."
+            echo "DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration" >> $GITHUB_ENV
+            
+      - name: Flyway Docker Image push
+        if: steps.flyway_push
+        run: |
+          docker tag ${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
 
 
       - name: Slack Notification
