@@ -144,6 +144,7 @@ jobs:
                 }
               }
             }
+            latest_tag = 'test'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
