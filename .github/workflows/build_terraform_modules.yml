@@ -71,7 +71,7 @@ jobs:
               response.data.files.forEach(file => {
                 const fileDirectory = file.filename.split("/")[0];
                  if (!excludedDirectories.includes(fileDirectory)) {
-                    modifiedDirectories.append(fileDirectory)
+                    modifiedDirectories.push(fileDirectory)
                  }
               });
               core.setOutput('modifiedDirectories' , modifiedDirectories.join(' '));
