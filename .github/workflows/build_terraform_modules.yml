@@ -28,6 +28,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
 
       - name: Get branch name && repo name 
         shell: bash
@@ -35,6 +41,40 @@ jobs:
           pwd
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "REPO_NAME=$(git ls-remote --get-url | xargs basename -s .git)" >> $GITHUB_ENV
+          
+      - name: finding the modified dir's
+        id: modified_dir
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
+              const excludedDirectories = ['.github','.gitignore'];
+              const modifiedFiles = response.data.files;
+              const modifiedDirectories = [];
+              response.data.files.forEach(file => {
+                const fileDirectory = file.filename.split("/")[0];
+                 if (!excludedDirectories.includes(fileDirectory)) {
+                    modifiedDirectories.push(fileDirectory)
+                 }
+              });
+              core.setOutput('modifiedDirectories' , modifiedDirectories.join(' '));
 
       - name: Zip terraform modules
         shell: bash
@@ -42,11 +82,12 @@ jobs:
           BASE_DIR=$PWD
           BUILD_DIR=$BASE_DIR/build
           mkdir -p $BUILD_DIR
-          DIRECTORIES=$(ls -l | grep '^d' | awk {'print $9'})
+          DIRECTORIES="${{ steps.modified_dir.outputs.modifiedDirectories }}"
           EXCLUDE_DIR=("build")
           for DIR in $DIRECTORIES
           do
             if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
+              echo "building  ${DIR}"
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
               VERSION=$(cat version.txt | awk -F "=" {'print $2'})
@@ -63,7 +104,7 @@ jobs:
           BASE_DIR=$PWD
           BUILD_DIR=$BASE_DIR/build
           mkdir -p $BUILD_DIR
-          DIRECTORIES=$(ls -l | grep '^d' | awk {'print $9'})
+          DIRECTORIES="${{ steps.modified_dir.outputs.modifiedDirectories }}"
           EXCLUDE_DIR=("build")
           for DIR in $DIRECTORIES
           do
