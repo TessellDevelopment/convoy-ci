@@ -44,7 +44,10 @@ jobs:
           
       - name: finding the modified dir's
         id: modified_dir
-        run: |
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
