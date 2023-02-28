@@ -84,6 +84,13 @@ jobs:
           image-name: ${{ env.DOCKER_IMAGE_NAME }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      - uses: actions/upload-artifact@v3
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        continue-on-error: true
+        with:
+           name: image-scan-report
+           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
 
       - name: Build and publish
@@ -94,14 +101,7 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-
-
-      - uses: actions/upload-artifact@v3
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        continue-on-error: true
-        with:
-           name: image-scan-report
-           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+      
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
