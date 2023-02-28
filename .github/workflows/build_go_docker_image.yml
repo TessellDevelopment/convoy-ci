@@ -94,7 +94,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -144,7 +144,6 @@ jobs:
                 }
               }
             }
-            latest_tag = 'test'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -161,14 +160,14 @@ jobs:
           
 
       - name: Docker Image push
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           
       - name: check for flyway and push flyway image to docker 
         id: flyway_push
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           if [ -d "flyway" ]; then
             echo "The 'flyway' directory exists in this repository."
