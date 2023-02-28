@@ -95,19 +95,20 @@ jobs:
             -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
-
       - name: Docker image scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         id: docker-image-scan
-        uses: azure/container-scan@v0
-        continue-on-error: true
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        uses: azure/container-scan@v0.1
+        continue-on-error: false
         with:
-            image-name: ${{ env.DOCKER_IMAGE_NAME }}
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
 
       - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         continue-on-error: true
         with:
             name: image-scan-report

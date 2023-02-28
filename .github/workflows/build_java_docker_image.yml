@@ -63,6 +63,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+
       
       - name: Build with Gradle
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -71,6 +73,17 @@ jobs:
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
         shell: bash
+
+      - name: Docker image scan
+        id: docker-image-scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        uses: azure/container-scan@v0.1
+        continue-on-error: false
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
 
       - name: Build and publish
@@ -83,18 +96,8 @@ jobs:
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
 
-      - name: Docker image scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        id: docker-image-scan
-        uses: azure/container-scan@v0.1
-        continue-on-error: true
-        with:
-           image-name: ${{ env.DOCKER_IMAGE_NAME }}
-           username: ${{ secrets.DOCKER_USERNAME }}
-           password: ${{ secrets.DOCKER_PASSWORD }}
-
       - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         continue-on-error: true
         with:
            name: image-scan-report
