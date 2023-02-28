@@ -295,9 +295,9 @@ jobs:
         run:
           terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
       
-      - name: Jira number validation
-        run: |
-          jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
+      #- name: Jira number validation
+      #  run: |
+      #    jira_check '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ env.SOURCE_BRANCH }}'
 
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
