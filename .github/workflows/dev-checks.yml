@@ -77,10 +77,13 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
         
       - name: Check branch name
-        if : ${{ !startsWith(env.SOURCE_BRANCH,'TS-') && !startsWith(env.SOURCE_BRANCH,'revert-') }} 
         run: |
-          echo "::debug::Branch name must start with 'TS-' ${{ env.SOURCE_BRANCH }}"
-          exit 1  
+         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+           echo "Branch name starts with 'TS-'"
+         else
+           echo "Branch name does not start with 'TS-'"
+           exit 1
+         fi
       
 
       - name: Check for merge conflict in PR
@@ -330,4 +333,3 @@ jobs:
       to: ${{ needs.dev-checks.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        
