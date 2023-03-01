@@ -70,11 +70,14 @@ jobs:
               const modifiedDirectories = [];
               response.data.files.forEach(file => {
                 const fileDirectory = file.filename.split("/")[0];
-                 if (!excludedDirectories.includes(fileDirectory)) {
-                    modifiedDirectories.push(fileDirectory)
-                 }
+                if (!excludedDirectories.includes(fileDirectory)) {
+                  modifiedDirectories.push(fileDirectory)
+                }
               });
-              core.setOutput('modifiedDirectories' , modifiedDirectories.join(' '));
+              const uniqueDirectories = [...new Set(modifiedDirectories)];
+              const outputString = uniqueDirectories.join(' ');
+              core.setOutput('modifiedDirectories', outputString);
+
 
       - name: Zip terraform modules
         shell: bash
