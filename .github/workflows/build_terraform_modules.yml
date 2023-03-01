@@ -74,9 +74,8 @@ jobs:
                   modifiedDirectories.push(fileDirectory)
                 }
               });
-              const uniqueDirectories = [...new Set(modifiedDirectories)];
-              const outputString = uniqueDirectories.join(' ');
-              core.setOutput('modifiedDirectories', outputString);
+              
+              core.setOutput('modifiedDirectories' , modifiedDirectories.join(' '));
 
 
       - name: Zip terraform modules
