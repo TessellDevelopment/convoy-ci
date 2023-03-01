@@ -75,8 +75,8 @@ jobs:
                 }
               });
               const uniqueDirectories = [...new Set(modifiedDirectories)];
-              const outputString = uniqueDirectories.join(' ’);
-              core.setOutput(‘modifiedDirectories’, outputString);
+              const outputString = uniqueDirectories.join(' ');
+              core.setOutput('modifiedDirectories', outputString);
 
       - name: Zip terraform modules
         shell: bash
