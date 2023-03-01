@@ -74,9 +74,9 @@ jobs:
                   modifiedDirectories.push(fileDirectory)
                 }
               });
-              
-              core.setOutput('modifiedDirectories' , modifiedDirectories.join(' '));
-
+              const uniqueDirectories = [...new Set(modifiedDirectories)];
+              const outputString = uniqueDirectories.join(' ’);
+              core.setOutput(‘modifiedDirectories’, outputString);
 
       - name: Zip terraform modules
         shell: bash
