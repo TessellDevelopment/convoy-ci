@@ -60,6 +60,7 @@ jobs:
         id: docker-image-scan
         continue-on-error: true
         uses: azure/container-scan@v0
+        continue-on-error: true
         with:
           image-name: ${{ env.DOCKER_IMAGE_NAME }}
           username: ${{ secrets.DOCKER_USERNAME }}
