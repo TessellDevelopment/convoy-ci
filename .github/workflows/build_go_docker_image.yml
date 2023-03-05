@@ -57,9 +57,8 @@ jobs:
 
       - name: Docker image scan
         id: docker-image-scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        continue-on-error: true
         uses: azure/container-scan@v0.1
-        continue-on-error: false
         with:
           severity-threshold: CRITICAL
           image-name: ${{ env.DOCKER_IMAGE_NAME }}
@@ -67,11 +66,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - uses: actions/upload-artifact@v3
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        continue-on-error: true
         with:
-          name: image-scan-report
-          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
@@ -157,6 +154,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
+          echo "DOCKERHUB_ORG_DEV=${{env.DOCKERHUB_ORG}}" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
           
 
@@ -165,6 +163,20 @@ jobs:
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          
+      - name: check for flyway and push flyway image to docker 
+        id: flyway_push
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          if [ -d "flyway" ]; then
+            echo "The 'flyway' directory exists in this repository."
+            DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+            docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push ${{ env.DOCKERHUB_ORG }}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
+          else
+            echo "The 'flyway' directory does not exists in this repository."
+          fi
+            
 
 
       - name: Slack Notification
