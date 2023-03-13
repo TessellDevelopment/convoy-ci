@@ -140,7 +140,6 @@ jobs:
                 }
               }
             }
-            latest_tag = '100.0.1'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
