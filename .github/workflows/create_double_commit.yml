@@ -105,7 +105,7 @@ jobs:
                 console.log(error);
               }
 
-              command = 'git cherry-pick ' + "${{ github.sha }}"
+              command = 'git -c user.name="`git log --pretty=format:"%ae"`" -c user.email="`git log --pretty=format:"%ae"`" cherry-pick' + "${{ github.sha }}"
               try {
                 // wait for exec to complete
                 const result = await execPromise(command);
