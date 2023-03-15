@@ -22,7 +22,8 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      DOCKERHUB_ORG: "tesselldev"
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      GOPATH: /home/github/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       OS_NAMES: "linux windows"
