@@ -57,7 +57,6 @@ jobs:
 
       - name: Docker image scan
         id: docker-image-scan
-        continue-on-error: false
         uses: azure/container-scan@v0.1
         with:
           severity-threshold: CRITICAL
