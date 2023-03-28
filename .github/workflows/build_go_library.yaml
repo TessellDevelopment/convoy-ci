@@ -54,7 +54,6 @@ jobs:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
             const oracle_exporter = JSON.parse(core.getInput('oracle_exporter'));
-            console.log(myInput.key1);
-            console.log(myInput.key2);
-            console.log(myInput.key3);
+            console.log(oracle_exporter.os);
+            console.log(oracle_exporter.engine);
 
