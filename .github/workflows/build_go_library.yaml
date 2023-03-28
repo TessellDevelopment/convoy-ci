@@ -62,7 +62,7 @@ jobs:
             print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))
             print(\"::set-output name=os_type::\" + os_type)
             print(\"::set-output name=exporter_name::\" + exporter_name)
-            print(\"::set-output name=engine::\" + engine)   
+            print(\"::set-output name=engine::\" + exporter_config[os_type])   
           """
           
       - name: Make clinets
