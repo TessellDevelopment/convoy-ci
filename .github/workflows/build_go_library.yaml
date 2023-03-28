@@ -46,141 +46,15 @@ jobs:
         with:
           fetch-depth: 0
           
-
-      - name: Install dependencies
-        run: |
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          go install golang.org/x/tools/cmd/goimports@latest
-          which go
-          
-      - name: Make clients
-        run: |
-          echo "Building the service"
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          make service os="${{ steps.my-action.outputs.my_output.key1 }}" engine="${{ steps.my-action.outputs.my_output.key1 }}"
-      
-      - name: My Action
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const inputs = ${{ fromJson(inputs) }};
-            console.log(inputs.key1);
-            console.log(inputs.key2);
-            console.log(inputs.key3);
-        env:
-          inputs: '{"key1":"value1","key2":"value2","key3":"value3"}'
-
-
-      - name: Get tags
-        uses: nick-fields/retry@v2.8.1
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          timeout_seconds: 10
-          max_attempts: 3
-          retry_on: error
-          command: |
-            git fetch --all
-            git tag --contains '${{ github.event.after }}'
-            latest_tags+=("$(git tag --contains '${{ github.event.after }}')")
-            if [[ "$latest_tags" == '' ]]; then 
-              echo " Tag is Empty"
-              exit 1
-            fi
-            echo "Tag is present: $latest_tags"       
-            for tag in $latest_tags; do tag_arr+=($tag); done
-            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-            
-      - name: Find latest tag
+      - name: getting the values
+        id: outputs
         uses: actions/github-script@v6.3.3
-        id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
-            console.log("Tags are " + "${{ env.TAGS }}")
-            latest_tag = '0.0.0'
-            // process multiple tags if any
-            tags = "${{ env.TAGS }}".split(' ')
-            if (tags.length == 1) {
-              console.log("There is only one tag. Using it." + tags[0])
-              latest_tag = tags[0]
-            } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "main") {
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("Checking tag " + tag)
-                  if (latest_tag == null) {
-                    latest_tag = tag
-                    continue
-                  }
-                  latest_parts = latest_tag.split(".")
-                  tag_parts = tag.split(".")
-                  for (i = 0; i < tag_parts.length; i++) {
-                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                      console.log("Skipping " + tag)
-                      break
-                    }
-                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                      latest_tag = tag
-                      console.log("Setting " + latest_tag)
-                      break
-                    }
-                  }
-                }
-              } else {
-                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
-                latest_tag = tag_base.join(".") + ".0"
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("branch - Checking tag " + tag)
-                  tag_parts = tag.split(".")
-                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                    latest_parts = latest_tag.split(".")
-                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
-                      latest_tag = tag
-                    }
-                  }
-                }
-              }
-            }
-            console.log("Latest tag: " + latest_tag)
-            // check if we have
-            if ( latest_tag == '' || latest_tag === undefined) {
-              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-              process.exit(1);
-            }
-            core.setOutput('tag_ref', latest_tag)
-          
-  
-          
-      - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+            const oracle_exporter = JSON.parse(core.getInput('oracle_exporter'));
+            console.log(myInput.key1);
+            console.log(myInput.key2);
+            console.log(myInput.key3);
 
-      - name: Get PR-Author,subject & body to send email
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        run: |
-          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
-      - name: sending output
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        id: mail_info
-        run: |
-          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
-  send-mail:
-    uses: ./.github/workflows/email_dc.yaml
-    needs: build
-    with:
-      subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
-      to: ${{ needs.build.outputs.mail_id_output }}
-    secrets: inherit
-    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
