@@ -50,6 +50,8 @@ jobs:
       - name: getting the values
         run: |
           os=$(echo '${{ inputs.oracle_exporter }}' | jq -r '.os')
+          engine=$(echo '${{ inputs.oracle_exporter }}' | jq -r '.engine')
           echo "Oracle Exporter OS: $os"
+          echo "Engine: $engine"
 
 
