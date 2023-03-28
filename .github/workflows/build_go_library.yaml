@@ -73,11 +73,11 @@ jobs:
 
       - name: make clients
         run: |
-          declare -A os_eng
-            os_eng["linux"]=('mysql')
-            os_eng["windows"]=('mssql') 
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          declare -A os_eng
+            os_eng["linux"]=['mysql']
+            os_eng["windows"]=['mssql'] 
           for os in "${!os_eng[@]}"; do
             engines_in_os=("${os_eng[$os]}")
               for engine in "${engines_in_os[@]}"; do
