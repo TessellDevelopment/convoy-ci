@@ -6,7 +6,7 @@ name: Tessell Pipelines Code Build
 on:
   workflow_call:
     inputs:
-      oracle_exporter:
+      exporter_config:
         description: 'dictonary input for oracle exporter'
         required: false
         type: string
@@ -50,7 +50,7 @@ jobs:
       - name: getting the values
         run: |
           import json
-          exporter_config = json.loads('${{ inputs.oracle_exporter }}')
+          exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
             print("{engine}-{os_type}-{exporter_config[os_type]}".format(engine=exporter_config['engine'], os_type=os_type))
           
