@@ -49,5 +49,6 @@ jobs:
           
       - name: getting the values
         run: |
-          oracle_exporter=${{ inputs.oracle_exporter }}
+          echo "${{ inputs.oracle_exporter.os }}"
+          echo "${{ inputs.oracle_exporter.engine }}"
 
