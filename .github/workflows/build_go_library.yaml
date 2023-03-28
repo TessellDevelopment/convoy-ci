@@ -6,21 +6,12 @@ name: Tessell Pipelines Code Build
 on:
   workflow_call:
     inputs:
-      oracle-exporter:
-        description: 'Making runner to run this workflow on java-17'
+      oracle_exporter:
+        description: 'dictonary input for oracle exporter'
         required: false
         type: string
-        default: {}
-       postgres-exporter:
-        description: 'Making runner to run this workflow on java-17'
-        required: false
-        type: string
-        default: 'false'
-       sql-exporter:
-        description: 'Making runner to run this workflow on java-17'
-        required: false
-        type: string
-        default: 'false'
+        default: '{}'
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -49,16 +40,12 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+          
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           
-      - name: Login to docker
-        uses: docker/login-action@v2.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Install dependencies
         run: |
@@ -70,8 +57,18 @@ jobs:
         run: |
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          make service
+          make service os="${{ steps.my-action.outputs.my_output.key1 }}" engine="${{ steps.my-action.outputs.my_output.key1 }}"
       
+      - name: My Action
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const inputs = ${{ fromJson(inputs) }};
+            console.log(inputs.key1);
+            console.log(inputs.key2);
+            console.log(inputs.key3);
+        env:
+          inputs: '{"key1":"value1","key2":"value2","key3":"value3"}'
 
 
       - name: Get tags
