@@ -52,6 +52,7 @@ jobs:
           fetch-depth: 0
           
       - name: getting the values
+        id: values
         run: |
           python3 -c """
           import json
@@ -59,7 +60,19 @@ jobs:
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
             print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))
+            print("::set-output name=os_type::" + os_type)
+            print("::set-output name=exporter_name::" + exporter_name)
+            print("::set-output name=engine::" + engine)   
           """
+          
+      - name: Make clinets
+        run: |
+          echo "Building the service"
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          echo ${{ env.os_type }}
+          echo ${{ env.exporter_name }}
+          echo ${{ env.engine }}
+          
           
           
     
