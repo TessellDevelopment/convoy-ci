@@ -49,10 +49,12 @@ jobs:
           
       - name: getting the values
         run: |
+          python3 -c """
           import json
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
             print("{engine}-{os_type}-{exporter_config[os_type]}".format(engine=exporter_config['engine'], os_type=os_type))
+            """
           
           
     
