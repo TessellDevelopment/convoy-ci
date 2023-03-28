@@ -49,9 +49,11 @@ jobs:
           
       - name: getting the values
         run: |
-          os=$(echo '${{ inputs.oracle_exporter }}' | jq -r '.os')
-          engine=$(echo '${{ inputs.oracle_exporter }}' | jq -r '.engine')
-          echo "Oracle Exporter OS: $os"
-          echo "Engine: $engine"
-
+          import json
+          exporter_config = json.loads('${{ inputs.oracle_exporter }}')
+          for os_type in exporter_config:
+            print("{engine}-{os_type}-{exporter_config[os_type]}".format(engine=exporter_config['engine'], os_type=os_type))
+          
+          
+    
 
