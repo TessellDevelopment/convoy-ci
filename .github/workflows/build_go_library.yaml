@@ -49,6 +49,9 @@ jobs:
           
       - name: getting the values
         run: |
-          echo ${{ inputs.oracle_exporter }}
-          echo ${{ inputs.oracle_exporter.engine }}
+          os=$(echo '${{ inputs.oracle_exporter }}' | jq -r '.os')
+          echo "Oracle Exporter OS: $os"
+          env:
+            inputs: ${{ toJson(inputs) }}
+
 
