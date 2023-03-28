@@ -25,6 +25,7 @@ jobs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
@@ -47,12 +48,6 @@ jobs:
           fetch-depth: 0
           
       - name: getting the values
-        id: outputs
-        uses: actions/github-script@v6.3.3
-        with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
-          script: |
-            const oracle_exporter = JSON.parse(core.getInput('oracle_exporter'));
-            console.log(oracle_exporter.os);
-            console.log(oracle_exporter.engine);
+        run: |
+          oracle_exporter=${{ inputs.oracle_exporter }}
 
