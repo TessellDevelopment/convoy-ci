@@ -49,7 +49,6 @@ jobs:
       - name: getting the values
         id: outputs
         uses: actions/github-script@v6.3.3
-        if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
