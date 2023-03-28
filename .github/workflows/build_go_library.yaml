@@ -55,6 +55,7 @@ jobs:
         run: |
           python3 -c """
           import json
+          exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
             print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))
