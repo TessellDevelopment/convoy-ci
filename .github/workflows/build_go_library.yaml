@@ -57,7 +57,7 @@ jobs:
           import json
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
-            print(f'{exporter_name}-{os_type}-{exporter_config[os_type]}')
+            print("{exporter_name}-{os_type}-{engine}".format(engine=oracle_exporter[os_type], os_type=os_type,exporter_name=exporter_name ))
           """
           
           
