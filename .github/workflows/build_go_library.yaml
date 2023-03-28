@@ -11,6 +11,10 @@ on:
         required: false
         type: string
         default: '{}'
+      exporter_name:
+        description: 'dictonary input for oracle exporter'
+        required: true
+        type: string
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -53,8 +57,8 @@ jobs:
           import json
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
-            print("{engine}-{os_type}-{exporter_config[os_type]}".format(engine=exporter_config['engine'], os_type=os_type))
-            """
+            print(f"{exporter_name}-{os_type}-{exporter_config[os_type]}")
+          """
           
           
     
