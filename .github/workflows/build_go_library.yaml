@@ -65,7 +65,7 @@ jobs:
 
 
       - name: Make Clients for ${{ inputs.exporter_name }}
-        shell: python
+        shell: python {0}
         run: |
           #echo "Building the service"
           #git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
