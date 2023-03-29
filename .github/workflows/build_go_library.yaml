@@ -176,6 +176,47 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
+      
+      
+      
+      - name: Pushing generated tar files to nexus
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'oracle-exporter' || 'postgres-exporter' }}
+        run: |
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            pwd
+            ls -lrta
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=./${{ inputs.exporter_name }}.tar -DrepositoryId=nexus
+                
+      
+      - name: Pushing generated tar files to nexus
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
+        run: |
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            pwd
+            ls -lrta
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-${{ steps.values.outputs.os_type }}-${{ steps.values.outputs.engine }} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=./${{ inputs.exporter_name }}-${{ steps.values.outputs.os_type }}-${{ steps.values.outputs.engine }}.tar -DrepositoryId=nexus
+      
+      
+      
+      
+      
+      
+      
+      
             
           
           
