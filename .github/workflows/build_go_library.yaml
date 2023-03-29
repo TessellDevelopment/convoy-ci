@@ -202,6 +202,12 @@ jobs:
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
         if: ${{ inputs.exporter_name == 'sql-exporter' }}
         run: |
+            declare -A os_eng
+            os_eng["linux"]=['mysql']
+            os_eng["windows"]=['mssql'] 
+            for os in "${!os_eng[@]}"; do
+              engines_in_os=("${os_eng[$os]}")
+                for engine in "${engines_in_os[@]}"; do
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
@@ -209,10 +215,12 @@ jobs:
             ls -lrta
             mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                 -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-${{ steps.values.outputs.os_type }}-${{ steps.values.outputs.engine }} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-${{ inputs.exporter_name }}-$os-$engine -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                 -DgeneratePom=true -Dpackaging=tar \
                 -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                -Dfile=./${{ inputs.exporter_name }}-${{ steps.values.outputs.os_type }}-${{ steps.values.outputs.engine }}.tar -DrepositoryId=nexus
+                -Dfile=./${{ inputs.exporter_name }}-$os-$engine.tar -DrepositoryId=nexus
+            done
+            done
       
       
       
