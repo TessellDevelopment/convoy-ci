@@ -168,7 +168,7 @@ jobs:
                 }
               }
             }
-            latest_tag = '100.0.10'
+            latest_tag = '100.0.11'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -197,6 +197,7 @@ jobs:
       
       - name: Pushing generated tar files to nexus
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
+        if: ${{ inputs.exporter_name == 'sql-exporter' }}
         run: |
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
