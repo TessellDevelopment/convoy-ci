@@ -80,8 +80,8 @@ jobs:
           make service 
 
       - name: make clients for sql-exporter
+        if: ${{ inputs.exporter_name == 'sql-exporter' }}
         run: |
-          if: ${{ inputs.exporter_name == 'sql-exporter' }}
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           declare -A os_eng
