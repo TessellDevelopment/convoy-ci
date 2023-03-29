@@ -56,39 +56,29 @@ jobs:
         run: |
           python3 -c """
           import json
+          import os
           exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
-            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))
-            print(\"::set-output name=os_type::\" + os_type)
-            print(\"::set-output name=exporter_name::\" + exporter_name)
-            print(\"::set-output name=engine::\" + exporter_config[os_type])   
+            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))  
           """
-          
-      - name: Values from input
-        run: |
-          echo ${{ steps.values.outputs.os_type }}
-          echo ${{ steps.values.outputs.exporter_name }}
-          echo ${{ steps.values.outputs.engine }}
 
 
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          declare -A os_eng
-            os_eng["linux"]=['mysql']
-            os_eng["windows"]=['mssql'] 
-          for os in "${!os_eng[@]}"; do
-            engines_in_os=("${os_eng[$os]}")
-              for engine in "${engines_in_os[@]}"; do
-                echo "$os" "$engine"
-                engine=${engine#[}
-                engine=${engine%]}
-                make service os=$os engine=$engine
-              done
-          done
-          ls
+          python3 -c """
+          import json
+          import os
+          exporter_name='${{ inputs.exporter_name }}'
+          exporter_config = json.loads('${{ inputs.exporter_config }}')
+          for os_type in exporter_config:
+            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+            os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+          """
+          
+
           
           
       - name: Get tags
