@@ -65,19 +65,18 @@ jobs:
 
 
       - name: Make Clients for ${{ inputs.exporter_name }}
-        shell: python {0}
         run: |
-          #echo "Building the service"
-          #git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          #python3 -c """
+          echo "Building the service"
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          python3 -c """
           import json
           import os
           exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for os_type in exporter_config:
-            print("{exporter_name}-{os_type}-{engine}".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
-            os.system("make service os={os_type} engine={engine}".format(engine=exporter_config[os_type], os_type=os_type ))
-          #"""
+            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+            os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+          """
           
 
           
