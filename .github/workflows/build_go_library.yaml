@@ -90,7 +90,8 @@ jobs:
           for os in "${!os_eng[@]}"; do
             engines_in_os=("${os_eng[$os]}")
               for engine in "${engines_in_os[@]}"; do
-                make service $os $engine
+                echo "$os" "$engine"
+                make service os=$os engine=$engine
               done
           done
           ls
