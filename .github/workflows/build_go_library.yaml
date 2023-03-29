@@ -189,7 +189,7 @@ jobs:
             exporter_name='${{ inputs.exporter_name }}'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for os_type in exporter_config:
-              print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+              #print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
               os.system(\"mkdir -p $HOME/.m2\")
               os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
               os.system(\"cat $HOME/.m2/settings.xml\")
