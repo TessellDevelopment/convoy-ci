@@ -50,19 +50,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          
-      - name: getting the values
-        id: values
-        run: |
-          python3 -c """
-          import json
-          import os
-          exporter_name='${{ inputs.exporter_name }}'
-          exporter_config = json.loads('${{ inputs.exporter_config }}')
-          for os_type in exporter_config:
-            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name ))  
-          """
-
 
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
@@ -76,10 +63,7 @@ jobs:
           for os_type in exporter_config:
             print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
             os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
-          """
-          
-
-          
+          """      
           
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
@@ -103,7 +87,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -153,7 +137,6 @@ jobs:
                 }
               }
             }
-            latest_tag = '100.0.13'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -163,25 +146,8 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
       
       
-      
-      #- name: Pushing generated tar files to nexus
-      #  #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'oracle-exporter' || 'postgres-exporter' }}
-      #  run: |
-      #      mkdir -p $HOME/.m2
-      #      cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-      #      cat $HOME/.m2/settings.xml
-      #      pwd
-      #      ls -lrta
-      #      mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-      #          -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-      #          -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-      #          -DgeneratePom=true -Dpackaging=tar \
-      #          -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-      #          -Dfile=./${{ inputs.exporter_name }}.tar -DrepositoryId=nexus
-                
-      
       - name: Pushing generated tar files to nexus
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
         run: |
             python3 -c """
             import json
