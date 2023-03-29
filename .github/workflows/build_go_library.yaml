@@ -198,7 +198,7 @@ jobs:
                             -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine}.format(engine=exporter_config[os_type], os_type=os_type) -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                             -DgeneratePom=true -Dpackaging=tar \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./'${{ inputs.exporter_name }}-{os_type}-{engine}'.format(engine=exporter_config[os_type], os_type=os_type).tar -DrepositoryId=nexus \")
+                            -Dfile=./\"${{ inputs.exporter_name }}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type).tar -DrepositoryId=nexus \")
               """ 
       
       
