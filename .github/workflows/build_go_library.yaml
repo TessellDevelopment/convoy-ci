@@ -71,13 +71,13 @@ jobs:
           echo ${{ steps.values.outputs.exporter_name }}
           echo ${{ steps.values.outputs.engine }}
           
-      - name: make clients for oracle-exporter & postgres-exporter
-        if: ${{ inputs.exporter_name == 'oracle-exporter' || 'postgres-exporter' }}
-        run: |
-          echo "make clients for '${{ inputs.exporter_name }}'"
-          echo "Building the service"
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          make service 
+      #- name: make clients for oracle-exporter & postgres-exporter
+      #  if: ${{ inputs.exporter_name == 'oracle-exporter' || 'postgres-exporter' }}
+      #  run: |
+      #    echo "make clients for '${{ inputs.exporter_name }}'"
+      #    echo "Building the service"
+      #    git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+      #    make service 
 
       - name: make clients for sql-exporter
         if: ${{ inputs.exporter_name == 'sql-exporter' }}
