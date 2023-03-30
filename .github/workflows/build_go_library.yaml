@@ -149,7 +149,7 @@ jobs:
       
       
       - name: Pushing generated tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' &&  inputs.exporter_name == 'sql-exporter' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
