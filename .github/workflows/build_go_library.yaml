@@ -1,0 +1,188 @@
+---
+# This is a basic workflow to help you get started with Actions
+name: Tessell Pipelines Code Build
+
+# Controls when the workflow will run
+on:
+  workflow_call:
+    inputs:
+      exporter_config:
+        description: 'dictonary input for oracle exporter'
+        required: false
+        type: string
+        default: '{}'
+      exporter_name:
+        description: 'dictonary input for oracle exporter'
+        required: true
+        type: string
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      GOPATH: /home/github/go
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      OS_NAMES: "linux windows"
+    steps:
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+          
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Make Clients for ${{ inputs.exporter_name }}
+        run: |
+          echo "Building the service"
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          python3 -c """
+          import json
+          import os
+          exporter_name='${{ inputs.exporter_name }}'
+          exporter_config = json.loads('${{ inputs.exporter_config }}')
+          for os_type in exporter_config:
+            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+            if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+          """      
+          
+      - name: Get tags
+        uses: nick-fields/retry@v2.8.1
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          timeout_seconds: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            git fetch --all
+            git tag --contains '${{ github.event.after }}'
+            latest_tags+=("$(git tag --contains '${{ github.event.after }}')")
+            if [[ "$latest_tags" == '' ]]; then 
+              echo " Tag is Empty"
+              exit 1
+            fi
+            echo "Tag is present: $latest_tags"       
+            for tag in $latest_tags; do tag_arr+=($tag); done
+            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+            
+      - name: Find latest tag
+        uses: actions/github-script@v6.3.3
+        id: latest_tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            console.log("Tags are " + "${{ env.TAGS }}")
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              console.log("There is only one tag. Using it." + tags[0])
+              latest_tag = tags[0]
+            } else {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            console.log("Latest tag: " + latest_tag)
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+            core.setOutput('tag_ref', latest_tag)
+      
+      
+      - name: Pushing generated tar files to nexus
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+            python3 -c """
+            import json
+            import os
+            exporter_name='${{ inputs.exporter_name }}'
+            exporter_config = json.loads('${{ inputs.exporter_config }}')
+            for os_type in exporter_config:
+              #print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+              exit_code = os.system(\"mkdir -p $HOME/.m2\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                            -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                            -DgeneratePom=true -Dpackaging=tar \
+                            -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(engine=exporter_config[os_type], os_type=os_type))
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              """ 
+      
+      
+      
+      
+            
+          
+          
+          
+    
+
