@@ -20,9 +20,14 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      DOCKERHUB_ORG: "tesselldev"
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      GOPATH: /home/github/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      OS_NAMES: "linux windows"
+      
     steps:
       - name: Get branch name
         shell: bash
@@ -45,12 +50,25 @@ jobs:
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           go install golang.org/x/tools/cmd/goimports@latest
           which go
+          
+          
       - name: Make clients
         run: |
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           make service
           make image
+          
+      - name: Building Tar files for pushprox
+        run: |
+          for os in ${OS_NAMES[@]};do
+            make os=$os pushprox-client
+            make clean
+            ls -lrta client-package
+          done
+          pwd
+          
+          
       - name: Docker image scan
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         id: docker-image-scan
@@ -153,6 +171,24 @@ jobs:
         shell: bash
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+          
+          
+      - name: Pushing generated tar files to nexus
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+            for os in ${OS_NAMES[@]};do
+              mkdir -p $HOME/.m2
+              cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+              cat $HOME/.m2/settings.xml
+              pwd
+              ls -lrta client-package
+              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                  -DgroupId=tessell.pushprox -DartifactId=pushprox-client-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                  -DgeneratePom=true -Dpackaging=tar \
+                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Dfile=client-package/pushprox-client-$os.tar -DrepositoryId=nexus
+            done
           
 
       - name: Docker Image push
