@@ -62,9 +62,9 @@ jobs:
       - name: Building Tar files for pushprox
         run: |
           for os in ${OS_NAMES[@]};do
-          make os=$os pushprox-client
-          make clean
-          ls -lrta client-package
+            make os=$os pushprox-client
+            make clean
+            ls -lrta client-package
           done
           pwd
           
@@ -177,17 +177,17 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             for os in ${OS_NAMES[@]};do
-            mkdir -p $HOME/.m2
-            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-            cat $HOME/.m2/settings.xml
-            pwd
-            ls -lrta client-package
-            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                -DgroupId=tessell.pushprox -DartifactId=pushprox-client-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-                -DgeneratePom=true -Dpackaging=tar \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                -Dfile=client-package/pushprox-client-$os.tar -DrepositoryId=nexus
+              mkdir -p $HOME/.m2
+              cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+              cat $HOME/.m2/settings.xml
+              pwd
+              ls -lrta client-package
+              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                  -DgroupId=tessell.pushprox -DartifactId=pushprox-client-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                  -DgeneratePom=true -Dpackaging=tar \
+                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Dfile=client-package/pushprox-client-$os.tar -DrepositoryId=nexus
             done
           
 
