@@ -22,7 +22,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
       GOPATH: /home/github/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
