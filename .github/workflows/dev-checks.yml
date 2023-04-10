@@ -43,6 +43,11 @@ on:
         required: false
         type: string
         default: 'false'
+      check_version_in_tessell_workflows:
+        description: 'This is used to check chart version in tessell workflows'
+        required: false
+        type: string
+        default: 'false'
 
 jobs:
   dev-checks:
@@ -281,8 +286,44 @@ jobs:
               }
             });
             core.setOutput('terraform_file' , terraform_file.join(','));
+        
+      - name: check for chart verison in tessell-workflows 
+        if : ${{ inputs.check_version_in_tessell_workflows == 'true' }}
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
+            version_updated = false
+             response.data.files.forEach(function(file_entry) {
+               if (file_entry.filename == 'Chart.yaml') {
+                   console.log(file_entry.patch)
+                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                       version_updated = true
+                   }
+               }
+             });
+             if (version_updated == false) {
+                  core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+             }
             
-            
+          
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
         if: steps.check_db_migration.outputs.db_migration_dir
