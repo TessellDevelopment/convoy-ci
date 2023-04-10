@@ -313,12 +313,14 @@ jobs:
             version_updated = false
             exclude_dirs = ['.github/', '.gitignore/', 'README.md/'];
             response.data.files.forEach(function(file_entry) {
+              if (file_entry.type === 'file' || file_entry.type === 'dir') {
+                 const excludeDirMatch = exclude_dirs.some(dir => file_entry.filename.startsWith(dir));
               if (!exclude_dirs.some(dir => file_entry.filename.includes(dir)) &&
                   (file_entry.type === 'file' || file_entry.type === 'dir')) {
-                if (file_entry.filename === 'helm-chart/Chart.yaml' &&
+                if (!excludeDirMatch && file_entry.filename === 'helm-chart/Chart.yaml' &&
                     file_entry.patch.includes("-version:") &&
-                    file_entry.patch.includes("+version:")){
-                       version_updated = true
+                   file_entry.patch.includes("+version:")) {
+                      version_updated = true
                    }
                }
              });
