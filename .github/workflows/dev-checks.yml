@@ -311,7 +311,7 @@ jobs:
                 base: base_commit
             });
               version_updated = true;
-              const excludeDirs = ['.github'];
+              const excludeDirs = ['.github', '.gitignore', 'README.md'];
               response.data.files.forEach(function(file_entry) {
                 if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
                     version_updated = false;
