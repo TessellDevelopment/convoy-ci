@@ -311,7 +311,7 @@ jobs:
                 base: base_commit
             });
               version_updated = false
-              exclude_dirs = ['node_modules/', 'dist/', '.github/']
+              exclude_dirs = ['.github']
               response.data.files.forEach(function(file_entry) {
                 if (file_entry.type === 'file' || file_entry.type === 'dir') {
                   const excludeDirMatch = exclude_dirs.some(dir => file_entry.filename.startsWith(dir));
