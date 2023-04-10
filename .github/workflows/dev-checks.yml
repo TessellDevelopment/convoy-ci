@@ -315,7 +315,7 @@ jobs:
               response.data.files.forEach(function(file_entry) {
                 if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
                     version_updated = false;
-                    break
+                    break;
                 }
               });
               response.data.files.forEach(function(file_entry) {
