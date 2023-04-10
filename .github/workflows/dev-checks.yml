@@ -43,8 +43,8 @@ on:
         required: false
         type: string
         default: 'false'
-      check_version_in_tessell_workflows:
-        description: 'This is used to check chart version in tessell workflows'
+      check_version_of_helm_chart:
+        description: 'This is used to check version(helm chart version) present in chart.yaml  '
         required: false
         type: string
         default: 'false'
@@ -287,8 +287,8 @@ jobs:
             });
             core.setOutput('terraform_file' , terraform_file.join(','));
         
-      - name: check for chart verison in tessell-workflows 
-        if : ${{ inputs.check_version_in_tessell_workflows == 'true' }}
+      - name: check for chart verison in chart.yaml 
+        if : ${{ inputs.check_version_of_helm_chart == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
@@ -311,8 +311,9 @@ jobs:
                 base: base_commit
             });
             version_updated = false
+            exclude_dirs = ['.gihtub', '.gitignore','README.md']
             response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'helm-chart/Chart.yaml') {
+               if (!exclude_dirs.some(dir => file_entry.filename.startsWith(dir)) && file_entry.filename == 'helm-chart/Chart.yaml') {
                    console.log(file_entry.patch)
                    if (file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                        version_updated = true
