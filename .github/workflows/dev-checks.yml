@@ -313,7 +313,7 @@ jobs:
               version_updated = false;
               const excludeDirs = ['.github'];
               response.data.files.forEach(function(file_entry) {
-                if (file_entry.isDirectory || !excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
+                if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
                   if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                     version_updated = true;
                   }
