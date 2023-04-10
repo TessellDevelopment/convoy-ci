@@ -310,13 +310,17 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              version_updated = false;
+              version_updated = true;
               const excludeDirs = ['.github'];
               response.data.files.forEach(function(file_entry) {
                 if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
+                    version_updated = false;
+                    break
+                }
+              });
+              response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                     version_updated = true;
-                  }
                 }
               });
               if (version_updated == false ) {
