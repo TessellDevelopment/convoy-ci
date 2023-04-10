@@ -310,20 +310,18 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-            version_updated = false
-            exclude_dirs = ['.github/', '.gitignore/', 'README.md/'];
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.type === 'file' || file_entry.type === 'dir') {
-                 const excludeDirMatch = exclude_dirs.some(dir => file_entry.filename.startsWith(dir));
-              if (!exclude_dirs.some(dir => file_entry.filename.includes(dir)) &&
-                  (file_entry.type === 'file' || file_entry.type === 'dir')) {
-                if (!excludeDirMatch && file_entry.filename === 'helm-chart/Chart.yaml' &&
-                    file_entry.patch.includes("-version:") &&
-                   file_entry.patch.includes("+version:")) {
-                      version_updated = true
-                   }
-               }
-             });
+              version_updated = false
+              exclude_dirs = ['node_modules/', 'dist/']
+              response.data.files.forEach(function(file_entry) {
+                if (file_entry.type === 'file' || file_entry.type === 'dir') {
+                  const excludeDirMatch = exclude_dirs.some(dir => file_entry.filename.startsWith(dir));
+                  if (!excludeDirMatch && file_entry.filename === 'helm-chart/Chart.yaml' &&
+                      file_entry.patch.includes("-version:") &&
+                      file_entry.patch.includes("+version:")) {
+                    version_updated = true
+                  }
+                }
+              });
              if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in chart.yaml file")
              }
