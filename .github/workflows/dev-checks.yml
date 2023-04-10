@@ -311,17 +311,17 @@ jobs:
                 base: base_commit
             });
             version_updated = false
-            exclude_dirs = ['.github/', '.gitignore/', 'README.md/']
+            exclude_dirs = ['.github', '.gitignore', 'README.md'];
             response.data.files.forEach(function(file_entry) {
               if (!exclude_dirs.some(dir => file_entry.filename.includes(dir)) &&
                   (file_entry.type === 'file' || file_entry.type === 'dir')) {
-                if file_entry.filename == 'helm-chart/Chart.yaml') {
-                   console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+                if (file_entry.filename === 'helm-chart/Chart.yaml' &&
+                    file_entry.patch.includes("-version:") &&
+                    file_entry.patch.includes("+version:")){
                        version_updated = true
                    }
                }
-             }});
+             });
              if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in chart.yaml file")
              }
