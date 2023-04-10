@@ -312,7 +312,7 @@ jobs:
             });
             version_updated = false
              response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'Chart.yaml') {
+               if (file_entry.filename == 'helm-chart/Chart.yaml') {
                    console.log(file_entry.patch)
                    if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
                        version_updated = true
