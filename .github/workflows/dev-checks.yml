@@ -311,23 +311,21 @@ jobs:
                 base: base_commit
             });
               version_updated = false
-              exclude_dirs = ['.github/', '.gitignore/', 'README.md']
+              exclude_dirs = ['node_modules/', 'dist/', '.github/']
               response.data.files.forEach(function(file_entry) {
-                console.log('Excluded directories:', exclude_dirs);
                 if (file_entry.type === 'file' || file_entry.type === 'dir') {
                   const excludeDirMatch = exclude_dirs.some(dir => file_entry.filename.startsWith(dir));
                   if (!excludeDirMatch && file_entry.filename === 'helm-chart/Chart.yaml' &&
                       file_entry.patch.includes("-version:") &&
                       file_entry.patch.includes("+version:")) {
-                      console.log('Filename:', file_entry.filename);
-                       console.log('Patch:', file_entry.patch);
                     version_updated = true
                   }
                 }
               });
-             if (version_updated == false) {
-                  core.setFailed("Tessell Libraries must update the version in chart.yaml file")
-             }
+              if (!version_updated) {
+                core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+              }
+
             
           
       - name: Check Version sequence of DB Scripts
