@@ -311,7 +311,7 @@ jobs:
                 base: base_commit
             });
             version_updated = false
-            exclude_dirs = ['.github', '.gitignore', 'README.md'];
+            exclude_dirs = ['.github/', '.gitignore/', 'README.md/'];
             response.data.files.forEach(function(file_entry) {
               if (!exclude_dirs.some(dir => file_entry.filename.includes(dir)) &&
                   (file_entry.type === 'file' || file_entry.type === 'dir')) {
