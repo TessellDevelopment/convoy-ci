@@ -322,7 +322,7 @@ jobs:
                   }
                 }
               });
-              if (!version_updated) {
+              if (version_updated == false ) {
                 core.setFailed("Tessell Libraries must update the version in chart.yaml file")
               }
 
