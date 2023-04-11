@@ -221,45 +221,43 @@ jobs:
             const modifiedFiles = response.data.files;
             const modifiedDirectories = {};
 
-            // Loop through all files in the pull request
             response.data.files.forEach(file => {
-              const filePathParts = file.filename.split('/');
-              const fileDirectory = filePathParts[0];
-              const fileName = filePathParts[1];
-
-              // Check if the file is a version.txt file in a new directory
-              if (!excludedDirectories.includes(fileDirectory) && 
-                  fileName === 'version.txt' &&
-                  !(fileDirectory in modifiedDirectories)) {
-
-                // Mark the directory as modified
-                modifiedDirectories[fileDirectory] = false;
-              }
-            });
-
-            // Loop through all files in the pull request again
-            response.data.files.forEach(function(file_entry) {
-              dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] == 'version.txt') {
-                console.log("Modifying version" + dir_name );
-                if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
-                  modifiedDirectories[dir_name] = true;
+              const fileDirectory = file.filename.split("/")[0];
+              const fileName = file.filename.split("/")[1];
+              if (!excludedDirectories.includes(fileDirectory)) {
+                if (!modifiedDirectories[fileDirectory]) {
+                  modifiedDirectories[fileDirectory] = false;
+                }
+                if (fileName === 'version.txt') {
+                  modifiedDirectories[fileDirectory] = true;
                 }
               }
             });
 
             console.log(modifiedDirectories);
 
-            // Loop through all modified directories and check if their version.txt file was updated
-            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-              if (!isModified) {
-                if (fileDirectory in modifiedDirectories) {
-                  core.setFailed('Tessell Libraries must update the version in version.txt for directory ' + fileDirectory);
-                } else {
-                  core.setFailed('Tessell Libraries must add a version.txt file to directory ' + fileDirectory);
+            response.data.files.forEach(function(file_entry) {
+              dir_name = file_entry.filename.split("/")[0];
+              if (file_entry.filename.split("/")[1] == 'version.txt' && !modifiedDirectories[dir_name]) {
+                console.log("Checking version in " + dir_name);
+                // Skip version.txt files for directories that were newly added
+                return;
+              }
+              if (file_entry.filename.split("/")[1] == 'version.txt') {
+                console.log("Modifying version in " + dir_name);
+                if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                  modifiedDirectories[dir_name] = true;
                 }
               }
             });
+
+            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+              if (isModified == false) {
+                core.setFailed('Tessell Libraries must include version.txt file in ' + fileDirectory );
+              }
+            });
+
+
 
 
 
