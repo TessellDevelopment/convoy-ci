@@ -217,49 +217,50 @@ jobs:
               console.log("Using the base branch's commit for comparing.")
               base_commit = "${{ github.event.pull_request.base.sha  }}"
             }
-            console.log("base_commit " + base_commit);
-            console.log("head_commit " + head_commit); 
-            response = await github.rest.repos.compareCommits({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                head: head_commit,
-                base: base_commit
+            const excludedDirectories = ['.github','.gitignore'];
+            const modifiedFiles = response.data.files;
+            const modifiedDirectories = {};
+
+            // Loop through all files in the pull request
+            response.data.files.forEach(file => {
+              const filePathParts = file.filename.split('/');
+              const fileDirectory = filePathParts[0];
+              const fileName = filePathParts[1];
+
+              // Check if the file is a version.txt file in a new directory
+              if (!excludedDirectories.includes(fileDirectory) && 
+                  fileName === 'version.txt' &&
+                  !(fileDirectory in modifiedDirectories)) {
+
+                // Mark the directory as modified
+                modifiedDirectories[fileDirectory] = false;
+              }
             });
-              const excludedDirectories = ['.github','.gitignore'];
-              const modifiedFiles = response.data.files;
-              const modifiedDirectories = {};
 
-              response.data.files.forEach(file => {
-                const fileDirectory = file.filename.split("/")[0];
-                if (!excludedDirectories.includes(fileDirectory)) {
-                  if (!modifiedDirectories[fileDirectory]) {
-                    modifiedDirectories[fileDirectory] = false;
-                  }
+            // Loop through all files in the pull request again
+            response.data.files.forEach(function(file_entry) {
+              dir_name = file_entry.filename.split("/")[0];
+              if (file_entry.filename.split("/")[1] == 'version.txt') {
+                console.log("Modifying version" + dir_name );
+                if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                  modifiedDirectories[dir_name] = true;
                 }
-              });
+              }
+            });
 
-              response.data.files.forEach(function(file_entry) {
-                dir_name = file_entry.filename.split("/")[0];
-                if (file_entry.filename.split("/")[1] == 'version.txt') {
-                  console.log("Modifying version" + dir_name );
-                  if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
-                    modifiedDirectories[dir_name] = true;
-                  }
+            console.log(modifiedDirectories);
+
+            // Loop through all modified directories and check if their version.txt file was updated
+            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+              if (!isModified) {
+                if (fileDirectory in modifiedDirectories) {
+                  core.setFailed('Tessell Libraries must update the version in version.txt for directory ' + fileDirectory);
+                } else {
+                  core.setFailed('Tessell Libraries must add a version.txt file to directory ' + fileDirectory);
                 }
-              });
+              }
+            });
 
-              console.log(modifiedDirectories);
-
-              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-                if (!isModified && !excludedDirectories.includes(fileDirectory)) {
-                  const isExistingDirectory = Object.keys(modifiedDirectories).includes(fileDirectory);
-                  if (isExistingDirectory) {
-                    core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
-                  } else {
-                    console.log('Directory added: ' + fileDirectory);
-                  }
-                }
-              });
 
 
             
