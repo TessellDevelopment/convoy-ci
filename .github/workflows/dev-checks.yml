@@ -225,11 +225,10 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github', '.gitignore'];
+              const excludedDirectories = ['.github','.gitignore'];
               const modifiedFiles = response.data.files;
               const modifiedDirectories = {};
 
-              // Check for modified files in existing directories
               response.data.files.forEach(file => {
                 const fileDirectory = file.filename.split("/")[0];
                 if (!excludedDirectories.includes(fileDirectory)) {
@@ -239,33 +238,29 @@ jobs:
                 }
               });
 
-              // Check for new directories and version.txt files
               response.data.files.forEach(function(file_entry) {
-                const filePath = file_entry.filename;
-                if (filePath.includes("/") && filePath.split("/").length >= 2) {
-                  const dirName = filePath.split("/")[0];
-                  const fileName = filePath.split("/")[1];
-                  if (fileName === 'version.txt') {
-                    console.log("Modifying version in " + dirName);
-                    if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
-                      modifiedDirectories[dirName] = true;
-                    }
-                  } else if (!modifiedDirectories.hasOwnProperty(dirName) && !excludedDirectories.includes(dirName)) {
-                    console.log("Found new directory " + dirName);
-                    if (fileName !== '.gitkeep') {
-                      core.setFailed('New directories must include a version.txt file: ' + dirName);
-                    }
+                dir_name = file_entry.filename.split("/")[0];
+                if (file_entry.filename.split("/")[1] == 'version.txt') {
+                  console.log("Modifying version" + dir_name );
+                  if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                    modifiedDirectories[dir_name] = true;
                   }
                 }
               });
 
-              // Check modified directories for version.txt updates
               console.log(modifiedDirectories);
-              Object.entries(modifiedDirectories).forEach(([dirName, isModified]) => {
-                if (isModified == false) {
-                  core.setFailed('Tessell Libraries must update the version in version.txt for directory: ' + dirName);
+
+              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+                if (!isModified && !excludedDirectories.includes(fileDirectory)) {
+                  const isExistingDirectory = Object.keys(modifiedDirectories).includes(fileDirectory);
+                  if (isExistingDirectory) {
+                    core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
+                  } else {
+                    console.log('Directory added: ' + fileDirectory);
+                  }
                 }
               });
+
 
             
            
