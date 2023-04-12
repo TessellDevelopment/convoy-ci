@@ -53,7 +53,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install -r ${{ env.REPO_NAME }}/requirements.txt
+          python3 -m pip install -r ${{ env.REPO_NAME }}/requirements.txt --dry-run
 
       - name: Lint with flake8
         run: |
