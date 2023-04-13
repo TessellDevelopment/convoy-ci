@@ -218,42 +218,33 @@ jobs:
               base_commit = "${{ github.event.pull_request.base.sha  }}"
             }
             const excludedDirectories = ['.github','.gitignore'];
-            const modifiedFiles = response.data.files;
-            const modifiedDirectories = {};
-
-            response.data.files.forEach(file => {
-              const fileDirectory = file.filename.split("/")[0];
-              const fileName = file.filename.split("/")[1];
-              if (!excludedDirectories.includes(fileDirectory)) {
+              const modifiedFiles = response.data.files;
+              const modifiedDirectories = {};
+              response.data.files.forEach(file => {
+                const fileDirectory = file.filename.split("/")[0];
+                 if (!excludedDirectories.includes(fileDirectory)) {
                 if (!modifiedDirectories[fileDirectory]) {
                   modifiedDirectories[fileDirectory] = false;
-                }
-                if (fileName === 'version.txt') {
-                  modifiedDirectories[fileDirectory] = true;
-                }
-              }
-            });
-
-            console.log(modifiedDirectories);
-
-            response.data.files.forEach(function(file_entry) {
+                }}
+              });
+              response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] == 'version.txt' && !modifiedDirectories[dir_name]) {
-                console.log("Checking version in " + dir_name);
-                // Skip version.txt files for directories that were newly added
-                return;
-              }
               if (file_entry.filename.split("/")[1] == 'version.txt') {
-                console.log("Modifying version in " + dir_name);
-                if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                if (!modifiedDirectories[dir_name]) {
+                  // For new directories, assume version is modified
                   modifiedDirectories[dir_name] = true;
+                } else {
+                  console.log("Modifying version" + dir_name);
+                  if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                    modifiedDirectories[dir_name] = true;
+                  }
                 }
               }
             });
-
-            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-              if (isModified == false) {
-                core.setFailed('Tessell Libraries must include version.txt file in ' + fileDirectory );
+              console.log(modifiedDirectories);
+              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+               if (isModified == false) {
+                core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
               }
             });
 
