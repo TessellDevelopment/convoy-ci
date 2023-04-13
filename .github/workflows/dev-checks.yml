@@ -249,9 +249,7 @@ jobs:
                       modifiedDirectories[dir_name] = true;
                     }
                   } else {
-                    if (file_entry.patch?.includes("+version=")) {
-                      modifiedDirectories[dir_name] = true;
-                    }
+                    modifiedDirectories[dir_name] = true;
                   }
                 }
               });
@@ -263,6 +261,8 @@ jobs:
                   core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
                 }
               });
+
+
 
 
 
