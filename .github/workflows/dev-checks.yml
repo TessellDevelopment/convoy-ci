@@ -235,17 +235,16 @@ jobs:
                   modifiedDirectories[fileDirectory] = false;
                 }}
               });
-              response.data.files.forEach(function(file_entry) {
+              response.data.files.forEach(file_entry => {
               dir_name = file_entry.filename.split("/")[0];
               if (file_entry.filename.split("/")[1] == 'version.txt') {
-                if (!modifiedDirectories[dir_name]) {
-                  // For new directories, only check if the version has been incremented
-                  if (file_entry.patch?.includes("+version=")) {
+                console.log("Modifying version" + dir_name);
+                if (modifiedDirectories[dir_name]) {
+                  if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
                     modifiedDirectories[dir_name] = true;
                   }
                 } else {
-                  console.log("Modifying version" + dir_name);
-                  if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                  if (file_entry.patch?.includes("+version=")) {
                     modifiedDirectories[dir_name] = true;
                   }
                 }
