@@ -225,11 +225,21 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.gitignore'];
+              const excludedDirectories = ['.github', '.gitignore'];
               const modifiedFiles = response.data.files;
               const modifiedDirectories = {};
+              const newDirectories = [];
 
-              // check existing directories for version increment
+              response.data.files.forEach(file => {
+                const fileDirectory = file.filename.split("/")[0];
+                if (!excludedDirectories.includes(fileDirectory)) {
+                  if (!modifiedDirectories[fileDirectory]) {
+                    modifiedDirectories[fileDirectory] = false;
+                    newDirectories.push(fileDirectory);
+                  }
+                }
+              });
+
               response.data.files.forEach(function(file_entry) {
                 dir_name = file_entry.filename.split("/")[0];
                 if (file_entry.filename.split("/")[1] == 'version.txt') {
@@ -240,26 +250,6 @@ jobs:
                 }
               });
 
-              // check for new directories with version.txt
-              response.data.files.forEach(function(file_entry) {
-                dir_name = file_entry.filename.split("/")[0];
-                if (!excludedDirectories.includes(dir_name) && !modifiedDirectories.hasOwnProperty(dir_name)) {
-                  if (file_entry.filename.split("/")[1] == 'version.txt') {
-                    console.log("New directory with version.txt: " + dir_name);
-                    modifiedDirectories[dir_name] = true;
-                  }
-                }
-              });
-
-              // check modified directories
-              console.log(modifiedDirectories);
-              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-                if (isModified == false) {
-                  core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
-                }
-              });
-
-
               console.log(modifiedDirectories);
 
               Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
@@ -267,6 +257,7 @@ jobs:
                   core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
                 }
               });
+
 
 
             
