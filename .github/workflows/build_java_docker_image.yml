@@ -81,6 +81,10 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
+            
+      - name: tagging docker image with scan
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
 
 
       - name: Docker image scan
@@ -88,7 +92,7 @@ jobs:
         uses: azure/container-scan@v0.1
         with:
            severity-threshold: CRITICAL
-           image-name: ${{ env.DOCKER_IMAGE_NAME }}
+           image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
            username: ${{ secrets.DOCKER_USERNAME }}
            password: ${{ secrets.DOCKER_PASSWORD }}
 
