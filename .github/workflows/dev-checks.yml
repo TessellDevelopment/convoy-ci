@@ -335,7 +335,7 @@ jobs:
                 }
               });
               response.data.files.forEach(function(file_entry) {
-                  if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+                  if (file_entry.patch?.includes("+version=")) {
                     version_updated = true;
                 }
               });
