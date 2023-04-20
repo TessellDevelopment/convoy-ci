@@ -1,0 +1,22 @@
+---
+name: 'Create release branch'
+description: 'Checkout the repositories and create release branch.'
+inputs:
+  organisation:
+    description: 'Organisation of the repository'
+    required: true
+  repo_name:
+    description: 'Repository name'
+    required: true
+  new_branch:
+    description: 'Branch to create.'
+    required: true
+  github-token:
+    desctiption: 'Override for github token'
+    requiredd: false
+outputs:
+  job_status:
+    description: 'Status of the branch status'
+runs:
+  using: 'node12'
+  main: 'index.js'
