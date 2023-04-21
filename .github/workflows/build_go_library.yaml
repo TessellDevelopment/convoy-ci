@@ -5,6 +5,17 @@ name: Tessell Pipelines Code Build
 # Controls when the workflow will run
 on:
   workflow_call:
+    inputs:
+      exporter_config:
+        description: 'dictonary input for oracle exporter'
+        required: false
+        type: string
+        default: '{}'
+      exporter_name:
+        description: 'dictonary input for oracle exporter'
+        required: true
+        type: string
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -18,63 +29,44 @@ jobs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      DOCKERHUB_ORG: "tesselldev"
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      GOPATH: /home/github/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-
+      OS_NAMES: "linux windows"
     steps:
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
-
+          
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: |
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          go install golang.org/x/tools/cmd/goimports@latest
-          
-      - name: Login to docker
-        uses: docker/login-action@v2.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}    
-     
-
-      - name: Make clients
+      - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           echo "Building the service"
-          export PATH=${PATH}:$GOPATH/bin
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          ./setup -g -i
+          python3 -c """
+          import json
+          import os
+          exporter_name='${{ inputs.exporter_name }}'
+          exporter_config = json.loads('${{ inputs.exporter_config }}')
+          for os_type in exporter_config:
+            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+            if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+          """      
           
-      
-      - name: tagging docker image with scan
-        run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-
-      - name: Docker image scan
-        id: docker-image-scan
-        uses: azure/container-scan@v0.1
-        with:
-          severity-threshold: CRITICAL
-          image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          trivy-version: "0.29.1"
-
-      - uses: actions/upload-artifact@v3
-        with:
-            name: image-scan-report
-            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-            
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
@@ -88,7 +80,7 @@ jobs:
             else{
                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-
+            
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -107,7 +99,7 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-
+            
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
@@ -168,66 +160,43 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-
-      - name: Set Push repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        shell: bash
-        run: |
-          echo "DOCKERHUB_ORG_DEV=${{env.DOCKERHUB_ORG}}" >> $GITHUB_ENV
-          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-          
-
-      - name: Docker Image push
+      
+      
+      - name: Pushing generated tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          
-      - name: check for flyway and push flyway image to docker 
-        id: flyway_push
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          if [ -d "flyway" ]; then
-            echo "The 'flyway' directory exists in this repository."
-            DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
-            docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push ${{ env.DOCKERHUB_ORG }}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
-          else
-            echo "The 'flyway' directory does not exists in this repository."
-          fi
+            python3 -c """
+            import json
+            import os
+            exporter_name='${{ inputs.exporter_name }}'
+            exporter_config = json.loads('${{ inputs.exporter_config }}')
+            for os_type in exporter_config:
+              #print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+              exit_code = os.system(\"mkdir -p $HOME/.m2\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                            -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                            -DgeneratePom=true -Dpackaging=tar \
+                            -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(engine=exporter_config[os_type], os_type=os_type))
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              """ 
+      
+      
+      
+      
             
+          
+          
+          
+    
 
-
-      - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-
-      - name: Get PR-Author,subject & body to send email
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        run: |
-          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
-      - name: sending output
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        id: mail_info
-        run: |
-          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
-  send-mail:
-    uses: ./.github/workflows/email_dc.yaml
-    needs: build
-    with:
-      subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
-      to: ${{ needs.build.outputs.mail_id_output }}
-    secrets: inherit
-    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            

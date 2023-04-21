@@ -1,0 +1,116 @@
+---
+name: Create Tessell Release Branch
+on: 
+  workflow_dispatch:
+    inputs:
+      organisation:
+        description: Organisation name
+        required: true
+        default: TessellDevelopment
+
+jobs:
+  find_repos_to_build:
+    runs-on: self-hosted
+    name: Find the repositories to build
+    outputs:
+      job_to_monitor: ${{ steps.job_to_monitor.outputs.job_to_monitor }}
+      organisation: ${{ steps.repos_dispatched.outputs.organisation }}
+      all_repos: ${{ steps.all_repos.outputs.all_repos }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get repos to build
+        id: all_repos
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            const { promises: fs } = require('fs')
+            const path = './build-order.json'
+            let content = await fs.readFile(path, 'utf8')
+            let all_repos = JSON.parse(content).git_repos
+            core.setOutput('all_repos', all_repos)
+
+  create-release-branch:
+    runs-on: self-hosted
+    env:
+      DEFAULT_ORGANISATION: TessellDevelopment
+      DEFAULT_BRANCH: main
+    name: Build Repository
+    needs: find_repos_to_build
+    strategy:
+      matrix:
+        repo_name: ${{fromJson(needs.find_repos_to_build.outputs.all_repos)}}
+      max-parallel: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Find latest tag
+        run: |
+          latest_commit=$(git log -n 1 origin/main --pretty=format:"%H")
+          echo "LATEST_COMMIT=${latest_commit}" >> $GITHUB_ENV
+          echo "LATEST_TAG=$(git tag --contains ${latest_commit})" >> $GITHUB_ENV
+        id: latest_tag
+
+      - name: create next release branch
+        id: set_rel_branch
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            versions = "${{ env.LATEST_TAG }}".split('.')
+            next_rel_branch = ['rel-' + versions[0], versions[1], '0'].join('.')
+            next_tag_on_main = [versions[0], parseInt(versions[1]) + 1, '0'].join('.')
+
+            console.log("Next Release Branch: " + next_rel_branch)
+            core.setOutput('next_rel_branch', next_rel_branch)
+            core.setOutput('next_tag_on_main', next_tag_on_main)
+
+      - name: Create branch
+        uses: ./github-actions/create-release-branch
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          organisation: "${{ github.event.inputs.organisation || env.DEFAULT_ORGANISATION }}"
+          repo_name: ${{ matrix.repo_name }}
+          new_branch: ${{ steps.set_rel_branch.outputs.next_rel_branch }}
+
+      - name: Create tag and update ref
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            // head of the branch needs to be tagged
+            sha_to_tag = "${{ env.LATEST_COMMIT }}"
+            new_tag = "${{ steps.set_rel_branch.outputs.next_tag_on_main }}"
+
+            console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
+
+            result = await github.rest.git.createTag({
+                owner: "${{ github.event.inputs.organisation }}",
+                repo: "${{ matrix.repo_name }}",
+                tag: new_tag,
+                message: 'Tag created by CI pipeline',
+                type: 'commit',
+                object: sha_to_tag
+            });
+
+            console.log(result)
+
+            fullTagName = "refs/tags/" + new_tag
+
+            console.log("Updating tag with REF: " + fullTagName)
+
+            newRef = await github.rest.git.createRef({
+                owner: "${{ github.event.inputs.organisation }}",
+                repo: "${{ matrix.repo_name }}",
+                ref: fullTagName,
+                sha: sha_to_tag
+            });
+
+            console.log('Ref updated.');
+            core.setOutput('tag_ref', fullTagName)

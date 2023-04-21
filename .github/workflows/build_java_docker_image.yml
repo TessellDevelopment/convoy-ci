@@ -74,20 +74,6 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
         shell: bash
 
-      - name: Docker image scan
-        id: docker-image-scan
-        uses: azure/container-scan@v0.1
-        continue-on-error: true
-        with:
-          severity-threshold: CRITICAL
-          image-name: ${{ env.DOCKER_IMAGE_NAME }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - uses: actions/upload-artifact@v3
-        with:
-           name: image-scan-report
-           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
       - name: Build and publish
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -97,7 +83,26 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-      
+            
+      - name: tagging docker image with scan
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+
+
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        continue-on-error: true
+        with:
+           severity-threshold: CRITICAL
+           image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
+           username: ${{ secrets.DOCKER_USERNAME }}
+           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+           name: image-scan-report
+           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

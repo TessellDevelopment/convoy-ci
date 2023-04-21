@@ -32,13 +32,13 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Auto approve
-        uses: juliangruber/approve-pull-request-action@v1
+        uses: juliangruber/approve-pull-request-action@v2.0.3
         with:
           github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
           number: "${{ github.event.number }}"
 
       - name: Enable Auto Merge
-        uses: peter-evans/enable-pull-request-automerge@v1
+        uses: peter-evans/enable-pull-request-automerge@v2.5.0
         with:
           token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           pull-request-number: "${{ github.event.number }}"
