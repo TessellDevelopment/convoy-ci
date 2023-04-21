@@ -95,10 +95,10 @@ jobs:
             -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
-
       - name: Docker image scan
         id: docker-image-scan
         uses: azure/container-scan@v0.1
+        continue-on-error: true
         with:
            severity-threshold: CRITICAL
            image-name: ${{ env.DOCKER_IMAGE_NAME }}

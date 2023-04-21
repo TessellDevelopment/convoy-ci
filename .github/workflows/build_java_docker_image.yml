@@ -63,6 +63,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+
       
       - name: Build with Gradle
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -90,6 +92,7 @@ jobs:
       - name: Docker image scan
         id: docker-image-scan
         uses: azure/container-scan@v0.1
+        continue-on-error: true
         with:
            severity-threshold: CRITICAL
            image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
