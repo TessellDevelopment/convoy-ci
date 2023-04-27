@@ -103,9 +103,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push with tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          ./gradlew dockerTagsPush --console plain \
+          ./gradlew dockerTag --console plain \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
@@ -116,10 +116,73 @@ jobs:
           ./gradlew pythonWheel docker --console plain \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            
+      - name: Find latest tag
+        uses: actions/github-script@v6.3.3
+        id: latest_tag
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            console.log("Tags are " + "${{ env.TAGS }}")
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              console.log("There is only one tag. Using it." + tags[0])
+              latest_tag = tags[0]
+            } else {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            latest_tag = 'scan'
+            console.log("Latest tag: " + latest_tag)
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+            core.setOutput('tag_ref', latest_tag)
      
       - name: tagging docker image with scan
         run: |
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan      
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
       
 
 
@@ -137,6 +200,15 @@ jobs:
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+            
+      - name: Sign and push docker image
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        uses: sudo-bot/action-docker-sign@latest
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
    
       - name: Slack Notification
