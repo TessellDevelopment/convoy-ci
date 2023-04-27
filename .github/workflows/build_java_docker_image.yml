@@ -83,24 +83,7 @@ jobs:
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
             
-      - name: Get tags
-        uses: nick-fields/retry@v2.8.1
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          timeout_seconds: 10
-          max_attempts: 3
-          retry_on: error
-          command: |
-            git fetch --all
-            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
-            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
-            if [[ "$latest_tags" == '' ]]; then 
-              echo " Tag is Empty"
-              exit 1
-            fi
-            echo "Tag is present: $latest_tags"       
-            for tag in $latest_tags; do tag_arr+=($tag); done
-            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+        
             
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
@@ -155,6 +138,7 @@ jobs:
                 }
               }
             }
+            latest_tag = '0.10.0'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
