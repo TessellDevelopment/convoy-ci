@@ -178,12 +178,9 @@ jobs:
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-          # Example: 51f9a39f3db4ddaaf9174fca69f41fb01a04a4dfb5125ef115feecb93d19efa6
-          private-key-id: "3ee735d98cc065dbded52e4a6ceef1cb74c3a883302b09217fefe7b8eb903525"
-          # The contents from: ~/.docker/trust/private/51f9a39f3db4ddaaf9174fca69f41fb01a04a4dfb5125ef115feecb93d19efa6.key)
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          # Example: myPassw0rdChangeMeReplaceMe
-          private-key-passphrase: "83t@N0zZ#n3yJZ1ZwgbU"      
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}  
           
 
       - name: Slack Notification
