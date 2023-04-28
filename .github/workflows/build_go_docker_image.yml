@@ -209,7 +209,7 @@ jobs:
           fi
           
       - name: sign and push flyway image to docker hub
-        if: steps.flyway_push.outputs.flyway_push_output
+        if: ${{ env.flyway_push_output == 'success' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}"
