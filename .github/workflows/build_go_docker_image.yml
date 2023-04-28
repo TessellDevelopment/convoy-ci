@@ -205,11 +205,11 @@ jobs:
             echo "set-output name=flyway_push_output::success"
           else
             echo "The 'flyway' directory does not exists in this repository."
-            echo "set-output name=flyway_push_output::failure"
+            # echo "set-output name=flyway_push_output::failure"
           fi
           
       - name: sign and push flyway image to docker hub
-        if: steps.flyway_push.outputs.flyway_push_output == 'success'
+        if: steps.flyway_push.outputs.flyway_push_output
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}"
