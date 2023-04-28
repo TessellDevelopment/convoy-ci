@@ -80,25 +80,6 @@ jobs:
         run: |
           cd filebeat
           docker build -t  ${{ env.IMAGE_NAME }}  .   
-          
-          
-
-      - name: Docker image scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        id: docker-image-scan
-        continue-on-error: true
-        uses: azure/container-scan@v0
-        with:
-          image-name: ${{ env.DOCKER_IMAGE_NAME }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        continue-on-error: true
-        with:
-          name: image-scan-report
-          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
@@ -122,7 +103,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v4
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -172,6 +153,7 @@ jobs:
                 }
               }
             }
+            latest_tag = 'scan'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -214,21 +196,43 @@ jobs:
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
               
-
-
+              
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-          
-      
-
-      - name: Docker Image push
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+              
+      - name: tagging docker image with scan
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+              
+
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.IMAGE_NAME }}:scan
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          trivy-version: "0.29.1"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+          
+          
+      - name: Sign and push docker image
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        uses: sudo-bot/action-docker-sign@latest
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
 
       - name: Slack Notification
