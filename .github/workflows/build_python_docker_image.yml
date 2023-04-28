@@ -216,10 +216,7 @@ jobs:
       - name: tagging docker image with scan
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
       
-
-
       - name: Docker image scan
         id: docker-image-scan
         uses: azure/container-scan@v0.1
