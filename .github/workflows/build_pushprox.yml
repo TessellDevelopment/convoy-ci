@@ -27,6 +27,7 @@ jobs:
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       OS_NAMES: "linux windows"
+      DOCKERHUB_ORG: "tesselldev"
       
     steps:
       - name: Get branch name
@@ -34,6 +35,7 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+          
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -68,24 +70,6 @@ jobs:
           done
           pwd
           
-          
-      - name: Docker image scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        id: docker-image-scan
-        continue-on-error: true
-        uses: azure/container-scan@v0
-        with:
-          image-name: ${{ env.DOCKER_IMAGE_NAME }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        continue-on-error: true
-        with:
-          name: image-scan-report
-          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
@@ -204,12 +188,36 @@ jobs:
                   -Dfile=client-package/pushprox-client-$os.tar -DrepositoryId=nexus
             done
           
-
-      - name: Docker Image push
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      - name: tagging docker image with scan
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan 
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          trivy-version: "0.29.1"
+
+      - name: sending scan report
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+      
+      - name: Sign and push docker image
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        uses: sudo-bot/action-docker-sign@latest
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+      
           
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
