@@ -12,7 +12,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -27,6 +27,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Set up JDK 16
+        uses: actions/setup-java@v3.10.0
+        with:
+          java-version: '16'
+          distribution: 'adopt'
 
       - name: Get branch name & Repo Name
         shell: bash
