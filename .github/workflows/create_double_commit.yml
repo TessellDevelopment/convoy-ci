@@ -51,7 +51,7 @@ jobs:
             }
 
             // check if NODC is set
-            if (`"${{ github.event.pull_request.title }}"`.endsWith('::NODC::')) {
+            if ("${{ github.event.pull_request.title }}".endsWith('::NODC::')) {
               console.log("NODC set, aborting..")
               process.exit(0);
             }
