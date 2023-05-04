@@ -98,7 +98,8 @@ jobs:
           export PATH=/opt/tessell/python/install/bin:$PATH
           ./gradlew pythonWheel docker --console plain \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
 
       - name: Build and push
@@ -111,7 +112,8 @@ jobs:
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
-            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}"
+            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" \
+            -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
