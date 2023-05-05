@@ -1,0 +1,186 @@
+---
+name: Tessell Repository Settings Validator
+on: 
+  workflow_dispatch:
+    inputs:
+      organisation:
+        description: Organisation name
+        required: true
+        default: 'TessellDevelopment'
+jobs:
+  check-repository-settings:
+    runs-on: self-hosted
+    steps:
+      - name: Get all repositories list
+        id: org_repos
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            var result = await github.rest.orgs.get({
+              org: "${{ github.event.inputs.organisation }}"
+            })
+            total_repo_count = result.data['total_private_repos']
+            page_count = 100
+            max_pages = total_repo_count / page_count
+            if (total_repo_count % page_count) {
+              max_pages = max_pages + 1
+            }
+            console.log(total_repo_count)
+            console.log(max_pages)
+            var arr = []
+            for (var page_no = 1; page_no <= max_pages; page_no++) {
+              result = await github.rest.repos.listForOrg({
+                org: "${{ github.event.inputs.organisation }}",
+                type: 'all',
+                accept: 'application/vnd.github.v3+json',
+                sort: 'full_name',
+                per_page: page_count,
+                page: page_no
+              })
+              for (var idx in result.data) {
+                if (result.data[idx]['disabled'] || result.data[idx]['archived']) {
+                  console.log("Skipping " + result.data[idx]['name'] + ":" + result.data[idx]['disabled'] + ":" + result.data[idx]['archived']);
+                  continue;
+                }
+                arr.push(result.data[idx]['name']);
+              }
+            }
+            core.setOutput('all_repos', arr);
+
+      - name: Check branch protection rules
+        id: protected_branches
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            var all_repos = ${{ steps.org_repos.outputs.all_repos }}
+            var failed_repos = []
+            for (var idx in all_repos) {
+              try {
+                var repo_name = all_repos[idx]
+                result = await github.rest.repos.getBranchProtection({
+                  owner: "${{ github.event.inputs.organisation }}",
+                  repo: repo_name,
+                  accept: 'application/vnd.github.v3+json',
+                  branch: 'main'
+                })
+                if (result.data['required_status_checks']['strict'] == false ||
+                  result.data['required_pull_request_reviews']['require_code_owner_reviews'] == false ||
+                  result.data['allow_deletions']['enabled'] == true ||
+                  result.data['required_conversation_resolution']['enabled'] == false ||
+                  result.data['allow_force_pushes']['enabled'] == true) {
+                  console.log(result.data)
+                  console.log("branch not protected due to permission." + repo_name)
+                  failed_repos.push(repo_name)
+                }
+              } catch(err) {
+                failed_repos.push(repo_name)
+              }
+            }
+            core.setOutput('invalid_repos', failed_repos)
+
+      - name: Check default branch
+        id: default_branch
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            var all_repos = ${{ steps.org_repos.outputs.all_repos }}
+            var failed_repos = []
+            for (var idx in all_repos) {
+              var repo_name = all_repos[idx]
+              result = await github.rest.repos.get({
+                owner: "${{ github.event.inputs.organisation }}",
+                repo: repo_name,
+                accept: 'application/vnd.github.v3+json'
+              })
+              if (result.data['default_branch'] != 'main') {
+                failed_repos.push(repo_name)
+              }
+            }
+            core.setOutput('invalid_repos', failed_repos)
+
+      - name: Check repo has projects
+        id: repo_projects
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            var all_repos = ${{ steps.org_repos.outputs.all_repos }}
+            var failed_repos = []
+            for (var idx in all_repos) {
+              var repo_name = all_repos[idx]
+              try {
+                result = await github.rest.projects.listForRepo({
+                  org: "${{ github.event.inputs.organisation }}",
+                  repo: repo_name,
+                  state: 'open'
+                })
+                if (result.status != 200 || result.data.length == 0) {
+                  failed_repos.push(repo_name)
+                }
+              } catch(err) {
+                failed_repos.push(repo_name)
+              }
+            }
+            core.setOutput('invalid_repos', failed_repos)
+
+      - name: Validate squash merge
+        id: squash_merge
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            var result = null
+            var all_repos = ${{ steps.org_repos.outputs.all_repos }}
+            var failed_repos = []
+            expected_setting = {
+              allow_squash_merge: true,
+              allow_merge_commit: false,
+              allow_rebase_merge: false,
+              delete_branch_on_merge: true
+            }
+            for (var idx in all_repos ) {
+              var repo_name = all_repos[idx]
+              result = await github.rest.repos.get({
+                owner: "${{ github.event.inputs.organisation }}",
+                repo: repo_name,
+                accept: 'application/vnd.github.v3+json',
+              })
+              for (const [key, value] of Object.entries(expected_setting)) {
+                if (result.data[key] != value) {
+                  failed_repos.push(repo_name)
+                  break
+                }
+              }
+            }
+            core.setOutput('invalid_repos', failed_repos)
+
+      - name: Generate Report
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            all_repos = ${{ steps.org_repos.outputs.all_repos }}
+            invalid_repos = {
+              squash_merge: ${{ steps.squash_merge.outputs.invalid_repos }},
+              default_branch: ${{ steps.default_branch.outputs.invalid_repos }},
+              protected_branch: ${{ steps.protected_branches.outputs.invalid_repos }}
+            }
+            final_list = {}
+            for (var idx in all_repos) {
+              repo_name = all_repos[idx]
+              for (const [key, value] of Object.entries(invalid_repos)) {
+                if (value.includes(repo_name)) {
+                  if (!(repo_name in final_list)) {
+                    final_list[repo_name] = []
+                  }
+                  final_list[repo_name].push(key)
+                }
+              }
+            }
+            if (Object.keys(final_list).length > 0) {
+              console.log(final_list)
+              core.setFailed("Repositories found which are not following the standards.")
+            }

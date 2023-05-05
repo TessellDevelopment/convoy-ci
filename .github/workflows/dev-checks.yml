@@ -43,6 +43,11 @@ on:
         required: false
         type: string
         default: 'false'
+      check_version_of_helm_chart:
+        description: 'This is used to check version(helm chart version) present in chart.yaml  '
+        required: false
+        type: string
+        default: 'false'
 
 jobs:
   dev-checks:
@@ -78,10 +83,10 @@ jobs:
         
       - name: Check branch name
         run: |
-         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-           echo "Branch name starts with 'TS-'"
+         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
+           echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
          else
-           echo "Branch name does not start with 'TS-'"
+           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
            exit 1
          fi
       
@@ -234,7 +239,7 @@ jobs:
                 dir_name = file_entry.filename.split("/")[0];
                 if (file_entry.filename.split("/")[1] == 'version.txt') {
                     console.log("Modifying version" + dir_name );
-                      if (file_entry.patch?.includes("-version=") && file_entry.patch?.includes("+version=")) {
+                      if  (file_entry.patch?.includes("+version=")) {
                            modifiedDirectories[dir_name] = true;
                        }
                 }
@@ -281,8 +286,48 @@ jobs:
               }
             });
             core.setOutput('terraform_file' , terraform_file.join(','));
+        
+      - name: check for chart verison in chart.yaml 
+        if : ${{ inputs.check_version_of_helm_chart == 'true' }}
+        uses: actions/github-script@v6.3.3
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
+              version_updated = true;
+              const excludeDirs = ['.github', '.gitignore', 'README.md'];
+              response.data.files.forEach(function(file_entry) {
+                if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
+                    version_updated = false;
+                }
+              });
+              response.data.files.forEach(function(file_entry) {
+                  if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+                    version_updated = true;
+                }
+              });
+              if (version_updated == false ) {
+                core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+              }
+
             
-            
+          
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
         if: steps.check_db_migration.outputs.db_migration_dir

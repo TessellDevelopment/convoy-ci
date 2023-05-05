@@ -65,7 +65,7 @@ jobs:
       - name: Install dependencies ${{ inputs.plugin_base_dir }}
         if: ${{ inputs.plugin_base_dir }}
         run: |
-          if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt; fi
+          if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt --dry-run; fi
        
 
       - name: Lint with flake8
