@@ -65,7 +65,7 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
 
       - name: Get branch name (merge)
@@ -100,7 +100,7 @@ jobs:
         uses: actions/github-script@v6.3.3
         if: github.event_name == 'pull_request'
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -134,7 +134,7 @@ jobs:
         uses: actions/github-script@v6.3.3
         if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -170,7 +170,7 @@ jobs:
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -206,7 +206,7 @@ jobs:
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -257,7 +257,7 @@ jobs:
         id: terraform_check
         uses: actions/github-script@v6.3.3
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"

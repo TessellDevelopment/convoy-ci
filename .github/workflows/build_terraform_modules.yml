@@ -46,7 +46,7 @@ jobs:
         id: modified_dir
         uses: actions/github-script@v6.3.3
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
