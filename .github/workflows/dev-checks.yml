@@ -130,7 +130,7 @@ jobs:
             response.data.files.forEach(function(file_entry){
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
               const version = file_entry.filename.split("__")[0];
-              const existing_files = response.data.files.filter(f => 
+              const existing_files = existingFiles(f => 
                 f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && f.status != 'modified'
               );
               const existing_versions = existing_files.map(f => f.filename.split("__")[0]);
