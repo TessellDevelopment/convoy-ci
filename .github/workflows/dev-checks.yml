@@ -131,9 +131,9 @@ jobs:
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
               const version = file_entry.filename.split("__")[0];
               const existing_files = response.data.files.filter(f => 
-                f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && f != file_entry
+                f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && f = file_entry
               );
-              const existing_versions = existing_files.filename.map(f => f.filename.split("__")[0]);
+              const existing_versions = existing_files.map(f => f.filename.split("__")[0]);
               console.log(file_entry.filename)
               console.log(version)
               console.log(existing_versions)
