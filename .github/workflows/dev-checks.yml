@@ -141,9 +141,8 @@ jobs:
             });
             console.log(existingFiles)
             const filesToCheck = response.data.files.filter(file_entry => {
-            return file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/");
-              });
-            filesToCheck.forEach(function(file_entry){
+              return file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/");
+            });
             filesToCheck.forEach(function(file_entry){
               if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
                 const version = file_entry.filename.split("__")[0];
@@ -162,6 +161,7 @@ jobs:
                 }
               }
             });
+
             
       - name: check for gradle properties version
         uses: actions/github-script@v6.3.3
