@@ -133,12 +133,12 @@ jobs:
               const existing_files = response.data.files.filter(f => 
                 f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && f != file_entry
               );
-              const existing_versions = existing_files.map(f => f.filename.split("__")[0]);
+              const existing_versions = existing_files.filename.map(f => f.filename.split("__")[0]);
               console.log(file_entry.filename)
               console.log(version)
               console.log(existing_versions)
               console.log(existing_files)
-              if (existing_versions.filename.includes(version)) {
+              if (existing_versions.includes(version)) {
                 console.log(file_entry.filename);
                 console.log(file_entry.status);
                 core.setFailed(`Flyway file with version ${version} already exists`);
