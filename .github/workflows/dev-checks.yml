@@ -144,8 +144,9 @@ jobs:
             return file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/");
               });
             filesToCheck.forEach(function(file_entry){
-            if (file_entry.name.endsWith(".sql") && file_entry.path.includes("db/migration/")) {
-              const version = file_entry.name.split("__")[0];
+            filesToCheck.forEach(function(file_entry){
+            if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
+              const version = file_entry.filename.split("__")[0];
               const existing_files = existingFiles.filter(f => 
                 f.name.endsWith(".sql") && f.path.includes("db/migration/")
               );
