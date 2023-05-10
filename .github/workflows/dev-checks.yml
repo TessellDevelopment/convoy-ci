@@ -92,9 +92,9 @@ jobs:
          fi
       
 
-      #- name: Check for merge conflict in PR
-      #  run: |
-      #    if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
+      - name: Check for merge conflict in PR
+        run: |
+          if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
 
       - name: install octokit/rest
         run:  |
