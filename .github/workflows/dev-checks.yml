@@ -135,7 +135,7 @@ jobs:
                 f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && 
                 f.status != 'removed' && f != file_entry
               );
-              const existing_versions = existing_files.map(f => f.filename.split("__")[0].substring(1)); // Extract version numbers from existing files
+              const existing_versions = existing_files.map(f => f.filename.split("__")[0]); // Extract version numbers from existing files
               if (existing_versions.includes(prefix)) {
                 console.log(file_entry.filename);
                 console.log(file_entry.status);
