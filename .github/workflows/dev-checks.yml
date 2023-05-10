@@ -138,8 +138,9 @@ jobs:
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
               path: "tessell-sample/service/src/main/resources/db/migration",
+              console.log(existingFiles)
             });
-
+            console.log(existingFiles)
             filesToCheck.forEach(function(file_entry){
             if (file_entry.name.endsWith(".sql") && file_entry.path.includes("db/migration/")) {
               const version = file_entry.name.split("__")[0];
