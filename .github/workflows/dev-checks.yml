@@ -132,11 +132,12 @@ jobs:
               }
             });
             const { Octokit } = require("@octokit/rest");
-            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            const github_token = ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            const octokit = new Octokit({ auth: github_token });
             const { data: existingFiles } = await octokit.repos.getContent({
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
-              path: "db/migration",
+              path: "tessell-sample/service/src/main/resources/db/migration/",
             });
 
             response.data.files.forEach(function(file_entry){
