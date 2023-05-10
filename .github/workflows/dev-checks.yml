@@ -127,7 +127,8 @@ jobs:
                 core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
               }
             });
-            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            const { Octokit } = require("@octokit/rest");
+            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN});
             const { data: existingFiles } = await octokit.repos.getContent({
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
