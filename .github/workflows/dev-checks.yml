@@ -80,6 +80,7 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
         
       - name: Check branch name
         run: |
@@ -132,10 +133,7 @@ jobs:
               }
             });
             const { Octokit } = require("@octokit/rest");
-            const github_token = "${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}"
-            console.log(github_token)
-            console.log(${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }})
-            const octokit = new Octokit({ auth: github_token });
+            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
             const { data: existingFiles } = await octokit.repos.getContent({
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
