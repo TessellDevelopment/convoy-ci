@@ -95,6 +95,7 @@ jobs:
       #  run: |
       #    if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
 
+      
       - name: Check DB Migration Scripts
         id: check_db_migration
         uses: actions/github-script@v6.3.3
@@ -127,9 +128,7 @@ jobs:
                 core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
               }
             });
-            const { Octokit } = require("@octokit/rest");
-            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN});
-            const { data: existingFiles } = await octokit.repos.getContent({
+            const { data: existingFiles } = await github.rest.repos.getContent({
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
               path: "db/migration",
