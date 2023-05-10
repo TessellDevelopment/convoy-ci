@@ -128,7 +128,6 @@ jobs:
               }
             });
             response.data.files.forEach(function(file_entry){
-            console.log(file_entry.filename)
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                 (file_entry.status == 'modified' || file_entry.status == 'removed')) {
               const version = file_entry.filename.split("__")[0];
@@ -136,7 +135,11 @@ jobs:
                 f.filename.endsWith(".sql") && f.filename.includes("db/migration/") && 
                 f.status != 'removed' && f != file_entry
               );
-              const existing_versions = existing_files.map(f => f.filename.split("__")[0]); 
+              const existing_versions = existing_files.map(f => f.filename.split("__")[0]);
+              console.log(file_entry.filename)
+              console.log(version)
+              console.log(existing_versions)
+              console.log(existing_files)
               if (existing_versions.includes(version)) {
                 console.log(file_entry.filename);
                 console.log(file_entry.status);
