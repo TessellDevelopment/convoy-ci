@@ -138,7 +138,6 @@ jobs:
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
               path: "tessell-sample/service/src/main/resources/db/migration",
-              console.log(existingFiles)
             });
             console.log(existingFiles)
             filesToCheck.forEach(function(file_entry){
