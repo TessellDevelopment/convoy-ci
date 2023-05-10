@@ -129,8 +129,8 @@ jobs:
               }
             });
             const { data: existingFiles } = await github.rest.repos.getContent({
-              owner: "${{ github.repository_owner }}",
-              repo: "${{  github.repository }}".split('/')[1],
+              owner: github.context.repo.owner,
+              repo: github.context.repo.repo.split('/')[1],
               path: "db/migration",
             });
             response.data.files.forEach(function(file_entry){
