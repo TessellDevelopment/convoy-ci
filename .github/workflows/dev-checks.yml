@@ -127,9 +127,8 @@ jobs:
                 core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
               }
             });
-            response.data.files.forEach(function(file_entry)
-              console.log(file_entry.filename)
-              {
+            response.data.files.forEach(function(file_entry){
+            console.log(file_entry.filename)
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                 (file_entry.status == 'modified' || file_entry.status == 'removed')) {
               const version = file_entry.filename.split("__")[0];
