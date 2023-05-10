@@ -140,14 +140,12 @@ jobs:
               path: "tessell-sample/service/src/main/resources/db/migration",
             });
             console.log(existingFiles)
+            const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
+            console.log(existing_versions)
             response.data.files.forEach(function(file_entry){
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
                 const version = file_entry.filename.split("__")[0];
-                const existing_versions = existingFiles.map(f => f.filename.split("__")[0]);
-                console.log(file_entry.filename)
                 console.log(version)
-                console.log(existing_versions)
-                console.log(existing_files)
                 if (existing_versions.includes(version)) {
                   console.log(file_entry.filename);
                   console.log(file_entry.status);
