@@ -128,6 +128,7 @@ jobs:
               }
             });
             response.data.files.forEach(function(file_entry) {
+              debugger;
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                 (file_entry.status == 'modified' || file_entry.status == 'removed')) {
               const prefix = file_entry.filename.split("__")[0];
