@@ -152,7 +152,6 @@ jobs:
                 const version = file_entry.filename.split("__")[0].split("/").pop();
                 if (existing_versions.includes(version)) {
                   console.log(file_entry.filename);
-                  console.log(file_entry.status);
                   core.setFailed(`Flyway file with version ${version} already exists`);
                 }
               }
