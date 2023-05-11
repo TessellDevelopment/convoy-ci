@@ -99,7 +99,7 @@ jobs:
       - name: install octokit/rest
         run: |
           if [ ! -d "node_modules/@octokit/rest" ]; then
-            npm install @octokit/rest
+            npm install @octokit/rest --legacy-peer-deps
           fi
       
       - name: Check DB Migration Scripts
