@@ -97,8 +97,10 @@ jobs:
           if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
 
       - name: install octokit/rest
-        run:  |
-          npm install @octokit/rest
+        run: |
+          if [ ! -d "node_modules/@octokit/rest" ]; then
+            npm install @octokit/rest --legacy-peer-deps
+          fi
       
       - name: Check DB Migration Scripts
         id: check_db_migration
