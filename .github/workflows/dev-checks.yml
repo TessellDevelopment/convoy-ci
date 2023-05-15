@@ -99,6 +99,7 @@ jobs:
       - name: install octokit/rest
         run: |
           if [ ! -d "node_modules/@octokit/rest" ]; then
+            npm cache clean --force
             npm install @octokit/rest --legacy-peer-deps
           fi
       
