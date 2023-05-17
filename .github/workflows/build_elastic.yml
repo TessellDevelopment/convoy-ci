@@ -205,6 +205,11 @@ jobs:
       - name: tagging docker image with scan
         run: |
            docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
+      
+      - name: tagging the latest tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
            docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
               
 
