@@ -27,7 +27,8 @@ jobs:
       - name: Get all the release branches
         run: |
           branches+=("$(git branch -r | sed 's/^ *//g'| grep 'rel-')")
-          for branch in $branches; do br_arr+=($branch); done
+          declare -a br_arr=()
+          for branch in $branches; do if [[ $branch == 'origin/rel-'* ]]; then br_arr+=($branch); fi ; done
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
         id: all_branches
@@ -51,8 +52,8 @@ jobs:
             }
 
             // check if NODC is set
-            if ("${{ github.event.pull_request.title }}".endsWith('::NODC::')) {
-              console.log("NODC set, aborting..")
+            if ("${{ github.event.pull_request.title }}".endsWith('::NODC::') || "${{ github.event.pull_request.title }}".startsWith('::NODC::')) {
+              console.log("NODC set, aborting..");
               process.exit(0);
             }
 
@@ -169,7 +170,7 @@ jobs:
               // create pull request
               pullCreateResponse = await github.rest.pulls.create({
                   owner: "${{ github.repository_owner }}",
-                  title: "Double Commit: " + `"${{ github.event.pull_request.title }}"`,
+                  title: "Double Commit: " + "${{ github.event.pull_request.title }}",
                   repo: "${{  github.repository }}".split('/')[1],
                   head: prBranchName,
                   base: dstBranch
