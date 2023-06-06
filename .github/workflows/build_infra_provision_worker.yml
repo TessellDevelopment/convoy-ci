@@ -44,8 +44,12 @@ jobs:
           
       - name: Get additional images names
         run : |
-          ehco ${{ inputs.add_images }}
+          echo ${{ inputs.add_images }}
+          for add_image in ${{ inputs.add_images }}; do 
+            echo add_image
+          done
           exit 1
+            #docker tag ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{ env.DOCKERHUB_ORG }}/${{ inputs.OtherImageName }}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
