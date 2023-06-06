@@ -45,10 +45,13 @@ jobs:
       - name: Get additional images names
         run : |
           echo ${{ inputs.add_images }}
-          for add_image in ${{ inputs.add_images }}; do 
-            echo $add_image
-          done
-          exit 1
+          echo "outside"
+          - name: printing inside loop
+            run: |
+              for add_image in ${{ inputs.add_images }}; do 
+                echo $add_image
+              done
+              exit 1
             #docker tag ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{ env.DOCKERHUB_ORG }}/${{ inputs.OtherImageName }}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Set Pull repository
