@@ -6,6 +6,12 @@ on:
   workflow_call:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      add_images:
+        description: 'This is used to get additional image from worker base repos'
+        required: true
+        type: string
+        default: '{}'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -29,6 +35,11 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+          
+      - name: Get additional images names
+        run : |
+          ehco ${{ inputs.add_images }}
+          exit 1
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
