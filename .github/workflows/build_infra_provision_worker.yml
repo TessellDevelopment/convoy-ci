@@ -261,7 +261,7 @@ jobs:
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
@@ -270,7 +270,7 @@ jobs:
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/$$IMAGE1:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "$$IMAGE1:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
@@ -279,7 +279,7 @@ jobs:
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/$IMAGE2:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "$IMAGE2:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }} 
