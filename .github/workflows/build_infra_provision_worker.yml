@@ -45,7 +45,8 @@ jobs:
       - name: docker tag
         run: |
           for add_image in ${{ inputs.add_images }}; do
-            docker tag ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{ env.DOCKERHUB_ORG }}/$add_image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker pull tesselldev/tessell-infra-provision-worker:0.0.2306061300
+            docker tag ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.0.2306061300 ${{ env.DOCKERHUB_ORG }}/$add_image:TS-12
             - name: Sign and push docker image
               #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
               uses: sudo-bot/action-docker-sign@latest
