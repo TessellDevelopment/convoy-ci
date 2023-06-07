@@ -244,8 +244,8 @@ jobs:
       - name: tagging docker image with scan
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/$IMAGE1:${{ steps.latest_tag.outputs.tag_ref }}
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/$IMAGE2:${{ steps.latest_tag.outputs.tag_ref }}
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE2 }}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Docker image scan
         id: docker-image-scan
@@ -261,25 +261,25 @@ jobs:
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "${{ env.DOCKERHUB_ORG }}/{{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
-      - name: Sign and push $IMAGE1 docker image
+      - name: Sign and push ${{ env.IMAGE1 }} docker image
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "$$IMAGE1:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
-      - name: Sign and push $IMAGE2 docker image
+      - name: Sign and push ${{ env.IMAGE2 }} docker image
         #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
-          image-ref: "$IMAGE2:${{ steps.latest_tag.outputs.tag_ref }}"
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE2 }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }} 
