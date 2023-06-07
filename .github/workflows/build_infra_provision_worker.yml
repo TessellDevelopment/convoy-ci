@@ -113,7 +113,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push with tag
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           mkdir -p build/tools
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
@@ -123,7 +123,7 @@ jobs:
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
       - name: Build
-        #if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           mkdir -p build/tools
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
@@ -168,7 +168,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -218,7 +218,6 @@ jobs:
                 }
               }
             }
-            latest_tag = '0.11.11'
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -244,7 +243,6 @@ jobs:
       - name: tagging docker image with scan
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE2 }}:${{ steps.latest_tag.outputs.tag_ref }}
 
@@ -259,7 +257,7 @@ jobs:
             trivy-version: "0.29.1"
             
       - name: Sign and push default docker image
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
@@ -268,7 +266,7 @@ jobs:
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
       - name: Sign and push ${{ env.IMAGE1 }} docker image
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}"
@@ -277,7 +275,7 @@ jobs:
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
       - name: Sign and push ${{ env.IMAGE2 }} docker image
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE2 }}:${{ steps.latest_tag.outputs.tag_ref }}"
