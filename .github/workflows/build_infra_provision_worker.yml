@@ -60,6 +60,7 @@ jobs:
         run: |
           echo "Image 1: ${{ env.IMAGE1 }}"
           echo "Image 2: ${{ env.IMAGE2 }}"
+          exit 1
           #for add_image in ${{ inputs.add_images }}; do
             
           
