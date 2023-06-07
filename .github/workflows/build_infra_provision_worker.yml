@@ -55,6 +55,7 @@ jobs:
           for image in "${IMAGES[@]}"; do
             echo "Image: $image"
             echo "IMAGE=$image" >> $GITHUB_ENV
+          done
             
       - name: Listing the ADD_IMAGES
         run: |
