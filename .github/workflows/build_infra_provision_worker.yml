@@ -51,7 +51,7 @@ jobs:
       
       - name: Separating add-images
         run: |
-          IFS=',' read -ra IMAGES <<< "${{ inputs.add_image }}"
+          IFS=',' read -ra IMAGES <<< "${{ inputs.add_images }}"
           for image in "${IMAGES[@]}"; do
             echo "Image: $image"
             echo "IMAGE=$image" >> $GITHUB_ENV
