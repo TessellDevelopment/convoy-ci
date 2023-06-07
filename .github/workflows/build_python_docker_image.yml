@@ -226,11 +226,7 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
      
-      - name: tagging docker image with scan
-        run: |
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}
+      
            
       - name: Separating add-images
         run: |
@@ -244,6 +240,12 @@ jobs:
       - name: Listing the ADD_IMAGES
         run: |
           echo "Image 1: $IMAGE1"
+          
+      - name: tagging docker image with scan
+        run: |
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}
           
       
       - name: Docker image scan
