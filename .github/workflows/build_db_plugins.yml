@@ -88,7 +88,7 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
 
       - name: Build and push
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           ./gradlew createMvnSettings twineUpload uploadPlugin --console plain \
             -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
