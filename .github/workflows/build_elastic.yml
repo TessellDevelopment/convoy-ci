@@ -63,7 +63,7 @@ jobs:
           export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-16-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
           cd filebeat
           mage package
-          cp ./build/package/filebeat-oss/filebeat-oss-linux-amd64.docker/docker-build/beat/filebeat .
+          cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
           
       - name: Set up Docker Buildx
         id: buildx
@@ -165,11 +165,14 @@ jobs:
       - name: creating tar files
         run: |
           PACKAGES_DIR=./filebeat/build/distributions/
+          mkdir -p $PACKAGES_DIR
           cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+          cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
           pushd $PACKAGES_DIR
           tar -zcvf filebeat-linux.tar.gz filebeat.yml
           popd
           cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+          cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat 
           pushd $PACKAGES_DIR
           tar -zcvf filebeat-windows.tar.gz filebeat.yml
           popd
