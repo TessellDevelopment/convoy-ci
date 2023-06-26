@@ -172,7 +172,7 @@ jobs:
           tar -zcvf filebeat-linux.tar.gz filebeat.yml
           popd
           cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
-          cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat 
+          cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
           pushd $PACKAGES_DIR
           tar -zcvf filebeat-windows.tar.gz filebeat.yml
           popd
