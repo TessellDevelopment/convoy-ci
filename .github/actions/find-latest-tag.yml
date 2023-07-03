@@ -1,0 +1,6 @@
+name: Find Latest Tag
+description: Finds the latest tag based on the specified conditions
+
+runs:
+  using: "node12"
+  main: "index.js"
