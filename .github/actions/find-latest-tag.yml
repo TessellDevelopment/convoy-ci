@@ -1,7 +1,5 @@
 name: 'Find Latest Tag'
-
 description: 'Find the latest tag'
-
 inputs:
   tags:
     description: 'Space-separated list of tags'
@@ -11,8 +9,20 @@ inputs:
     required: true
 
 runs:
-  using: 'node12'
-  main: 'index.js'
+  using: 'ubuntu-latest'
+  steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Run the action
+      run: |
+        npm install
+        node index.js
 
 outputs:
   tag_ref:
