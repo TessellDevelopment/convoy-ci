@@ -1,6 +1,28 @@
-name: Find Latest Tag
-description: Finds the latest tag based on the specified conditions
+name: 'Find Latest Tag'
+
+description: 'Find the latest tag'
+
+inputs:
+  tags:
+    description: 'Space-separated list of tags'
+    required: true
+  source_branch:
+    description: 'Source branch'
+    required: true
 
 runs:
-  using: "node12"
-  main: "index.js"
+  using: 'node12'
+  main: 'index.js'
+
+outputs:
+  tag_ref:
+    description: 'Latest tag reference'
+
+branding:
+  icon: 'tag'
+
+permissions:
+  actions: read
+
+env:
+  CIPIPELINE_NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
