@@ -1,65 +1,60 @@
 const core = require('@actions/core');
 
-async function run() {
-  try {
-    console.log("Tags are " + process.env.TAGS);
-    let latestTag = '0.0.0';
-    const tags = process.env.TAGS.split(' ');
+try {
+  console.log(`Tags are ${process.env.INPUT_TAGS}`);
+  let latest_tag = '0.0.0';
+  const tags = process.env.INPUT_TAGS.split(' ');
 
-    if (tags.length === 1) {
-      console.log("There is only one tag. Using it." + tags[0]);
-      latestTag = tags[0];
-    } else {
-      if (process.env.SOURCE_BRANCH === "main") {
-        for (let i in tags) {
-          const tag = tags[i];
-          console.log("Checking tag " + tag);
-          if (latestTag === null) {
-            latestTag = tag;
-            continue;
+  if (tags.length === 1) {
+    console.log(`There is only one tag. Using it: ${tags[0]}`);
+    latest_tag = tags[0];
+  } else {
+    if (process.env.INPUT_SOURCE_BRANCH === 'main') {
+      for (let i = 0; i < tags.length; i++) {
+        const tag = tags[i];
+        console.log(`Checking tag ${tag}`);
+        if (latest_tag === null) {
+          latest_tag = tag;
+          continue;
+        }
+        const latest_parts = latest_tag.split('.');
+        const tag_parts = tag.split('.');
+        for (let j = 0; j < tag_parts.length; j++) {
+          if (parseInt(tag_parts[j]) < parseInt(latest_parts[j])) {
+            console.log(`Skipping ${tag}`);
+            break;
           }
-          const latestParts = latestTag.split(".");
-          const tagParts = tag.split(".");
-          for (let i = 0; i < tagParts.length; i++) {
-            if (parseInt(tagParts[i]) < parseInt(latestParts[i])) {
-              console.log("Skipping " + tag);
-              break;
-            }
-            if (parseInt(tagParts[i]) > parseInt(latestParts[i])) {
-              latestTag = tag;
-              console.log("Setting " + latestTag);
-              break;
-            }
+          if (parseInt(tag_parts[j]) > parseInt(latest_parts[j])) {
+            latest_tag = tag;
+            console.log(`Setting ${latest_tag}`);
+            break;
           }
         }
-      } else {
-        const tagBase = process.env.SOURCE_BRANCH.substring(4).split(".").slice(0, 2);
-        latestTag = tagBase.join(".") + ".0";
-        for (let i in tags) {
-          const tag = tags[i];
-          console.log("branch - Checking tag " + tag);
-          const tagParts = tag.split(".");
-          if (tagBase[0] == tagParts[0] && tagBase[1] == tagParts[1]) {
-            const latestParts = latestTag.split(".");
-            if (parseInt(latestParts[2]) < parseInt(tagParts[2])) {
-              latestTag = tag;
-            }
+      }
+    } else {
+      const tag_base = process.env.INPUT_SOURCE_BRANCH.substring(4).split('.').slice(0, 2);
+      latest_tag = `${tag_base.join('.')}.0`;
+      for (let i = 0; i < tags.length; i++) {
+        const tag = tags[i];
+        console.log(`branch - Checking tag ${tag}`);
+        const tag_parts = tag.split('.');
+        if (tag_base[0] === tag_parts[0] && tag_base[1] === tag_parts[1]) {
+          const latest_parts = latest_tag.split('.');
+          if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+            latest_tag = tag;
           }
         }
       }
     }
-
-    console.log("Latest tag: " + latestTag);
-
-    if (latestTag === '' || latestTag === undefined) {
-      console.log("Couldn't determine the latest tag, exiting. Retry manually..");
-      process.exit(1);
-    }
-
-    core.setOutput('tag_ref', latestTag);
-  } catch (error) {
-    core.setFailed(error.message);
   }
-}
 
-run();
+  console.log(`Latest tag: ${latest_tag}`);
+  if (latest_tag === '' || latest_tag === undefined) {
+    console.log("Couldn't determine the latest tag, exiting. Retry manually..");
+    process.exit(1);
+  }
+
+  core.setOutput('tag_ref', latest_tag);
+} catch (error) {
+  core.setFailed(error.message);
+}
