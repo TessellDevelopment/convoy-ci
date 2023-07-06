@@ -38,6 +38,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Separating add-images
+        if: ${{ inputs.add_images != '' }}
+        run: |
+          echo "HI"
     
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -228,7 +233,7 @@ jobs:
       
            
       - name: Separating add-images
-        if: ${{ inputs.add_images != "" }}
+        if: ${{ inputs.add_images != '' }}
         run: |
           IFS=',' read -ra IMAGES <<< "${{ inputs.add_images }}"
           for i in "${!IMAGES[@]}"; do
