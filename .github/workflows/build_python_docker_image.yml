@@ -38,11 +38,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
-      - name: Separating add-images
-        if: ${{ inputs.add_images != '{}' }}
-        run: |
-          echo "HI"
     
       - name: Set up Python
         uses: actions/setup-python@v2
