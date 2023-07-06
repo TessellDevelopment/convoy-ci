@@ -7,7 +7,7 @@ on:
     inputs:
       add_images:
           description: 'This is used to get additional image from worker base repos'
-          required: true
+          required: false
           type: string
           default: '{}'
   # Allows you to run this workflow manually from the Actions tab
@@ -15,7 +15,7 @@ on:
     inputs:
       add_images:
           description: 'This is used to get additional image from worker base repos'
-          required: true
+          required: false
           type: string
           default: '{}'
 
