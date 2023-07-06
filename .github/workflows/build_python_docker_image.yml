@@ -7,7 +7,7 @@ on:
     inputs:
       add_images:
           description: 'This is used to get additional image from worker base repos'
-          required: true
+          required: false
           type: string
           default: '{}'
   # Allows you to run this workflow manually from the Actions tab
@@ -15,7 +15,7 @@ on:
     inputs:
       add_images:
           description: 'This is used to get additional image from worker base repos'
-          required: true
+          required: false
           type: string
           default: '{}'
 
@@ -228,6 +228,7 @@ jobs:
       
            
       - name: Separating add-images
+        if: ${{ inputs.add_images != '{}' }}
         run: |
           IFS=',' read -ra IMAGES <<< "${{ inputs.add_images }}"
           for i in "${!IMAGES[@]}"; do
@@ -237,6 +238,7 @@ jobs:
           done
             
       - name: Listing the ADD_IMAGES
+        if: ${{ inputs.add_images != '{}' }}
         run: |
           echo "Image 1: $IMAGE1"
           
@@ -245,7 +247,7 @@ jobs:
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
            
       - name: tagging docker image with scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' && inputs.add_images != '{}' }}
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}
           
@@ -275,7 +277,7 @@ jobs:
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
       - name: Sign and push ${{ env.IMAGE1 }} docker image
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' && inputs.add_images != '{}' }}
         uses: sudo-bot/action-docker-sign@latest
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}"
