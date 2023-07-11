@@ -98,7 +98,7 @@ jobs:
       
       - name: import packages for json lint
         run: |
-          npm install -g jsonlint
+          sudo sudo npm install jsonlint -g
           
       - name: Check for Jsonlint
         run: |
