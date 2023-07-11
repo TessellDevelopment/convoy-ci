@@ -95,6 +95,15 @@ jobs:
       - name: Check for merge conflict in PR
         run: |
           if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
+      
+      - name: import packages for json lint
+        run: |
+          sudo sudo npm install jsonlint -g
+          
+      - name: Check for Jsonlint
+        run: |
+          set -e
+          git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
       - name: install octokit/rest
         run: |
