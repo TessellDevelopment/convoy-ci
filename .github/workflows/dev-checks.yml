@@ -114,7 +114,7 @@ jobs:
       
       - name: Check DB Migration Scripts
         id: check_db_migration
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v6.4.1
         if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
