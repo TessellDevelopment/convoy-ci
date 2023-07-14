@@ -93,8 +93,8 @@ jobs:
       
       - name: Check PR Title
         run : |
-          SUB_PR=${"${{github.event.pull_request.title}}"%|*}
-          SUB_BR=${"${{github.event.pull_request.title}}"%_*}
+          SUB_PR="${"${{github.event.pull_request.title}}"%|*}"
+          SUB_BR="${"${{github.event.pull_request.title}}"%_*}"
           if echo "${{github.event.pull_request.title}}" | grep -Eq '^TS-' || echo "${{github.event.pull_request.title}}" | grep -Eq '^TDEVOPS-'; then
             echo "PR title starts with 'TS-' or 'TDEVOPS-'"
             if SUB_PR==SUB_BR
