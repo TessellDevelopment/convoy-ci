@@ -93,9 +93,7 @@ jobs:
       
       - name: Check PR Title
         run : |
-          PR_TITLE= "${{github.event.pull_request.title}}"
-          BRANCH_NAME= "${{env.SOURCE_BRANCH}}"
-          if [[$PR_TITLE == TS*]]
+          if [["${{github.event.pull_request.title}}" == TS*]]
             then
             echo "PR title starts with 'TS-' or 'TDEVOPS-'"
           else 
