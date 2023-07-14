@@ -91,6 +91,23 @@ jobs:
            exit 1
          fi
       
+      - name: Check PR Title
+        run : |
+          PR_TITLE= "${{github.event.pull_request.title}}"
+          BRANCH_NAME= "${{env.SOURCE_BRANCH}}"
+          if [[$PR_TITLE == TS*]] || [[$PR_TITLE == TDEVOPS*]]
+            then
+            echo "PR title starts with 'TS-' or 'TDEVOPS-'"
+            if [[ ${PR_TITLE%|*} ==  ${PR_TITLE%-*}]] 
+              then
+              echo "PR Jira ticket and Branch Jira ticket Matched"
+            else
+              echo "Different Jira in PR and Branch"
+              exit 1
+          else 
+            echo "PR title does not start with 'TS-' or 'TDEVOPS-'"
+            exit 1
+          fi  
 
       - name: Check for merge conflict in PR
         run: |
