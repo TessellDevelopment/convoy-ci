@@ -95,6 +95,12 @@ jobs:
         run : |
           if echo "${{github.event.pull_request.title}}" | grep -Eq '^TS-' || echo "${{github.event.pull_request.title}}" | grep -Eq '^TDEVOPS-'; then
             echo "PR title starts with 'TS-' or 'TDEVOPS-'"
+            if [[ ${"${{github.event.pull_request.title}}"%|*} ==  ${"${{github.event.pull_request.title}}"%-*}]] 
+            then
+              echo "PR Jira ticket and Branch Jira ticket Matched"
+            else
+              echo "Different Jira in PR and Branch"
+              exit 1
           else 
             echo "PR title does not start with 'TS-' or 'TDEVOPS-'"
             exit 1
