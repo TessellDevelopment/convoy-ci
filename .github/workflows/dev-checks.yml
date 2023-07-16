@@ -93,12 +93,15 @@ jobs:
       
       - name: Check PR Title
         run : |
-          if echo "${{github.event.pull_request.title}}" | grep -Eq '^TS-' || echo "${{github.event.pull_request.title}}" | grep -Eq '^TDEVOPS-'; then
-            echo "PR title starts with 'TS-' or 'TDEVOPS-'"
-          else 
-            echo "PR title does not start with 'TS-' or 'TDEVOPS-'"
+          PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
+          PATTERN="^(TS|TDEVOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
+          if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
+            echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
             exit 1
-          fi  
+          else 
+            echo "PR Title is in the valid forma."
+          fi
+        
 
       - name: Check for merge conflict in PR
         run: |
