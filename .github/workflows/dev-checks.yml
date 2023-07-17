@@ -87,7 +87,6 @@ jobs:
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
             echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
-            exit 1
           else
             echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'. Checking PR title format."
             PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
@@ -97,8 +96,6 @@ jobs:
               exit 1
             else 
               echo "PR Title is in the valid format."
-            fi
-            exit 1
           fi
 
       - name: Check for merge conflict in PR
