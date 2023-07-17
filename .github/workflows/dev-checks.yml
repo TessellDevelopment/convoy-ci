@@ -18,8 +18,8 @@ on:
         required: false
         type: string
         default: 'true'
-      check_branch_name:
-        description: 'This is used to check branch name starts with TS-'
+      check_branch_pr_format:
+        description: 'This is used to check branch name and PR title format.'
         required: false
         type: string
         default: 'true'
@@ -81,27 +81,24 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
-        
-      - name: Check branch name
+         
+      - name: Check branch and PR title format
+        if: ${{ inputs.check_branch_pr_format == 'true' }}
         run: |
-         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
-           echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
-         else
-           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
-           exit 1
-         fi
-      
-      - name: Check PR Title
-        run : |
-          PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
-          PATTERN="^(TS|TDEVOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
-          if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-            echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
+            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
+            PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
+            PATTERN="^(TS|TDEVOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
+            if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
+              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
+              exit 1
+            else 
+              echo "PR Title is in the valid forma."
+            fi
+          else
+            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
             exit 1
-          else 
-            echo "PR Title is in the valid forma."
           fi
-        
 
       - name: Check for merge conflict in PR
         run: |
