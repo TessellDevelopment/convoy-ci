@@ -97,7 +97,7 @@ jobs:
               exit 1
             else 
               echo "PR Title is in the valid format."
-              exit 0
+            fi  
           fi
 
       - name: Check for merge conflict in PR
