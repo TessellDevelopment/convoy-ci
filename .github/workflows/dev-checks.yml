@@ -87,16 +87,17 @@ jobs:
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
             echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
+            exit 1
+          else
+            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'. Checking PR title format."
             PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
             PATTERN="^(TS|TDEVOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
               echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
               exit 1
             else 
-              echo "PR Title is in the valid forma."
+              echo "PR Title is in the valid format."
             fi
-          else
-            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
             exit 1
           fi
 
