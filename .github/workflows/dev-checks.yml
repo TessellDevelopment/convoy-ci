@@ -407,12 +407,12 @@ jobs:
 
       - name: Extract Jira Ticket
         id: extract
-        if: ${{inputs.extract_valid_jira == true}}
+        if: ${{inputs.extract_valid_jira == 'true'}}
         run: |
           extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' 
 
       - name: Validate Jira Ticket
-        if: ${{inputs.check_valid_jira == true}}
+        if: ${{inputs.check_valid_jira == 'true'}}
         run: |
           echo "${{steps.extract.outputs.jira_ticket}}"
           validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
