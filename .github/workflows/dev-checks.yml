@@ -414,7 +414,7 @@ jobs:
       - name: Validate Jira Ticket
         if: ${{inputs.check_valid_jira == true}}
         run: |
-          echo "${{extracted_jira_output}}"
+          echo "${{steps.extract.outputs.jira_ticket}}"
           validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
 
       - name: check to verify same branch is exist
