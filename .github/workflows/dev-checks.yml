@@ -32,7 +32,7 @@ on:
         description: 'This is used to extract Jira Ticket from Branch name or PR Title'
         required: false
         type: string
-        defaul: 'true'    
+        default: 'true'    
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not'
         required: false
@@ -54,10 +54,10 @@ on:
         type: string
         default: 'false'
 
-    outputs:
-      extracted_jira_output: 
-        description: "Extracted Jira ticked from branch name or PR title"
-        value: ${{jobs.steps.extract_valid_jira.outputs.jira_ticket}}
+    # outputs:
+    #   extracted_jira_output: 
+    #     description: "Extracted Jira ticked from branch name or PR title"
+    #     value: ${{jobs.steps.extract_valid_jira.outputs.jira_ticket}}
 
 jobs:
   dev-checks:
@@ -406,6 +406,7 @@ jobs:
           terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
 
       - name: Extract Jira Ticket
+        id: extract
         if: ${{inputs.extract_valid_jira == true}}
         run: |
           extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' 
@@ -414,7 +415,7 @@ jobs:
         if: ${{inputs.check_valid_jira == true}}
         run: |
           echo "${{extracted_jira_output}}"
-          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ outputs.extracted_jira_output }}'
+          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
 
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
