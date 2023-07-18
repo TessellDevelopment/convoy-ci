@@ -414,7 +414,7 @@ jobs:
         if: ${{inputs.check_valid_jira == true}}
         run: |
           echo "${{extracted_jira_output}}"
-          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ extracted_jira_output }}'
+          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ outputs.extracted_jira_output }}'
 
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
