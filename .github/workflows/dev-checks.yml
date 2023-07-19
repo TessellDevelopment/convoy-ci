@@ -30,7 +30,7 @@ on:
         default: 'true'
       extract_valid_jira:
         description: 'This is used to extract Jira Ticket from Branch name or PR Title'
-        required: false
+        required: true
         type: string
         default: 'true'    
       check_valid_jira:
