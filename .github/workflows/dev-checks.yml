@@ -28,6 +28,16 @@ on:
         required: false
         type: string
         default: 'true'
+      jira_id_source:
+        description: 'This is used to specify the Jira ID source'
+        required: true
+        type: string
+        default: 'BRANCH'
+      jira_match_type:
+        description: 'This is used to specify to check both the sources or any or none'
+        required: true
+        type: string
+        default: 'ANY'    
       extract_valid_jira:
         description: 'This is used to extract Jira Ticket from Branch name or PR Title'
         required: true
@@ -35,7 +45,7 @@ on:
         default: 'true'    
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not'
-        required: false
+        required: true
         type: string
         default: 'true'
       check_terraform_provider_version:
@@ -407,12 +417,15 @@ jobs:
 
       - name: Extract Jira Ticket
         id: extract
-        if: ${{inputs.extract_valid_jira == 'true'}}
+        if: ${{inputs.extract_valid_jira == 'true' && inputs.jira_match_type != 'NONE'  }}
         run: |
-          extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' 
-
+          if [inputs.jira_match_type == 'ALL']; then
+            extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}'
+          elif [inputs.jira_match_type == 'ANY']; then
+            extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}'
+  
       - name: Validate Jira Ticket
-        if: ${{inputs.check_valid_jira == 'true'}}
+        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
         run: |
           echo "${{steps.extract.outputs.jira_ticket}}"
           validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
