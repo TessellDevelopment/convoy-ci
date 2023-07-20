@@ -277,7 +277,7 @@ jobs:
               const modifiedDirectories = {};
               response.data.files.forEach(file => {
                 const fileDirectory = file.filename.split("/")[0];
-                 if (!excludedDirectories.includes(fileDirectory)) {
+                 if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
                 if (!modifiedDirectories[fileDirectory]) {
                   modifiedDirectories[fileDirectory] = false;
                 }}
