@@ -282,14 +282,15 @@ jobs:
         run: |
           python - <<EOF
           import os
-
+          import json
+          
           def check_version_in_file(filename):
               with open(filename, 'r') as f:
                   content = f.read()
                   return 'version:' in content
           
-          base_commit = os.popen('git rev-parse HEAD').read().strip()
-          head_commit = os.popen('git rev-parse main').read().strip()
+          base_commit = os.getenv("GITHUB_BEFORE_SHA")
+          head_commit = os.getenv("GITHUB_SHA")
           
           excluded_directories = ['.github', '.gitignore']
           modified_files = os.popen(f'git diff --name-only {base_commit} {head_commit}').read().splitlines()
