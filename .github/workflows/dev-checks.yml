@@ -271,11 +271,11 @@ jobs:
               if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
               }
-      - name: Set up Python
-        if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.10.12
+      # - name: Set up Python
+      #   if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
+      #   uses: actions/setup-python@v2
+      #   with:
+      #     python-version: 3.10.12
 
       - name: check for version in version.txt in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
@@ -283,38 +283,56 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
+            head_commit = "${{ github.sha }}"
+            base_commit = "${{ github.sha }}"
+            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+              base_commit = "${{ github.event.before }}"
+            }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
+            console.log("base_commit " + base_commit);
+            console.log("head_commit " + head_commit); 
+            response = await github.rest.repos.compareCommits({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                head: head_commit,
+                base: base_commit
+            });
+            
+            const excludedDirectories = ['.github', '.gitignore'];
+            const modifiedFiles = response.data.files;
+            const modifiedDirectories = {};
+            
+            response.data.files.forEach(file => {
+              const fileDirectory = file.filename.split("/")[0];
+              if (!excludedDirectories.includes(fileDirectory)) {
+                if (!modifiedDirectories[fileDirectory]) {
+                  modifiedDirectories[fileDirectory] = false;
+                }
+              }
+            });
+            
+            response.data.files.forEach(function (file_entry) {
+              const dir_name = file_entry.filename.split("/")[0];
+              if (file_entry.filename.split("/")[1] == 'convoy-config.yaml') {
+                console.log("Modifying version in " + dir_name);
+                if (file_entry.patch?.includes("version:")) {
+                  modifiedDirectories[dir_name] = true;
+                }
+              }
+            });
+            
+            console.log(modifiedDirectories);
+            
+            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+              if (isModified == false) {
+                core.setFailed('The convoy-config.yaml file must be updated in ' + fileDirectory);
+              }
+            });
+                    
 
-            excluded_directories=('.github' '.gitignore')
-            modified_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-            modified_directories=()
-            
-            for file in $modified_files; do
-              directory=$(echo "$file" | cut -d '/' -f 1)
-              if [[ ! " ${excluded_directories[@]} " =~ " $directory " ]]; then
-                modified_directories["$directory"]=false
-              fi
-            done
-            
-            for file in $modified_files; do
-              directory=$(echo "$file" | cut -d '/' -f 1)
-              filename=$(echo "$file" | cut -d '/' -f 2)
-              if [[ "$filename" == "convoy-config.yaml" ]]; then
-                echo "Modifying version in $directory"
-                if grep -q 'version:' "$file"; then
-                  modified_directories["$directory"]=true
-                fi
-              fi
-            done
-            
-            echo "${modified_directories[@]}"
-            
-            for directory in "${!modified_directories[@]}"; do
-              is_modified="${modified_directories[$directory]}"
-              if [[ "$is_modified" == "false" ]]; then
-                echo "The convoy-config.yaml file must be updated in $directory"
-                exit 1
-              fi
-              
       - name: check for terraform (code)
         if : github.event_name == 'pull_request'
         id: terraform_check
