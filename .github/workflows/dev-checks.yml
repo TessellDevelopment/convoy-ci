@@ -282,18 +282,19 @@ jobs:
         run: |
           python - <<EOF
           import os
-          
+
           excluded_directories = ['.github', '.gitignore']
           modified_files = os.popen(f'git diff --name-only ${{ github.event.before }} ${{ github.sha }}').read().splitlines()
           modified_directories = {}
           
           for file in modified_files:
-              directory = file.split('/')[0]
+              directory = os.path.dirname(file)
               if directory not in excluded_directories:
                   modified_directories[directory] = False
           
           for file in modified_files:
-              directory, filename = file.split('/')
+              directory = os.path.dirname(file)
+              filename = os.path.basename(file)
               if filename == 'convoy-config.yaml':
                   print(f"Modifying version in {directory}")
                   with open(file, 'r') as f:
