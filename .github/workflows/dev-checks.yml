@@ -64,11 +64,6 @@ on:
         type: string
         default: 'false'
 
-    # outputs:
-    #   extracted_jira_output: 
-    #     description: "Extracted Jira ticked from branch name or PR title"
-    #     value: ${{jobs.steps.extract_valid_jira.outputs.jira_ticket}}
-
 jobs:
   dev-checks:
     runs-on: self-hosted
@@ -300,32 +295,61 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.gitignore'];
-              const modifiedFiles = response.data.files;
-              const modifiedDirectories = {};
-              response.data.files.forEach(file => {
-                const fileDirectory = file.filename.split("/")[0];
-                 if (!excludedDirectories.includes(fileDirectory)) {
+
+            const excludedDirectories = ['.github','.gitignore'];
+            const modifiedFiles = response.data.files;
+            const modifiedDirectories = {};
+            
+            #   response.data.files.forEach(file => {
+            #     const fileDirectory = file.filename.split("/")[0];
+            #      if (!excludedDirectories.includes(fileDirectory)) {
+            #     if (!modifiedDirectories[fileDirectory]) {
+            #       modifiedDirectories[fileDirectory] = false;
+            #     }}
+            #   });
+            #   response.data.files.forEach(function(file_entry) {
+            #     dir_name = file_entry.filename.split("/")[0];
+            #     if (file_entry.filename.split("/")[1] == 'version.txt') {
+            #         console.log("Modifying version" + dir_name );
+            #           if  (file_entry.patch?.includes("+version=")) {
+            #                modifiedDirectories[dir_name] = true;
+            #            }
+            #     }
+            #   });
+            #   console.log(modifiedDirectories);
+            #   Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+            #    if (isModified == false) {
+            #     core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
+            #   }
+            # });
+            
+            response.data.files.forEach(file => {
+              const fileDirectory = file.filename.split("/")[0];
+              if (!excludedDirectories.includes(fileDirectory)) {
                 if (!modifiedDirectories[fileDirectory]) {
                   modifiedDirectories[fileDirectory] = false;
-                }}
-              });
-              response.data.files.forEach(function(file_entry) {
-                dir_name = file_entry.filename.split("/")[0];
-                if (file_entry.filename.split("/")[1] == 'version.txt') {
-                    console.log("Modifying version" + dir_name );
-                      if  (file_entry.patch?.includes("+version=")) {
-                           modifiedDirectories[dir_name] = true;
-                       }
                 }
-              });
-              console.log(modifiedDirectories);
-              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-               if (isModified == false) {
-                core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
               }
             });
-            
+
+            response.data.files.forEach(function (file_entry) {
+              const dir_name = file_entry.filename.split("/")[0];
+              if (file_entry.filename.split("/")[1] == 'convoy-config.yaml') {
+                console.log("Modifying version in " + dir_name);
+                if (file_entry.patch?.includes("version:")) {
+                  modifiedDirectories[dir_name] = true;
+                }
+              }
+            });
+
+            console.log(modifiedDirectories);
+
+            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+              if (isModified == false) {
+                core.setFailed('The convoy-config.yaml file must be updated in ' + fileDirectory);
+              }
+            });
+
            
       - name: check for terraform (code)
         if : github.event_name == 'pull_request'
