@@ -283,24 +283,21 @@ jobs:
           python - <<EOF
           import os
 
+          def check_version_in_file(filename):
+              with open(filename, 'r') as f:
+                  content = f.read()
+                  return 'version:' in content
+          
           excluded_directories = ['.github', '.gitignore']
           modified_files = os.popen(f'git diff --name-only ${{ github.event.before }} ${{ github.sha }}').read().splitlines()
           modified_directories = {}
           
           for file in modified_files:
               directory = os.path.dirname(file)
-              if directory not in excluded_directories:
-                  modified_directories[directory] = False
-          
-          for file in modified_files:
-              directory = os.path.dirname(file)
               filename = os.path.basename(file)
-              if filename == 'convoy-config.yaml':
+              if filename == 'convoy-config.yaml' and directory not in excluded_directories:
                   print(f"Modifying version in {directory}")
-                  with open(file, 'r') as f:
-                      content = f.read()
-                      if 'version:' in content:
-                          modified_directories[directory] = True
+                  modified_directories[directory] = check_version_in_file(file)
           
           print(modified_directories)
           
@@ -309,7 +306,7 @@ jobs:
                   print(f"The convoy-config.yaml file must be updated in {directory}")
                   exit(1)
           EOF
-
+          
           # head_commit = "${{ github.sha }}"
           # base_commit = "${{ github.sha }}"
           # if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
