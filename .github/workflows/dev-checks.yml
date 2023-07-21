@@ -288,8 +288,11 @@ jobs:
                   content = f.read()
                   return 'version:' in content
           
+          base_commit = os.getenv("GITHUB_BASE_SHA")
+          head_commit = os.getenv("GITHUB_SHA")
+          
           excluded_directories = ['.github', '.gitignore']
-          modified_files = os.popen(f'git diff --name-only ${{ github.event.before }} ${{ github.sha }}').read().splitlines()
+          modified_files = os.popen(f'git diff --name-only {base_commit} {head_commit}').read().splitlines()
           modified_directories = {}
           
           for file in modified_files:
@@ -304,9 +307,12 @@ jobs:
           for directory, is_modified in modified_directories.items():
               if not is_modified:
                   print(f"The convoy-config.yaml file must be updated in {directory}")
+                  print(f"Files changed in {directory}:")
+                  files_changed = [file for file in modified_files if os.path.dirname(file) == directory]
+                  print("\n".join(files_changed))
                   exit(1)
           EOF
-          
+                    
           # head_commit = "${{ github.sha }}"
           # base_commit = "${{ github.sha }}"
           # if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
