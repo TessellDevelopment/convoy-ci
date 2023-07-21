@@ -271,102 +271,81 @@ jobs:
               if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
               }
-      # - name: Set up Python
-      #   if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
-      #   uses: actions/setup-python@v2
-      #   with:
-      #     python-version: 3.10.12
+      - name: Set up Python
+        if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.12
 
       - name: check for version in version.txt in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
-        uses: actions/github-script@v6.3.3
-        with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-          script: |
-            head_commit = "${{ github.sha }}"
-            base_commit = "${{ github.sha }}"
-            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-              base_commit = "${{ github.event.before }}"
-            }
-            if ( "${{ github.event_name }}" == 'pull_request') {
-              console.log("Using the base branch's commit for comparing.")
-              base_commit = "${{ github.event.pull_request.base.sha  }}"
-            }
-            console.log("base_commit " + base_commit);
-            console.log("head_commit " + head_commit); 
-            response = await github.rest.repos.compareCommits({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                head: head_commit,
-                base: base_commit
-            });
-            
-            const excludedDirectories = ['.github', '.gitignore'];
-            const modifiedFiles = response.data.files;
-            const modifiedDirectories = {};
-            
-            response.data.files.forEach(file => {
-              const fileDirectory = file.filename.split("/")[0];
-              if (!excludedDirectories.includes(fileDirectory)) {
-                if (!modifiedDirectories[fileDirectory]) {
-                  modifiedDirectories[fileDirectory] = false;
-                }
-              }
-            });
-            
-            response.data.files.forEach(function (file_entry) {
-              const dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] == 'convoy-config.yaml') {
-                console.log("Modifying version in " + dir_name);
-                if (file_entry.patch?.includes("version:")) {
-                  modifiedDirectories[dir_name] = true;
-                }
-              }
-            });
-            
-            console.log(modifiedDirectories);
-            
-            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-              if (isModified == false) {
-                core.setFailed('The convoy-config.yaml file must be updated in ' + fileDirectory);
-              }
-            });
-                    
+        run: |
+          import os
+          from github import Github
 
-      - name: check for terraform (code)
-        if : github.event_name == 'pull_request'
-        id: terraform_check
-        uses: actions/github-script@v6.3.3
-        with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-          script: |
-            head_commit = "${{ github.sha }}"
-            base_commit = "${{ github.sha }}"
-            if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-              base_commit = "${{ github.event.before }}"
-            }
-            if ( "${{ github.event_name }}" == 'pull_request') {
-              console.log("Using the base branch's commit for comparing.")
-              base_commit = "${{ github.event.pull_request.base.sha  }}"
-            }
-            console.log("base_commit " + base_commit);
-            console.log("head_commit " + head_commit); 
-            response = await github.rest.repos.compareCommits({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                head: head_commit,
-                base: base_commit
-            });
-            var terraform_file = [] 
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
-                console.log(file_entry.filename);
-                console.log(file_entry.status);
-                terraform_file.push(file_entry.filename)
-                console.log(terraform_file) ;
-              }
-            });
-            core.setOutput('terraform_file' , terraform_file.join(','));
+          # Define your GitHub token to access the repository
+          github_token = ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+
+          # Initialize the GitHub API
+          g = Github(github_token)
+          repo = g.get_repo(os.environ['GITHUB_REPOSITORY'])
+
+          # Get the base and head commits
+          event = os.environ['GITHUB_EVENT_NAME']
+          if event == 'pull_request':
+              base_commit = os.environ['GITHUB_BASE_REF']
+              head_commit = os.environ['GITHUB_HEAD_REF']
+          else:
+              base_commit = head_commit = os.environ['GITHUB_SHA']
+
+          # Compare the commits to get the modified files
+          response = repo.compare(base_commit, head_commit)
+          modified_files = response.files
+
+          excluded_directories = ['.github', '.gitignore']
+          modified_directories = {}
+
+          for file_entry in modified_files:
+              dir_name = file_entry.filename.split("/")[0]
+              if dir_name not in excluded_directories and file_entry.status != 'removed':
+                  if dir_name not in modified_directories:
+                      modified_directories[dir_name] = {
+                          'pullRequestVersionUpdated': False,
+                          'baseVersion': None
+                      }
+                  if file_entry.filename.endswith('convoy-config.yaml'):
+                      modified_directories[dir_name]['pullRequestVersionUpdated'] = True
+
+          print(modified_directories)
+
+          # Now, we compare the versions of "convoy-config.yaml" files in modified directories
+          def get_version_from_yaml(yaml_content):
+              import re
+              match = re.search(r'version:\s*([0-9]+\.[0-9]+\.[0-9]+)', yaml_content)
+              return match.group(1) if match else None
+
+          def compare_versions():
+              for dir_name, data in modified_directories.items():
+                  if data['pullRequestVersionUpdated']:
+                      try:
+                          base_branch_ref = repo.get_git_ref('heads/' + base_commit)
+                          base_branch_sha = base_branch_ref.object.sha
+                          base_content = repo.get_contents(f"{dir_name}/convoy-config.yaml", ref=base_branch_sha)
+                          base_content_str = base_content.decoded_content.decode('utf-8')
+                          base_version = get_version_from_yaml(base_content_str)
+                          modified_directories[dir_name]['baseVersion'] = base_version
+                      except Exception as e:
+                          print("Error while fetching base branch content:", e)
+
+              print(modified_directories)
+
+              for dir_name, data in modified_directories.items():
+                  if data['pullRequestVersionUpdated'] and data['baseVersion'] is not None:
+                      print(f"Directory: {dir_name}")
+                      print(f"Pull Request Branch Version: {get_version_from_yaml(convoy_config_content)}")
+                      print(f"Base Branch Version: {data['baseVersion']}")
+
+          compare_versions()
         
       - name: check for chart verison in chart.yaml 
         if : ${{ inputs.check_version_of_helm_chart == 'true' }}
