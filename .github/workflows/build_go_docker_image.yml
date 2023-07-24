@@ -1,247 +1,257 @@
 ---
-# This is a basic workflow to help you get started with Actions
-name: Tessell Pipelines Code Build
-
-# Controls when the workflow will run
-on:
-  workflow_call:
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: self-hosted
-    outputs:
-      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      DOCKERHUB_ORG: "tesselldev"
-      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-
-    steps:
-      - name: Get branch name
-        shell: bash
-        run: |
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-          echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Install dependencies
-        run: |
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          go install golang.org/x/tools/cmd/goimports@latest
-          
-      - name: Login to docker
-        uses: docker/login-action@v2.1.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}    
-     
-
-      - name: Make clients
-        run: |
-          echo "Building the service"
-          export PATH=${PATH}:$GOPATH/bin
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          ./setup -g -i
-          
-      
-      - name: tagging docker image with scan
-        run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-
-      - name: Docker image scan
-        id: docker-image-scan
-        uses: azure/container-scan@v0.1
-        with:
-          severity-threshold: CRITICAL
-          image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          trivy-version: "0.29.1"
-
-      - uses: actions/upload-artifact@v3
-        with:
-            name: image-scan-report
-            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+  # This is a basic workflow to help you get started with Actions
+  name: Tessell Pipelines Code Build
+  
+  # Controls when the workflow will run
+  on:
+    workflow_call:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+  
+  # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  jobs:
+    # This workflow contains a single job called "build"
+    build:
+      # The type of runner that the job will run on
+      runs-on: self-hosted
+      outputs:
+        mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+        mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+        mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+        DOCKERHUB_ORG: "tesselldev"
+        GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+        GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+  
+      steps:
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+            echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+  
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+  
+        - name: Install dependencies
+          run: |
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            go install golang.org/x/tools/cmd/goimports@latest
             
-      - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
-        id: find_commit
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-          script: |
-            if (${{ github.event_name  == 'workflow_dispatch'}} ){
-                core.setOutput('commit_id', "${{ github.sha }}" )
-            }
-            else{
-               core.setOutput('commit_id', "${{ github.event.after }}" )
-            }
-
-      - name: Get tags
-        uses: nick-fields/retry@v2.8.1
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          timeout_seconds: 10
-          max_attempts: 3
-          retry_on: error
-          command: |
-            git fetch --all
-            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
-            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
-            if [[ "$latest_tags" == '' ]]; then 
-              echo " Tag is Empty"
-              exit 1
-            fi
-            echo "Tag is present: $latest_tags"       
-            for tag in $latest_tags; do tag_arr+=($tag); done
-            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-
-      - name: Find latest tag
-        uses: actions/github-script@v6.3.3
-        id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-          script: |
-            console.log("Tags are " + "${{ env.TAGS }}")
-            latest_tag = '0.0.0'
-            // process multiple tags if any
-            tags = "${{ env.TAGS }}".split(' ')
-            if (tags.length == 1) {
-              console.log("There is only one tag. Using it." + tags[0])
-              latest_tag = tags[0]
-            } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "main") {
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("Checking tag " + tag)
-                  if (latest_tag == null) {
-                    latest_tag = tag
-                    continue
-                  }
-                  latest_parts = latest_tag.split(".")
-                  tag_parts = tag.split(".")
-                  for (i = 0; i < tag_parts.length; i++) {
-                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                      console.log("Skipping " + tag)
-                      break
-                    }
-                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                      latest_tag = tag
-                      console.log("Setting " + latest_tag)
-                      break
-                    }
-                  }
-                }
-              } else {
-                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
-                latest_tag = tag_base.join(".") + ".0"
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("branch - Checking tag " + tag)
-                  tag_parts = tag.split(".")
-                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                    latest_parts = latest_tag.split(".")
-                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
-                      latest_tag = tag
-                    }
-                  }
-                }
-              }
-            }
-            console.log("Latest tag: " + latest_tag)
-            // check if we have
-            if ( latest_tag == '' || latest_tag === undefined) {
-              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-              process.exit(1);
-            }
-            core.setOutput('tag_ref', latest_tag)
-
-      - name: Set Push repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        shell: bash
-        run: |
-          echo "DOCKERHUB_ORG_DEV=${{env.DOCKERHUB_ORG}}" >> $GITHUB_ENV
-          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-          
-          
-      - name: Docker Image tag and check for flyway
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          if [ -d "flyway" ]; then
-            echo "The 'flyway' directory exists in this repository."
-            DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
-            echo "DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration" >> $GITHUB_ENV
-            docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
-            echo "FLYWAY_PUSH_OUTPUT=success" >> $GITHUB_ENV
-          else
-            echo "The 'flyway' directory does not exists in this repository."
-          fi
-      
-      
-      - name: Sign and push docker image
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        uses: sudo-bot/action-docker-sign@latest
-        with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-      
-          
-      - name: sign and push flyway image to docker hub
-        if: ${{ env.FLYWAY_PUSH_OUTPUT == 'success' }}
-        uses: sudo-bot/action-docker-sign@latest
-        with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+        - name: Login to docker
+          uses: docker/login-action@v2.1.0
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}    
+       
+  
+        - name: Make clients
+          run: |
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            ./setup -g -i
             
-
-      - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-
-      - name: Get PR-Author,subject & body to send email
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        run: |
-          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
-      - name: sending output
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        id: mail_info
-        run: |
-          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
         
-  send-mail:
-    uses: ./.github/workflows/email_dc.yaml
-    needs: build
-    with:
-      subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
-      to: ${{ needs.build.outputs.mail_id_output }}
-    secrets: inherit
-    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
+        - name: tagging docker image with scan
+          run: |
+            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+  
+        - name: Docker image scan
+          id: docker-image-scan
+          uses: azure/container-scan@v0.1
+          with:
+            severity-threshold: CRITICAL
+            image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+            trivy-version: "0.29.1"
+  
+        - uses: actions/upload-artifact@v3
+          with:
+              name: image-scan-report
+              path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+              
+        - name: getting commit id for workflow_dispatch
+          uses: actions/github-script@v6.3.3
+          id: find_commit
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            script: |
+              if (${{ github.event_name  == 'workflow_dispatch'}} ){
+                  core.setOutput('commit_id', "${{ github.sha }}" )
+              }
+              else{
+                 core.setOutput('commit_id', "${{ github.event.after }}" )
+              }
+  
+        - name: Get tags
+          uses: nick-fields/retry@v2.8.1
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+            timeout_seconds: 10
+            max_attempts: 3
+            retry_on: error
+            command: |
+              git fetch --all
+              git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
+              latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
+              if [[ "$latest_tags" == '' ]]; then 
+                echo " Tag is Empty"
+                exit 1
+              fi
+              echo "Tag is present: $latest_tags"       
+              for tag in $latest_tags; do tag_arr+=($tag); done
+              echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+  
+        # - name: Find latest tag
+        #   uses: actions/github-script@v6.3.3
+        #   id: latest_tag
+        #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #   with:
+        #     github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+        #     script: |
+        #       console.log("Tags are " + "${{ env.TAGS }}")
+        #       latest_tag = '0.0.0'
+        #       // process multiple tags if any
+        #       tags = "${{ env.TAGS }}".split(' ')
+        #       if (tags.length == 1) {
+        #         console.log("There is only one tag. Using it." + tags[0])
+        #         latest_tag = tags[0]
+        #       } else {
+        #         if ("${{ env.SOURCE_BRANCH }}" == "main") {
+        #           for (i in tags) {
+        #             tag = tags[i]
+        #             console.log("Checking tag " + tag)
+        #             if (latest_tag == null) {
+        #               latest_tag = tag
+        #               continue
+        #             }
+        #             latest_parts = latest_tag.split(".")
+        #             tag_parts = tag.split(".")
+        #             for (i = 0; i < tag_parts.length; i++) {
+        #               if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+        #                 console.log("Skipping " + tag)
+        #                 break
+        #               }
+        #               if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+        #                 latest_tag = tag
+        #                 console.log("Setting " + latest_tag)
+        #                 break
+        #               }
+        #             }
+        #           }
+        #         } else {
+        #           tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+        #           latest_tag = tag_base.join(".") + ".0"
+        #           for (i in tags) {
+        #             tag = tags[i]
+        #             console.log("branch - Checking tag " + tag)
+        #             tag_parts = tag.split(".")
+        #             if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+        #               latest_parts = latest_tag.split(".")
+        #               if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+        #                 latest_tag = tag
+        #               }
+        #             }
+        #           }
+        #         }
+        #       }
+        #       console.log("Latest tag: " + latest_tag)
+        #       // check if we have
+        #       if ( latest_tag == '' || latest_tag === undefined) {
+        #         console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+        #         process.exit(1);
+        #       }
+        #       core.setOutput('tag_ref', latest_tag)
+  
+        - name: Find latest tag
+          id: latest_tag
+          uses: ./github-actions/find-latest-tags
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+              github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+              env-tags: ${{ env.TAGS }}
+              source-branch: ${{ env.SOURCE_BRANCH }}
+  
+        - name: Set Push repository
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          shell: bash
+          run: |
+            echo "DOCKERHUB_ORG_DEV=${{env.DOCKERHUB_ORG}}" >> $GITHUB_ENV
+            echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
             
+            
+        - name: Docker Image tag and check for flyway
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          run: |
+            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+            if [ -d "flyway" ]; then
+              echo "The 'flyway' directory exists in this repository."
+              DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+              echo "DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration" >> $GITHUB_ENV
+              docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
+              echo "FLYWAY_PUSH_OUTPUT=success" >> $GITHUB_ENV
+            else
+              echo "The 'flyway' directory does not exists in this repository."
+            fi
+        
+        
+        - name: Sign and push docker image
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          uses: sudo-bot/action-docker-sign@latest
+          with:
+            image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+            private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+            private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+            private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+        
+            
+        - name: sign and push flyway image to docker hub
+          if: ${{ env.FLYWAY_PUSH_OUTPUT == 'success' }}
+          uses: sudo-bot/action-docker-sign@latest
+          with:
+            image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+            private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+            private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+            private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+              
+  
+        - name: Slack Notification
+          uses: act10ns/slack@v1.5.0
+          if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+          with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+  
+        - name: Get PR-Author,subject & body to send email
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          run: |
+            echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+            echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+   
+        - name: sending output
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          id: mail_info
+          run: |
+            echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+            echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+            echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+          
+    send-mail:
+      uses: ./.github/workflows/email_dc.yaml
+      needs: build
+      with:
+        subject: ${{ needs.build.outputs.mail_subject_output }}
+        body: ${{ needs.build.outputs.mail_body_output }} 
+        to: ${{ needs.build.outputs.mail_id_output }}
+      secrets: inherit
+      if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+  
+              
+  
