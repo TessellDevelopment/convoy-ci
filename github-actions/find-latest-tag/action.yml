@@ -1,0 +1,19 @@
+---
+name: 'Find Latest Tag'
+description: 'Action for finding latest tag'
+inputs:
+  env-tags:
+    description: 'Existing tags'
+    required: true
+  source-branch:
+    description: 'Source Branch'
+    required: true
+  github-token:
+    description: 'Override for github token'
+    required: false
+outputs:
+  tag-ref:
+    description: 'Reference tag for latest tag'
+runs:
+  using: 'node12'
+  main: 'index.js'
