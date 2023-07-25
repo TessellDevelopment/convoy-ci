@@ -115,10 +115,6 @@ jobs:
             fi  
           fi
 
-      - name: Check for merge conflict in PR
-        run: |
-          if [ $(git grep -rln '^<<<<<<<|^>>>>>>>' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
-
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
@@ -159,8 +155,7 @@ jobs:
               dir_name = file_entry.filename.split("/")[0];
               console.log(file_entry.patch);
               if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
-                console.log("Merge Conflict in: " + dir_name );  
-                core.setFailed('Please resolve conflict in:' + file_entry.filename.split("/")[1]);
+                core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
               }
             });
             console.log("No merge conflicts found"); 
