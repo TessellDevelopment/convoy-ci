@@ -144,6 +144,10 @@ jobs:
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
               base_commit = "${{ github.event.before }}"
             }
+            if ( "${{ github.event_name }}" == 'pull_request') {
+              console.log("Using the base branch's commit for comparing.")
+              base_commit = "${{ github.event.pull_request.base.sha  }}"
+            }
             response = await github.rest.repos.compareCommits({
                 owner: "${{ github.repository_owner }}",
                 repo: "${{  github.repository }}".split('/')[1],
