@@ -13,8 +13,8 @@ inputs:
     required: true
     default: 'main'
   github-token:
-    description: 'Override for github token'
-    required: false
+    desctiption: 'Override for github token'
+    requiredd: false
     default: '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'
 outputs:
   job_status:
