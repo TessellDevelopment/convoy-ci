@@ -115,9 +115,9 @@ jobs:
             fi  
           fi
 
-      # - name: Check for merge conflict in PR
-      #   run: |
-      #     # if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
+      - name: Check for merge conflict in PR
+        run: |
+          if [ $(git grep -rln '^<<<<<<<|^>>>>>>>' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
 
       - name: import packages for json lint
         run: |
@@ -140,7 +140,6 @@ jobs:
       
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
-        if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -159,9 +158,9 @@ jobs:
               console.log(file_entry.filename);
               dir_name = file_entry.filename.split("/")[0];
               console.log(file_entry.patch);
-              if (file_entry.filename.split("/")[1] != 'dev-checks.yaml' && file_entry.patch.includes("+<<<<<<< HEAD")) {
-                console.log("Modifying version" + dir_name );  
-                core.setFailed('Merge conflict noticed, please resolve in:' + file_entry.filename.split("/")[1]);
+              if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
+                console.log("Merge Conflict in: " + dir_name );  
+                core.setFailed('Please resolve conflict in:' + file_entry.filename.split("/")[1]);
               }
             });
             console.log("No merge conflicts found"); 
