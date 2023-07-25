@@ -117,8 +117,34 @@ jobs:
 
       - name: Check for merge conflict in PR
         run: |
-          if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
-      
+          # if [ $(git grep -rln '<<<<<<< HEAD' -- ':(exclude)*dev-checks.yml') ]; then echo "Please resolve the merge conflict"; exit 1; else exit 0; fi
+          git checkout ${{ github.head_ref }}
+
+          # Get the list of changed files in the pull request
+          changed_files=$(git diff --name-only ${{ github.base_ref }}..${{ github.head_ref }})
+
+          # Check for merge conflicts in changed files
+          has_merge_conflict=false
+          for file in $changed_files; do
+              if grep -q "<<<<<<< HEAD" "$file"; then
+                  echo "Merge conflict found in $file:"
+                  grep -n "<<<<<<< HEAD" "$file"
+                  has_merge_conflict=true
+              fi
+          done
+
+          # If merge conflict found, exit with an error
+          if [ "$has_merge_conflict" = true ]; then
+              echo "Please resolve the merge conflict."
+              exit 1
+          fi
+
+          # Print the content of changed files in git log style
+          for file in $changed_files; do
+              echo "git log style for $file:"
+              git diff --color-words --no-prefix ${{ github.base_ref }} ${{ github.head_ref }} -- $file
+              echo ""
+          done
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
