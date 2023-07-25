@@ -12,8 +12,8 @@ inputs:
     description: 'Branch to create.'
     required: true
   github-token:
-    description: 'Override for github token'
-    required: false
+    desctiption: 'Override for github token'
+    requiredd: false
 outputs:
   job_status:
     description: 'Status of the branch status'
