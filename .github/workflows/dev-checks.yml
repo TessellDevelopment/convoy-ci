@@ -19,7 +19,7 @@ on:
         type: string
         default: 'true'
       check_branch_pr_format:
-        description: 'This is used to check branch name and PT title format'
+        description: 'This is used to check branch name and PR title format'
         required: false
         type: string
         default: 'true'
@@ -30,17 +30,17 @@ on:
         default: 'true'
       jira_id_source:
         description: 'This is used to specify the Jira ID source'
-        required: true
+        required: false
         type: string
         default: 'BRANCH'
       jira_match_type:
         description: 'This is used to specify to check both the sources or any or none'
-        required: true
+        required: false
         type: string
         default: 'ANY'    
       extract_valid_jira:
         description: 'This is used to extract Jira Ticket from Branch name or PR Title'
-        required: true
+        required: false
         type: string
         default: 'true'    
       check_valid_jira:
