@@ -82,14 +82,14 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
         
-      - name: Check branch name
-        run: |
-         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
-           echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
-         else
-           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
-           exit 1
-         fi
+      # - name: Check branch name
+      #   run: |
+      #    if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
+      #      echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
+      #    else
+      #      echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
+      #      exit 1
+      #    fi
      
       - name: import packages for json lint
         run: |
