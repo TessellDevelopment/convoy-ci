@@ -134,7 +134,7 @@ jobs:
               console.log(file_entry.filename);
               dir_name = file_entry.filename.split("/")[0];
               console.log(file_entry.patch);
-              if(file_entry.patch != "undefined"){
+              if(typeof file_entry.patch !== 'undefined'){
                 if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
                   core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
                 }
