@@ -38,7 +38,7 @@ on:
         required: false
         type: string
         default: 'true'
-      check_version_in_config_terraform_modules:
+      check_version_in_terraform_modules:
         description: 'This is used to check terraform modules directories version in convoy-config'
         required: false
         type: string
@@ -250,7 +250,7 @@ jobs:
               }
 
       - name: check for version in convoy-config.yaml in terraform modules repo
-        if:  ${{ inputs.check_version_in_config_terraform_modules == 'true' }}
+        if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
