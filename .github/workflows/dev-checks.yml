@@ -38,11 +38,6 @@ on:
         required: false
         type: string
         default: 'true'
-      check_version_in_terraform_modules:
-        description: 'This is used to check terraform modules directories version'
-        required: false
-        type: string
-        default: 'false'
       check_version_in_config_terraform_modules:
         description: 'This is used to check terraform modules directories version in convoy-config'
         required: false
