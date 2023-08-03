@@ -329,7 +329,7 @@ jobs:
             const excludedDirectories = ['.github','.gitignore'];
             const modifiedFiles = response.data.files;
             const modifiedDirectories = {};
-            # console.log(modifiedFiles);
+            console.log(modifiedFiles);
             response.data.files.forEach(file => {
               const fileDirectory = file.filename.split("/")[0];
               if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
@@ -337,8 +337,8 @@ jobs:
                 modifiedDirectories[fileDirectory] = false;
               }}
             });
-            # console.log(modifiedDirectories);
-            # console.log("Check");
+            console.log(modifiedDirectories);
+            console.log("Check");
             response.data.files.forEach(function(file_entry) {
               console.log(file_entry.filename);
               dir_name = file_entry.filename.split("/")[0];
