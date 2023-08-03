@@ -253,55 +253,6 @@ jobs:
               if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
               }
-            
-      # - name: check for version in version.txt in terraform modules repo
-      #   if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
-      #   uses: actions/github-script@v6.3.3
-      #   with:
-      #     github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-      #     script: |
-      #       head_commit = "${{ github.sha }}"
-      #       base_commit = "${{ github.sha }}"
-      #       if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-      #         base_commit = "${{ github.event.before }}"
-      #       }
-      #       if ( "${{ github.event_name }}" == 'pull_request') {
-      #         console.log("Using the base branch's commit for comparing.")
-      #         base_commit = "${{ github.event.pull_request.base.sha  }}"
-      #       }
-      #       console.log("base_commit " + base_commit);
-      #       console.log("head_commit " + head_commit); 
-      #       response = await github.rest.repos.compareCommits({
-      #           owner: "${{ github.repository_owner }}",
-      #           repo: "${{  github.repository }}".split('/')[1],
-      #           head: head_commit,
-      #           base: base_commit
-      #       });
-      #         const excludedDirectories = ['.github','.gitignore'];
-      #         const modifiedFiles = response.data.files;
-      #         const modifiedDirectories = {};
-      #         response.data.files.forEach(file => {
-      #           const fileDirectory = file.filename.split("/")[0];
-      #            if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
-      #           if (!modifiedDirectories[fileDirectory]) {
-      #             modifiedDirectories[fileDirectory] = false;
-      #           }}
-      #         });
-      #         response.data.files.forEach(function(file_entry) {
-      #           dir_name = file_entry.filename.split("/")[0];
-      #           if (file_entry.filename.split("/")[1] == 'version.txt') {
-      #               console.log("Modifying version" + dir_name );
-      #                 if  (file_entry.patch?.includes("+version=")) {
-      #                      modifiedDirectories[dir_name] = true;
-      #                  }
-      #           }
-      #         });
-      #         console.log(modifiedDirectories);
-      #         Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-      #          if (isModified == false) {
-      #           core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
-      #         }
-      #       });
 
       - name: check for version in convoy-config.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_config_terraform_modules == 'true' }}
@@ -329,7 +280,6 @@ jobs:
             const excludedDirectories = ['.github','.gitignore'];
             const modifiedFiles = response.data.files;
             const modifiedDirectories = {};
-            console.log(modifiedFiles);
             response.data.files.forEach(file => {
               const fileDirectory = file.filename.split("/")[0];
               if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
@@ -337,12 +287,8 @@ jobs:
                 modifiedDirectories[fileDirectory] = false;
               }}
             });
-            console.log(modifiedDirectories);
-            console.log("Check");
             response.data.files.forEach(function(file_entry) {
-              console.log(file_entry.filename);
               dir_name = file_entry.filename.split("/")[0];
-              console.log(file_entry.patch);
               if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("-version") && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
