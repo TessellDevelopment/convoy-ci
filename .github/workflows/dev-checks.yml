@@ -343,7 +343,7 @@ jobs:
               console.log(file_entry.filename);
               dir_name = file_entry.filename.split("/")[0];
               console.log(file_entry.patch);
-              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("-version") && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
               }
