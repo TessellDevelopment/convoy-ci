@@ -23,6 +23,10 @@ on:
         required: false
         type: string
         default: 'true'
+      check_double_commit:
+        description: 'This is used to check double commit in PR title'
+        required: false
+        type: boolean
       check_existing_branch_name:
         description: 'This is used to check whether same branch is existing or no'
         required: false
@@ -90,7 +94,14 @@ jobs:
            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
            exit 1
          fi
-     
+      - name: Check double commit
+        run: |
+          if contains(${{github.event.pull_request.head.ref}}, 'double_commit') && ("${{ github.event.pull_request.user.login }}" != "cipipeline" ); then
+            echo "Exclude Double commit in PR title and try again."
+            exit 1
+          else
+            echo "Clear"
+          fi
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
