@@ -96,8 +96,8 @@ jobs:
          fi
       - name: Check double commit
         run: |
-          if contains(${{github.event.pull_request.head.ref}}, 'double_commit') && ("${{ github.event.pull_request.user.login }}" != "cipipeline" ); then
-            echo "Exclude Double commit in PR title and try again."
+          if contains("${{github.event.pull_request.head.ref}}", 'double_commit') || contains("${{github.event.pull_request.title}}", 'Double Commit') && ("${{ github.event.pull_request.user.login }}" != "cipipeline" ); then
+            echo "Exclude Double commit in Branch, PR title and try again."
             exit 1
           else
             echo "Clear"
