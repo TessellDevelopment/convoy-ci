@@ -93,7 +93,7 @@ jobs:
               echo "building  ${DIR}"
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+              VERSION=$(yq .version convoy-config.yaml)
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
               terraform_build $PWD $ARTIFACT_FILE
             fi
@@ -114,7 +114,7 @@ jobs:
             if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+              VERSION=$(yq .version convoy-config.yaml)
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
               terraform_build $PWD $ARTIFACT_FILE
 

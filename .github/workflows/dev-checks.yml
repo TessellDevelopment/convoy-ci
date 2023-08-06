@@ -54,7 +54,7 @@ on:
         type: string
         default: 'true'
       check_version_in_terraform_modules:
-        description: 'This is used to check terraform modules directories version'
+        description: 'This is used to check terraform modules directories version in convoy-config'
         required: false
         type: string
         default: 'false'
@@ -302,8 +302,8 @@ jobs:
               if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
               }
-            
-      - name: check for version in version.txt in terraform modules repo
+
+      - name: check for version in convoy-config.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
         uses: actions/github-script@v6.3.3
         with:
@@ -326,33 +326,30 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.gitignore'];
-              const modifiedFiles = response.data.files;
-              const modifiedDirectories = {};
-              response.data.files.forEach(file => {
-                const fileDirectory = file.filename.split("/")[0];
-                 if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
-                if (!modifiedDirectories[fileDirectory]) {
-                  modifiedDirectories[fileDirectory] = false;
-                }}
-              });
-              response.data.files.forEach(function(file_entry) {
-                dir_name = file_entry.filename.split("/")[0];
-                if (file_entry.filename.split("/")[1] == 'version.txt') {
-                    console.log("Modifying version" + dir_name );
-                      if  (file_entry.patch?.includes("+version=")) {
-                           modifiedDirectories[dir_name] = true;
-                       }
-                }
-              });
-              console.log(modifiedDirectories);
-              Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
-               if (isModified == false) {
-                core.setFailed('Tessell Libraries must update the version in version.txt' + fileDirectory );
+            const excludedDirectories = ['.github','.gitignore'];
+            const modifiedFiles = response.data.files;
+            const modifiedDirectories = {};
+            response.data.files.forEach(file => {
+              const fileDirectory = file.filename.split("/")[0];
+              if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
+              if (!modifiedDirectories[fileDirectory]) {
+                modifiedDirectories[fileDirectory] = false;
+              }}
+            });
+            response.data.files.forEach(function(file_entry) {
+              dir_name = file_entry.filename.split("/")[0];
+              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("-version") && file_entry.patch.includes("+version")) {
+                console.log("Modifying version" + dir_name );  
+                modifiedDirectories[dir_name] = true;
               }
             });
-            
-           
+            console.log(modifiedDirectories);
+            Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
+              if (isModified == false) {
+                core.setFailed('Tessell Libraries must update the version in convoy-config.yaml :' + fileDirectory );
+              }
+            });
+
       - name: check for terraform (code)
         if : github.event_name == 'pull_request'
         id: terraform_check
