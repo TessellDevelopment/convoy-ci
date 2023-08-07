@@ -23,10 +23,6 @@ on:
         required: false
         type: string
         default: 'true'
-      check_double_commit:
-        description: 'This is used to check double commit in PR title'
-        required: false
-        type: boolean
       check_existing_branch_name:
         description: 'This is used to check whether same branch is existing or no'
         required: false
@@ -96,11 +92,11 @@ jobs:
          fi
       - name: Check double commit
         run: |
-          if ["${{ github.event.pull_request.user.login }}" != "cipipelinetessell" ] && [[ "${{ github.event.pull_request.head.ref }}" == *"double_commit"* ]] || [[ "${{ github.event.pull_request.title }}" == *"Double Commit"* ]]; then
-              echo "Exclude Double commit in Branch, PR title and try again."
+          if ["${{ github.event.pull_request.user.login }}" != "${{secrets.CIPIPELINE_USER_NAME}}" ] && [[ "${{ github.event.pull_request.head.ref }}" == *"double_commit"* ]] || [[ "${{ github.event.pull_request.title }}" == *"Double Commit"* ]]; then
+              echo "Exclude Double commit naming in Branch, PR title and try again."
               exit 1
           else
-            echo "Clear"
+            echo "No double commit conflicts found in Branch or PR title."
           fi
       - name: import packages for json lint
         run: |
