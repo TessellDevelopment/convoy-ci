@@ -18,11 +18,6 @@ on:
         required: false
         type: string
         default: 'true'
-      check_branch_pr_format:
-        description: 'This is used to check branch name and PR title format'
-        required: false
-        type: string
-        default: 'true'
       check_existing_branch_name:
         description: 'This is used to check whether same branch is existing or no'
         required: false
@@ -42,7 +37,7 @@ on:
         description: 'This is used to provide list of all the prefix required in the repo.'
         required: false
         type: string
-        default: 'TS|TDEVOPS|TOPS'  
+        default: 'TS|TDEVOPS|TOPS|revert'  
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not'
         required: false
@@ -97,24 +92,18 @@ jobs:
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
         
-      - name: Check branch and PR title format
-        if: ${{ inputs.check_branch_pr_format == 'true' }}
+      - name: Check Format and Extract Jira Ticket
+        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
+        id: extract
         run: |
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || ${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
-            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
-            exit 0
-          else
-            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
-            PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
-            PATTERN="^(TS|TDEVOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
-            if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
-              exit 1
-            else 
-              echo "PR Title is in the valid format."
-            fi  
-          fi
-          
+          extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}' '${{inputs.jira_project_names}}'
+
+      - name: Validate Jira Ticket
+        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
+        run: |
+          echo "${{steps.extract.outputs.jira_ticket}}"
+          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
+
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
@@ -438,18 +427,6 @@ jobs:
         run:
           terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
       
-      - name: Extract Jira Ticket
-        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
-        id: extract
-        run: |
-          extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}' '${{inputs.jira_project_names}}'
-
-      - name: Validate Jira Ticket
-        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
-        run: |
-          echo "${{steps.extract.outputs.jira_ticket}}"
-          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
-
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
         run: |
