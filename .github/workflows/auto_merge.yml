@@ -12,7 +12,7 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-    if: ${{ !contains(github.event.pull_request.head.ref, 'double_commit') && github.event.pull_request.user.login == 'cipipeline' }}
+    if: ${{ !contains(github.event.pull_request.head.ref, 'double_commit') && github.event.pull_request.user.login == 'cipipelinetessell' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
