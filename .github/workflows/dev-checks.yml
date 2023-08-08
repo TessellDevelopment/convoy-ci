@@ -90,7 +90,14 @@ jobs:
            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
            exit 1
          fi
-     
+      - name: Check double commit
+        run: |
+          if [[ "${{ github.event.pull_request.user.login }}" != "${{secrets.CIPIPELINE_USER_NAME}}" ]] && [[ "${{ github.event.pull_request.head.ref }}" == *"double_commit"* ]] || [[ "${{ github.event.pull_request.title }}" == *"Double Commit"* ]]; then
+              echo "Exclude Double commit naming in Branch, PR title and try again."
+              exit 1
+          else
+            echo "No double commit conflicts found in Branch or PR title."
+          fi
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
