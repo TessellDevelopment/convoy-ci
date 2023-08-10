@@ -6,6 +6,11 @@ name: Tessell Pipelines Code Build
 on:
   workflow_call:
     inputs:
+      makefile_service:
+        description: 'service to build in makefile'
+        required: false
+        type: string
+        default: 'service'
       exporter_config:
         description: 'dictonary input for oracle exporter'
         required: false
@@ -58,11 +63,12 @@ jobs:
           python3 -c """
           import json
           import os
-          exporter_name='${{ inputs.exporter_name }}'
+          exporter_name = '${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
+          service_name = '${{inputs.makefile_service}}'
           for os_type in exporter_config:
             print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
-            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+            exit_code = os.system(\"make {service} os={os_type} engine={engine}\".format(service=service_name, engine=exporter_config[os_type], os_type=os_type ))
             if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
           """      
