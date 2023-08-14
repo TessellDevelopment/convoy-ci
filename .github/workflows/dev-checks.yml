@@ -92,7 +92,7 @@ jobs:
          fi
       - name: Check double commit
         run: |
-          if ([[ "${{ github.event.pull_request.user.login }}" != "cipipelinetessell" ]]) && ([[ "${{ github.event.pull_request.head.ref }}" == *"double_commit"* ]] || [[ "${{ github.event.pull_request.title }}" == *"Double Commit"* ]]); then
+          if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ '${{ github.event.pull_request.head.ref }}' == *'double_commit'* ]] || [[ '${{ github.event.pull_request.title }}' == *'Double Commit'* ]]); then
               echo "Exclude Double commit naming in Branch, PR title and try again."
               exit 1
           else
