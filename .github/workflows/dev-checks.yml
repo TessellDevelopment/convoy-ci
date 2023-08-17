@@ -98,6 +98,8 @@ jobs:
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Extraction"
+            exit 0
+            fi
           extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}' '${{inputs.jira_project_names}}'
 
       - name: Validate Jira Ticket
@@ -105,6 +107,7 @@ jobs:
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
+            exit 0
             fi
           echo "${{steps.extract.outputs.jira_ticket}}"
           validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
