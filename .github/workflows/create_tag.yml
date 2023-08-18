@@ -19,6 +19,7 @@ jobs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      tag_ref_output: ${{ steps.mail_info.outputs.tag_ref }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -36,6 +37,7 @@ jobs:
 
       - name: Create tag and update ref
         uses: actions/github-script@v6.3.3
+        id: create_tag
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -123,8 +125,7 @@ jobs:
             });
 
             console.log('Ref updated.');
-            core.setOutput('tag_ref', fullTagName)
-
+            core.setOutput('tag_ref', fullTagName)          
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         with:
@@ -146,6 +147,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+          echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
@@ -156,3 +158,40 @@ jobs:
       to: ${{ needs.create-tag-on-merge.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+  post-convoy: 
+    runs-on: self-hosted
+    needs: create-tag-on-merge
+    steps:
+      - name: Update Convoy API
+        uses: nick-fields/retry@v2
+        env:
+          API_URL: "http://api.dev.convoy.tessell.cloud//devops/git-metadata/commits"
+          commit_hash: "${{github.sha}}"
+          repo: "${{github.repository}}"
+          tag: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
+          base_branch: "${{github.event.pull_request.base.ref}}"
+          commit_message: "${{github.event.id}}"
+          pr_id: "${{github.ref}}"
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+        with:
+          timeout_seconds: 10
+          max_attempts: 5
+          shell: bash
+          command: |
+            JSON_DATA="{ \"repoName\": \"$repo\", \"tag\": \"$tag\" , \"baseBranch\": \"$base_branch\" , \"commitHash\": \"$commit_hash\", \"pullRequestId\": \"$pr_id\", \"commitMessage\": \"$commit_message\"}"
+            RESPONSE=$(curl -X POST -H "Content-Type: application/json" -H "Authorization: Basic $github_token" -d "$JSON_DATA" "$API_URL")
+            if [ $? -eq 0 ]; then
+            echo "Response:"
+            echo "$RESPONSE"
+            HTTP_STATUS=$(echo "$RESPONSE" | awk '{print $2}')
+            if [[ $HTTP_STATUS == 2* ]]; then
+              echo "API request successful."
+            else
+              echo "API request failed with status code $HTTP_STATUS."
+              exit 1
+            fi
+            else
+              echo "Failed to make API request."
+              exit 1
+            fi
