@@ -176,21 +176,6 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
-                   (file_entry.status == 'modified' || file_entry.status == 'removed')) {
-                console.log(file_entry.filename);
-                console.log(file_entry.status);
-                core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
-              }
-            });
-            let path = "";
-            response.data.files.forEach(function(file_entry) {
-              if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                const lastSlashIndex = file_entry.filename.lastIndexOf("/");
-                path = file_entry.filename.substring(0, lastSlashIndex);
-              }
-            });
             const { Octokit } = require("@octokit/rest");
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
             const { data: existingFiles } = await octokit.repos.getContent({
@@ -198,8 +183,30 @@ jobs:
               repo: "${{  github.repository }}".split('/')[1],
               path: path,
             });
+
             console.log(existingFiles)
             const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
+            console.log(existing_versions)
+
+            response.data.files.forEach(function(file_entry) {
+              if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
+                   (file_entry.status == 'modified' || file_entry.status == 'removed')) {
+                console.log(file_entry.filename);
+                console.log(file_entry.status);
+                # If latest then allow otherwise fail
+                core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
+              }
+            });
+            let path = "";
+
+            response.data.files.forEach(function(file_entry) {
+              if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
+                const lastSlashIndex = file_entry.filename.lastIndexOf("/");
+                path = file_entry.filename.substring(0, lastSlashIndex);
+              }
+            });
+            
+
             response.data.files.forEach(function(file_entry){
             if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
                 console.log(existing_versions)
@@ -207,6 +214,7 @@ jobs:
                 console.log(version)
                 console.log(existing_versions)
                 if (existing_versions.includes(version) && file_entry.status != 'removed') {
+                  console.log(file_entry.status);
                   console.log(file_entry.filename);
                   core.setFailed(`Flyway file with version ${version} already exists`);
                 }
