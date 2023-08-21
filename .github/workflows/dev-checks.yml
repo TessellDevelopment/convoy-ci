@@ -472,11 +472,15 @@ jobs:
 
             execSync = require('child_process').execSync;
             const output=execSync(`
-                if [$NEXUS_REPO == "tessell-repos-m2-comoponent"] 
+                if [[ $NEXUS_REPO == "tessell-repos-m2-component" ]]; 
                 then
-                    file="$REPO/[^/]*/$version"
+                    file="$REPO/[^/]*/$VERSION"
+                elif [[ $NEXUS_REPO == "tessell-repos-helm-component" ]]; 
+                then
+                    file="$REPO-$VERSION.tgz"  
                 else
-                    file="$REPO/$version"                             
+                    file="$REPO-$VERSION-py3-none-any.whl"
+                fi
                 API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
                 echo $file
                 echo $API_URL
@@ -503,7 +507,6 @@ jobs:
                         echo "Pass"
                         exit 
                     fi
-                fi
             `, { encoding: 'utf-8' }); 
             if(output.match("Fail"))
               throw "Update version, matching version file already present in Nexus"
