@@ -457,7 +457,7 @@ jobs:
             console.log(path);
             
             var VERSION;
-            if("$VERSION_FILE" == "convoy-config.yaml" || "$VERSION_FILE" == "Chart.yaml"){
+            if("${{ENV.VERSION_FILE}}" == "convoy-config.yaml" || "${{ENV.VERSION_FILE}}" == "Chart.yaml"){
               const content = fs.readFileSync(path, 'utf8');
               const data = yaml.load(content);
               VERSION = data.version;
