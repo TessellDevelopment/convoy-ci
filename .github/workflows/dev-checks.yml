@@ -191,6 +191,7 @@ jobs:
                 path = file_entry.filename.substring(0, lastSlashIndex);
               }
             });
+            console.log(path);
             const { Octokit } = require("@octokit/rest");
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
             const { data: existingFiles } = await octokit.repos.getContent({
