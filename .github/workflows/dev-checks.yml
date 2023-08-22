@@ -441,7 +441,7 @@ jobs:
           NEXUS_REPO: ${{inputs.nexus_repository}}
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
-          REPO: ${{inputs.check_version_in_nexus}}
+          REPO: ${{inputs.nexus_exporter}}
           VERSION_FILE: ${{ENV.VERSION_FILE}}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
