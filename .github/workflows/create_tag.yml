@@ -166,7 +166,7 @@ jobs:
       - name: Update Convoy API
         uses: nick-fields/retry@v2
         env:
-          API_URL: "http://api.dev.convoy.tessell.cloud//devops/git-metadata/commits"
+          API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
           commit_hash: "${{github.sha}}"
           repo: "${{github.repository}}"
           tag: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
@@ -180,7 +180,8 @@ jobs:
           shell: bash
           command: |
             JSON_DATA="{ \"repoName\": \"$repo\", \"tag\": \"$tag\" , \"baseBranch\": \"$base_branch\" , \"commitHash\": \"$commit_hash\", \"pullRequestId\": \"$pr_id\", \"commitMessage\": \"$commit_message\"}"
-            RESPONSE=$(curl -X POST -H "Content-Type: application/json" -H "Authorization: Basic $github_token" -d "$JSON_DATA" "$API_URL")
+            TOKEN= `echo $github-token | base64`
+            RESPONSE=$(curl --location "$API_URL" --header 'Content-Type: application/json' --header 'Authorization: Basic $TOKEN' --data $JSON_DATA)
             if [ $? -eq 0 ]; then
             echo "Response:"
             echo "$RESPONSE"
