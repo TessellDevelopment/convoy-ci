@@ -48,7 +48,7 @@ on:
         required: false
         type: string
         default: 'false'
-      check_version_in_nexus:
+      nexus_exporter:
         description: 'This is used to get the exporter name used in nexus repository'
         required: false
         type: string
@@ -433,9 +433,9 @@ jobs:
               execSync = require('child_process').execSync(
                 `echo "VERSION_FILE=Chart.yaml" >> $GITHUB_ENV`);
 
-      - name: check for Verison in NEXUS 
+      - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
-        if: ${{ inputs.check_version_in_nexus != 'false' }}
+        if: ${{ inputs.nexus_exporter != 'false' }}
         env:
           NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/search?repository
           NEXUS_REPO: ${{inputs.nexus_repository}}
