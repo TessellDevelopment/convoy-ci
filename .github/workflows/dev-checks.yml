@@ -430,7 +430,8 @@ jobs:
               if (version_updated == false ) {
                 core.setFailed("Tessell Libraries must update the version in chart.yaml file")
               }
-            echo "VERSION_FILE=Chart.yaml" >> $GITHUB_ENV
+              execSync = require('child_process').execSync(
+                `echo "VERSION_FILE=Chart.yaml" >> $GITHUB_ENV`);
 
       - name: check for Verison in NEXUS 
         uses: actions/github-script@v6.3.3
