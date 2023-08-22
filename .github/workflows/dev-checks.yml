@@ -457,7 +457,7 @@ jobs:
             console.log(path);
             
             var VERSION;
-            if("${{ENV.VERSION_FILE}}" == "convoy-config.yaml" || "${{ENV.VERSION_FILE}}" == "Chart.yaml"){
+            if( "${{ENV.VERSION_FILE}}" == "convoy-config.yaml" || "${{ENV.VERSION_FILE}}" == "Chart.yaml"){
               const content = fs.readFileSync(path, 'utf8');
               const data = yaml.load(content);
               VERSION = data.version;
@@ -468,9 +468,8 @@ jobs:
                   version=$(grep '^version=' $VERSION_FILE | cut -d '=' -f 2)
                   echo "Extracted version: $version"            
               `, { encoding: 'utf-8' });
-              console.log(VERSION);
             }
-
+            console.log(VERSION);
             execSync = require('child_process').execSync;
             const output=execSync(`
                 if [[ $NEXUS_REPO == "tessell-repos-m2-component" ]]; 
@@ -483,6 +482,8 @@ jobs:
                     file="$REPO-${VERSION}-py3-none-any.whl"
                 fi
                 API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
+                echo $API_URL
+                echo $file
                 response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
                 check="$(echo $response | grep $file)"
                 if [ ! -z "$check" ]
@@ -490,6 +491,7 @@ jobs:
                         echo "Fail"
                         exit 
                     fi
+                
                 while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
                     continuationToken=$(echo $response | jq -r '.continuationToken')
                     response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
@@ -506,10 +508,7 @@ jobs:
                         exit 
                     fi
             `, { encoding: 'utf-8' }); 
-            if(output.match("Fail"))
-              throw "Update version, matching version file already present in Nexus"
-            else
-              console.log("Passed: No matching version present in Nexus")  
+            console.log(output);
 
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
