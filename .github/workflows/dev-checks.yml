@@ -472,10 +472,10 @@ jobs:
             console.log(VERSION);
             execSync = require('child_process').execSync;
             const output=execSync(`
-                if [[ $NEXUS_REPO == "tessell-repos-m2-component" ]]; 
+                if [ $NEXUS_REPO == "tessell-repos-m2-component" ]; 
                 then
                     file="$REPO/[^/]*/${VERSION}"
-                elif [[ $NEXUS_REPO == "tessell-repos-helm-component" ]]; 
+                elif [ $NEXUS_REPO == "tessell-repos-helm-component" ]; 
                 then
                     file="$REPO-${VERSION}.tgz"  
                 else
