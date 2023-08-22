@@ -264,7 +264,8 @@ jobs:
              if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in gradle.properties file")
              }
-             echo "VERSION_FILE=gradle.properties" >> $GITHUB_ENV
+             execSync = require('child_process').execSync(
+                `echo "VERSION_FILE=gradle.properties" >> $GITHUB_ENV`);
       
       - name: check for version in version_txt
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
