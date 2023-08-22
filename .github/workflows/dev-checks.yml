@@ -472,18 +472,16 @@ jobs:
             console.log(VERSION);
             execSync = require('child_process').execSync;
             const output=execSync(`
-                if [ $NEXUS_REPO == "tessell-repos-m2-component" ]; 
+                if [ $NEXUS_REPO = "tessell-repos-m2-component" ]; 
                 then
                     file="$REPO/[^/]*/${VERSION}"
-                elif [ $NEXUS_REPO == "tessell-repos-helm-component" ]; 
+                elif [ $NEXUS_REPO = "tessell-repos-helm-component" ]; 
                 then
                     file="$REPO-${VERSION}.tgz"  
                 else
                     file="$REPO-${VERSION}-py3-none-any.whl"
                 fi
                 API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
-                echo $API_URL
-                echo $file
                 response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
                 check="$(echo $response | grep $file)"
                 if [ ! -z "$check" ]
@@ -508,7 +506,11 @@ jobs:
                         exit 
                     fi
             `, { encoding: 'utf-8' }); 
-            console.log(output);
+            if(output.match("Fail"))
+              throw "Update version, matching version file already present in Nexus"
+            else
+              console.log("Passed: No matching version present in Nexus")  
+
 
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
