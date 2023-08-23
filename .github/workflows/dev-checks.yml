@@ -467,7 +467,7 @@ jobs:
               execSync =  require('child_process').execSync;
               VERSION = execSync(`
                   version=$(grep '^version=' $VERSION_FILE | cut -d '=' -f 2)
-                  echo "Extracted version: $version"            
+                  echo $version|tr -d '\n'          
               `, { encoding: 'utf-8' });
             }
             console.log(VERSION);
