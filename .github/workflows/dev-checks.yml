@@ -467,7 +467,7 @@ jobs:
             const output=execSync(`
                 if [ $NEXUS_REPO = "tessell-repos-m2-component" ]; 
                 then
-                    file="$EXPORTER-{VERSION}.jar"
+                    file="$EXPORTER-${VERSION}.jar"
                 elif [ $NEXUS_REPO = "tessell-repos-helm-component" ]; 
                 then
                     file="$EXPORTER-${VERSION}.tgz"  
