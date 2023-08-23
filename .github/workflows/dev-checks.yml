@@ -234,7 +234,6 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            // If pom.xml exists the m2 or if req.txt exist then py,use find content command
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
@@ -310,7 +309,6 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            // Uploads to m2-component
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
@@ -390,12 +388,6 @@ jobs:
       - name: check for chart verison in chart.yaml 
         if : ${{ inputs.check_version_of_helm_chart == 'true' }}
         uses: actions/github-script@v6.3.3
-        env:
-          NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/assets?repository
-          NEXUS_REPO: tessell-repos-helm-component
-          NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-          NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
-          REPO:  ${{github.event.pull_request.base.name}}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -436,13 +428,13 @@ jobs:
 
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
-        if: ${{ inputs.nexus_exporter != 'false' }}
+        if: ${{ inputs.nexus_repository != 'false' }}
         env:
           NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/search?repository
           NEXUS_REPO: ${{inputs.nexus_repository}}
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
-          REPO: ${{inputs.nexus_exporter}}
+          EXPORTER: ${{inputs.nexus_exporter}}
           VERSION_FILE: ${{ENV.VERSION_FILE}}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
@@ -475,12 +467,12 @@ jobs:
             const output=execSync(`
                 if [ $NEXUS_REPO = "tessell-repos-m2-component" ]; 
                 then
-                    file="$REPO/[^/]*/${VERSION}"
+                    file="$EXPORTER-{VERSION}.jar"
                 elif [ $NEXUS_REPO = "tessell-repos-helm-component" ]; 
                 then
-                    file="$REPO-${VERSION}.tgz"  
+                    file="$EXPORTER-${VERSION}.tgz"  
                 else
-                    file="$REPO-${VERSION}-py3-none-any.whl"
+                    file="$EXPORTER-${VERSION}-py3-none-any.whl"
                 fi
                 API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
                 echo $API_URL
