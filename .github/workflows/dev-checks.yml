@@ -272,7 +272,6 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            // same as gradle
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
