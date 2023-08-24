@@ -1,11 +1,7 @@
 ---
 name: Auto Merge Double Commit PRs
 on:
-  pull_request:
-    types: [ opened, synchronize ]
-    branches:
-      - 'main'
-      - 'rel-*'
+  workflow_call:
 
 jobs:
   auto-merge:
