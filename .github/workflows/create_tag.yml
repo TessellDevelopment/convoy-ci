@@ -163,8 +163,18 @@ jobs:
     runs-on: self-hosted
     needs: create-tag-on-merge
     steps:
-      - name: Update Convoy API
-        uses: nick-fields/retry@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml
+
+      - name: Run Python script
         env:
           API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
           commit_hash: "${{github.sha}}"
@@ -173,26 +183,141 @@ jobs:
           base_branch: "${{github.event.pull_request.base.ref}}"
           commit_message: "${{github.event.id}}"
           pr_id: "${{github.ref}}"
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-        with:
-          timeout_seconds: 10
-          max_attempts: 5
-          shell: bash
-          command: |
-            JSON_DATA="{ \"repoName\": \"$repo\", \"tag\": \"$tag\" , \"baseBranch\": \"$base_branch\" , \"commitHash\": \"$commit_hash\", \"pullRequestId\": \"$pr_id\", \"commitMessage\": \"$commit_message\"}"
-            TOKEN= `echo $github-token | base64`
-            RESPONSE=$(curl --location "$API_URL" --header 'Content-Type: application/json' --header 'Authorization: Basic $TOKEN' --data $JSON_DATA)
-            if [ $? -eq 0 ]; then
-            echo "Response:"
-            echo "$RESPONSE"
-            HTTP_STATUS=$(echo "$RESPONSE" | awk '{print $2}')
-            if [[ $HTTP_STATUS == 2* ]]; then
-              echo "API request successful."
-            else
-              echo "API request failed with status code $HTTP_STATUS."
-              exit 1
-            fi
-            else
-              echo "Failed to make API request."
-              exit 1
-            fi
+          github_token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+        run: |
+          python - <<EOF
+          
+          import yaml
+          import requests
+          import os
+          import time
+
+          def exclude_keys(data, keys_to_exclude):
+            return {key: value for key, value in data.items() if key not in keys_to_exclude}
+
+          API_URL = os.environ.get('API_URL')
+          github_token = os.environ.get('github_token')
+          repo = os.environ.get('repo')
+          commit_hash = os.environ.get('commit_hash')
+          commit_message = os.environ.get('commit_message')
+          base_branch = os.environ.get('base_branch')
+          pr_id = os.environ.get('pr_id')
+          tag = os.environ.get('tag')
+          
+          with open('convoy.yaml', 'r') as convoy_content:
+              yaml_data = yaml.safe_load(convoy_content)
+          type = yaml_data.get('artifactType') 
+          payload={}
+
+          if type == 'dockerImage':
+            payload = {
+              "repoName": repo,
+              "commitHash": commit_hash,
+              "commitMessage": commit_message,
+              "baseBranch": base_branch,
+              "tag": tag,
+              "pullRequestId": pr_id,
+              "artifactMetadata": {
+                "type": type,
+                "version": tag,
+              }
+            }
+          elif type == 'helmChart':
+            version_path = yaml_data.get('version')
+            with open(version_path, 'r') as helm_content:
+              data = yaml.safe_load(helm_content)
+            version = data.get('version') 
+            payload = {
+              "repoName": repo,
+              "commitHash": commit_hash,
+              "commitMessage": commit_message,
+              "baseBranch": base_branch,
+              "tag": tag,
+              "pullRequestId": pr_id,
+              "artifactMetadata": {
+                "type": type,
+                "version": version,
+              }
+            }
+          elif type == 'zip':
+            keys_to_exclude = ['artifactType', 'version']
+            convoy_content = exclude_keys(yaml_data, keys_to_exclude)
+            version = yaml_data.get('version')
+            if version == None:
+              version=tag
+            payload = {
+              "repoName": repo,
+              "commitHash": commit_hash,
+              "commitMessage": commit_message,
+              "baseBranch": base_branch,
+              "tag": tag,
+              "pullRequestId": pr_id,
+              "artifactMetadata": {
+                "type": type,
+                "version": version,
+                "convoyConfig": convoy_content
+              }
+            }
+          elif type == 'nested':
+            artifacts=[]
+            headers = {'Authorization': f'Bearer {github_token}'}
+            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{pr_id}/files'
+            res = requests.get(url, headers=headers)
+            files_data = res.json()
+
+            modified_folders = set()
+            for file_data in files_data:
+                file_path = file_data['filename']
+                folder_path = '/'.join(file_path.split('/')[:-1])  
+                modified_folders.add(folder_path)
+
+            print("Modified folders:")
+            for folder in modified_folders:
+                print(folder)
+                path = f'./{folder}/convoy.yaml'
+                with open(path, 'r') as module_content:
+                  module_data = yaml.safe_load(module_content)
+                data = {
+                  "name": folder,
+                  "convoyConfig": module_data
+                } 
+                artifacts.append(data) 
+
+            payload = {
+              "repoName": repo,
+              "commitHash": commit_hash,
+              "commitMessage": commit_message,
+              "baseBranch": base_branch,
+              "tag": tag,
+              "pullRequestId": pr_id,
+              "artifactMetadata": {
+                "type": type,
+                "artifacts": artifacts
+              }
+            }
+          else:
+            print("Invalid Type in Convoy.yaml")
+            
+          headers = {
+              'Authorization': f'Bearer {github_token}',
+              'Content-Type': 'application/json'
+          }
+
+          max_retries = 3
+          retry_delay = 5 
+
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
