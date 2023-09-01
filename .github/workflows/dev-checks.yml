@@ -223,7 +223,7 @@ jobs:
               'Authorization': f'Bearer {GITHUB_TOKEN}',
               'Content-Type': 'application/json'
           }
-
+          print(payload)
           max_retries = 3
           retry_delay = 5 
 

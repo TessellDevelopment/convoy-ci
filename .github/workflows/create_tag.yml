@@ -163,7 +163,7 @@ jobs:
     runs-on: self-hosted
     needs: create-tag-on-merge
     steps:
-      
+
       - name: Set up Python
         uses: actions/setup-python@v2
 
@@ -176,7 +176,7 @@ jobs:
         env:
           API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
-          REPO: "${{github.repository}}"
+          REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           COMMIT_MESSAGE: "${{github.event.pull_request.body}}"
@@ -270,7 +270,7 @@ jobs:
               'Authorization': f'Bearer {GITHUB_TOKEN}',
               'Content-Type': 'application/json'
           }
-
+          print(payload)
           max_retries = 3
           retry_delay = 5 
 
