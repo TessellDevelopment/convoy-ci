@@ -246,7 +246,7 @@ jobs:
           elif type == 'nested':
             artifacts = []
             headers = {'Authorization': f'Bearer {TF_TOKEN}'}
-            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{pr_id}/files'
+            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{PR_ID}/files'
             res = requests.get(url, headers=headers)
             files_data = res.json()
 
