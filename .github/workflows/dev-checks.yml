@@ -125,7 +125,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pyyaml pybase64
 
-      - name: Run Python script
+      - name: POST API to Convoy
         env:
           API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
@@ -195,7 +195,7 @@ jobs:
           elif type == 'nested':
             artifacts = []
             headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{pr_id}/files'
+            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{PR_ID}/files'
             res = requests.get(url, headers=headers)
             files_data = res.json()
 
@@ -233,10 +233,6 @@ jobs:
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
-                  print(response.status_code)
-                  print(response.text)
-                  break
-              elif response.status_code == 500:
                   print(response.status_code)
                   print(response.text)
                   break
