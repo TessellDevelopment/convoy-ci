@@ -196,6 +196,7 @@ jobs:
             return {key: value for key, value in data.items() if key not in keys_to_exclude}
 
           API_URL = os.environ.get('API_URL')
+          TF_TOKEN=os.environ.get('GITHUB_TOKEN')
           GITHUB_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
@@ -244,7 +245,7 @@ jobs:
             artifactMetadata["convoyConfig"] = convoy_content
           elif type == 'nested':
             artifacts = []
-            headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
+            headers = {'Authorization': f'Bearer {TF_TOKEN}'}
             url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{pr_id}/files'
             res = requests.get(url, headers=headers)
             files_data = res.json()
