@@ -132,7 +132,7 @@ jobs:
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "0.1.0"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          COMMIT_MESSAGE: "${{github.event.pull_request.body}}"
+          COMMIT_MESSAGE: "${{ github.event.pull_request.title }}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -158,10 +158,13 @@ jobs:
           TAG = os.environ.get('TAG')
           
           GITHUB_TOKEN = base64.b64encode(GITHUB_TOKEN.encode('utf-8')).decode('utf-8')
-          with open('convoy.yaml', 'r') as convoy_content:
-              yaml_data = yaml.safe_load(convoy_content)
+          try:
+            with open('convoy.yaml', 'r') as yaml_file:
+                yaml_data = yaml.safe_load(yaml_file)
+          except FileNotFoundError:
+              print(f"YAML file not found. Skipping this step.")
+              exit(0)
           type = yaml_data.get('artifactType') 
-
           payload = { "repoName": REPO,
                     "commitHash": COMMIT_HASH,
                     "commitMessage": COMMIT_MESSAGE,
@@ -233,7 +236,12 @@ jobs:
                   print(response.status_code)
                   print(response.text)
                   break
+              elif response.status_code == 500:
+                  print(response.status_code)
+                  print(response.text)
+                  break
               else:
+                  print(response.status_code)
                   print(response.text)
                   print(f"Retrying... ({max_retries - _} attempts left)")
                   time.sleep(retry_delay)

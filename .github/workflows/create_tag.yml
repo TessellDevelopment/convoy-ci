@@ -208,7 +208,13 @@ jobs:
           with open('convoy.yaml', 'r') as convoy_content:
               yaml_data = yaml.safe_load(convoy_content)
           type = yaml_data.get('artifactType') 
-
+          try:
+            with open('convoy.yaml', 'r') as yaml_file:
+                yaml_data = yaml.safe_load(yaml_file)
+          except FileNotFoundError:
+              print(f"YAML file not found. Skipping this step.")
+              exit(0)
+          type = yaml_data.get('artifactType') 
           payload = { "repoName": REPO,
                     "commitHash": COMMIT_HASH,
                     "commitMessage": COMMIT_MESSAGE,
@@ -280,7 +286,12 @@ jobs:
                   print(response.status_code)
                   print(response.text)
                   break
+              elif response.status_code == 500:
+                print(response.status_code)
+                print(response.text)
+                break
               else:
+                  print(response.status_code)
                   print(response.text)
                   print(f"Retrying... ({max_retries - _} attempts left)")
                   time.sleep(retry_delay)
