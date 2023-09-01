@@ -116,7 +116,7 @@ jobs:
       - name: install node fetch 
         run: | 
           npm install node-fetch
-          
+
       - name: Set up Python
         uses: actions/setup-python@v2
 
@@ -129,7 +129,7 @@ jobs:
         env:
           API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
-          REPO: "${{github.repository}}"
+          REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "0.1.0"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           COMMIT_MESSAGE: "${{github.event.pull_request.body}}"
