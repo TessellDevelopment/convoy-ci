@@ -163,6 +163,9 @@ jobs:
     runs-on: self-hosted
     needs: create-tag-on-merge
     steps:
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
 
       - name: Install dependencies
         run: |

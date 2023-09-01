@@ -116,6 +116,9 @@ jobs:
       - name: install node fetch 
         run: | 
           npm install node-fetch
+          
+      - name: Set up Python
+        uses: actions/setup-python@v2
 
       - name: Install dependencies
         run: |
