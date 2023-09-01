@@ -198,7 +198,7 @@ jobs:
             url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{PR_ID}/files'
             res = requests.get(url, headers=headers)
             files_data = res.json()
-
+            print(files_data)
             modified_folders = set()
             for file_data in files_data:
                 file_path = file_data['filename']
