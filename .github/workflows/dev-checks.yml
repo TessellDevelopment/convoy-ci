@@ -174,7 +174,7 @@ jobs:
             artifactMetadata["type"] = type
             artifactMetadata["version"] = TAG
           elif type == 'helmChart':
-            version_path = yaml_data.get('version')
+            version_path = yaml_data.get('chartPath')
             with open(version_path, 'r') as helm_content:
               data = yaml.safe_load(helm_content)
             version = data.get('version') 
