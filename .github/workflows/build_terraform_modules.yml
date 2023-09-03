@@ -41,7 +41,21 @@ jobs:
           pwd
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "REPO_NAME=$(git ls-remote --get-url | xargs basename -s .git)" >> $GITHUB_ENV
-          
+          - name: Install AWS CLI
+          run: |
+            curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+            chmod +x install-aws.sh
+            ./install-aws.sh "v2" "amd64"
+            rm install-aws.sh  
+  
+      - run: aws --version  
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+
       - name: finding the modified dir's
         id: modified_dir
         uses: actions/github-script@v6.3.3
@@ -125,6 +139,8 @@ jobs:
                 -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
                 -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
 
+              #s3 Upload    
+              aws s3 cp ${ARTIFACT_FILE} s3://tessell-terraform-modules/terls/${DIR}/${VERSION}/
             fi
           done
 

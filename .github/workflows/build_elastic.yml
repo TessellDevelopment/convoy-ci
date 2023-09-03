@@ -55,6 +55,20 @@ jobs:
           git clone https://github.com/magefile/mage
           cd mage
           go run bootstrap.go
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh  
+
+      - run: aws --version  
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
 
       - name: Make clients
         run: |
@@ -181,6 +195,7 @@ jobs:
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
+            VERSION=${{ steps.latest_tag.outputs.tag_ref }}  
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
@@ -197,7 +212,11 @@ jobs:
               -DgeneratePom=true -Dpackaging=tar.gz \
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
-              
+
+            #s3 Upload    
+            aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-windows/${VERSION}/
+            aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-linux/${VERSION}/
+
               
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
