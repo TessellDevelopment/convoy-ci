@@ -59,8 +59,8 @@ jobs:
           export PYTHONPATH=lib
           export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-          $INSTALL_DIR/openapitools/openapi-generator-cli version
-          $INSTALL_DIR/openapitools/openapi-generator-cli help
+          /usr/local/bin/openapitools/openapi-generator-cli version
+          /usr/local/bin/openapitools/openapi-generator-cli help
           cp configs/qarel.json config.json
           make clients -B
 
