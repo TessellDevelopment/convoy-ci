@@ -47,7 +47,7 @@ jobs:
           curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
           sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
           sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
-          sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+          sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator-cli
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
           sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
           sudo python3 -m pip install -r scripts/requirements.txt
