@@ -36,9 +36,12 @@ jobs:
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v6.3.3
+        env: 
+          PR_TITLE: ${{github.event.pull_request.title}}
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
+            const prTitle = process.env.PR_TITLE
             // Get base branch minor version of the PR
             const prBaseBranch = "${{ github.event.pull_request.base.ref }}"
             const prBaseBranchMinVer = prBaseBranch.split('.')[1]
@@ -52,7 +55,7 @@ jobs:
             }
 
             // check if NODC is set
-            if ("${{ github.event.pull_request.title }}".endsWith('::NODC::') || "${{ github.event.pull_request.title }}".startsWith('::NODC::')) {
+            if (prTitle.endsWith('::NODC::') || prTitle.startsWith('::NODC::')) {
               console.log("NODC set, aborting..");
               process.exit(0);
             }
@@ -168,9 +171,10 @@ jobs:
               console.log("stdout: " + result.stdout);
               console.log("stderr: " + result.stderr);
               // create pull request
+              dcTitle = `Double Commit: ${prTitle}`
               pullCreateResponse = await github.rest.pulls.create({
                   owner: "${{ github.repository_owner }}",
-                  title: "Double Commit: " + "${{ github.event.pull_request.title }}",
+                  title: dcTitle,
                   repo: "${{  github.repository }}".split('/')[1],
                   head: prBranchName,
                   base: dstBranch
