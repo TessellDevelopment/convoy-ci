@@ -131,6 +131,142 @@ jobs:
       - name: Install dependencies
         run: npm install js-yaml
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml pybase64
+
+      - name: POST API to Convoy
+        env:
+          API_URL: https://api.dev.convoy.tessell.cloud/devops/git-metadata/commits
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.event.pull_request.base.repo.name}}"
+          TAG: "0.1.0"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          COMMIT_MESSAGE: "${{github.event.pull_request.body}}"
+          PR_ID: "${{github.event.number}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+        run: |
+          python - <<EOF
+          
+          import yaml
+          import requests
+          import os
+          import time
+          import base64
+
+          def exclude_keys(data, keys_to_exclude):
+            return {key: value for key, value in data.items() if key not in keys_to_exclude}
+
+          API_URL = os.environ.get('API_URL')
+          TF_TOKEN=os.environ.get('GITHUB_TOKEN')
+          GITHUB_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          COMMIT_MESSAGE = os.environ.get('COMMIT_MESSAGE')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          PR_ID = os.environ.get('PR_ID')
+          TAG = os.environ.get('TAG')
+          
+          GITHUB_TOKEN = base64.b64encode(GITHUB_TOKEN.encode('utf-8')).decode('utf-8')
+          with open('convoy.yaml', 'r') as convoy_content:
+              yaml_data = yaml.safe_load(convoy_content)
+          type = yaml_data.get('artifactType') 
+          try:
+            with open('convoy.yaml', 'r') as yaml_file:
+                yaml_data = yaml.safe_load(yaml_file)
+          except FileNotFoundError:
+              print(f"YAML file not found. Skipping this step.")
+              exit(0)
+          type = yaml_data.get('artifactType') 
+          payload = { "repoName": REPO,
+                    "commitHash": COMMIT_HASH,
+                    "commitMessage": COMMIT_MESSAGE,
+                    "baseBranch": BASE_BRANCH,
+                    "tag": TAG,
+                    "pullRequestId": PR_ID,
+                    }
+          artifactMetadata = {}
+          if type == 'dockerImage':
+            artifactMetadata["type"] = type
+            artifactMetadata["version"] = TAG
+          elif type == 'helmChart':
+            version_path = yaml_data.get('chartPath')
+            with open(version_path, 'r') as helm_content:
+              data = yaml.safe_load(helm_content)
+            version = data.get('version') 
+            artifactMetadata["type"] = type
+            artifactMetadata["version"] = version
+          elif type == 'zip':
+            keys_to_exclude = ['artifactType', 'version']
+            convoy_content = exclude_keys(yaml_data, keys_to_exclude)
+            version = yaml_data.get('version')
+            if version == None:
+              version = TAG
+            artifactMetadata["type"] = type
+            artifactMetadata["version"] = version
+            artifactMetadata["convoyConfig"] = convoy_content
+          elif type == 'nested':
+            artifacts = []
+            headers = {'Authorization': f'Bearer {TF_TOKEN}'}
+            url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{PR_ID}/files'
+            res = requests.get(url, headers=headers)
+            files_data = res.json()
+
+            modified_folders = set()
+            for file_data in files_data:
+                file_path = file_data['filename']
+                folder_path = '/'.join(file_path.split('/')[:-1])  
+                modified_folders.add(folder_path)
+
+            print("Modified folders:")
+            for folder in modified_folders:
+                print(folder)
+                if '.github' in folder:
+                  continue
+                path = f'./{folder}/convoy.yaml'
+                with open(path, 'r') as module_content:
+                  module_data = yaml.safe_load(module_content)
+                data = {
+                  "name": folder,
+                  "convoyConfig": module_data
+                } 
+                artifacts.append(data) 
+            artifactMetadata["type"] = type
+            artifactMetadata["artifacts"] = artifacts
+          else:
+            print("Invalid Type in Convoy.yaml")
+          
+          payload["artifactMetadata"] = artifactMetadata 
+          headers = {
+              'Authorization': f'Bearer {GITHUB_TOKEN}',
+              'Content-Type': 'application/json'
+          }
+          print(payload)
+          max_retries = 3
+          retry_delay = 5 
+
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200 or 409:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
+
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
         with:
