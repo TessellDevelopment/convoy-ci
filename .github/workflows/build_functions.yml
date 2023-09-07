@@ -36,21 +36,6 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh  
-
-      - run: aws --version  
-        shell: bash
-
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-
       - name: create tar file 
         run: |
           cd tessell;
@@ -160,7 +145,6 @@ jobs:
       - name: steps to upload tar files to nexus 
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          VERSION=${{ steps.latest_tag.outputs.tag_ref }}  
           for OS in ${OS_NAMES[@]} ;do
            for CLOUD in ${CLOUD_NAMES[@]}; do
               mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
