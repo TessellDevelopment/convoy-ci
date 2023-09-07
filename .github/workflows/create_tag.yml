@@ -285,7 +285,7 @@ jobs:
 
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
-              if response.status_code == 200 or 409:
+              if response.status_code == 200 or response.status_code == 409:
                   print(response.status_code)
                   print(response.text)
                   break

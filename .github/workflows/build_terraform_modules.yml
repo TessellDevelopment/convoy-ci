@@ -138,9 +138,6 @@ jobs:
                 -DgeneratePom=true -Dpackaging=zip \
                 -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
                 -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
-
-              #s3 Upload    
-              aws s3 cp ${ARTIFACT_FILE} s3://tessell-terraform-modules/terls/${DIR}/${VERSION}/
             fi
           done
 
