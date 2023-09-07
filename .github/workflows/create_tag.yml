@@ -258,9 +258,9 @@ jobs:
 
             print("Modified folders:")
             for folder in modified_folders:
-                print(folder)
-                if '.github' in folder:
+                if '.github' in folder or len(folder) == 0:
                   continue
+                print(folder)  
                 path = f'./{folder}/convoy.yaml'
                 with open(path, 'r') as module_content:
                   module_data = yaml.safe_load(module_content)
