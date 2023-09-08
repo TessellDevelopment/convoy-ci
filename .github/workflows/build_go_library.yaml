@@ -21,10 +21,31 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  file-check:
+    runs-on: self-hosted
+    outputs:
+      specific: ${{steps.check-file-output.outputs.specific}}
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+      - name: Changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            .github/**
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
+    if: needs.file-check.outputs.specific == 'false' 
     runs-on: self-hosted
+    needs: file-check
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}

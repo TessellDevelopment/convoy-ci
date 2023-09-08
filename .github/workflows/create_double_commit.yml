@@ -13,9 +13,29 @@ on:
   workflow_call:
 
 jobs:
-  create-pr-for-double-merge:
-    if: github.event.pull_request.merged == true
+  file-check:
     runs-on: self-hosted
+    outputs:
+      specific: ${{steps.check-file-output.outputs.specific}}
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+      - name: Changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            .github/**
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
+  create-pr-for-double-merge:
+    if: github.event.pull_request.merged == true && needs.file-check.outputs.specific == 'false'
+    runs-on: self-hosted
+    needs: file-check
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
