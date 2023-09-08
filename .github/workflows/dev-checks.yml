@@ -69,21 +69,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 
-
       - name: Changed files
         id: changed-files-specific
         uses: tj-actions/changed-files@v39
         with:
           files: |
             .github/**
-
       - name: Set Output
         id: check-file-output
         run: |
           echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
 
   dev-checks:
-    if: ${{ needs.file-check.outputs.specific == 'true' }}
+    if: needs.file-check.outputs.specific == 'false' 
     runs-on: self-hosted
     needs: file-check
     outputs: 
