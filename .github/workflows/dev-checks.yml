@@ -438,8 +438,13 @@ jobs:
                 else{
                   VERSION = data.version;
                 }
-                NEXUS_REPO = data.nexusRepository;
-                EXPORTER = data.nexusExporter;
+                nexusUrl = data.nexusUrl;
+                if(nexusUrl != undefined){
+                  const parts = nexusUrl.split('/');
+                  NEXUS_REPO = parts[4];
+                }
+                artifacts = data.artifactName;
+                EXPORTER = artifacts[0];
                 if(VERSION === undefined || NEXUS_REPO === undefined || EXPORTER === undefined ){
                   console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                   process.exit(0);
