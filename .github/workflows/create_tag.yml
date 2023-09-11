@@ -125,7 +125,7 @@ jobs:
             });
 
             console.log('Ref updated.');
-            core.setOutput('tag_ref', fullTagName)  
+            core.setOutput('tag_ref', new_tag)  
 
       - name: Tag Output
         id: tag_output
