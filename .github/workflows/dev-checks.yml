@@ -81,6 +81,10 @@ jobs:
         if: ${{inputs.check_valid_jira == 'true'}}
         id: extract
         run: |
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+              echo "Revert branch, skipping Jira Extraction"
+              exit 0
+          fi
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || ${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
             echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
           else
@@ -94,14 +98,10 @@ jobs:
               echo "PR Title is in the valid format."
             fi  
           fi
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-            echo "Revert branch, skipping Jira Extraction"
-            exit 0
-          fi
           pip install shyaml
           jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
           jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
-          extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "jira_match"
+          extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
         if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
