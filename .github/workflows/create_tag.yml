@@ -215,7 +215,7 @@ jobs:
                 artifactMetadata["version"] = version
             elif type == 'zip':
                 keys_to_exclude = ['artifactType', 'version']
-                convoy_content = exclude_keys(yaml_data, keys_to_exclude)
+                convoy_content = delete_keys(yaml_data, keys_to_exclude)
                 version = yaml_data.get('version')
                 if version == None:
                     version = TAG
