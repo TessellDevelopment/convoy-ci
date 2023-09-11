@@ -19,7 +19,7 @@ jobs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
-      tag_ref_output: ${{ steps.mail_info.outputs.tag_ref }}
+      tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -125,7 +125,13 @@ jobs:
             });
 
             console.log('Ref updated.');
-            core.setOutput('tag_ref', fullTagName)          
+            core.setOutput('tag_ref', fullTagName)  
+
+      - name: Tag Output
+        id: tag_output
+        run: |
+          echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         with:
@@ -147,7 +153,6 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-          echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
