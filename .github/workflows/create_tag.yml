@@ -200,32 +200,29 @@ jobs:
                     print(f'{key} not present in convoy.yaml')
             return data
 
-          def get_artifact_metadata(yaml_data,type,TAG,PR_ID):
-            GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-            artifactMetadata = {}
+          def get_artifact_metadata(yaml_data, type):
+            artifactMetadata = {"type": type}
+            
             if type == 'dockerImage':
-                artifactMetadata["type"] = type
                 artifactMetadata["version"] = TAG
+
             elif type == 'helmChart':
                 chart_path = yaml_data.get('chartPath')
                 with open(chart_path, 'r') as chart_yaml_content:
                     data = yaml.safe_load(chart_yaml_content)
-                version = data.get('version') 
-                artifactMetadata["type"] = type
-                artifactMetadata["version"] = version
+                artifactMetadata["version"] = data.get('version')
+
             elif type == 'zip':
-                keys_to_exclude = ['artifactType', 'version']
-                convoy_content = delete_keys(yaml_data, keys_to_exclude)
                 version = yaml_data.get('version')
-                if version == None:
-                    version = TAG
-                artifactMetadata["type"] = type
-                artifactMetadata["version"] = version
-                artifactMetadata["convoyConfig"] = convoy_content
+                artifactMetadata["version"] = version if version else TAG
+                keys_to_exclude = ['artifactType', 'version']
+                artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
+
             elif type == 'nested':
                 artifacts = []
+                GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
                 headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-                url = f'https://api.github.com/repos/TessellDevelopment/tessell-terraform-modules/pulls/{PR_ID}/files'
+                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files'
                 res = requests.get(url, headers=headers)
                 files_data = res.json()
         
@@ -248,10 +245,9 @@ jobs:
                         "convoyConfig": module_data
                     } 
                     artifacts.append(data) 
-                artifactMetadata["type"] = type
                 artifactMetadata["artifacts"] = artifacts
             else:
-                print("Invalid Type in Convoy.yaml")
+                print(f"Artifact Type is {type}. Skipping this step.")
                 exit(0)
             return artifactMetadata
             
@@ -305,8 +301,7 @@ jobs:
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
-          payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type,TAG,PR_ID)
-          print(payload)
+          payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
+          print(f"Payload: {payload}")
           post_request(payload)
-          exit(0)
           EOF
