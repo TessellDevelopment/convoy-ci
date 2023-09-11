@@ -23,11 +23,6 @@ on:
         required: false
         type: string
         default: 'true'
-      check_valid_jira:
-        description: 'This is used to check if we are using a valid jira or not'
-        required: false
-        type: string
-        default: 'true'
       check_terraform_provider_version:
         description: 'This is used to check terraform provider version in terraform files'
         required: false
@@ -78,7 +73,6 @@ jobs:
           echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
         
       - name: Check Format and Extract Jira Ticket
-        if: ${{inputs.check_valid_jira == 'true'}}
         id: extract
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
@@ -104,7 +98,6 @@ jobs:
           extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
-        if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
