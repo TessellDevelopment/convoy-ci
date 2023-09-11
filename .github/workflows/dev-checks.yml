@@ -444,8 +444,10 @@ jobs:
                   NEXUS_REPO = parts[4];
                 }
                 artifacts = data.artifactName;
-                EXPORTER = artifacts[0];
-                if(VERSION === undefined || NEXUS_REPO === undefined || EXPORTER === undefined ){
+                if(artifacts != undefined){
+                  EXPORTER = artifacts[0];
+                }
+                if(VERSION === undefined || nexusUrl === undefined || artifacts === undefined ){
                   console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                   process.exit(0);
                 }
