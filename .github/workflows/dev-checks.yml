@@ -18,11 +18,6 @@ on:
         required: false
         type: string
         default: 'true'
-      check_existing_branch_name:
-        description: 'This is used to check whether same branch is existing or no'
-        required: false
-        type: string
-        default: 'true'
       check_terraform_provider_version:
         description: 'This is used to check terraform provider version in terraform files'
         required: false
