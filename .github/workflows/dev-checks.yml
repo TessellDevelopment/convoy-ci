@@ -137,7 +137,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install js-yaml
-      
+
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
         with:
@@ -346,7 +346,7 @@ jobs:
             });
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("+version")) {
+              if ((file_entry.filename.split("/")[1] === 'convoy-config.yaml' || file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
               }
