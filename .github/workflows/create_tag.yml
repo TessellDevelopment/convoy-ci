@@ -309,3 +309,4 @@ jobs:
           print(payload)
           post_request(payload)
           exit(0)
+          EOF
