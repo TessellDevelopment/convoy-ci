@@ -23,21 +23,6 @@ on:
         required: false
         type: string
         default: 'true'
-      jira_id_source:
-        description: 'This is used to specify the Jira ID source'
-        required: false
-        type: string
-        default: 'BRANCH'
-      jira_match_type:
-        description: 'This is used to specify to check both the sources or any or none'
-        required: false
-        type: string
-        default: 'ANY'    
-      jira_project_names:
-        description: 'This is used to provide list of all the prefix required in the repo.'
-        required: false
-        type: string
-        default: 'TS|TDEVOPS|TOPS|revert'  
       check_valid_jira:
         description: 'This is used to check if we are using a valid jira or not'
         required: false
@@ -103,7 +88,7 @@ jobs:
             PULL_REQUEST_TITLE="${{ github.event.pull_request.title }}"
             PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' format."
+              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
               exit 1
             else 
               echo "PR Title is in the valid format."
@@ -113,7 +98,10 @@ jobs:
             echo "Revert branch, skipping Jira Extraction"
             exit 0
           fi
-          extract_jira_id '${{env.SOURCE_BRANCH}}' '${{github.event.pull_request.title}}' '${{inputs.jira_id_source}}' '${{inputs.jira_match_type}}' '${{inputs.jira_project_names}}'
+          pip install shyaml
+          jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
+          jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
+          extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "jira_match"
 
       - name: Validate Jira Ticket
         if: ${{inputs.check_valid_jira == 'true' &&  inputs.jira_match_type != 'NONE' }}
