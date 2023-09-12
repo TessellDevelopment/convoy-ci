@@ -6,7 +6,10 @@ on:
     outputs:
         specific:
           description: "Changed File output"
-          value: ${{ jobs.file-check.outputs.specific }}  
+          value: ${{ jobs.file-check.outputs.specific }}
+        word:
+            description: "Changed File output"
+            value: ${{ jobs.file-check.outputs.hello }}   
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -16,6 +19,7 @@ jobs:
     runs-on: self-hosted
     outputs:
       specific: ${{steps.check-file-output.outputs.specific}}
+      hello: ${{steps.check-file-output.outputs.hello}}
     name: Check changed files
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +35,4 @@ jobs:
         id: check-file-output
         run: |
           echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
+          echo "hello=hello" >> $GITHUB_OUTPUT
