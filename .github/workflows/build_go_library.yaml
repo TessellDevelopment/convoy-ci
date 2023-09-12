@@ -99,7 +99,7 @@ jobs:
             
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -191,34 +191,34 @@ jobs:
           done
 
       
-      - name: Pushing generated tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-            python3 -c """
-            import json
-            import os
-            exporter_name='${{ inputs.exporter_name }}'
-            exporter_config = json.loads('${{ inputs.exporter_config }}')
-            for os_type in exporter_config:
-              #print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
-              exit_code = os.system(\"mkdir -p $HOME/.m2\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                            -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-                            -DgeneratePom=true -Dpackaging=tar \
-                            -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(engine=exporter_config[os_type], os_type=os_type))
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              """ 
+      # - name: Pushing generated tar files to nexus
+      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      #   run: |
+      #       python3 -c """
+      #       import json
+      #       import os
+      #       exporter_name='${{ inputs.exporter_name }}'
+      #       exporter_config = json.loads('${{ inputs.exporter_config }}')
+      #       for os_type in exporter_config:
+      #         #print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
+      #         exit_code = os.system(\"mkdir -p $HOME/.m2\")
+      #         if exit_code != 0:
+      #           raise Exception('Command failed with exit code {}'.format(exit_code))
+      #         exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
+      #         if exit_code != 0:
+      #           raise Exception('Command failed with exit code {}'.format(exit_code))
+      #         exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
+      #         if exit_code != 0:
+      #           raise Exception('Command failed with exit code {}'.format(exit_code))
+      #         exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+      #                       -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+      #                       -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+      #                       -DgeneratePom=true -Dpackaging=tar \
+      #                       -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+      #                       -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(engine=exporter_config[os_type], os_type=os_type))
+      #         if exit_code != 0:
+      #           raise Exception('Command failed with exit code {}'.format(exit_code))
+      #         """ 
       
       
       
