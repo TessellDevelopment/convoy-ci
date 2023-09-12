@@ -67,7 +67,22 @@ jobs:
         run: |
           if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt --dry-run; fi
        
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
 
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+  
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
