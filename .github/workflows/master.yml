@@ -1,0 +1,28 @@
+---
+name: Master CI Workflow
+on:
+    workflow_call:
+
+jobs:
+    file-check:
+        uses: TessellDevelopment/tessell-ci/.github/workflows/file-checks.yaml@TDEVOPS-92
+        secrets: inherit
+    test-output:
+        needs: file-check
+        name: Check output 
+        runs-on: self-hosted
+        steps:
+            - name: Echo
+              run: |
+                echo ${{needs.file-check.outputs.specific}}
+                echo ${{needs.file-check.outputs.word}}
+
+    dev-checks:
+        needs: file-check
+        if: needs.file-check.outputs.specific == 'false'
+        uses: TessellDevelopment/tessell-ci/.github/workflows/dev-checks.yml@main
+        secrets: inherit
+    dev-checks-2:
+        needs: dev-checks
+        uses: TessellDevelopment/tessell-ci/.github/workflows/dev-checks.yml@TDEVOPS-92
+        secrets: inherit
