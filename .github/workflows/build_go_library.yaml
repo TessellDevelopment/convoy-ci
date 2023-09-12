@@ -181,7 +181,7 @@ jobs:
       - name: Upload tar file to S3 Bucket
         # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          config=${{ inputs.exporter_config }}
+          config="${{ inputs.exporter_config }}"
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           config=$(echo "$config" | sed 's/\\//g')
           for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
