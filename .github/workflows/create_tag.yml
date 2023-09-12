@@ -13,35 +13,15 @@ on:
   workflow_call:
 
 jobs:
-  file-check:
-    runs-on: self-hosted
-    outputs:
-      specific: ${{steps.check-file-output.outputs.specific}}
-    name: Check changed files
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 
-      - name: Changed files
-        id: changed-files-specific
-        uses: tj-actions/changed-files@v39
-        with:
-          files: |
-            .github/**
-      - name: Set Output
-        id: check-file-output
-        run: |
-          echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
   create-tag-on-merge:
     runs-on: self-hosted
-    needs: file-check
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && needs.file-check.outputs.specific == 'false'
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v3
         with:

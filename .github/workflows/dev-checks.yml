@@ -577,7 +577,16 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+  check-check:
+    needs: file-check
+    runs-on: self-hosted
+    steps:
+      - name: Check changed file output
+        run: |
+          if[[ ${{needs.file-check.outputs.specific}} == 'true' ]]; then
+            exit 0
+          fi
+          
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: dev-checks
@@ -587,3 +596,4 @@ jobs:
       to: ${{ needs.dev-checks.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
