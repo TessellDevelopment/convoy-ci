@@ -141,7 +141,7 @@ jobs:
               #   -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
               #   -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
                
-              aws s3 cp $ARTIFACT_FILE s3://tessell-terraform-modules/terls/$DIR/$VERSION/
+              aws s3 cp $ARTIFACT_FILE s3://tessell-terraform-modules-terls/ciTestFolder/$DIR/$VERSION/
 
             fi
           done
