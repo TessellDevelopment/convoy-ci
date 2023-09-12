@@ -51,6 +51,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           echo "Building the service"
@@ -70,7 +86,7 @@ jobs:
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -83,7 +99,7 @@ jobs:
             
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -103,7 +119,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -154,6 +170,7 @@ jobs:
               }
             }
             console.log("Latest tag: " + latest_tag)
+            latest_tag='0.1.0'
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
               console.log("Couldn't determine the latest tag, exiting. Retry manually..")
@@ -161,6 +178,18 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
       
+      - name: Upload tar file to S3 Bucket
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          config=${{ inputs.exporter_config }}
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          config=$(echo "$config" | sed 's/\\//g')
+          for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
+            os_type=$(echo "$key" | cut -d',' -f1)
+            engine=$(echo "$key" | cut -d',' -f2)
+            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tessell-terraform-modules-terls/ciTestFolder/tessell/${{ inputs.exporter_name }}/${{ inputs.exporter_name }}-$os_type-$engine/$VERSION/
+          done
+
       
       - name: Pushing generated tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}

@@ -68,8 +68,8 @@ jobs:
 
       - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
           aws configure set region ap-south-1
 
       - name: Make clients
@@ -81,21 +81,21 @@ jobs:
           mage package
           cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
           
-      # - name: Set up Docker Buildx
-      #   id: buildx
-      #   uses: docker/setup-buildx-action@v1    
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1    
           
 
-      # - name: Login to docker
-      #   uses: docker/login-action@v1
-      #   with:
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}    
+      - name: Login to docker
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}    
           
-      # - name: docker build
-      #   run: |
-      #     cd filebeat
-      #     docker build -t  ${{ env.IMAGE_NAME }}  .   
+      - name: docker build
+        run: |
+          cd filebeat
+          docker build -t  ${{ env.IMAGE_NAME }}  .   
 
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
@@ -119,7 +119,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v4
         id: latest_tag
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -170,7 +170,6 @@ jobs:
               }
             }
             console.log("Latest tag: " + latest_tag)
-            latest_tag='0.1.0'
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
               console.log("Couldn't determine the latest tag, exiting. Retry manually..")
@@ -194,11 +193,12 @@ jobs:
           tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
           popd
           
-      - name: Upload to S3 Bucket
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-windows/$VERSION/
-          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-linux/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/tessell/filebeat/filebeat-windows/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3:///tesselltools/tessell/filebeat/filebeat-linux/$VERSION/
 
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -220,47 +220,47 @@ jobs:
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
             
-      # - name: Set Push repository
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   shell: bash
-      #   run: |
-      #     echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+      - name: Set Push repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
               
-      # - name: tagging docker image with scan
-      #   run: |
-      #      docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
+      - name: tagging docker image with scan
+        run: |
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
       
-      # - name: tagging the latest tag
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   shell: bash
-      #   run: |
-      #      docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+      - name: tagging the latest tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
               
 
-      # - name: Docker image scan
-      #   id: docker-image-scan
-      #   uses: azure/container-scan@v0.1
-      #   with:
-      #     severity-threshold: CRITICAL
-      #     image-name: ${{ env.IMAGE_NAME }}:scan
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
-      #     trivy-version: "0.29.1"
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.IMAGE_NAME }}:scan
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          trivy-version: "0.29.1"
 
-      # - uses: actions/upload-artifact@v3
-      #   with:
-      #     name: image-scan-report
-      #     path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
           
           
-      # - name: Sign and push docker image
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   uses: sudo-bot/action-docker-sign@latest
-      #   with:
-      #     image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-      #     private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-      #     private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-      #     private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+      - name: Sign and push docker image
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        uses: sudo-bot/action-docker-sign@latest
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
 
       - name: Slack Notification

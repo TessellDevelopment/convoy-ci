@@ -53,7 +53,22 @@ jobs:
           go install golang.org/x/tools/cmd/goimports@latest
           which go
           
-          
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Make clients
         run: |
           echo "Building the service"
@@ -170,7 +185,14 @@ jobs:
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
           
-          
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }} 
+          for os in ${OS_NAMES[@]};do
+            aws s3 cp client-package/pushprox-client-$os.tar s3://tesselltools/tessell/pushprox/pushprox-client-$os/$VERSION/
+          done
+
       - name: Pushing generated tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
