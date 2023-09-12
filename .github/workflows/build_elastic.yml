@@ -68,8 +68,8 @@ jobs:
 
       - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
 
       - name: Make clients
         run: |
@@ -118,7 +118,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v4
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -169,6 +169,7 @@ jobs:
               }
             }
             console.log("Latest tag: " + latest_tag)
+            latest_tag='0.1.0'
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
               console.log("Couldn't determine the latest tag, exiting. Retry manually..")
@@ -192,11 +193,15 @@ jobs:
           tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
           popd
           
-            
+      - name: Upload to S3 Bucket
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-windows/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-linux/$VERSION/
+
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-            
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
@@ -214,10 +219,6 @@ jobs:
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
             
-            # AWS S3 Upload
-            aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-windows/${VERSION}/
-            aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-linux/${VERSION}/
-
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
