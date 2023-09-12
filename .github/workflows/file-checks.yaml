@@ -3,6 +3,10 @@ name: Check Changed Files
 # Controls when the workflow will run
 on:
   workflow_call:
+    outputs:
+        specific:
+          description: "Changed File output"
+          value: ${{ jobs.file-check.outputs.specific }}  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
