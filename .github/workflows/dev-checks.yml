@@ -95,10 +95,10 @@ jobs:
         
       - name: Check branch name
         run: |
-         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
+         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS|TDEVOPS|TOPS|revert)-'; then
            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
          else
-           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
+           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'"
            exit 1
          fi
       - name: Check double commit
