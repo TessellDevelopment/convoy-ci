@@ -45,6 +45,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
       - name: Create pip conf
         run: |
           # Create pip.conf and copy to /etc; 
@@ -103,7 +108,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV    
       
       - name: Build and push to tessellDev
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && needs.file-check.outputs.any-modified == 'true'}} 
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && needs.file-check.outputs.any-modified == 'true' }}
         env:
           IMAGE_NAME: tesselldev/tessell-qa-runner
         run: |
@@ -112,7 +117,7 @@ jobs:
           docker push $IMAGE_NAME:${{ env.VERSION }}
   
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && needs.file-check.outputs.any-modified == 'true'}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && needs.file-check.outputs.any-modified == 'true' }}
         env:
           IMAGE_NAME: tessellprod/tessell-qa-runner
         run: |
