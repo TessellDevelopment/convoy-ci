@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0 
       - name: Changed files
-        id: changed-files-specific
+        id: changed-files
         uses: tj-actions/changed-files@v39
         with:
           files: |
@@ -29,7 +29,7 @@ jobs:
       - name: Set Output
         id: check-file-output
         run: |
-          echo "any-modified=${{steps.changed-files-specific.outputs.any_modified}}" >> $GITHUB_OUTPUT
+          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
 
   build:
     runs-on: self-hosted
@@ -71,6 +71,7 @@ jobs:
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
           sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
           sudo python3 -m pip install -r scripts/requirements.txt
+          pip install yq
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
@@ -97,8 +98,7 @@ jobs:
       - name: Extract version
         id: extract-version
         run: | 
-          pip install shyaml
-          VERSION=$(shyaml get-value .version < convoy.yaml)
+          VERSION=$(yq '.version' convoy.yaml)
           echo "The extracted value is: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV    
       
