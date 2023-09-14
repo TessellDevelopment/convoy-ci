@@ -595,7 +595,7 @@ jobs:
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
-          STATUS = upper(os.environ.get('STATUS'))
+          STATUS = (os.environ.get('STATUS')).upper()
           CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
           CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
