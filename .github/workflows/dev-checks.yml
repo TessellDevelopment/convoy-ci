@@ -576,7 +576,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: https://api.dev.convoy.tessell.cloud/docs#/git-metadata/create_devops_git_metadata_build_status_post
+          API_URL: https://api.dev.convoy.tessell.cloud/docs#/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
