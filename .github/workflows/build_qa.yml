@@ -23,7 +23,6 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v39
         with:
-          since_last_remote_commit: true
           files: |
             scripts/Dockerfile
             scripts/initializeAutomation.sh
@@ -34,6 +33,7 @@ jobs:
 
   build:
     runs-on: self-hosted
+    needs: file-check
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
