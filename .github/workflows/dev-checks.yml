@@ -105,6 +105,7 @@ jobs:
               echo "Revert branch, skipping Jira Extraction"
               exit 0
           fi
+          pip install shyaml
           jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
           jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
           extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
