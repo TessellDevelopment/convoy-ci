@@ -91,9 +91,9 @@ jobs:
         id: convoy_check
         run: |
           if [ -f "convoy.yaml" ]; then
-            echo "convoy-check=true" >> $GITHUB_OUTPUT
+            echo "::set-output name=convoy-check::true"
           else
-            echo "convoy-check=false" >> $GITHUB_OUTPUT
+            echo "::set-output name=convoy-check::false"
           fi
 
       - name: Set up Python
