@@ -106,7 +106,7 @@ jobs:
           echo ${{steps.convoy_check.outputs.convoy_exists}}
             
       - name: Extract Jira Ticket
-        if: ${{steps.convoy_check.outputs.convoy_exists}} == 'true'
+        if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
         id: extract
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
@@ -118,7 +118,7 @@ jobs:
           extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
-        if: ${{steps.convoy_check.outputs.convoy_exists}} == 'true'
+        if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
