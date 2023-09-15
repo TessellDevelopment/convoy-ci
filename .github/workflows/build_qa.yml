@@ -41,6 +41,7 @@ jobs:
     env:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      DOCKER_IMAGE_NAME: tessell-qa-runner
 
     steps:
       - name: Checkout code
@@ -111,20 +112,35 @@ jobs:
       - name: Build and push to tessellDev
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && needs.file-check.outputs.any-modified == 'true' }}
         env:
-          IMAGE_NAME: tesselldev/tessell-qa-runner
+          DOCKER_ORG: tesselldev
         run: |
           cd scripts
-          docker build -t $IMAGE_NAME:${{ env.VERSION }} .
-          docker push $IMAGE_NAME:${{ env.VERSION }}
+          docker build -t ${{env.DOCKER_IMAGE_NAME}}/$DOCKER_ORG:${{ env.VERSION }} .
+          docker push ${{env.DOCKER_IMAGE_NAME}}/$DOCKER_ORG:${{ env.VERSION }}
   
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && needs.file-check.outputs.any-modified == 'true' }}
         env:
-          IMAGE_NAME: tessellprod/tessell-qa-runner
+          DOCKER_ORG: tessellprod
         run: |
           cd scripts
-          docker build -t $IMAGE_NAME:${{ env.VERSION }} .
-          docker push $IMAGE_NAME:${{ env.VERSION }}
+          docker build -t ${{env.DOCKER_IMAGE_NAME}}/$DOCKER_ORG:${{ env.VERSION }} .
+          docker push ${{env.DOCKER_IMAGE_NAME}}/$DOCKER_ORG:${{ env.VERSION }}
+
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}:${{env.VERSION}}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}   
+             
+      - name: upload image scan report 
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
