@@ -66,12 +66,11 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
           echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
-        
-      - name: Check Format and Extract Jira Ticket
-        id: extract
+      
+      - name: Check Format
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-              echo "Revert branch, skipping Jira Extraction"
+              echo "Revert branch, skipping Format check"
               exit 0
           fi
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || ${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
@@ -87,12 +86,31 @@ jobs:
               echo "PR Title is in the valid format."
             fi  
           fi
+
+      - name: Check convoy.yaml
+        id: convoy_check
+        run: |
+          if [ -f "convoy.yaml" ]; then
+            echo "convoy-check=true" >> $GITHUB_OUTPUT
+          else
+            echo "convoy-check=false" >> $GITHUB_OUTPUT
+          fi
           pip install shyaml
+            
+      - name: Extract Jira Ticket
+        if: ${{steps.convoy_check.outputs.convoy-check}}
+        id: extract
+        run: |
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+              echo "Revert branch, skipping Jira Extraction"
+              exit 0
+          fi
           jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
           jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
           extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
+        if: ${{steps.convoy_check.outputs.convoy-check}}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
