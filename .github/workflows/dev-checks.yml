@@ -73,7 +73,7 @@ jobs:
               echo "Revert branch, skipping Format check"
               exit 0
           fi
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || ${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
             echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
           else
             echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
