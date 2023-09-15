@@ -91,9 +91,9 @@ jobs:
         id: convoy_check
         run: |
           if [ -f "convoy.yaml" ]; then
-            echo "::set-output name=convoy-check::true"
+            echo "convoy_exists=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=convoy-check::false"
+            echo "convoy_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up Python
@@ -103,9 +103,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install shyaml
+          echo ${{steps.convoy_check.outputs.convoy_exists}}
             
       - name: Extract Jira Ticket
-        if: ${{steps.convoy_check.outputs.convoy-check}}
+        if: ${{steps.convoy_check.outputs.convoy_exists}}
         id: extract
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
@@ -117,7 +118,7 @@ jobs:
           extract_jira_id "${{env.SOURCE_BRANCH}}" "${{github.event.pull_request.title}}" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
-        if: ${{steps.convoy_check.outputs.convoy-check}}
+        if: ${{steps.convoy_check.outputs.convoy_exists}}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
