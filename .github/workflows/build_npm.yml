@@ -50,6 +50,7 @@ jobs:
 
       - name: Set up .npmrc
         run: |
+          apt-get install expect
           expect <<EOD
           spawn npm adduser
           expect {
