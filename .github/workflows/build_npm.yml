@@ -53,7 +53,7 @@ jobs:
           sudo npm install -g npm-cli-login
           npm-cli-login login -u ${{ secrets.CIPIPELINE_NEXUS_USERNAME }} -p ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
           -e ${{ secrets.CIPIPELINE_USER_EMAIL }} -r ${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}
-          rm .npmrc
+
           ENCODED_TOKEN=$(echo -n "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" | base64)
           echo "//${{ env.NEXUS_URL }}/repository/:_auth='$ENCODED_TOKEN'" > .npmrc
           echo "//${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/:always-auth=true" >> .npmrc
