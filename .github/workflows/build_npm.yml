@@ -50,7 +50,7 @@ jobs:
 
       - name: Set up .npmrc
         run: |
-          sudo apt-get install expect
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install expect
           expect <<EOD
           spawn npm adduser
           expect {
