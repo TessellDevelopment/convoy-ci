@@ -40,8 +40,8 @@ jobs:
       - name: Install dependencies
         run: |
           npm install 
-          npm build    
-          
+          npm run build    
+
       - name: Set Component repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
