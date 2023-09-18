@@ -52,6 +52,7 @@ jobs:
 
       - name: Publish the package
         run: |
+          npm install
           npm run build
           npm publish    
       
