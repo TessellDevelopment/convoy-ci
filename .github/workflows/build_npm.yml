@@ -52,7 +52,7 @@ jobs:
 
       - name: Publish the package
         run: |
-          npm build
+          npm run build
           npm publish    
       
       - name: Slack Notification  
