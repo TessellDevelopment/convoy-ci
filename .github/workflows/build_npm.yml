@@ -58,6 +58,11 @@ jobs:
 
       - name: Publish the package
         run: |
+          npm adduser <<!
+          ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+          ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          ${{ secrets.CIPIPELINE_USER_EMAIL }}
+          !
           npm publish    
       
       - name: Slack Notification  
