@@ -50,9 +50,15 @@ jobs:
 
       - name: Set up .npmrc
         run: |
-          sudo npm install -g npm-cli-login
-          npm-cli-login login -u ${{ secrets.CIPIPELINE_NEXUS_USERNAME }} -p ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
-          -e ${{ secrets.CIPIPELINE_USER_EMAIL }} -r ${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}
+          /usr/bin/expect <<EOD
+          spawn npm adduser
+          expect {
+            "Username:" {send "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}\r"; exp_continue}
+            "Password:" {send "${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}\r"; exp_continue}
+            "Email: (this IS public)" {send "${{ secrets.CIPIPELINE_USER_EMAIL }}\r"; exp_continue}
+          }
+          EOD
+          cat .npmrc
 
           ENCODED_TOKEN=$(echo -n "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" | base64)
           echo "//${{ env.NEXUS_URL }}/repository/:_auth='$ENCODED_TOKEN'" > .npmrc
