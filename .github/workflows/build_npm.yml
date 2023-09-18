@@ -50,7 +50,7 @@ jobs:
 
       - name: Set up .npmrc
         run: |
-          /usr/bin/expect <<EOD
+          expect <<EOD
           spawn npm adduser
           expect {
             "Username:" {send "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}\r"; exp_continue}
