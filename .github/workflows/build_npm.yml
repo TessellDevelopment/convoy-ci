@@ -37,6 +37,11 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
+      - name: Install dependencies
+        run: |
+          npm install 
+          npm build    
+          
       - name: Set Component repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
@@ -52,8 +57,6 @@ jobs:
 
       - name: Publish the package
         run: |
-          npm install
-          npm run build
           npm publish    
       
       - name: Slack Notification  
