@@ -1,0 +1,45 @@
+---
+name: Master CI PR Workflows
+on:
+  workflow_call:
+
+jobs:
+
+  file-check:
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master-ci/workflows/file-check.yml@TDEVOPS-827
+  
+  check-output:
+    runs-on: self-hosted
+    needs: file-check
+    if: needs.file-check.outputs.specific == 'true'
+    run: |
+      echo "Only .github files are changed. Exiting the workflow."
+      exit 0
+
+  dev-checks:
+    needs: file-check
+    if: needs.file-check.outputs.specific == 'false'
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master-ci/workflows/dev-checks.yml@TDEVOPS-827
+  
+  build-file:
+    runs-on: self-hosted
+    needs: dev-checks
+    steps:
+
+      - name: Determine build file from Convoy
+        run: |
+
+      - name: Set Output
+        run: |
+
+  build:
+    needs: build-file
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master-ci/workflows/${{needs.build-file.outputs.file}}.yml@TDEVOPS-827
+
+  auto-merge:
+    needs: build
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master-ci/workflows/auto-merge.yml@TDEVOPS-827  
+
+
+
+
