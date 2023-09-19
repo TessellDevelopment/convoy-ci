@@ -156,7 +156,6 @@ jobs:
             done
           done
 
-        
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |

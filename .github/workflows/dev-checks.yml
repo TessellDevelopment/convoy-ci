@@ -33,6 +33,17 @@ on:
         required: false
         type: string
         default: 'false'
+      nexus_exporter:
+        description: 'This is used to get the exporter name used in nexus repository'
+        required: false
+        type: string
+        default: 'false'
+      nexus_repository: 
+        description: 'This is used to get the Nexus repostiory name where artifact will be pushed'
+        required: false
+        type: string
+        default: 'false'
+
 
 jobs:
   dev-checks:
@@ -131,6 +142,22 @@ jobs:
           echo "${{steps.extract.outputs.jira_ticket}}"
           validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
 
+      - name: Check double commit
+        env: 
+          PR_TITLE: ${{github.event.pull_request.title}}
+          BRANCH: ${{ github.event.pull_request.head.ref}}
+        run: |
+          if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+            if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
+              echo "Revert Double commit Branch. Allowed"
+            else   
+              echo "Exclude Double commit naming in Branch, PR title and try again."
+              exit 1
+            fi
+          else
+            echo "No double commit conflicts found in Branch or PR title."
+          fi
+
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
@@ -149,7 +176,10 @@ jobs:
       - name: install node fetch 
         run: | 
           npm install node-fetch
-      
+
+      - name: Install dependencies
+        run: npm install js-yaml
+
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
         with:
@@ -224,11 +254,13 @@ jobs:
                 path = file_entry.filename.substring(0, lastSlashIndex);
               }
             });
+            console.log(path);
             const { Octokit } = require("@octokit/rest");
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
             const { data: existingFiles } = await octokit.repos.getContent({
               owner: "${{ github.repository_owner }}",
               repo: "${{  github.repository }}".split('/')[1],
+              ref: "${{github.base_ref}}",
               path: path,
             });
             console.log(existingFiles)
@@ -282,6 +314,8 @@ jobs:
              if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in gradle.properties file")
              }
+             execSync = require('child_process').execSync(
+                `echo "VERSION_FILE=gradle.properties" >> $GITHUB_ENV`);
       
       - name: check for version in version_txt
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
@@ -354,7 +388,7 @@ jobs:
             });
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("-version") && file_entry.patch.includes("+version")) {
+              if ((file_entry.filename.split("/")[1] === 'convoy-config.yaml' || file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
               }
@@ -400,7 +434,7 @@ jobs:
               }
             });
             core.setOutput('terraform_file' , terraform_file.join(','));
-        
+
       - name: check for chart verison in chart.yaml 
         if : ${{ inputs.check_version_of_helm_chart == 'true' }}
         uses: actions/github-script@v6.3.3
@@ -439,9 +473,91 @@ jobs:
               if (version_updated == false ) {
                 core.setFailed("Tessell Libraries must update the version in chart.yaml file")
               }
+              execSync = require('child_process').execSync(
+                `echo "VERSION_FILE=Chart.yaml" >> $GITHUB_ENV`);
 
+      - name: check for version in nexus 
+        uses: actions/github-script@v6.3.3
+        if: ${{ inputs.nexus_repository != 'false' }}
+        env:
+          NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/search?repository
+          NEXUS_REPO: ${{inputs.nexus_repository}}
+          NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
+          EXPORTER: ${{inputs.nexus_exporter}}
+          VERSION_FILE: ${{ENV.VERSION_FILE}}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+
+            var execSync =  require('child_process').execSync;
+            var path = execSync(`
+                find . -name "$VERSION_FILE" -type f               
+            `, { encoding: 'utf-8' });
+            path=path.substring(0,path.length-1);
+            console.log(path);
             
-          
+            var VERSION;
+            if( "${{ENV.VERSION_FILE}}" == "convoy-config.yaml" || "${{ENV.VERSION_FILE}}" == "Chart.yaml"){
+              const content = fs.readFileSync(path, 'utf8');
+              const data = yaml.load(content);
+              VERSION = data.version;
+            }
+            else{
+              execSync =  require('child_process').execSync;
+              VERSION = execSync(`
+                  version=$(grep '^version=' $VERSION_FILE | cut -d '=' -f 2)
+                  echo $version|tr -d '\n'          
+              `, { encoding: 'utf-8' });
+            }
+            console.log(VERSION);
+            execSync = require('child_process').execSync;
+            const output=execSync(`
+                if [ $NEXUS_REPO = "tessell-repos-m2-component" ]; 
+                then
+                    file="$EXPORTER-${VERSION}.jar"
+                elif [ $NEXUS_REPO = "tessell-repos-helm-component" ]; 
+                then
+                    file="$EXPORTER-${VERSION}.tgz"  
+                else
+                    file="$EXPORTER-${VERSION}-py3-none-any.whl"
+                fi
+                API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
+                echo $API_URL
+                echo $file
+                response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
+                check="$(echo $response | grep $file)"
+                if [ ! -z "$check" ]
+                    then
+                        echo "Fail"
+                        exit 
+                    fi
+                
+                while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
+                    continuationToken=$(echo $response | jq -r '.continuationToken')
+                    response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
+                    check="$(echo $response | grep $file)"
+                    if [ ! -z "$check" ]
+                    then
+                        echo "Fail"
+                        exit 
+                    fi
+                done
+                if [ -z "$check" ]
+                    then
+                        echo "Pass"
+                        exit 
+                    fi
+            `, { encoding: 'utf-8' }); 
+            console.log(output);
+            if(output.includes("Fail"))
+              throw "Update version, matching version file already present in Nexus"
+            else
+              console.log("Passed: No matching version present in Nexus")  
+
+
       - name: Check Version sequence of DB Scripts
         id: check_db_version_seq
         if: steps.check_db_migration.outputs.db_migration_dir
