@@ -101,7 +101,7 @@ jobs:
             
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
-        #if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
