@@ -116,6 +116,12 @@ jobs:
             -Pnexus_pull_repo_raw="${{ env.NEXUS_PULL_REPOS_RAW }}" \
             -Pnexus_push_repo_raw="${{ env.NEXUS_PUSH_REPOS_RAW }}"
 
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/tessell/filebeat/filebeat-windows/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3:///tesselltools/tessell/filebeat/filebeat-linux/$VERSION/
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
