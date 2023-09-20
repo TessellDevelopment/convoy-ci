@@ -68,8 +68,8 @@ jobs:
 
       - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
           aws configure set region ap-south-1
 
       - name: Make clients
@@ -119,7 +119,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v4
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -169,6 +169,7 @@ jobs:
                 }
               }
             }
+            latest_tag="0.2.0"
             console.log("Latest tag: " + latest_tag)
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
@@ -194,13 +195,13 @@ jobs:
           popd
           
       - name: Upload tar file to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           mv ./filebeat/build/distributions/filebeat-windows.tar.gz ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz
           mv ./filebeat/build/distributions/filebeat-linux.tar.gz ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz
-          aws s3 cp ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz s3://tesselltools/tessell/filebeat/filebeat-windows/$VERSION/
-          aws s3 cp ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz s3:///tesselltools/tessell/filebeat/filebeat-linux/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-windows/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz s3://tessell-terraform-modules-terls/ciTestFolder/tessell/filebeat/filebeat-linux/$VERSION/
 
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
