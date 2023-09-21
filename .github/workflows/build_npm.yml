@@ -52,7 +52,7 @@ jobs:
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install expect
           expect <<EOD
-          spawn npm adduser
+          spawn npm adduser --registry https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}
           expect {
             "Username:" {send "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}\r"; exp_continue}
             "Password:" {send "${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}\r"; exp_continue}
