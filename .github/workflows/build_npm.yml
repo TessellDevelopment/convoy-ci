@@ -51,7 +51,7 @@ jobs:
       - name: Set up .npmrc
         run: |
           cd ~
-          echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
+          echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
           cat .npmrc
 
       - name: Publish the package
