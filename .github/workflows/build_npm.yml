@@ -50,22 +50,9 @@ jobs:
 
       - name: Set up .npmrc
         run: |
-          # sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install expect
-          # expect <<EOD
-          # spawn npm adduser --registry https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}
-          # expect {
-          #   "Username:" {send "cipipelinetessell\r"; exp_continue}
-          #   "Password:" {send "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\r"; exp_continue}
-          #   "Email: (this IS public)" {send "cipipeline@tessell.com\r"; exp_continue}
-          # }
-          # EOD
-          # cat .npmrc
-
-          # ENCODED_TOKEN=$(echo -n "${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" | base64)
-          # echo "//${{ env.NEXUS_URL }}/repository/:_auth='$ENCODED_TOKEN'" > .npmrc
-          # echo "//${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/:always-auth=true" >> .npmrc
-          # echo "registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
-          # cat .npmrc
+          cd ~
+          echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
+          cat .npmrc
 
       - name: Publish the package
         run: |
