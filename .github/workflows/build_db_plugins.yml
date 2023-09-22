@@ -152,11 +152,12 @@ jobs:
         env:
           API_URL: http://convoy-devops.convoy-dev:8080/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
-          REPO: "${{github.event.pull_request.base.repo.name}}"
+          REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
           python - <<EOF
           import requests
@@ -173,6 +174,9 @@ jobs:
           CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
           CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
           payload = {
             "repoName": REPO,
             "commitHash": COMMIT_HASH,
