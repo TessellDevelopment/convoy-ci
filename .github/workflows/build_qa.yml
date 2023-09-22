@@ -9,10 +9,31 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+
+  file-check:
     runs-on: self-hosted
+    outputs:
+      any-modified: ${{steps.check-file-output.outputs.any-modified}}
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            scripts/Dockerfile
+            scripts/initializeAutomation.sh
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: self-hosted
+    needs: file-check
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -20,10 +41,16 @@ jobs:
     env:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      DOCKER_IMAGE_NAME: tessell-qa-runner
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Create pip conf
         run: |
@@ -51,6 +78,13 @@ jobs:
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
           sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
           sudo python3 -m pip install -r scripts/requirements.txt
+          pip install yq
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Make clients
         id: make_clients
@@ -67,6 +101,31 @@ jobs:
         shell: bash
         run: |
           python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+      
+      - name: Extract version
+        id: extract-version
+        run: | 
+          VERSION=$(yq '.version' convoy.yaml)
+          echo "The extracted value is: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV    
+      
+      - name: Build and push to tessellDev
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && needs.file-check.outputs.any-modified == 'true' }}
+        env:
+          DOCKERHUB_ORG: tesselldev
+        run: |
+          cd scripts
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
+  
+      - name: Build and push to tessellProd
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && needs.file-check.outputs.any-modified == 'true' }}
+        env:
+          DOCKERHUB_ORG: tessellprod
+        run: |
+          cd scripts
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
