@@ -246,7 +246,6 @@ jobs:
                 if [ -f gradle.properties ]; then
                   if grep -q 'version=' gradle.properties; then
                     echo "Please remove version from gradle.properties"
-                    echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
                     exit 1
                   else
                     echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
