@@ -1,0 +1,49 @@
+---
+name: Check Required Approvals
+on:
+  workflow_call:
+    inputs:
+      approval-teams:
+        description: 'This is used to determine teams required for approval'
+        required: true
+        type: string
+ 
+jobs:
+  check-approval:
+    runs-on: self-hosted
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+
+        - name: Check Approval
+          env:
+            TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+            TEAMS: ${{inputs.approval-teams}}
+          run: |
+            ORG_NAME="TessellDevelopment"
+            TEAM_NAME="api-spec-approvers"
+            PR_NUMBER=${{github.event.number}}
+            REPO=${{github.repository}}
+            MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM_NAME/members" | jq -r '.[].login')
+            REVIEWERS=$(curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/reviews | jq -r '.[] | select(.state == "APPROVED") | .user.login')
+            echo $MEMBERS
+            echo $REVIEWERS
+            if [ ${#REVIEWERS} -eq 0 ]; then
+              echo "No one has approved the PR."
+              exit 1
+            else
+              IFS=, read -r -a array1 <<< "$(echo -e "$REVIEWERS" | tr '\n' ',')"
+              IFS=, read -r -a array2 <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
+              for member1 in "${array1[@]}"; do
+                  for member2 in "${array2[@]}"; do
+                      if [ "$member1" == "$member2" ]; then
+                          echo "Review Approved by: $member1"
+                          break
+                      fi
+                  done
+              done
+            fi

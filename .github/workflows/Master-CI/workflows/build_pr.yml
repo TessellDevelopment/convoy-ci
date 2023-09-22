@@ -1,0 +1,36 @@
+---
+name: Tessell Pipelines Code Build for PR
+
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'This is used to determine build type'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      BUILD_TYPE: ${{inputs.type}}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      
+      - name: Build OPS
+        if: BUILD_TYPE == 'OPS'
+        run: |
+          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+        
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}

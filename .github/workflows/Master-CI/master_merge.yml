@@ -1,0 +1,52 @@
+---
+name: Master CI Merge Workflows
+on:
+  workflow_call:
+
+jobs:
+  file-check:
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/file_check.yml@TDEVOPS-827
+
+  build-file:
+    runs-on: self-hosted
+    if: needs.file-check.outputs.specific == 'false'
+    outputs:
+      type: ${{steps.build-type.outputs.type}}
+    needs: file-check
+    steps:
+      - name: Determine build type from Convoy
+        id: build-type
+        run: |
+          build_line=$(grep 'build:' convoy.yaml)
+          build_type=$(echo "$build_line" | awk '{print $2}')
+          echo "$build_type"
+          echo "type=$build_type" >> $GITHUB_OUTPUT
+  
+  create-tag:
+    if: needs.file-check.outputs.specific == 'false'
+    needs: build-file
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_tag.yml@TDEVOPS-827
+
+  find-latest-tag:
+    if: needs.file-check.outputs.specific == 'false'
+    needs: create-tag
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/find_latest_tag.yml@TDEVOPS-827
+
+  build:
+    if: needs.file-check.outputs.specific == 'false'
+    needs: find-latest-tag
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/build_merge.yml@TDEVOPS-827
+    with:
+      type: ${{needs.build-file.outputs.type}}
+      tag: ${{needs.find-latest-tag.outputs.tag}}
+
+  create-double-commit:
+    if: needs.file-check.outputs.specific == 'false'
+    needs: build
+    if: echo "${{ github.event.pull_request.base.ref }}" | grep -Eq '^rel-'
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_double_commit.yml@TDEVOPS-827
+
+
+
+
+

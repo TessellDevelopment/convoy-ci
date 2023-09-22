@@ -1,0 +1,32 @@
+name: Check Changed Files
+
+on:
+  workflow_call:
+    outputs:
+        specific:
+          description: "Changed File output"
+          value: ${{ jobs.file-check.outputs.specific }}
+
+jobs:
+  file-check:
+    runs-on: self-hosted
+    outputs:
+      specific: ${{steps.check-file-output.outputs.specific}}
+
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            .github/**
+
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT

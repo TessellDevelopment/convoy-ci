@@ -1,0 +1,63 @@
+---
+name: Master CI PR Workflows
+on:
+  workflow_call:
+
+jobs:
+  
+  dev-checks:
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/dev_checks.yml@TDEVOPS-827
+
+  version-check:
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/version_check.yml@TDEVOPS-827
+
+  build-file:
+    runs-on: self-hosted
+    outputs:
+      type: ${{steps.build-type.outputs.type}}
+    needs: [dev-checks,file-check]
+    steps:
+      - name: Determine build type from Convoy
+        id: build-type
+        run: |
+          build_line=$(grep 'build:' convoy.yaml)
+          build_type=$(echo "$build_line" | awk '{print $2}')
+          echo "$build_type"
+          echo "type=$build_type" >> $GITHUB_OUTPUT
+
+  build:
+    needs: build-file
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/build_pr.yml@TDEVOPS-827
+    with:
+      type: ${{needs.build-file.outputs.type}}
+
+  check-commits:
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    needs: build
+    env:
+      REPO: ${{github.repository}}
+      PR_NUMBER: ${{github.event.number}}
+      GITHUB_TOKEN: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+    steps:  
+      - run: |
+        PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+        echo "Number of commits in PR: $PR_COMMITS"
+        echo "::set-output name=pr_commits::$PR_COMMITS"
+
+      - name: Check Number of Commits
+        run: |
+          PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+          if [ "$PR_COMMITS" -eq 1 ]; then
+            echo "Number of commits is 1, workflow passed."
+          else
+            echo "Number of commits is not 1, workflow failed."
+            exit 1
+          fi
+    
+  auto-merge:
+    needs: check-hash
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/auto_merge.yml@TDEVOPS-827  
+
+
+
+
