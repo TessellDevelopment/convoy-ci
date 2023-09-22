@@ -236,6 +236,24 @@ jobs:
               }
             });
             
+      - name: Check version in convoy.yaml and gradle.properties
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        run: |
+            if [ -f convoy.yaml ]; then
+              if grep -q 'version:' convoy.yaml; then
+                echo "Version found in convoy.yaml"
+                if [ -f gradle.properties ]; then
+                  if grep -q 'version=' gradle.properties; then
+                    echo "Please remove version from gradle.properties"
+                    exit 1
+                  fi
+                fi
+              else
+                echo "Version not found in convoy.yaml"
+              fi
+            else
+              echo "convoy.yaml not found"
+            fi
             
       - name: check for gradle properties version
         uses: actions/github-script@v6.3.3
