@@ -38,8 +38,8 @@ jobs:
       - name: Create tag and update ref
         uses: actions/github-script@v6.3.3
         id: create_tag
-        # with:
-        #   github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+        with:
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             /* latest_tag = '0.0.0'
             // process multiple tags if any
