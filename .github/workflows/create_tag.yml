@@ -41,7 +41,7 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            /* latest_tag = '0.0.0'
+            latest_tag = '0.0.0'
             // process multiple tags if any
             tags = "${{ env.TAGS }}".split(' ')
             if (tags.length == 1) {
@@ -122,8 +122,7 @@ jobs:
                 repo: "${{  github.repository }}".split('/')[1],
                 ref: fullTagName,
                 sha: sha_to_tag
-            }); */
-            new_tag="0.2.0"
+            });
             console.log('Ref updated.');
             core.setOutput('tag_ref', new_tag)  
 
@@ -132,27 +131,27 @@ jobs:
         run: |
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v1.5.0
-      #   with:
-      #      status: ${{ job.status }}
-      #      steps: ${{ toJson(steps) }}
-      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-      #   if: failure()
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+        if: failure()
 
-      # - name: Get PR-Author,subject & body to send email
-      #   if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-      #   run: |
-      #     echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-      #     echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
  
-      # - name: sending output
-      #   if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-      #   id: mail_info
-      #   run: |
-      #     echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-      #     echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-      #     echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
@@ -166,7 +165,7 @@ jobs:
 
   push-commit-details-to-convoy: 
     runs-on: self-hosted
-    needs: create-tag-on-merge
+    # needs: create-tag-on-merge
     steps:
 
       - name: Set up Python
@@ -189,7 +188,8 @@ jobs:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
-          TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
+          # TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
+          TAG: "0.2.0"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           COMMIT_MESSAGE: "${{steps.get-message.outputs.COMMIT_MESSAGE}}"
           PR_ID: "${{github.event.number}}"
