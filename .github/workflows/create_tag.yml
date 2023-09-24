@@ -38,10 +38,10 @@ jobs:
       - name: Create tag and update ref
         uses: actions/github-script@v6.3.3
         id: create_tag
-        with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+        # with:
+        #   github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            latest_tag = '0.0.0'
+            /* latest_tag = '0.0.0'
             // process multiple tags if any
             tags = "${{ env.TAGS }}".split(' ')
             if (tags.length == 1) {
@@ -122,8 +122,8 @@ jobs:
                 repo: "${{  github.repository }}".split('/')[1],
                 ref: fullTagName,
                 sha: sha_to_tag
-            });
-
+            }); */
+            new_tag="0.2.0"
             console.log('Ref updated.');
             core.setOutput('tag_ref', new_tag)  
 
