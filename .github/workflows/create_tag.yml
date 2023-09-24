@@ -132,27 +132,27 @@ jobs:
         run: |
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
 
-      - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
-        with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-        if: failure()
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v1.5.0
+      #   with:
+      #      status: ${{ job.status }}
+      #      steps: ${{ toJson(steps) }}
+      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+      #   if: failure()
 
-      - name: Get PR-Author,subject & body to send email
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        run: |
-          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+      # - name: Get PR-Author,subject & body to send email
+      #   if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+      #   run: |
+      #     echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+      #     echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
  
-      - name: sending output
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-        id: mail_info
-        run: |
-          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+      # - name: sending output
+      #   if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+      #   id: mail_info
+      #   run: |
+      #     echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+      #     echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+      #     echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
