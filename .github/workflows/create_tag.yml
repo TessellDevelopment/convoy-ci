@@ -176,13 +176,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pyyaml pybase64
 
-      - name: Get merge message
-        id: get-message
-        run: |
-          latest_merge_commit=$(git log --merges --first-parent -n 1 origin/main --pretty=format:"%H")
-          commit_message=$(git log --format=%B -n 1 $latest_merge_commit)
-          echo "COMMIT_MESSAGE=$commit_message" >> $GITHUB_OUTPUT
-
       - name: POST API to Convoy
         env:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
@@ -191,7 +184,6 @@ jobs:
           # TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           TAG: "0.2.0"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          COMMIT_MESSAGE: "${{steps.get-message.outputs.COMMIT_MESSAGE}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -203,6 +195,7 @@ jobs:
           import os
           import time
           import base64
+          import subprocess
 
           def delete_keys(data, keys_to_exclude):
             for key in keys_to_exclude:
@@ -293,11 +286,16 @@ jobs:
             
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
-          COMMIT_MESSAGE = os.environ.get('COMMIT_MESSAGE')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
+          command = [
+            'git', 'log', '--merges', '--first-parent', '--max-count=1',
+            '--format=%B', 'main'
+          ]
+          COMMIT_MESSAGE = subprocess.check_output(command, cwd=".", stderr=subprocess.PIPE, universal_newlines=True)
+
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
