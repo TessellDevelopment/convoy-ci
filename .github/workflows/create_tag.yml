@@ -167,7 +167,12 @@ jobs:
     runs-on: self-hosted
     # needs: create-tag-on-merge
     steps:
-
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: main
+          fetch-depth: 0
+          
       - name: Set up Python
         uses: actions/setup-python@v2
 
@@ -290,11 +295,12 @@ jobs:
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
+          repo_path = "${{ github.workspace }}" 
           command = [
-            'git', 'log', '--merges', '--first-parent', '--max-count=1',
-            '--format=%B', 'main'
+              'git', 'log', '--merges', '--first-parent', '--max-count=1',
+              '--format=%B', 'main'
           ]
-          COMMIT_MESSAGE = subprocess.check_output(command, cwd=".", stderr=subprocess.PIPE, universal_newlines=True)
+          COMMIT_MESSAGE = subprocess.check_output(command, cwd=repo_path, stderr=subprocess.PIPE, universal_newlines=True)
 
           try:
             with open('convoy.yaml', 'r') as yaml_file:
