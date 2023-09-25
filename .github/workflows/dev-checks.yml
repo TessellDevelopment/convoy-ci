@@ -51,7 +51,7 @@ on:
       nexus_exporter:
         description: 'This is used to get the exporter name used in nexus repository'
         required: false
-        type: stringver
+        type: string
         default: 'false'
       nexus_repository: 
         description: 'This is used to get the Nexus repostiory name where artifact will be pushed'
