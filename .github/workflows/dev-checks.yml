@@ -579,7 +579,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: dev-checks
