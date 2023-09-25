@@ -51,6 +51,8 @@ jobs:
       - name: Set up .npmrc
         run: |
           cd ~
+          head -n -1 .npmrc > temp && mv temp .npmrc
+          cat .npmrc
           echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
           cat .npmrc
 
