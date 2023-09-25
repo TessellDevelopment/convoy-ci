@@ -172,7 +172,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          
+
       - name: Set up Python
         uses: actions/setup-python@v2
 
@@ -301,7 +301,7 @@ jobs:
               '--format=%B', 'main'
           ]
           COMMIT_MESSAGE = subprocess.check_output(command, cwd=repo_path, stderr=subprocess.PIPE, universal_newlines=True)
-
+          print(COMMIT_MESSAGE)
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
