@@ -51,7 +51,7 @@ on:
       nexus_exporter:
         description: 'This is used to get the exporter name used in nexus repository'
         required: false
-        type: string
+        type: stringver
         default: 'false'
       nexus_repository: 
         description: 'This is used to get the Nexus repostiory name where artifact will be pushed'
@@ -244,7 +244,7 @@ jobs:
               if grep -q 'version:' convoy.yaml; then
                 echo "Version found in convoy.yaml"
                 if [ -f gradle.properties ]; then
-                  if grep -q 'version=' gradle.properties; then
+                  if grep -q '^\s*version=' gradle.properties; then
                     echo "Please remove version from gradle.properties"
                     exit 1
                   else
