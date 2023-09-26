@@ -452,9 +452,9 @@ jobs:
           script: |
               const fs = require('fs');
               const yaml = require('js-yaml');
-              var NEXUS_REPO;
-              var VERSION;
-              var EXPORTER;
+              var nexusRepo;
+              var version;
+              var exporter;
               try{
                 const content = fs.readFileSync('./convoy.yaml', 'utf8');
                 const data = yaml.load(content);
@@ -463,21 +463,21 @@ jobs:
                   const path = data.chartPath
                   const contentHelm = fs.readFileSync(path, 'utf8');
                   const dataHelm = yaml.load(contentHelm);
-                  VERSION = dataHelm.version
+                  version = dataHelm.version
                 }
                 else{
-                  VERSION = data.version;
+                  version = data.version;
                 }
                 nexusUrl = data.nexusUrl;
                 if(nexusUrl != undefined){
                   const parts = nexusUrl.split('/');
-                  NEXUS_REPO = parts[4];
+                  nexusRepo = parts[4];
                 }
                 artifacts = data.artifactName;
                 if(artifacts != undefined){
-                  EXPORTER = artifacts[0];
+                  exporter = artifacts[0];
                 }
-                if(VERSION === undefined || nexusUrl === undefined || artifacts === undefined ){
+                if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
                   console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                   process.exit(0);
                 }
@@ -486,13 +486,13 @@ jobs:
                 console.error('Error:', error.message)
                 process.exit(0);
               }
-              console.log(NEXUS_REPO);
-              console.log(EXPORTER);
-              console.log(VERSION);
+              console.log(nexusRepo);
+              console.log(exporter);
+              console.log(version);
               execSync = require('child_process').execSync;
               const output=execSync(`
-                  file="${EXPORTER}-${VERSION}"
-                  API_URL="$NEXUS_URL=${NEXUS_REPO}&version=${VERSION}"
+                  file="${exporter}-${version}"
+                  API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
                   echo $API_URL
                   echo $file
                   response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
