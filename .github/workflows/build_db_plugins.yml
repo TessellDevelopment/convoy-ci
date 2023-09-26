@@ -126,7 +126,7 @@ jobs:
           PLUGIN_NAME="${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}"
           VERSION="${parts[4]}"
 
-          aws s3 cp ./build/* s3://tesselltools/tessell/plugins/$PLUGIN_NAME/$VERSION/
+          aws s3 cp ./build/* s3://tesselltools/terls/tessell/plugins/$PLUGIN_NAME/$VERSION/
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

@@ -219,8 +219,8 @@ jobs:
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           mv ./filebeat/build/distributions/filebeat-windows.tar.gz ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz
           mv ./filebeat/build/distributions/filebeat-linux.tar.gz ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz
-          aws s3 cp ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz s3://tesselltools/tessell/filebeat/filebeat-windows/$VERSION/
-          aws s3 cp ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz s3://tesselltools/tessell/filebeat/filebeat-linux/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows-$VERSION.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-windows/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux-$VERSION.tar.gz s3://tesselltools/terls/tessell/filebeat/filebeat-linux/$VERSION/
 
             
       - name: Set Push repository

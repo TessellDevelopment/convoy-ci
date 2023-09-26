@@ -178,7 +178,7 @@ jobs:
           for OS in ${OS_NAMES[@]} ;do
             for CLOUD in ${CLOUD_NAMES[@]}; do
               mv ./tessell/tessell-task-handler-$OS-$CLOUD.tar ./tessell/tessell-task-handler-$OS-$CLOUD-$VERSION.tar
-              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD-$VERSION.tar s3://tesselltools/tessell/functions/tessell-task-handler-$OS-$CLOUD/$VERSION/
+              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD-$VERSION.tar s3://tesselltools/terls/tessell/functions/tessell-task-handler-$OS-$CLOUD/$VERSION/
             done
           done
 
