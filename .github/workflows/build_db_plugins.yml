@@ -67,7 +67,22 @@ jobs:
         run: |
           if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt --dry-run; fi
        
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
 
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+  
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -101,6 +116,17 @@ jobs:
             -Pnexus_pull_repo_raw="${{ env.NEXUS_PULL_REPOS_RAW }}" \
             -Pnexus_push_repo_raw="${{ env.NEXUS_PUSH_REPOS_RAW }}"
 
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          cd build
+          FILE=$(ls)
+          BASENAME=$(basename "$FILE" .tar.gz)
+          IFS='-' read -ra parts <<< "$BASENAME"
+          PLUGIN_NAME="${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}"
+          VERSION="${parts[4]}"
+
+          aws s3 cp ./build/* s3://tesselltools/tessell/plugins/$PLUGIN_NAME/$VERSION/
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
