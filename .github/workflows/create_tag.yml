@@ -295,12 +295,9 @@ jobs:
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
-          shell_script = """
-          commit_message=$(git log --format=%B -n 1 )
-          echo "$commit_message"
-          """
-          COMMIT_MESSAGE = subprocess.check_output(shell_script, shell=True, text=True)
-          
+          COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
+          print(COMMIT_MESSAGE)
+
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
