@@ -180,12 +180,19 @@ jobs:
           OWNER = REPO.split("/")
           REPO = OWNER[1]
           
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFULL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
           payload = {
             "repoName": REPO,
             "commitHash": COMMIT_HASH,
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
+
+          print(payload)
           headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
