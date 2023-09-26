@@ -121,7 +121,7 @@ jobs:
         run: |
           repo=${{github.repository}}
           plugin=$(echo "$repo" | cut -d '-' -f 4)
-          cd "$tessell-db-plugin-$plugin"
+          cd "tessell-db-plugin-$plugin"
           cd build
           FILE=$(ls)
           BASENAME=$(basename "$FILE" .tar.gz)
