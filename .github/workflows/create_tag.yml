@@ -296,6 +296,7 @@ jobs:
           TAG = os.environ.get('TAG')
           
           COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
+          COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
           print(COMMIT_MESSAGE)
 
           try:
