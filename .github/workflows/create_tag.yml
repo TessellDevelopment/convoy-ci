@@ -296,8 +296,6 @@ jobs:
           
           COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
           COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
-          print(COMMIT_MESSAGE)
-
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
