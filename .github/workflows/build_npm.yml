@@ -58,8 +58,7 @@ jobs:
 
       - name: Publish the package
         run: |
-          version_line=$(grep 'version:' "convoy.yaml")
-          version=$(echo "$version_line" | awk '{print $2}')
+          version=$(cat convoy.yaml | yq -r '.version')
           yq ".version = \"$version\"" package.json > tmp_package.json
           mv tmp_package.json package.json
           npm publish    
