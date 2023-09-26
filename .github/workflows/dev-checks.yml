@@ -84,17 +84,24 @@ jobs:
         
       - name: Check branch name
         run: |
-         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-'; then
+         if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS|TDEVOPS|TOPS|revert)-'; then
            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'" 
          else
-           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-'"
+           echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'"
            exit 1
          fi
       - name: Check double commit
+        env: 
+          PR_TITLE: ${{github.event.pull_request.title}}
+          BRANCH: ${{ github.event.pull_request.head.ref}}
         run: |
-          if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ '${{ github.event.pull_request.head.ref }}' == *'double_commit'* ]] || [[ '${{ github.event.pull_request.title }}' == *'Double Commit'* ]]); then
+          if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+            if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
+              echo "Revert Double commit Branch. Allowed"
+            else   
               echo "Exclude Double commit naming in Branch, PR title and try again."
               exit 1
+            fi
           else
             echo "No double commit conflicts found in Branch or PR title."
           fi
@@ -119,7 +126,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install js-yaml
-      
+
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
         with:
@@ -218,10 +225,33 @@ jobs:
               }
             });
             
+      - name: Check version in convoy.yaml and gradle.properties
+        id: check_convoy
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        run: |
+            if [ -f convoy.yaml ]; then
+              if grep -q 'version:' convoy.yaml; then
+                echo "Version found in convoy.yaml"
+                if [ -f gradle.properties ]; then
+                  if grep -q '^\s*version=' gradle.properties; then
+                    echo "Please remove version from gradle.properties"
+                    exit 1
+                  else
+                    echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
+                  fi
+                fi
+              else
+                echo "Version not found in convoy.yaml"
+                echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "convoy.yaml not found"
+              echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+            fi
             
       - name: check for gradle properties version
         uses: actions/github-script@v6.3.3
-        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' && steps.check_convoy.outputs.check_version_in_gradle == 'true'}} 
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -326,7 +356,7 @@ jobs:
             });
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
-              if (file_entry.filename.split("/")[1] === 'convoy-config.yaml' && file_entry.patch.includes("+version")) {
+              if ((file_entry.filename.split("/")[1] === 'convoy-config.yaml' || file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
               }
@@ -536,7 +566,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: dev-checks
