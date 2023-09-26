@@ -33,17 +33,6 @@ on:
         required: false
         type: string
         default: 'false'
-      nexus_exporter:
-        description: 'This is used to get the exporter name used in nexus repository'
-        required: false
-        type: string
-        default: 'false'
-      nexus_repository: 
-        description: 'This is used to get the Nexus repostiory name where artifact will be pushed'
-        required: false
-        type: string
-        default: 'false'
-
 
 jobs:
   dev-checks:
@@ -278,10 +267,33 @@ jobs:
               }
             });
             
+      - name: Check version in convoy.yaml and gradle.properties
+        id: check_convoy
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        run: |
+            if [ -f convoy.yaml ]; then
+              if grep -q 'version:' convoy.yaml; then
+                echo "Version found in convoy.yaml"
+                if [ -f gradle.properties ]; then
+                  if grep -q '^\s*version=' gradle.properties; then
+                    echo "Please remove version from gradle.properties"
+                    exit 1
+                  else
+                    echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
+                  fi
+                fi
+              else
+                echo "Version not found in convoy.yaml"
+                echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "convoy.yaml not found"
+              echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+            fi
             
       - name: check for gradle properties version
         uses: actions/github-script@v6.3.3
-        if:  ${{ inputs.check_version_in_gradle_properties == 'true' }} 
+        if:  ${{ inputs.check_version_in_gradle_properties == 'true' && steps.check_convoy.outputs.check_version_in_gradle == 'true'}} 
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
@@ -314,8 +326,6 @@ jobs:
              if (version_updated == false) {
                   core.setFailed("Tessell Libraries must update the version in gradle.properties file")
              }
-             execSync = require('child_process').execSync(
-                `echo "VERSION_FILE=gradle.properties" >> $GITHUB_ENV`);
       
       - name: check for version in version_txt
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
@@ -473,89 +483,89 @@ jobs:
               if (version_updated == false ) {
                 core.setFailed("Tessell Libraries must update the version in chart.yaml file")
               }
-              execSync = require('child_process').execSync(
-                `echo "VERSION_FILE=Chart.yaml" >> $GITHUB_ENV`);
 
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
-        if: ${{ inputs.nexus_repository != 'false' }}
         env:
           NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/search?repository
-          NEXUS_REPO: ${{inputs.nexus_repository}}
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
-          EXPORTER: ${{inputs.nexus_exporter}}
-          VERSION_FILE: ${{ENV.VERSION_FILE}}
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-
-            var execSync =  require('child_process').execSync;
-            var path = execSync(`
-                find . -name "$VERSION_FILE" -type f               
-            `, { encoding: 'utf-8' });
-            path=path.substring(0,path.length-1);
-            console.log(path);
-            
-            var VERSION;
-            if( "${{ENV.VERSION_FILE}}" == "convoy-config.yaml" || "${{ENV.VERSION_FILE}}" == "Chart.yaml"){
-              const content = fs.readFileSync(path, 'utf8');
-              const data = yaml.load(content);
-              VERSION = data.version;
-            }
-            else{
-              execSync =  require('child_process').execSync;
-              VERSION = execSync(`
-                  version=$(grep '^version=' $VERSION_FILE | cut -d '=' -f 2)
-                  echo $version|tr -d '\n'          
-              `, { encoding: 'utf-8' });
-            }
-            console.log(VERSION);
-            execSync = require('child_process').execSync;
-            const output=execSync(`
-                if [ $NEXUS_REPO = "tessell-repos-m2-component" ]; 
-                then
-                    file="$EXPORTER-${VERSION}.jar"
-                elif [ $NEXUS_REPO = "tessell-repos-helm-component" ]; 
-                then
-                    file="$EXPORTER-${VERSION}.tgz"  
-                else
-                    file="$EXPORTER-${VERSION}-py3-none-any.whl"
-                fi
-                API_URL="$NEXUS_URL=$NEXUS_REPO&version=${VERSION}"
-                echo $API_URL
-                echo $file
-                response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
-                check="$(echo $response | grep $file)"
-                if [ ! -z "$check" ]
-                    then
-                        echo "Fail"
-                        exit 
-                    fi
-                
-                while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
-                    continuationToken=$(echo $response | jq -r '.continuationToken')
-                    response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
-                    check="$(echo $response | grep $file)"
-                    if [ ! -z "$check" ]
-                    then
-                        echo "Fail"
-                        exit 
-                    fi
-                done
-                if [ -z "$check" ]
-                    then
-                        echo "Pass"
-                        exit 
-                    fi
-            `, { encoding: 'utf-8' }); 
-            console.log(output);
-            if(output.includes("Fail"))
-              throw "Update version, matching version file already present in Nexus"
-            else
-              console.log("Passed: No matching version present in Nexus")  
+              const fs = require('fs');
+              const yaml = require('js-yaml');
+              var nexusRepo;
+              var version;
+              var exporter;
+              try{
+                const content = fs.readFileSync('./convoy.yaml', 'utf8');
+                const data = yaml.load(content);
+                var artifactType = data.artifactType
+                if(artifactType === 'helmChart'){
+                  const path = data.chartPath
+                  const contentHelm = fs.readFileSync(path, 'utf8');
+                  const dataHelm = yaml.load(contentHelm);
+                  version = dataHelm.version
+                }
+                else{
+                  version = data.version;
+                }
+                nexusUrl = data.nexusUrl;
+                if(nexusUrl != undefined){
+                  const parts = nexusUrl.split('/');
+                  nexusRepo = parts[4];
+                }
+                artifacts = data.artifactName;
+                if(artifacts != undefined){
+                  exporter = artifacts[0];
+                }
+                if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+                  console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
+                  process.exit(0);
+                }
+              } catch(error){
+                console.log("convoy.yaml not present in respository skipping check nexus version.")
+                console.error('Error:', error.message)
+                process.exit(0);
+              }
+              console.log(nexusRepo);
+              console.log(exporter);
+              console.log(version);
+              execSync = require('child_process').execSync;
+              const output=execSync(`
+                  file="${exporter}-${version}"
+                  API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
+                  echo $API_URL
+                  echo $file
+                  response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
+                  check="$(echo $response | grep $file)"
+                  if [ ! -z "$check" ]
+                      then
+                          echo "Fail"
+                          exit 
+                      fi
+                  
+                  while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
+                      continuationToken=$(echo $response | jq -r '.continuationToken')
+                      response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
+                      check="$(echo $response | grep $file)"
+                      if [ ! -z "$check" ]
+                      then
+                          echo "Fail"
+                          exit 
+                      fi
+                  done
+                  if [ -z "$check" ]
+                      then
+                          echo "Pass"
+                          exit 
+                      fi
+              `, { encoding: 'utf-8' }); 
+              console.log(output);
+              if(output.includes("Fail"))
+                throw "Update version, matching version file already present in Nexus"
+              else
+                console.log("Passed: No matching version present in Nexus")
 
 
       - name: Check Version sequence of DB Scripts
@@ -594,7 +604,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: dev-checks

@@ -51,6 +51,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           echo "Building the service"
@@ -160,8 +176,7 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-      
-      
+
       - name: Pushing generated tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -190,13 +205,109 @@ jobs:
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
-      
-      
-      
-      
-            
-          
-          
-          
-    
 
+      - name: Upload files to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          config="${{ inputs.exporter_config }}"
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          config=$(echo "$config" | sed 's/\\//g')
+          for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
+            os_type=$(echo "$key" | cut -d',' -f1)
+            engine=$(echo "$key" | cut -d',' -f2)
+            mv ./${{ inputs.exporter_name }}-$os_type-$engine.tar ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar
+            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/${{ inputs.exporter_name }}-$os_type-$engine/$VERSION/
+          done
+
+  post-build-status-to-convoy:
+    runs-on: self-hosted
+    needs: build
+    if: always()  
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pybase64
+
+      - uses: technote-space/workflow-conclusion-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          python - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
+          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
+          
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFULL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
+          payload = {
+            "repoName": REPO,
+            "commitHash": COMMIT_HASH,
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+
+          print(payload)
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+          }
+
+          max_retries = 3
+          retry_delay = 5 
+      
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
