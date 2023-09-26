@@ -155,7 +155,7 @@ jobs:
           REPO = OWNER[1]
           
           if STATUS == 'SUCCESS':
-            STATUS='SUCCESSFULL'
+            STATUS = 'SUCCESSFULL'
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
@@ -191,7 +191,7 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
-          
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build

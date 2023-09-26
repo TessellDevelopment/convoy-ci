@@ -247,7 +247,7 @@ jobs:
           REPO = OWNER[1]
           
           if STATUS == 'SUCCESS':
-            STATUS='SUCCESSFULL'
+            STATUS = 'SUCCESSFULL'
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
