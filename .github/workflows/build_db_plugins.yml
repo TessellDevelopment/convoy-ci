@@ -127,6 +127,7 @@ jobs:
           BASENAME=$(basename "$FILE" .tar.gz)
           IFS='-' read -ra parts <<< "$BASENAME"
           PLUGIN_NAME="${parts[0]}"
+          PLUGIN_NAME=$(echo "$PLUGIN_NAME" | tr '_' '-')
           VERSION="${parts[1]}"
           echo "$FILE"
           echo "$PLUGIN_NAME"
