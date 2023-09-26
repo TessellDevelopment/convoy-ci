@@ -314,7 +314,101 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+   
+          
+  post-build-status-to-convoy:
+    runs-on: self-hosted
+    needs: build
+    if: always()  
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pybase64
+
+      - uses: technote-space/workflow-conclusion-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          python - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
+          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
+          
+          if STATUS == 'SUCCESS':
+            STATUS='SUCCESSFULL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
+          payload = {
+            "repoName": REPO,
+            "commitHash": COMMIT_HASH,
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+
+          print(payload)
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+          }
+
+          max_retries = 3
+          retry_delay = 5 
+      
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build
@@ -324,5 +418,3 @@ jobs:
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            

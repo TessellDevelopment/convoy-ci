@@ -272,7 +272,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
 
       - name: POST API to Convoy
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
