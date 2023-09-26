@@ -184,7 +184,7 @@ jobs:
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          COMMIT_MESSAGE: "${{github.event.pull_request.base.repo.merge_commit_message}}"
+          COMMIT_MESSAGE: "${{github.event.head_commit.message}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
