@@ -216,15 +216,5 @@ jobs:
             os_type=$(echo "$key" | cut -d',' -f1)
             engine=$(echo "$key" | cut -d',' -f2)
             mv ./${{ inputs.exporter_name }}-$os_type-$engine.tar ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar
-            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar s3://tessell-terraform-modules-terls/ciTestFolder/tessell/${{ inputs.exporter_name }}/${{ inputs.exporter_name }}-$os_type-$engine/$VERSION/
+            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar s3://tesselltools/tessell/${{ inputs.exporter_name }}/${{ inputs.exporter_name }}-$os_type-$engine/$VERSION/
           done
-      
-      
-      
-      
-            
-          
-          
-          
-    
-
