@@ -55,8 +55,6 @@ jobs:
           mkdir -p build; cd tsmv101; terraform_build $PWD ../build/${ARTIFACT_NAME}.zip; cd ../build; ls -l;
           unzip -l ${ARTIFACT_NAME}.zip
           cd ..
-          version=$(cat convoy.yaml | yq -r '.version')
-          echo "$version"
 
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
