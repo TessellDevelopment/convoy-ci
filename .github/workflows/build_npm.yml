@@ -4,6 +4,7 @@ name: Tessell Pipelines Code Build
 # Controls when the workflow will run
 on:
   workflow_call:
+   
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -19,50 +20,57 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_URL: https://nexus.tessell.cloud
     steps:
       - uses: actions/checkout@v3
+        name: Checkout repos  
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Set Pull repository
+      - name: Install dependencies
+        run: |
+          npm install 
+          npm run build    
+
+      - name: Set Component repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
+          echo "NEXUS_REPO_NPM=tessell-repos-npm-component" >> $GITHUB_ENV    
 
-      - name: Build
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      - name: Set up .npmrc
         run: |
-          echo ./gradlew mavenPackage --refresh-dependencies --console plain \
-            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          cd ~
+          head -n -1 .npmrc > temp && mv temp .npmrc
+          cat .npmrc
+          echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
+          cat .npmrc
 
-      - name: Build with Gradle
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      - name: Publish the package
         run: |
-          echo ./gradlew mavenDeploy --console plain --refresh-dependencies \
-            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" \
-            -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
-
-      - name: Slack Notification
+          version=$(cat convoy.yaml | yq -r '.version')
+          yq ".version = \"$version\"" package.json > tmp_package.json
+          mv tmp_package.json package.json
+          npm publish    
+      
+      - name: Slack Notification  
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}
            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-      
+
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
@@ -76,7 +84,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-   
+        
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
@@ -169,17 +177,13 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
-          
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build
     with:
-      subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
-      to: ${{ needs.build.outputs.mail_id_output }}
+        subject: ${{ needs.build.outputs.mail_subject_output }}
+        body: ${{ needs.build.outputs.mail_body_output }} 
+        to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            
-
-           
