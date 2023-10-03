@@ -3,44 +3,38 @@ name: Master CI Approve Workflows
 on:
   workflow_call:
 
-  worfkflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   file-check:
-    if: ${{}} =='push'
+    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/file_check.yml@TDEVOPS-827
   
   read-codeowners:
-    if: ${{}} =='push'
-    need: file-check
+    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+    needs: file-check
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/read_codeowners.yml@TDEVOPS-827
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
     
   check-label:
-    if: ${{}} =='push'
-    need: read-codeowners
+    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+    needs: read-codeowners
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/check_label.yml@TDEVOPS-827
     with:
       approval-teams: ${{needs.read-codeowners.outputs.teams}}   
 
   commit-event:
-    if: ${{}} =='push'
-    need: check-label
+    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+    needs: check-label
     run: |
       exit 1
 
   post-message: 
-    if: ${{}} == 'label'
+    if: github.event.action == 'labeled'
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/post_message.yml@TDEVOPS-827
 
   check-approval:
     if: github.event.review.state == 'approved'
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/check_approval.yml@TDEVOPS-827
-    with:
-      approval-teams: ${{needs.read-codeowners.outputs.teams}}
-  
-  
-  
-  
-  
+    

@@ -4,8 +4,11 @@ on:
   workflow_call:
     outputs:
       github-changes:
-          description: "Changed File output"
+          description: "Github File Changes output"
           value: ${{ jobs.file-check.outputs.github-changes }}
+      changed-files:
+        description: "All Changed File output"
+        value: ${{ jobs.file-check.outputs.changed-files }}
 
   workflow_dispatch:
 
@@ -13,7 +16,8 @@ jobs:
   file-check:
     runs-on: self-hosted
     outputs:
-      github-changes: ${{steps.check-github-output.outputs.github-changes}}
+      github-changes: ${{ steps.set-output.outputs.github-changes }}
+      changed-files: ${{ steps.set-output.outputs.changed-files }}
 
     name: Check changed files
     steps:
@@ -27,8 +31,13 @@ jobs:
         with:
           files: |
             .github/**
+            
+      - name: List all changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: Set Output
-        id: check-github-output
+        id: set-output
         run: |
-          echo "github-changes=${{steps.changed-files-github.outputs.only_changed}}" >> $GITHUB_OUTPUT
+          echo "github-changes=${{ steps.changed-files-github.outputs.only_changed }}" >> $GITHUB_OUTPUT
+          echo "changed-files=${{ steps.changed-files.outputs.all_changed_files }}" >> $GITHUB_OUTPUT
