@@ -1,4 +1,3 @@
-# Get all changed files and check from codeowners and output team names whose approval will be required
 ---
 name: Check Changed Files
 
@@ -24,6 +23,51 @@ jobs:
     steps: 
       - name: Extract team names from CODEOWNERS
         id: extract-teams
+        env:
+          changed-files: "${{ inputs.changed-files }}"
         run: |
-          CHANGED_FILES="${{ inputs.changed-files }}"
+          python - <<EOF
+          def extract_team_names(team_names):
+            return [team.replace('@TessellDevelopment/', '') for team in team_names]
+        
+          team_patterns = {}
+          with open('CODEOWNERS', 'r') as pattern_file:
+              lines = pattern_file.readlines()
+          
+          for line in lines:
+              line = line.strip()
+              if not line or line.startswith('#'):
+                  continue
+          
+              parts = line.split()
+              file_pattern = parts[0]
+              team_names = parts[1:]
+          
+              team_names_cleaned = extract_team_names(team_names)
+              team_patterns[file_pattern] = team_names_cleaned
+          
+          changed_files = os.environ.get('changed-files')
+          changed_files_list = changed_files.split()
+          changed_teams = set()
+          for file_path in changed_files_list:
+              matched = False
+              for pattern, team_names in team_patterns.items():
+                  if pattern == '*' or (pattern.endswith('**') and file_path.startswith(pattern[:-2])):
+                      teams = team_names
+                      changed_teams.update(teams)
+                      matched = True
+                  elif file_path.startswith(pattern):
+                      teams = team_names
+                      changed_teams.update(teams)
+                      matched = True
+              
+              if not matched:
+                  for teams in team_patterns.values():
+                      changed_teams.update(teams)
+          
+          required_teams = ""
+          for team in changed_teams:
+            required_teams=required_teams+team+" "
+          required_teams.strip()
+          EOF
           
