@@ -3,15 +3,17 @@ name: Check Changed Files
 on:
   workflow_call:
     outputs:
-        specific:
+      github-changes:
           description: "Changed File output"
-          value: ${{ jobs.file-check.outputs.specific }}
+          value: ${{ jobs.file-check.outputs.github-changes }}
+
+  workflow_dispatch:
 
 jobs:
   file-check:
     runs-on: self-hosted
     outputs:
-      specific: ${{steps.check-file-output.outputs.specific}}
+      github-changes: ${{steps.check-github-output.outputs.github-changes}}
 
     name: Check changed files
     steps:
@@ -19,14 +21,14 @@ jobs:
         with:
           fetch-depth: 0 
 
-      - name: Changed files
-        id: changed-files-specific
+      - name: Check .github changes
+        id: changed-files-github
         uses: tj-actions/changed-files@v39
         with:
           files: |
             .github/**
 
       - name: Set Output
-        id: check-file-output
+        id: check-github-output
         run: |
-          echo "specific=${{steps.changed-files-specific.outputs.only_changed}}" >> $GITHUB_OUTPUT
+          echo "github-changes=${{steps.changed-files-github.outputs.only_changed}}" >> $GITHUB_OUTPUT

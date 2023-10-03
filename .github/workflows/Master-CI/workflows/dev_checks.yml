@@ -2,6 +2,8 @@
   name: Best Practices Check
   on:
     workflow_call:
+    
+    workflow_dispatch:
   
   jobs:
     dev-checks:

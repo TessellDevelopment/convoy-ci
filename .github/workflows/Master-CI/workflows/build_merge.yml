@@ -1,0 +1,57 @@
+---
+name: Tessell Pipelines Code Build Post merge
+
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'This is used to determine build type'
+        required: true
+        type: string
+      tag:
+        description: 'Latest tag for upload'
+        required: true
+        type: string
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      BUILD_TYPE: ${{inputs.type}}
+      LATEST_TAG: ${{inputs.tag}}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build and Push OPS
+        if: BUILD_TYPE == 'OPS'
+        run: |
+          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+
+          mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                  -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
+                  -DgeneratePom=true -Dpackaging=zip \
+                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Dfile=./target/function.zip -DrepositoryId=nexus
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}

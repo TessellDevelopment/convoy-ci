@@ -3,6 +3,8 @@ name: Master CI Approve Workflows
 on:
   workflow_call:
 
+  worfkflow_dispatch:
+
 jobs:
   file-check:
     if: ${{}} =='push'

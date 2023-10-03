@@ -3,13 +3,15 @@ name: Master CI Merge Workflows
 on:
   workflow_call:
 
+  workflow_dispatch:
+
 jobs:
   file-check:
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/file_check.yml@TDEVOPS-827
 
   build-file:
     runs-on: self-hosted
-    if: needs.file-check.outputs.specific == 'false'
+    if: needs.file-check.outputs.github-changes == 'false'
     outputs:
       type: ${{steps.build-type.outputs.type}}
     needs: file-check
@@ -23,30 +25,37 @@ jobs:
           echo "type=$build_type" >> $GITHUB_OUTPUT
   
   create-tag:
-    if: needs.file-check.outputs.specific == 'false'
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: build-file
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_tag.yml@TDEVOPS-827
 
+  post-tag-to-convoy:
+    if: needs.file-check.outputs.github-changes == 'false'
+    needs: create-tag
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/post_tag_convoy.yml@TDEVOPS-827
+    with:
+      tag: ${{needs.create-tag.outputs.tag}}
+
   find-latest-tag:
-    if: needs.file-check.outputs.specific == 'false'
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/find_latest_tag.yml@TDEVOPS-827
 
   build:
-    if: needs.file-check.outputs.specific == 'false'
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: find-latest-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/build_merge.yml@TDEVOPS-827
     with:
       type: ${{needs.build-file.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
 
+  post-build-to-convoy:
+    if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
+    needs: build
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/post_build_convoy.yml@TDEVOPS-827
+
   create-double-commit:
-    if: needs.file-check.outputs.specific == 'false'
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: build
     if: echo "${{ github.event.pull_request.base.ref }}" | grep -Eq '^rel-'
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_double_commit.yml@TDEVOPS-827
-
-
-
-
-

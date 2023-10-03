@@ -1,0 +1,162 @@
+---
+name: Create tag on release branch
+on:
+  workflow_call:
+    outputs:
+      tag:
+        description: "New tag created post merge"
+        value: ${{ jobs.create-tag-on-merge.outputs.tag_ref_output }}
+
+  workflow_dispatch:
+
+jobs:
+  create-tag-on-merge:
+    runs-on: self-hosted
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
+    env:
+       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Find latest tag
+        run: |
+          latest_tags+=("$(git tag --contains '${{ github.event.pull_request.base.sha }}')")
+          for tag in $latest_tags; do tag_arr+=($tag); done
+          echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+        id: latest_tag
+
+      - name: Create tag and update ref
+        uses: actions/github-script@v6.3.3
+        id: create_tag
+        with:
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          script: |
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              latest_tag = tags[0]
+            } else {
+              if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            console.log("Latest tag: " + latest_tag)
+
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+
+            // increase the minor version lineraly to get the new tag
+            tag_parts = latest_tag.split('.')
+            new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+
+            // head of the branch needs to be tagged
+            sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
+
+            console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
+
+            result = await github.rest.git.createTag({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                tag: new_tag,
+                message: 'Tag created by CI pipeline',
+                type: 'commit',
+                object: sha_to_tag
+            });
+
+            console.log(result)
+
+            fullTagName = "refs/tags/" + new_tag
+
+            console.log("Updating tag with REF: " + fullTagName)
+
+            newRef = await github.rest.git.createRef({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                ref: fullTagName,
+                sha: sha_to_tag
+            });
+
+            console.log('Ref updated.');
+            core.setOutput('tag_ref', new_tag)  
+
+      - name: Tag Output
+        id: tag_output
+        run: |
+          echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+        if: failure()
+
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+          
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: create-tag-on-merge
+    with:
+      subject: ${{ needs.create-tag-on-merge.outputs.mail_subject_output }}
+      body: ${{ needs.create-tag-on-merge.outputs.mail_body_output }}
+      to: ${{ needs.create-tag-on-merge.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
