@@ -78,6 +78,7 @@ jobs:
           for team in changed_teams:
             required_teams=required_teams+team+" "
           required_teams.strip()
+          print(required_teams)
           sys.stdout.write(f"::set-output name=teams::{required_teams}\n")
           EOF
           

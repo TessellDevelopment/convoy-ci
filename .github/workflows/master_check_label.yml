@@ -20,6 +20,7 @@ jobs:
         id: check-label
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
+          req_teams="${{inputs.required-teams}}"
           LABELS=$(curl -s -H "Authorization: Bearer ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}" \
             -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}" | \
@@ -38,6 +39,7 @@ jobs:
       - name: Create Labels
         run: |
           LABELS=${{ steps.check-label.outputs.create_label }}
+          echo "$LABELS"
           LABELS=$(echo "$LABELS" | tr ' ' '\n')
           for label in $LABELS; do
             curl -X POST "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/labels" \
