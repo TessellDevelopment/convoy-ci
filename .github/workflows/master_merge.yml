@@ -8,6 +8,7 @@ on:
 jobs:
   file-check:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
+    secrets: inherit
 
   build-file:
     runs-on: self-hosted
@@ -19,32 +20,30 @@ jobs:
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          build_line=$(grep 'build:' convoy.yaml)
-          build_type=$(echo "$build_line" | awk '{print $2}')
-          echo "$build_type"
+          build_type=$(yq .ci.build convoy.yaml)
           echo "type=$build_type" >> $GITHUB_OUTPUT
   
   create-tag:
-    if: needs.file-check.outputs.github-changes == 'false'
     needs: build-file
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_tag.yml@TDEVOPS-827
+    secrets: inherit
 
   post-tag-to-convoy:
-    if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-827
+    secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
 
   find-latest-tag:
-    if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-827
+    secrets: inherit
 
   build:
-    if: needs.file-check.outputs.github-changes == 'false'
     needs: find-latest-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_build_merge.yml@TDEVOPS-827
+    secrets: inherit
     with:
       type: ${{needs.build-file.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
@@ -53,8 +52,10 @@ jobs:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     needs: build
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-827
+    secrets: inherit
 
   create-double-commit:
     if: echo "${{ github.event.pull_request.base.ref }}" | grep -Eq '^rel-'
     needs: build
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-827
+    secrets: inherit

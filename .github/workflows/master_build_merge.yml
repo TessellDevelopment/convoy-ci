@@ -19,7 +19,6 @@ jobs:
   build:
     runs-on: self-hosted
     env:
-      BUILD_TYPE: ${{inputs.type}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
@@ -37,7 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build and Push OPS
-        if: BUILD_TYPE == 'OPS'
+        if: ${{inputs.type}} == 'OPS'
         run: |
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
 

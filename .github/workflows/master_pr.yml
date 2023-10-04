@@ -23,9 +23,7 @@ jobs:
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          build_line=$(grep 'build:' convoy.yaml)
-          build_type=$(echo "$build_line" | awk '{print $2}')
-          echo "$build_type"
+          build_type=$(yq .ci.build convoy.yaml)
           echo "type=$build_type" >> $GITHUB_OUTPUT
 
   build:

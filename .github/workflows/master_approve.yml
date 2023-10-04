@@ -9,18 +9,21 @@ jobs:
   file-check:
     if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
+    secrets: inherit
   
   read-codeowners:
     needs: file-check
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_read_codeowners.yml@TDEVOPS-827
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
+    secrets: inherit
     
   check-label:
     needs: read-codeowners
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_label.yml@TDEVOPS-827
     with:
-      required-teams: ${{needs.read-codeowners.outputs.required-teams}}   
+      required-teams: ${{needs.read-codeowners.outputs.required-teams}}
+    secrets: inherit
 
   commit-event:
     runs-on: self-hosted
@@ -33,8 +36,10 @@ jobs:
   post-message: 
     if: github.event.action == 'labeled'
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_message.yml@TDEVOPS-827
+    secrets: inherit
 
   check-approval:
     if: github.event.review.state == 'approved'
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_approval.yml@TDEVOPS-827
+    secrets: inherit
     

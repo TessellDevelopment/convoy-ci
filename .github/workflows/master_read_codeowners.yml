@@ -23,7 +23,7 @@ jobs:
     steps: 
       - name: Set up Python
         uses: actions/setup-python@v2
-        
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -38,7 +38,7 @@ jobs:
             return [team.replace('@TessellDevelopment/', '') for team in team_names]
         
           team_patterns = {}
-          with open('CODEOWNERS', 'r') as pattern_file:
+          with open('.github/CODEOWNERS', 'r') as pattern_file:
               lines = pattern_file.readlines()
           
           for line in lines:
