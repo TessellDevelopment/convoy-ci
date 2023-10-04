@@ -24,9 +24,9 @@ jobs:
           TEAM_NAME="${{github.event.label.name}}"
           MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM_NAME/members" | jq -r '.[].login')
           IFS=, read -r -a array <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
-          MESSAGE="Files changed in your PR requires approval from `$TEAM_NAME` team. Please get approval from:"
+          MESSAGE="Files changed in your PR requires approval from $TEAM_NAME team. Please get approval from:"
           for member in "${array[@]}"; do
-            MESSAGE="$MESSAGE\n`$member`"
+            MESSAGE="$MESSAGE\n$member"
           done
           echo "message=$MESSAGE" >> $GITHUB_OUTPUT
 
