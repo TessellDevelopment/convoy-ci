@@ -197,7 +197,7 @@ jobs:
           REPO = OWNER[1]
           
           if STATUS == 'SUCCESS':
-            STATUS = 'SUCCESSFULL'
+            STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
@@ -245,4 +245,3 @@ jobs:
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
 
             
-
