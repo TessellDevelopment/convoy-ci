@@ -105,7 +105,7 @@ jobs:
                 repo: "${{ github.event.inputs.new_repo_name }}",
                 accept: 'application/vnd.github.v3+json'
               })
-              console.log("Repository with name, ${{ github.event.inputs.new_repo_name }} created SUCCESSFULy")
+              console.log("Repository with name, ${{ github.event.inputs.new_repo_name }} created successfully")
             } catch (err) {
               core.setFailed("Repository with name, ${{ github.event.inputs.new_repo_name }} does not exists.")
             }
