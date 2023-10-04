@@ -69,5 +69,7 @@ jobs:
           for team in changed_teams:
             required_teams=required_teams+team+" "
           required_teams.strip()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'{teams}={required_teams}', file=fh)
           EOF
           

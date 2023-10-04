@@ -61,7 +61,3 @@ jobs:
     needs: check-commits
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
     uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/auto_merge.yml@TDEVOPS-827  
-
-
-
-
