@@ -41,7 +41,7 @@ jobs:
                   fi
                 done
               done
-              if[ FLAG -eq 0 ]; then
+              if[ $FLAG -eq 0 ]; then
                 echo "Approval not present for $TEAM_NAME team."
                 exit 1
               fi
