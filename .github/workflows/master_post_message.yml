@@ -26,7 +26,7 @@ jobs:
           IFS=, read -r -a array <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
           MESSAGE="Files changed in your PR requires approval from $TEAM_NAME team. Please get approval from:"
           for member in "${array[@]}"; do
-            MESSAGE="$MESSAGE\n$member"
+            MESSAGE="$MESSAGE <br /> $member"
           done
           echo "message=$MESSAGE" >> $GITHUB_OUTPUT
 
