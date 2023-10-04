@@ -26,8 +26,9 @@ jobs:
           echo "message=$MESSAGE" >> $GITHUB_OUTPUT
 
       - name: Post team members name message
-        uses: wei/github-pr-comment@v1
+        uses: thollander/actions-comment-pull-request@v2
         with:
           message: ${{steps.team_members.outputs.message}}
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          pr_number: ${{ github.event.pull_request.number }}
           
