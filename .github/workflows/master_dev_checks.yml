@@ -58,15 +58,6 @@
               fi  
             fi
   
-        - name: Check convoy.yaml
-          id: convoy_check
-          run: |
-            if [ -f "convoy.yaml" ]; then
-              echo "convoy_exists=true" >> $GITHUB_OUTPUT
-            else
-              echo "convoy_exists=false" >> $GITHUB_OUTPUT
-            fi
-  
         - name: Set up Python
           uses: actions/setup-python@v2
   
@@ -74,10 +65,8 @@
           run: |
             python -m pip install --upgrade pip
             pip install shyaml
-            echo ${{steps.convoy_check.outputs.convoy_exists}}
               
         - name: Extract Jira Ticket
-          if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
           id: extract
           env:
             PR_TITLE: ${{github.event.pull_request.title}}
@@ -91,7 +80,6 @@
             extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
   
         - name: Validate Jira Ticket
-          if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
           run: |
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
               echo "Revert branch, skipping Jira Validation"

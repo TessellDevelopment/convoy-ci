@@ -39,6 +39,7 @@ jobs:
       - name: Create Labels
         run: |
           LABELS="${{ steps.check-label.outputs.create_label }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
           echo "$LABELS"
           LABELS=$(echo "$LABELS" | tr ' ' '\n')
           for label in $LABELS; do
