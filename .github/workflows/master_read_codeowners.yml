@@ -21,6 +21,13 @@ jobs:
     outputs:
       required-teams: ${{steps.extract-teams.outputs.teams}}
     steps: 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+ 
       - name: Extract team names from CODEOWNERS
         id: extract-teams
         env:
