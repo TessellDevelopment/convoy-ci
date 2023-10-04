@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  
   dev-checks:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-827
 
