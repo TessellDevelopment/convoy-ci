@@ -7,7 +7,7 @@ on:
 
 jobs:
   file-check:
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/file_check.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/file_check.yml@TDEVOPS-827
 
   build-file:
     runs-on: self-hosted
@@ -27,24 +27,24 @@ jobs:
   create-tag:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: build-file
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_tag.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/create_tag.yml@TDEVOPS-827
 
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/post_tag_convoy.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/post_tag_convoy.yml@TDEVOPS-827
     with:
       tag: ${{needs.create-tag.outputs.tag}}
 
   find-latest-tag:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/find_latest_tag.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/find_latest_tag.yml@TDEVOPS-827
 
   build:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: find-latest-tag
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/build_merge.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/build_merge.yml@TDEVOPS-827
     with:
       type: ${{needs.build-file.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
@@ -52,10 +52,9 @@ jobs:
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     needs: build
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/post_build_convoy.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/post_build_convoy.yml@TDEVOPS-827
 
   create-double-commit:
-    if: needs.file-check.outputs.github-changes == 'false'
-    needs: build
     if: echo "${{ github.event.pull_request.base.ref }}" | grep -Eq '^rel-'
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/create_double_commit.yml@TDEVOPS-827
+    needs: build
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/create_double_commit.yml@TDEVOPS-827

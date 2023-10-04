@@ -8,10 +8,10 @@ on:
 jobs:
   
   dev-checks:
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/dev_checks.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/dev_checks.yml@TDEVOPS-827
 
   version-check:
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/check_version.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/check_version.yml@TDEVOPS-827
 
   build-file:
     runs-on: self-hosted
@@ -29,7 +29,7 @@ jobs:
 
   build:
     needs: build-file
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/build_pr.yml@TDEVOPS-827
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/build_pr.yml@TDEVOPS-827
     with:
       type: ${{needs.build-file.outputs.type}}
 
@@ -60,4 +60,4 @@ jobs:
   auto-merge:
     needs: check-commits
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-ci/workflows/auto_merge.yml@TDEVOPS-827  
+    uses: TessellDevelopment/tessell-ci/.github/workflows/Master-CI/workflows/auto_merge.yml@TDEVOPS-827  
