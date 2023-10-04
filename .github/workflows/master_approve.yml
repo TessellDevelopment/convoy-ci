@@ -11,24 +11,24 @@ jobs:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
   
   read-codeowners:
-    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     needs: file-check
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_read_codeowners.yml@TDEVOPS-827
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
     
   check-label:
-    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     needs: read-codeowners
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_label.yml@TDEVOPS-827
     with:
-      required-teams: ${{needs.read-codeowners.outputs.teams}}   
+      required-teams: ${{needs.read-codeowners.outputs.required-teams}}   
 
   commit-event:
-    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
+    runs-on: self-hosted
     needs: check-label
-    run: |
-      exit 1
+    steps:
+      - name: Fail workflows
+        run: |
+         exit 1
 
   post-message: 
     if: github.event.action == 'labeled'

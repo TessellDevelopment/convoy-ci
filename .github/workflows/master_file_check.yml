@@ -18,7 +18,6 @@ jobs:
     outputs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
       changed-files: ${{ steps.set-output.outputs.changed-files }}
-    name: Check changed files
     steps:
       - uses: actions/checkout@v4
         with:
