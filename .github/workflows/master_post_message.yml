@@ -3,30 +3,31 @@ name: Check Changed Files
 
 on:
   workflow_call:
-
   workflow_dispatch:
 
 jobs:
-  runs-on: self-hosted
-  env:
-    TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-    TEAM_LABEL: ${{ github.event.action.label.name }}
-  steps: 
-    - name: Get team members names
-      id: team_members
-      run: |
-        ORG_NAME="TessellDevelopment"
-        TEAM_NAME=${{env.TEAM_LABEL}}
-        MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM_NAME/members" | jq -r '.[].login')
-        IFS=, read -r -a array <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
-        MESSAGE="Files changed in your PR requires approval from $TEAM_NAME team. Please get approval from:"
-        for member in "${array[@]}"; do
-          MESSAGE="$MESSAGE\n\n$member"
-        done
-        echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+  post-message:
+    runs-on: self-hosted
+    env:
+      TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      TEAM_LABEL: ${{ github.event.action.label.name }}
+    steps: 
+      - name: Get team members names
+        id: team_members
+        run: |
+          ORG_NAME="TessellDevelopment"
+          TEAM_NAME=${{env.TEAM_LABEL}}
+          MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM_NAME/members" | jq -r '.[].login')
+          IFS=, read -r -a array <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
+          MESSAGE="Files changed in your PR requires approval from $TEAM_NAME team. Please get approval from:"
+          for member in "${array[@]}"; do
+            MESSAGE="$MESSAGE\n\n$member"
+          done
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
 
-    - name: Post team members name message
-      uses: wei/github-pr-comment@v1
-      with:
-        message: ${{steps.team_members.outputs.message}}
-        GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      - name: Post team members name message
+        uses: wei/github-pr-comment@v1
+        with:
+          message: ${{steps.team_members.outputs.message}}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          
