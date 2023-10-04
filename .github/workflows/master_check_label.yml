@@ -38,7 +38,7 @@ jobs:
 
       - name: Create Labels
         run: |
-          LABELS=${{ steps.check-label.outputs.create_label }}
+          LABELS="${{ steps.check-label.outputs.create_label }}"
           echo "$LABELS"
           LABELS=$(echo "$LABELS" | tr ' ' '\n')
           for label in $LABELS; do
