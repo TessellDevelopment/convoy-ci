@@ -38,6 +38,14 @@ jobs:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_message.yml@TDEVOPS-827
     secrets: inherit
 
+  message-event:
+    runs-on: self-hosted
+    needs: post-message
+    steps:
+      - name: Fail workflow
+        run: |
+          exit 1
+
   check-approval:
     if: github.event.review.state == 'approved'
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_approval.yml@TDEVOPS-827
