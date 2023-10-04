@@ -61,17 +61,17 @@ jobs:
               matched = False
               for pattern, team_names in team_patterns.items():
                   if pattern == '*' or (pattern.endswith('**') and file_path.startswith(pattern[:-2])):
-                      teams = team_names
-                      changed_teams.update(teams)
+                      required_teams = team_names
+                      changed_teams.update(required_teams)
                       matched = True
                   elif file_path.startswith(pattern):
-                      teams = team_names
-                      changed_teams.update(teams)
+                      required_teams = team_names
+                      changed_teams.update(required_teams)
                       matched = True
               
               if not matched:
                   for teams in team_patterns.values():
-                      changed_teams.update(teams)
+                      changed_teams.update(required_teams)
           
           required_teams = ""
           for team in changed_teams:
