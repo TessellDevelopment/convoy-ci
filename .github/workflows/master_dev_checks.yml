@@ -3,8 +3,6 @@
   on:
     workflow_call:
     
-    workflow_dispatch:
-  
   jobs:
     dev-checks:
       runs-on: self-hosted
