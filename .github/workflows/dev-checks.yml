@@ -528,6 +528,9 @@ jobs:
                 console.error('Error:', error.message)
                 process.exit(0);
               }
+              if(nexusRepo === 'tessell-repos-py-component'){
+                exporter = exporter.replace('-','_')
+              }
               console.log(nexusRepo);
               console.log(exporter);
               console.log(version);
