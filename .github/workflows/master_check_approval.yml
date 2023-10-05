@@ -13,7 +13,9 @@ jobs:
         - name: Check commits
           id: get-pr-commits
           run: |
-            PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+            # PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+            BASE_BRANCH="${{ github.base_ref }}"
+            PR_COMMITS=$(git rev-list --count $(git merge-base HEAD origin/$BASE_BRANCH)..HEAD)
             echo "Number of commits in PR: $PR_COMMITS"
             echo "::set-output name=pr_commits::$PR_COMMITS"
 
@@ -21,7 +23,6 @@ jobs:
           env:
             TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           run: |
-            #if double commit with single commit and created by cipipeline then pass the workflow
             title="${{github.event.pull_request.head.ref}}"
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "varenyatessell" ]]; then
