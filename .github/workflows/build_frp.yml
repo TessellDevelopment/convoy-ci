@@ -49,6 +49,7 @@
             echo "Building the service"
             export PATH=${PATH}:$GOPATH/bin
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            chmod +x setup
             ./setup -b
             ls
           
