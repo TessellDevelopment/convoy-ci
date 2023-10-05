@@ -46,11 +46,11 @@ jobs:
       - name: Check commits
         id: get-pr-commits
         run: |
-          PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
-          echo "$PR_COMMITS"
-          BASE_BRANCH="${{ github.base_ref }}"
-          PR_COMMITS=$(git rev-list --count $(git merge-base HEAD origin/$BASE_BRANCH)..HEAD)
-          PR_COMMITS=$(($PR_COMMITS-1))
+          PR_COMMITS=$(curl -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
           echo "Number of commits in PR: $PR_COMMITS"
           echo "::set-output name=pr_commits::$PR_COMMITS"
 
