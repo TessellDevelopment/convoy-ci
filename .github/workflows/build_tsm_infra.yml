@@ -62,7 +62,7 @@ jobs:
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
-            VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+            VERSION=$(yq -r '.version' convoy.yaml)
             mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
                 -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                 -DgroupId=${GROUP_NAME} -DartifactId=${ARTIFACT_NAME} -Dversion=$VERSION \
@@ -148,7 +148,7 @@ jobs:
           REPO = OWNER[1]
           
           if STATUS == 'SUCCESS':
-            STATUS = 'SUCCESSFULL'
+            STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
