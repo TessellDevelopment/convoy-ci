@@ -57,7 +57,7 @@ jobs:
       - name: Check Number of Commits
         run: |
           PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-          if [ "$PR_COMMITS" -gt 1 ]; then                                  #Testing
+          if [ "$PR_COMMITS" -eq 1 ]; then
             echo "One Commit present in DC."
           else
             echo "More than one commit present in DC, need approval."

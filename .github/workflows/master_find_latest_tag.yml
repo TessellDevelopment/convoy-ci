@@ -15,7 +15,6 @@ jobs:
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     steps:
-
       - name: Get branch name
         shell: bash
         run: |

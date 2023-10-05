@@ -15,6 +15,7 @@ jobs:
     runs-on: self-hosted
     env:
       TAG: "${{inputs.tag}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -164,4 +165,4 @@ jobs:
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}

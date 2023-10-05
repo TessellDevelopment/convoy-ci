@@ -8,6 +8,8 @@ on:
 jobs:
   post-build-status-to-convoy:
     runs-on: self-hosted
+    env: 
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -102,4 +104,4 @@ jobs:
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}
