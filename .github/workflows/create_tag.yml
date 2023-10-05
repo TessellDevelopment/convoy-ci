@@ -21,7 +21,7 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     env:
-       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v3
@@ -166,6 +166,8 @@ jobs:
   push-commit-details-to-convoy: 
     runs-on: self-hosted
     needs: create-tag-on-merge
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -315,3 +317,11 @@ jobs:
           print(f"Payload: {payload}")
           post_request(payload)
           EOF
+          
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
