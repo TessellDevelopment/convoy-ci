@@ -27,7 +27,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
 
       - name: POST API to Convoy
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
@@ -60,7 +59,7 @@ jobs:
           REPO = OWNER[1]
           
           if STATUS == 'SUCCESS':
-            STATUS = 'SUCCESSFULL'
+            STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
@@ -96,3 +95,11 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}

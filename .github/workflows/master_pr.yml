@@ -35,7 +35,7 @@ jobs:
     secrets: inherit
 
   check-commits:
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
     needs: build
     runs-on: self-hosted
     env:
@@ -62,6 +62,6 @@ jobs:
     
   auto-merge:
     needs: check-commits
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
