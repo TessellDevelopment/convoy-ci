@@ -529,7 +529,7 @@ jobs:
                 process.exit(0);
               }
               if(nexusRepo === 'tessell-repos-py-component'){
-                exporter = exporter.replace('-','_')
+                exporter = exporter.replaceAll('-','_')
               }
               console.log(nexusRepo);
               console.log(exporter);
