@@ -46,14 +46,16 @@ jobs:
       - name: Check commits
         id: get-pr-commits
         run: |
-          PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+          # PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+          BASE_BRANCH="${{ github.base_ref }}"
+          PR_COMMITS=$(git rev-list --count HEAD ^origin/$BASE_BRANCH)
           echo "Number of commits in PR: $PR_COMMITS"
           echo "::set-output name=pr_commits::$PR_COMMITS"
 
       - name: Check Number of Commits
         run: |
           PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-          if [ "$PR_COMMITS" -eq 1 ]; then
+          if [ "$PR_COMMITS" -eq 2 ]; then                                  #Testing
             echo "One Commit present in DC."
           else
             echo "More than one commit present in DC, need approval."
@@ -62,6 +64,6 @@ jobs:
     
   auto-merge:
     needs: check-commits
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )   
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
