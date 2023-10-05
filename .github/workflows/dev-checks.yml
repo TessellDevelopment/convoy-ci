@@ -515,7 +515,7 @@ jobs:
                   const parts = nexusUrl.split('/');
                   nexusRepo = parts[4];
                 }
-                artifacts = data.artifactName;
+                artifacts = data.artifactNames;
                 if(artifacts != undefined){
                   exporter = artifacts[0];
                 }
