@@ -10,10 +10,30 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v2
 
+        - name: Check commits
+          id: get-pr-commits
+          run: |
+            PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
+            echo "Number of commits in PR: $PR_COMMITS"
+            echo "::set-output name=pr_commits::$PR_COMMITS"
+
         - name: Check Approval
           env:
             TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           run: |
+            #if double commit with single commit and created by cipipeline then pass the workflow
+            title="${{github.event.pull_request.head.ref}}"
+            user="${{github.event.pull_request.user.login}}"
+            if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
+              PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+              if [ "$PR_COMMITS" -eq 1 ]; then
+                echo "One Commit present in DC."
+                exit 0
+              else
+                echo "More than one commit present in DC, need approval."
+              fi
+            fi
+
             ORG_NAME="TessellDevelopment"
             REPO=${{github.repository}}
             PR_NUMBER="${{ github.event.pull_request.number }}"

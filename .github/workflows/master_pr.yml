@@ -43,7 +43,9 @@ jobs:
       PR_NUMBER: ${{github.event.number}}
       GITHUB_TOKEN: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
     steps:  
-      - run: |
+      - name: Check commits
+        id: get-pr-commits
+        run: |
           PR_COMMITS=$(curl -s "https://api.github.com/repos/$REPO/pulls/${{ github.event.pull_request.number }}/commits" | jq -r '. | length')
           echo "Number of commits in PR: $PR_COMMITS"
           echo "::set-output name=pr_commits::$PR_COMMITS"
