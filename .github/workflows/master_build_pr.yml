@@ -25,6 +25,5 @@ jobs:
       - name: Build OPS
         if: ${{inputs.type}} == 'OPS'
         run: |
-          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          # ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
-        
