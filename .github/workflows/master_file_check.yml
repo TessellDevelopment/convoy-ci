@@ -34,5 +34,5 @@ jobs:
         id: set-output
         run: |
           echo "github-changes=${{ steps.changed-files.outputs.only_changed }}" >> $GITHUB_OUTPUT
-          echo "changed-files=${{ steps.changed-files.outputs.all_modified_files }}" >> $GITHUB_OUTPUT
+          echo "changed-files=${{ steps.changed-files.outputs.all_changed_and_modified_files }}" >> $GITHUB_OUTPUT
           
