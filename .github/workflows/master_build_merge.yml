@@ -38,14 +38,14 @@ jobs:
       - name: Build and Push OPS
         if: ${{inputs.type}} == 'OPS'
         run: |
-          # ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
 
-          # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-          #         -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-          #         -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
-          #         -DgeneratePom=true -Dpackaging=zip \
-          #         -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-          #         -Dfile=./target/function.zip -DrepositoryId=nexus
+          mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                  -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
+                  -DgeneratePom=true -Dpackaging=zip \
+                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Dfile=./target/function.zip -DrepositoryId=nexus
           echo "${{env.LATEST_TAG}}"
           echo "Build successful"
 
