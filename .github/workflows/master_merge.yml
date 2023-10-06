@@ -25,7 +25,6 @@ jobs:
           echo "type=$build_type" >> $GITHUB_OUTPUT
   
   create-tag:
-    needs: build-file
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_tag.yml@TDEVOPS-827
     secrets: inherit
 
@@ -42,7 +41,7 @@ jobs:
     secrets: inherit
 
   build:
-    needs: find-latest-tag
+    needs: [build-file,find-latest-tag]
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_build_merge.yml@TDEVOPS-827
     secrets: inherit
     with:
