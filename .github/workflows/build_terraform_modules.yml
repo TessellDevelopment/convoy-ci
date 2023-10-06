@@ -81,7 +81,7 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.gitignore'];
+              const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
               const modifiedFiles = response.data.files;
               const modifiedDirectories = [];
               response.data.files.forEach(file => {
