@@ -515,7 +515,7 @@ jobs:
                   const parts = nexusUrl.split('/');
                   nexusRepo = parts[4];
                 }
-                artifacts = data.artifactName;
+                artifacts = data.artifactNames;
                 if(artifacts != undefined){
                   exporter = artifacts[0];
                 }
@@ -527,6 +527,9 @@ jobs:
                 console.log("convoy.yaml not present in respository skipping check nexus version.")
                 console.error('Error:', error.message)
                 process.exit(0);
+              }
+              if(nexusRepo === 'tessell-repos-py-component'){
+                exporter = exporter.replaceAll('-','_')
               }
               console.log(nexusRepo);
               console.log(exporter);
