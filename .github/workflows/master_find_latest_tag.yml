@@ -34,11 +34,14 @@ jobs:
           max_attempts: 3
           retry_on: error
           command: |
+            git fetch --all
             sha="${{github.sha}}"
             sha="${sha:0:7}"
-            latest_tags+=("$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')")
+            echo "$sha"
+            echo "$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')
+            latest_tags="$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')"
             if [[ "$latest_tags" == '' ]]; then 
-              echo " Tag is Empty"
+              echo "Tag is Empty"
               exit 1
             fi
             echo "Tag is present: $latest_tags"       

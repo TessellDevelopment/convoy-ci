@@ -32,7 +32,6 @@ jobs:
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{env.TAG}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          COMMIT_MESSAGE: "${{github.event.head_commit.message}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -134,11 +133,12 @@ jobs:
             
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
-          COMMIT_MESSAGE = os.environ.get('COMMIT_MESSAGE')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
+          COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
+          COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
