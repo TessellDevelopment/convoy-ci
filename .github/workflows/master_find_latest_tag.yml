@@ -25,20 +25,6 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           echo "$GITHUB_CONTEXT"
-      
-      - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
-        id: find_commit
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
-          script: |
-            if (${{ github.event_name  == 'workflow_dispatch'}} ){
-                core.setOutput('commit_id', "${{ github.sha }}" )
-            }
-            else{
-              core.setOutput('commit_id', "${{ github.event.after }}" )
-            }
               
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
@@ -48,9 +34,9 @@ jobs:
           max_attempts: 3
           retry_on: error
           command: |
-            git fetch --all
-            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
-            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
+            sha="${{github.sha}}"
+            sha="${sha:0:7}"
+            latest_tags+=("$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')")
             if [[ "$latest_tags" == '' ]]; then 
               echo " Tag is Empty"
               exit 1
