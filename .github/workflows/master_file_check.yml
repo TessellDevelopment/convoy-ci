@@ -23,6 +23,12 @@ jobs:
         with:
           fetch-depth: 0 
 
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+
       - name: Check .github changes
         id: changed-files-github
         uses: tj-actions/changed-files@v39
