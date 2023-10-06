@@ -14,7 +14,7 @@ jobs:
         id: convoy_check
         run: |
           if [ -f convoy.yaml ]; then
-            if grep -q 'version:' convoy.yaml; then
+            if grep -q 'version' convoy.yaml; then
               echo "Version found in convoy.yaml"
               echo "check=true" >> $GITHUB_OUTPUT
             else
@@ -28,7 +28,7 @@ jobs:
 
   version-check:
     needs: convoy-check
-    if: needs.convoy-check.outputs.check == 'true' || github.repository == 'TessellDevelopment/tessell-terraform-modules'
+    if: ${{needs.convoy-check.outputs.check == 'true' || github.repository == 'TessellDevelopment/tessell-terraform-modules'}}
     runs-on: self-hosted
     steps:
       
