@@ -44,81 +44,81 @@ jobs:
         NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
       with:
         script: |
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-            var NEXUS_REPO;
-            var VERSION;
-            var EXPORTER;
-            try{
-              const content = fs.readFileSync('./convoy.yaml', 'utf8');
-              const data = yaml.load(content);
-              var artifactType = data.artifactType
-              if(artifactType === 'helmChart'){
-                const path = data.chartPath
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                VERSION = dataHelm.version
-              }
-              else{
-                VERSION = data.version;
-              }
-              nexusUrl = data.nexusUrl;
-              if(nexusUrl != undefined){
-                const parts = nexusUrl.split('/');
-                NEXUS_REPO = parts[4];
-              }
-              artifacts = data.artifactNames;
-              if(artifacts != undefined){
-                EXPORTER = artifacts[0];
-              }
-              if(VERSION === undefined || nexusUrl === undefined || artifacts === undefined ){
-                console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
-                process.exit(0);
-              }
-            } catch(error){
-              console.log("convoy.yaml not present in respository skipping check nexus version.")
-              console.error('Error:', error.message)
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          var nexusRepo;
+          var version;
+          var exporter;
+          try{
+            const content = fs.readFileSync('./convoy.yaml', 'utf8');
+            const data = yaml.load(content);
+            var artifactType = data.artifactType
+            if(artifactType === 'helmChart'){
+              const path = data.chartPath
+              const contentHelm = fs.readFileSync(path, 'utf8');
+              const dataHelm = yaml.load(contentHelm);
+              version = dataHelm.version
+            }
+            else{
+              version = data.version;
+            }
+            nexusUrl = data.nexusUrl;
+            if(nexusUrl != undefined){
+              const parts = nexusUrl.split('/');
+              nexusRepo = parts[4];
+            }
+            artifacts = data.artifactNames;
+            if(artifacts != undefined){
+              exporter = artifacts[0];
+            }
+            if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+              console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
               process.exit(0);
             }
-            if(nexusRepo === 'tessell-repos-py-component'){
-                exporter = exporter.replaceAll('-','_')
-            }
-            console.log(NEXUS_REPO);
-            console.log(EXPORTER);
-            console.log(VERSION);
-            execSync = require('child_process').execSync;
-            const output=execSync(`
-                file="${EXPORTER}-${VERSION}"
-                API_URL="$NEXUS_URL=${NEXUS_REPO}&version=${VERSION}"
-                echo $API_URL
-                echo $file
-                response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
-                check="$(echo $response | grep $file)"
-                if [ ! -z "$check" ]
-                    then
-                        echo "Fail"
-                        exit 
-                    fi
-                
-                while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
-                    continuationToken=$(echo $response | jq -r '.continuationToken')
-                    response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
-                    check="$(echo $response | grep $file)"
-                    if [ ! -z "$check" ]
-                    then
-                        echo "Fail"
-                        exit 
-                    fi
-                done
-                if [ -z "$check" ]
-                    then
-                        echo "Pass"
-                        exit 
-                    fi
-            `, { encoding: 'utf-8' }); 
-            console.log(output);
-            if(output.includes("Fail"))
-              throw "Update version, matching version file already present in Nexus"
-            else
-              console.log("Passed: No matching version present in Nexus")
-        
+          } catch(error){
+            console.log("convoy.yaml not present in respository skipping check nexus version.")
+            console.error('Error:', error.message)
+            process.exit(0);
+          }
+          if(nexusRepo === 'tessell-repos-py-component'){
+            exporter = exporter.replaceAll('-','_')
+          }
+          console.log(nexusRepo);
+          console.log(exporter);
+          console.log(version);
+          execSync = require('child_process').execSync;
+          const output=execSync(`
+              file="${exporter}-${version}"
+              API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
+              echo $API_URL
+              echo $file
+              response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
+              check="$(echo $response | grep $file)"
+              if [ ! -z "$check" ]
+                  then
+                      echo "Fail"
+                      exit 
+                  fi
+              
+              while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
+                  continuationToken=$(echo $response | jq -r '.continuationToken')
+                  response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
+                  check="$(echo $response | grep $file)"
+                  if [ ! -z "$check" ]
+                  then
+                      echo "Fail"
+                      exit 
+                  fi
+              done
+              if [ -z "$check" ]
+                  then
+                      echo "Pass"
+                      exit 
+                  fi
+          `, { encoding: 'utf-8' }); 
+          console.log(output);
+          if(output.includes("Fail"))
+            throw "Update version, matching version file already present in Nexus"
+          else
+            console.log("Passed: No matching version present in Nexus")
+          
