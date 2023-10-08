@@ -401,7 +401,8 @@ jobs:
             });
             const uniqueDirectories = [...new Set(modifiedDir)];
             const outputString = uniqueDirectories.join(' ');
-            core.setOutput('modifiedDirectories', outputString);
+            console.log(modifiedDir);
+            core.setOutput('modifiedDir', outputString);
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
               if ((file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
@@ -557,7 +558,8 @@ jobs:
                 version = dataHelm.version
               }
               else if(artifactType === 'nested'){
-                modifiedDir = "${{ steps.terraform_check.outputs.modifiedDirectories }}"
+                modifiedDir = "${{ steps.terraform_check.outputs.modifiedDir }}"
+                console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
                   console.log(directories[i]);
