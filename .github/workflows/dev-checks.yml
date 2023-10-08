@@ -365,6 +365,7 @@ jobs:
 
       - name: check for version in convoy.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
+        id: terraform-check
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
@@ -396,6 +397,9 @@ jobs:
                 modifiedDirectories[fileDirectory] = false;
               }}
             });
+            const uniqueDirectories = [...new Set(modifiedDirectories)];
+            const outputString = uniqueDirectories.join(' ');
+            core.setOutput('modifiedDirectories', outputString);
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
               if ((file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
@@ -540,38 +544,6 @@ jobs:
                 console.log("Passed: No matching version present in Nexus")
             }
             
-            function checkModifiedDir(){
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              console.log("base_commit " + base_commit);
-              console.log("head_commit " + head_commit); 
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
-                const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
-                const modifiedFiles = response.data.files;
-                const modifiedDirectories = [];
-                response.data.files.forEach(file => {
-                  const fileDirectory = file.filename.split("/")[0];
-                  if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
-                    modifiedDirectories.push(fileDirectory)
-                  }
-                });
-                const uniqueDirectories = [...new Set(modifiedDirectories)];
-                const outputString = uniqueDirectories.join(' ');
-                return outputString
-            }
-            
             try{
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
@@ -583,7 +555,7 @@ jobs:
                 version = dataHelm.version
               }
               else if(artifactType === 'nested'){
-                modifiedDir = checkModifiedDir()
+                modifiedDir = "${{ steps.terraform_check.outputs.modifiedDirectories }}"
                 const directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
                   console.log(directories[i]);
