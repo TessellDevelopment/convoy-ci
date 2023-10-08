@@ -365,7 +365,7 @@ jobs:
 
       - name: check for version in convoy.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
-        id: terraform-check
+        id: terraform_file_check
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
@@ -401,7 +401,7 @@ jobs:
             });
             const uniqueDirectories = [...new Set(modifiedDir)];
             const outputString = uniqueDirectories.join(' ');
-            console.log(modifiedDir);
+            console.log(outputString);
             core.setOutput('modifiedDir', outputString);
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
@@ -558,7 +558,7 @@ jobs:
                 version = dataHelm.version
               }
               else if(artifactType === 'nested'){
-                modifiedDir = "${{ steps.terraform_check.outputs.modifiedDir }}"
+                modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
