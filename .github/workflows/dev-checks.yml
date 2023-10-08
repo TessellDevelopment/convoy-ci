@@ -390,14 +390,16 @@ jobs:
             const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
             const modifiedFiles = response.data.files;
             const modifiedDirectories = {};
+            const modifiedDir = []
             response.data.files.forEach(file => {
               const fileDirectory = file.filename.split("/")[0];
               if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
               if (!modifiedDirectories[fileDirectory]) {
                 modifiedDirectories[fileDirectory] = false;
-              }}
+                modifiedDir.push(fileDirectory)
+                }}
             });
-            const uniqueDirectories = [...new Set(modifiedDirectories)];
+            const uniqueDirectories = [...new Set(modifiedDir)];
             const outputString = uniqueDirectories.join(' ');
             core.setOutput('modifiedDirectories', outputString);
             response.data.files.forEach(function(file_entry) {
