@@ -65,7 +65,7 @@
             ls
           
         - name: Push tar files to nexus
-          # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
             version=$(cat convoy.yaml | yq -r '.version')
             mkdir -p $HOME/.m2
