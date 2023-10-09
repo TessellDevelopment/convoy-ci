@@ -15,6 +15,7 @@ jobs:
     secrets: inherit
 
   build-file:
+    if: startsWith("${{github.event.pull_request.base.ref}}", 'rel')
     runs-on: self-hosted
     outputs:
       type: ${{steps.build-type.outputs.type}}

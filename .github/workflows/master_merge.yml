@@ -55,7 +55,7 @@ jobs:
     secrets: inherit
 
   create-double-commit:
-    if: echo "${{ github.event.pull_request.base.ref }}" | grep -Eq '^rel-'
+    if: startsWith("${{github.event.pull_request.base.ref}}", 'rel')
     needs: build
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-827
     secrets: inherit
