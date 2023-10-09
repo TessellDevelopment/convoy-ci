@@ -41,18 +41,27 @@
         - name: Setup Go environment
           uses: actions/setup-go@v4
           with: 
-              go-version: 1.20
+              go-version: 1.20.1
+        - run: |
+            go version
+            echo $GOPATH
+            echo $GOROOT
+            echo $PATH
+            cd /root/ 
+            ls
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            go env
   
         - name: Install dependencies
           run: |
-            # git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            # go install golang.org/x/tools/cmd/goimports@latest
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            go install golang.org/x/tools/cmd/goimports@latest
    
         - name: Make clients
           run: |
             echo "Building the service"
-            # export PATH=${PATH}:$GOPATH/bin
-            # git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            export PATH=${PATH}:$GOPATH/bin
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             chmod +x setup
             ./setup -b
             ls
