@@ -166,6 +166,8 @@ jobs:
   push-commit-details-to-convoy: 
     runs-on: self-hosted
     needs: create-tag-on-merge
+    env:
+      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -315,3 +317,11 @@ jobs:
           print(f"Payload: {payload}")
           post_request(payload)
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
