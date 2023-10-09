@@ -37,12 +37,13 @@ jobs:
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
         run: |
           python - <<EOF
-          
+            
           import yaml
           import requests
           import os
           import time
           import base64
+          import subprocess
 
           def delete_keys(data, keys_to_exclude):
             for key in keys_to_exclude:
@@ -158,6 +159,7 @@ jobs:
           print(f"Payload: {payload}")
           post_request(payload)
           EOF
+
           
       # - name: Slack Notification
       #   uses: act10ns/slack@v1.5.0

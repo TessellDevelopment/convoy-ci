@@ -38,9 +38,9 @@ jobs:
             sha="${{github.sha}}"
             sha="${sha:0:7}"
             echo "$sha"
-            echo "$(git log)"
+            echo "$(git log --decorate --oneline)"
             echo "$(git log --decorate --oneline | grep $sha)"
-            echo "$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')
+            echo "$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')"
             latest_tags="$(git log --decorate --oneline | grep $sha | grep -o -E "tag: [0-9]+\.[0-9]+\.[0-9]+" | awk '{print $2}')"
             if [[ "$latest_tags" == '' ]]; then 
               echo "Tag is Empty"
