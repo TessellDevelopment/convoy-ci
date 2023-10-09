@@ -10,6 +10,11 @@ jobs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
 
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          
       - name: Check convoy.yaml version exists
         id: convoy_check
         run: |
