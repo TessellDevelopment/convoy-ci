@@ -28,7 +28,7 @@ jobs:
 
   version-check:
     needs: convoy-check
-    if: ${{needs.convoy-check.outputs.check == 'true' || github.repository == 'TessellDevelopment/tessell-terraform-modules'}}
+    if: needs.convoy-check.outputs.check == 'true'
     runs-on: self-hosted
     steps:
 
