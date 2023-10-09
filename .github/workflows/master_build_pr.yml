@@ -28,6 +28,9 @@ jobs:
           distribution: adopt
           java-version: '11'
 
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
+
       - name: Install Maven
         run: |
           wget -q https://archive.apache.org/dist/maven/maven-3/3.9.4/binaries/apache-maven-3.9.4-bin.tar.gz
@@ -35,6 +38,7 @@ jobs:
           export PATH=$PATH:$(pwd)/apache-maven-3.9.4/bin
           mvn -version
           rm apache-maven-3.9.4-bin.tar.gz
+          docker --version
         
       - name: Build OPS
         if: ${{inputs.type}} == 'OPS'
