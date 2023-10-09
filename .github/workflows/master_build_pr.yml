@@ -26,5 +26,5 @@ jobs:
         if: ${{inputs.type}} == 'OPS'
         run: |
           # ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-          echo "$(git log)"
+          echo "$(git log --decorate --oneline)"
           echo "Build successful"
