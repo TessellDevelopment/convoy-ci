@@ -542,7 +542,7 @@ jobs:
               `, { encoding: 'utf-8' }); 
               console.log(output);
               if(output.includes("Fail")){
-                throw new Error("Error: Update version, matching version file already present in Nexus")
+                throw "Error: Update version, matching version file already present in Nexus"
               }
               else
                 console.log("Passed: No matching version present in Nexus")
