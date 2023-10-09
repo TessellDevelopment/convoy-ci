@@ -27,5 +27,6 @@ jobs:
         run: |
           pwd
           ls
-          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          ./mvnw install
+          ls
           echo "Build successful"
