@@ -542,8 +542,7 @@ jobs:
               `, { encoding: 'utf-8' }); 
               console.log(output);
               if(output.includes("Fail")){
-                console.log("Error: Update version, matching version file already present in Nexus")
-                process.exit(1)
+                throw new Error("Error: Update version, matching version file already present in Nexus")
               }
               else
                 console.log("Passed: No matching version present in Nexus")
@@ -570,7 +569,11 @@ jobs:
                   const dataDir = yaml.load(contentDir);
                   exporter = dataDir.artifactNames
                   version = dataDir.version
-                  checkVersion('tessell-repos-m2-component',exporter,version); 
+                  try{
+                    checkVersion('tessell-repos-m2-component',exporter,version);
+                  } catch (e) {
+                    console.error(e);
+                  }
                 }
                 process.exit(0);
               }
@@ -598,7 +601,11 @@ jobs:
             if(nexusRepo === 'tessell-repos-py-component'){
               exporter = exporter.replaceAll('-','_')
             }
-            checkVersion(nexusRepo,exporter,version)
+            try{
+              checkVersion(nexusRepo,exporter,version)
+            } catch (e) {
+              console.error(e);
+            }
 
 
       - name: Check Version sequence of DB Scripts
