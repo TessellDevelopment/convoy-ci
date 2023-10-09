@@ -55,7 +55,7 @@
         - name: Install dependencies
           run: |
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            go install golang.org/x/tools/cmd/goimports@latest
+            # go install golang.org/x/tools/cmd/goimports@latest
    
         - name: Make clients
           run: |
