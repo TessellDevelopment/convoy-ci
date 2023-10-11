@@ -58,9 +58,8 @@ jobs:
 
       - name: Add GraalVM to Path
         run: |
-          echo "export PATH=\$PATH:$GRAALVM_HOME/bin" >> $GITHUB_ENV
-        env:
-          GRAALVM_HOME: "/usr/local/opt/graalvm-ce-java11/libexec"
+          echo "export PATH=\$PATH:$HOME/.sdkman/candidates/java/21.3.0.r16-grl/bin" >> $GITHUB_ENV
+        shell: bash
 
       - name: Verify GraalVM and Native Image
         run: |
