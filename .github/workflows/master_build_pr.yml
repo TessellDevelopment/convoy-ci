@@ -34,17 +34,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          
+
       - name: Build OPS
         run: |
           ./mvnw install
-          mv target project
-          cd project 
-          ls
-          cd ..
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-          cd project
-          ls
-          cd ..
-          mv project target
           echo "Build successful"
