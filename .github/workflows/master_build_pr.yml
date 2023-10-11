@@ -32,5 +32,10 @@ jobs:
 
       - name: Build OPS
         run: |
+          ./mvnw install
+          mv target project
+          cd project 
+          ls
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          ls
           echo "Build successful"
