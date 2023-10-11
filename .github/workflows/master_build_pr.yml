@@ -32,6 +32,31 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: adopt-hotspot
+          java-version: '11' 
+
+      - name: Set up Maven
+        run: |
+          mvn --version
+
+      - name: Install GraalVM
+        run: |
+          brew update
+          brew install --cask graalvm/tap/graalvm-ce-java11
+
+      - name: Set up GraalVM
+        run: |
+          export GRAALVM_HOME="/usr/local/opt/graalvm-ce-java11/libexec"
+          gu install native-image
+
+      - name: Verify GraalVM and Native Image
+        run: |
+          java -version
+          native-image --version
         
       - name: Build OPS
         if: ${{inputs.type}} == 'GRAALVM'
