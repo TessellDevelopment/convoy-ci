@@ -37,7 +37,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v2
         with:
-          distribution: adotp-hotspot
+          distribution: adopt-hotspot
           java-version: '11' 
 
       - name: Set up Maven
