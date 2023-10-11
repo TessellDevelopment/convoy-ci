@@ -25,55 +25,11 @@ jobs:
   
   build-macos:
     if: ${{inputs.type == 'GRAALVM' }}
-    runs-on: macos-latest
+    runs-on: self-hosted
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
-      - name: Set up Java
-        uses: actions/setup-java@v2
-        with:
-          distribution: adopt-hotspot
-          java-version: '17' 
-  
-      - name: Set up Maven
-        run: |
-          echo 'export PATH=$HOME/.m2/apache-maven-3.8.3/bin:$PATH' >> $HOME/.bash_profile
-          source $HOME/.bash_profile
-          mkdir -p $HOME/.m2
-          wget https://apache.osuosl.org/maven/maven-3/3.8.3/binaries/apache-maven-3.8.3-bin.zip
-          unzip -q apache-maven-3.8.3-bin.zip -d $HOME/.m2
-          rm apache-maven-3.8.3-bin.zip
-        shell: bash
-  
-      - name: Set up Docker
-        run: |
-          brew install --cask docker
-          open --background -a Docker
-          sleep 10
-        shell: bash
-  
-      - name: Set up GraalVM
-        run: |
-          curl -L https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.3/graalvm-ce-java11-darwin-amd64-22.1.3.tar.gz -o graalvm.tar.gz
-          tar -xzf graalvm.tar.gz -C $HOME
-          export GRAALVM_HOME=$HOME/graalvm-ce-java11-22.1.3
-          echo "export GRAALVM_HOME=$HOME/graalvm-ce-java11-22.1.3" >> $HOME/.bash_profile
-          echo 'export PATH=$GRAALVM_HOME/bin:$PATH' >> $HOME/.bash_profile
-          source $HOME/.bash_profile
-        shell: bash
-  
-      - name: Verify installations
-        run: |
-          java -version
-          mvn --version
-          docker --version
-          native-image --version
-        shell: bash
       - name: Build OPS
         run: |
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
