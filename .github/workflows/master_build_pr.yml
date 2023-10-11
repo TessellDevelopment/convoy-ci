@@ -36,6 +36,10 @@ jobs:
           mv target project
           cd project 
           ls
+          cd ..
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          cd project
           ls
+          cd ..
+          mv project target
           echo "Build successful"
