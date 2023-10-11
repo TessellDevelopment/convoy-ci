@@ -24,6 +24,7 @@ jobs:
           fetch-depth: 0
   
   build-macos:
+    if: ${{inputs.type}} == 'GRAALVM'
     runs-on: macos-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
@@ -36,7 +37,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v2
         with:
-          distribution: adopt-hotspot
+          distribution: adotp-hotspot
           java-version: '11' 
 
       - name: Set up Maven
@@ -59,7 +60,6 @@ jobs:
           native-image --version
         
       - name: Build OPS
-        if: ${{inputs.type}} == 'GRAALVM'
         run: |
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
