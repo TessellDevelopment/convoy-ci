@@ -363,8 +363,9 @@ jobs:
                   core.setFailed("Tessell Libraries must update the version in version.txt file")
               }
 
-      - name: check for version in convoy-config.yaml in terraform modules repo
+      - name: check for version in convoy.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
+        id: terraform_file_check
         uses: actions/github-script@v6.3.3
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
@@ -386,19 +387,25 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-            const excludedDirectories = ['.github','.gitignore'];
+            const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
             const modifiedFiles = response.data.files;
             const modifiedDirectories = {};
+            const modifiedDir = []
             response.data.files.forEach(file => {
               const fileDirectory = file.filename.split("/")[0];
               if (file.status !== "removed" && !excludedDirectories.includes(fileDirectory)) {
               if (!modifiedDirectories[fileDirectory]) {
                 modifiedDirectories[fileDirectory] = false;
-              }}
+                modifiedDir.push(fileDirectory)
+                }}
             });
+            const uniqueDirectories = [...new Set(modifiedDir)];
+            const outputString = uniqueDirectories.join(' ');
+            console.log(outputString);
+            core.setOutput('modifiedDir', outputString);
             response.data.files.forEach(function(file_entry) {
               dir_name = file_entry.filename.split("/")[0];
-              if ((file_entry.filename.split("/")[1] === 'convoy-config.yaml' || file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
+              if ((file_entry.filename.split("/")[1] === 'convoy.yaml') && file_entry.patch.includes("+version")) {
                 console.log("Modifying version" + dir_name );  
                 modifiedDirectories[dir_name] = true;
               }
@@ -406,7 +413,7 @@ jobs:
             console.log(modifiedDirectories);
             Object.entries(modifiedDirectories).forEach(([fileDirectory, isModified]) => {
               if (isModified == false) {
-                core.setFailed('Tessell Libraries must update the version in convoy-config.yaml :' + fileDirectory );
+                core.setFailed('Tessell Libraries must update the version in convoy.yaml :' + fileDirectory );
               }
             });
 
@@ -492,42 +499,14 @@ jobs:
           NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
         with:
           script: |
-              const fs = require('fs');
-              const yaml = require('js-yaml');
-              var nexusRepo;
-              var version;
-              var exporter;
-              try{
-                const content = fs.readFileSync('./convoy.yaml', 'utf8');
-                const data = yaml.load(content);
-                var artifactType = data.artifactType
-                if(artifactType === 'helmChart'){
-                  const path = data.chartPath
-                  const contentHelm = fs.readFileSync(path, 'utf8');
-                  const dataHelm = yaml.load(contentHelm);
-                  version = dataHelm.version
-                }
-                else{
-                  version = data.version;
-                }
-                nexusUrl = data.nexusUrl;
-                if(nexusUrl != undefined){
-                  const parts = nexusUrl.split('/');
-                  nexusRepo = parts[4];
-                }
-                artifacts = data.artifactName;
-                if(artifacts != undefined){
-                  exporter = artifacts[0];
-                }
-                if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
-                  console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
-                  process.exit(0);
-                }
-              } catch(error){
-                console.log("convoy.yaml not present in respository skipping check nexus version.")
-                console.error('Error:', error.message)
-                process.exit(0);
-              }
+            const exp = require('constants');
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            var nexusRepo;
+            var version;
+            var exporter;
+            
+            function checkVersion(nexusRepo, exporter, version){
               console.log(nexusRepo);
               console.log(exporter);
               console.log(version);
@@ -562,10 +541,73 @@ jobs:
                       fi
               `, { encoding: 'utf-8' }); 
               console.log(output);
-              if(output.includes("Fail"))
-                throw "Update version, matching version file already present in Nexus"
+              if(output.includes("Fail")){
+                throw new Error("Error: Update version, matching version file already present in Nexus")
+              }
               else
                 console.log("Passed: No matching version present in Nexus")
+            }
+            
+            try{
+              const content = fs.readFileSync('./convoy.yaml', 'utf8');
+              const data = yaml.load(content);
+              var artifactType = data.artifactType
+              if(artifactType === 'nested'){
+                modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
+                console.log(modifiedDir);
+                const directories = modifiedDir.split(' ');
+                for (let i = 0; i < directories.length; i++) {
+                  console.log(directories[i]);
+                  const path = `./${directories[i]}/convoy.yaml`
+                  const contentDir = fs.readFileSync(path, 'utf8');
+                  const dataDir = yaml.load(contentDir);
+                  exporter = dataDir.artifactNames
+                  version = dataDir.version
+                  try{
+                    checkVersion('tessell-repos-m2-component',exporter,version);
+                  } catch (e) {
+                    console.error(e);
+                    process.exit(1);
+                  }
+                }
+                process.exit(0);
+              }
+              else if(artifactType === 'helmChart'){
+                const path = data.chartPath
+                const contentHelm = fs.readFileSync(path, 'utf8');
+                const dataHelm = yaml.load(contentHelm);
+                version = dataHelm.version
+              }
+              else{
+                version = data.version;
+              }
+              nexusUrl = data.nexusUrl;
+              if(nexusUrl != undefined){
+                const parts = nexusUrl.split('/');
+                nexusRepo = parts[4];
+              }
+              artifacts = data.artifactNames;
+              if(artifacts != undefined){
+                exporter = artifacts[0];
+              }
+              if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+                console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
+                process.exit(0);
+              }
+            } catch(error){
+              console.log("convoy.yaml not present in respository skipping check nexus version.")
+              console.error('Error:', error.message)
+              process.exit(0);
+            }
+            if(nexusRepo === 'tessell-repos-py-component'){
+              exporter = exporter.replaceAll('-','_')
+            }
+            try{
+              checkVersion(nexusRepo,exporter,version)
+            } catch (e) {
+              console.error(e);
+              process.exit(1);
+            }
 
 
       - name: Check Version sequence of DB Scripts
