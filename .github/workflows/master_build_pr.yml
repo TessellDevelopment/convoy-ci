@@ -12,8 +12,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-ubuntu:
+    if: ${{inputs.type}} == 'GRAALVM'
     runs-on: self-hosted
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+  
+  build-macos:
+    runs-on: macos-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
@@ -23,7 +34,7 @@ jobs:
           fetch-depth: 0
         
       - name: Build OPS
-        if: ${{inputs.type}} == 'OPS'
+        if: ${{inputs.type}} == 'GRAALVM'
         run: |
-          # ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
