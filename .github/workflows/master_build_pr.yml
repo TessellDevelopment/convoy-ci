@@ -13,7 +13,7 @@ on:
 
 jobs:
   build-ubuntu:
-    if: ${{inputs.type}} != 'GRAALVM'
+    if: ${{inputs.type != 'GRAALVM' }}
     runs-on: self-hosted
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
   
   build-macos:
-    if: ${{inputs.type}} == 'GRAALVM'
+    if: ${{inputs.type == 'GRAALVM' }}
     runs-on: macos-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
@@ -44,15 +44,23 @@ jobs:
         run: |
           mvn --version
 
-      - name: Install GraalVM
+      - name: Install SDKMan
         run: |
-          brew update
-          brew install --cask graalvm/tap/graalvm-ce-java11
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+        shell: bash
 
-      - name: Set up GraalVM
+      - name: Install GraalVM with SDKMan
         run: |
-          export GRAALVM_HOME="/usr/local/opt/graalvm-ce-java11/libexec"
-          gu install native-image
+          sdk install java 21.3.0.r16-grl
+          sdk use java 21.3.0.r16-grl
+        shell: bash
+
+      - name: Add GraalVM to Path
+        run: |
+          echo "export PATH=\$PATH:$GRAALVM_HOME/bin" >> $GITHUB_ENV
+        env:
+          GRAALVM_HOME: "/usr/local/opt/graalvm-ce-java11/libexec"
 
       - name: Verify GraalVM and Native Image
         run: |
