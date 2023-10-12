@@ -25,7 +25,7 @@ jobs:
   
   build-macos:
     if: ${{inputs.type == 'GRAALVM' }}
-    runs-on: self-hosted
+    runs-on: ARM64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
