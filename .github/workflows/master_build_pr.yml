@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ubuntu:
+  build-amd:
     if: ${{inputs.type != 'GRAALVM' }}
     runs-on: self-hosted
     env:
@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
   
-  build-macos:
+  build-arm:
     if: ${{inputs.type == 'GRAALVM' }}
     runs-on: ARM64
     env:
