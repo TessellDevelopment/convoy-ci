@@ -146,22 +146,23 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
-          docker tag ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:latest ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
           docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          docker tag ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:latest ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Tagging docker image with scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+          docker images
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{env.VERSION}} ${{ env.DOCKER_IMAGE_NAME }}:scan
 
   
       - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
@@ -171,6 +172,7 @@ jobs:
             password: ${{ secrets.DOCKER_PASSWORD }}   
             
       - name: Upload image scan report
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         uses: actions/upload-artifact@v3
         with:
             name: image-scan-report
