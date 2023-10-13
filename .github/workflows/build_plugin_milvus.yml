@@ -142,10 +142,10 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
       
-      - name: Build image
+      - name: Build and push to tesselldev
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
+          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
           docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
 
       - name: Build and push to tessellProd
