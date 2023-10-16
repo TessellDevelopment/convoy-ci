@@ -266,6 +266,10 @@ jobs:
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+
+      - name: Listing the Docker images
+        run: |
+          docker images
             
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
