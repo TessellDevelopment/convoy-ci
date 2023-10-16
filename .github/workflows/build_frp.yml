@@ -87,6 +87,8 @@
                 -Dfile=./tessell-$service-$os-amd64.tar -DrepositoryId=nexus
               done
             done
+
+        
           
         - name: Slack Notification
           uses: act10ns/slack@v1.5.0

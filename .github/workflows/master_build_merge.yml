@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_SERVER: nexus.tessell.cloud
