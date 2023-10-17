@@ -117,7 +117,7 @@ jobs:
           ls -lrta $BUILD_DIR
 
       - name: Upload terraform modules to nexus / S3 bucket
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           BASE_DIR=$PWD
@@ -134,12 +134,12 @@ jobs:
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE $VERSION
               terraform_build $PWD $ARTIFACT_FILE
 
-              # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
-              #   -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-              #   -DgroupId=${GROUP_NAME} -DartifactId=${DIR} -Dversion=$VERSION \
-              #   -DgeneratePom=true -Dpackaging=zip \
-              #   -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
-              #   -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
+              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=${GROUP_NAME} -DartifactId=${DIR} -Dversion=$VERSION \
+                -DgeneratePom=true -Dpackaging=zip \
+                -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
+                -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
               
               VERSION_FILE=$BUILD_DIR/${DIR}-$VERSION.zip
               mv $ARTIFACT_FILE $VERSION_FILE 
