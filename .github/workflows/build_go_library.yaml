@@ -76,9 +76,9 @@ jobs:
           import os
           exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
-          for os_type in exporter_config:
-            print(\"{exporter_name}-{os_type}-{engine}\".format(engine=exporter_config[os_type], os_type=os_type,exporter_name=exporter_name )) 
-            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(engine=exporter_config[os_type], os_type=os_type ))
+          for engine in exporter_config:
+            print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
+            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(os_type=exporter_config[engine], engine=engine ))
             if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
           """      
