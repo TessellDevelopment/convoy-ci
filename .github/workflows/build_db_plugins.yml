@@ -27,8 +27,9 @@ jobs:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
-
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
