@@ -178,7 +178,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to nexus
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
@@ -198,7 +198,7 @@ jobs:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=0.0.120 \
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
                             -DgeneratePom=true -Dpackaging=tar \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                             -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine))
@@ -207,11 +207,10 @@ jobs:
               """ 
 
       - name: Upload files to S3 Bucket
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           config="${{ inputs.exporter_config }}"
-          # VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          VERSION='0.0.120'
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           config=$(echo "$config" | sed 's/\\//g')
           for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
             engine=$(echo "$key" | cut -d',' -f1)
