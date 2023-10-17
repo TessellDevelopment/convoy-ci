@@ -16,7 +16,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-amd:
+    if: ${{inputs.type != 'GRAALVM' }}
+    runs-on: self-hosted
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+
+  build-arm:
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
