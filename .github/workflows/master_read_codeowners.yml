@@ -40,7 +40,7 @@ jobs:
             return [team.replace('@TessellDevelopment/', '') for team in team_names]
 
           team_patterns = {}
-          with open('CODEOWNERS', 'r') as pattern_file:
+          with open('.github/CODEOWNERS', 'r') as pattern_file:
             lines = pattern_file.readlines()
 
           for line in lines:
