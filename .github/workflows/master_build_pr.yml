@@ -25,7 +25,7 @@ jobs:
   
   build-arm:
     if: ${{inputs.type == 'GRAALVM' }}
-    runs-on: ubuntu-latest
+    runs-on: ARM64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
@@ -34,11 +34,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Build OPS
         run: |
