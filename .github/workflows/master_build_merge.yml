@@ -55,7 +55,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build and Push OPS
-        if: ${{inputs.type}} == 'OPS'
+        if: ${{inputs.type}} == 'GRAALVM'
         run: |
           ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
 
