@@ -25,26 +25,26 @@ jobs:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
     secrets: inherit
 
-  commit-event:
-    runs-on: amd64
-    needs: check-label
-    steps:
-      - name: Fail workflow
-        run: |
-         exit 1
+  # commit-event:
+  #   runs-on: amd64
+  #   needs: check-label
+  #   steps:
+  #     - name: Fail workflow
+  #       run: |
+  #        exit 1
 
   post-message: 
     if: github.event.action == 'labeled'
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_message.yml@TDEVOPS-827
     secrets: inherit
 
-  message-event:
-    runs-on: amd64
-    needs: post-message
-    steps:
-      - name: Fail workflow
-        run: |
-          exit 1
+  # message-event:
+  #   runs-on: amd64
+  #   needs: post-message
+  #   steps:
+  #     - name: Fail workflow
+  #       run: |
+  #         exit 1
 
   check-approval:
     if: github.event.review.state == 'approved'
