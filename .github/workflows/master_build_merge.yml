@@ -59,16 +59,17 @@ jobs:
         run: |
           sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
 
-          mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+          sudo mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                   -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                   -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
                   -DgeneratePom=true -Dpackaging=zip \
                   -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                   -Dfile=./target/function.zip -DrepositoryId=nexus
-                  
+          
           echo "${{env.LATEST_TAG}}"
-          echo "Build successful"
-
+          echo "Build and push successful"
+          sudo rm -rf target
+                  
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
