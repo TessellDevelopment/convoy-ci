@@ -7,7 +7,7 @@ on:
 
 jobs:
   post-message:
-    runs-on: self-hosted
+    runs-on: amd64
     env:
       TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
     steps: 

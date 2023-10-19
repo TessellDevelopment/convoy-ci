@@ -14,7 +14,7 @@ on:
 
 jobs:
   file-check:
-    runs-on: self-hosted
+    runs-on: amd64
     outputs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
       changed-files: ${{ steps.set-output.outputs.changed-files }}

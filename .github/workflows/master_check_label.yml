@@ -14,7 +14,7 @@ on:
 
 jobs:
   check-labels:
-    runs-on: self-hosted
+    runs-on: amd64
     steps:
       - name: Check all labels
         id: check-label

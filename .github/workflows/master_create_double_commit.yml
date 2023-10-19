@@ -6,7 +6,7 @@ on:
 jobs:
   create-pr-for-double-merge:
     if: github.event.pull_request.merged == true
-    runs-on: self-hosted
+    runs-on: amd64
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:

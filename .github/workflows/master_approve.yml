@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   commit-event:
-    runs-on: self-hosted
+    runs-on: amd64
     needs: check-label
     steps:
       - name: Fail workflow
@@ -39,7 +39,7 @@ jobs:
     secrets: inherit
 
   message-event:
-    runs-on: self-hosted
+    runs-on: amd64
     needs: post-message
     steps:
       - name: Fail workflow

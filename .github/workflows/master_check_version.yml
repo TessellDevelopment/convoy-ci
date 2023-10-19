@@ -5,7 +5,7 @@ on:
 
 jobs:
   convoy-check:
-    runs-on: self-hosted
+    runs-on: amd64
     outputs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
@@ -34,7 +34,7 @@ jobs:
   version-check:
     needs: convoy-check
     if: needs.convoy-check.outputs.check == 'true'
-    runs-on: self-hosted
+    runs-on: amd64
     steps:
 
       - name: Checkout code

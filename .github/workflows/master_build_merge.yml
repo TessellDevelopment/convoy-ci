@@ -18,7 +18,7 @@ on:
 jobs:
   build-amd:
     if: ${{inputs.type != 'GRAALVM' }}
-    runs-on: self-hosted
+    runs-on: amd64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:

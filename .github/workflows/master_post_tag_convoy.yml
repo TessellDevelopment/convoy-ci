@@ -12,7 +12,7 @@ on:
 
 jobs:
   push-commit-details-to-convoy: 
-    runs-on: self-hosted
+    runs-on: amd64
     env:
       TAG: "${{inputs.tag}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

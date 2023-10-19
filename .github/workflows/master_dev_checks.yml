@@ -5,7 +5,7 @@
     
   jobs:
     dev-checks:
-      runs-on: self-hosted
+      runs-on: amd64
       outputs:
         mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
         mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}

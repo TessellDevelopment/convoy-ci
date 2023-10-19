@@ -15,7 +15,7 @@ jobs:
     secrets: inherit
 
   build-file:
-    runs-on: self-hosted
+    runs-on: amd64
     outputs:
       type: ${{steps.build-type.outputs.type}}
     needs: [dev-checks,version-check]
@@ -37,7 +37,7 @@ jobs:
   check-commits:
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
     needs: build
-    runs-on: self-hosted
+    runs-on: amd64
     env:
       REPO: ${{github.repository}}
       PR_NUMBER: ${{github.event.number}}
