@@ -15,6 +15,11 @@ jobs:
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+          
       - name: Get branch name
         shell: bash
         run: |

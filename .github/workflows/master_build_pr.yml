@@ -29,7 +29,6 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v2
         with:
@@ -39,4 +38,4 @@ jobs:
         run: |
           sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
-          
+          sudo rm -rf target

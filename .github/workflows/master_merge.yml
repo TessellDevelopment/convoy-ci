@@ -17,6 +17,11 @@ jobs:
       type: ${{steps.build-type.outputs.type}}
     needs: file-check
     steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+          
       - name: Determine build type from Convoy
         id: build-type
         run: |

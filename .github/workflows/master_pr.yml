@@ -20,6 +20,12 @@ jobs:
       type: ${{steps.build-type.outputs.type}}
     needs: [dev-checks,version-check]
     steps:
+
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+
       - name: Determine build type from Convoy
         id: build-type
         run: |
@@ -43,6 +49,11 @@ jobs:
       PR_NUMBER: ${{github.event.number}}
       GITHUB_TOKEN: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
     steps:  
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+
       - name: Check commits
         id: get-pr-commits
         run: |
