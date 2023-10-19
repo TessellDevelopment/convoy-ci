@@ -143,7 +143,7 @@ jobs:
               
               VERSION_FILE=$BUILD_DIR/${DIR}-$VERSION.zip
               mv $ARTIFACT_FILE $VERSION_FILE 
-              aws s3 cp $VERSION_FILE s3://tessell-terraform-modules/terls/ciTest/$DIR/$VERSION/
+              aws s3 cp $VERSION_FILE s3://tessell-terraform-modules/terls/$DIR/$VERSION/
                
             fi
           done
