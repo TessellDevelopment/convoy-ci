@@ -3,18 +3,18 @@ name: Cherry Pick workflow
 on:
   workflow_call:
     inputs: 
-      head-repo: 
+      base-repo: 
         description: 'Head repo url to get changes'
         required: true
         type: string
-        
+
   workflow_dispatch:
 
 jobs:
   cherry-pick:
     runs-on: self-hosted
     env: 
-      URL: "${{inputs.head-repo}}"
+      URL: "${{inputs.base-repo}}"
       REPO: "${{github.repository}}"
     steps:
       - name: Cherry Pick changes from FRP repo
