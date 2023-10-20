@@ -167,7 +167,7 @@ jobs:
     runs-on: self-hosted
     needs: create-tag-on-merge
     env:
-      SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
