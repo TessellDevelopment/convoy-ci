@@ -24,6 +24,7 @@ jobs:
       - name: Cherry Pick changes from FRP repo
         run: |
           #!/bin/bash
+          set +e
           git remote add upstream $URL
           git fetch upstream master
           git checkout -b TDEVOPS-1004-master-cherry-pick
