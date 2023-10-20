@@ -1,5 +1,4 @@
 name: Cherry Pick workflow
-
 on:
   workflow_call:
     inputs: 
