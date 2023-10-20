@@ -1,0 +1,216 @@
+---
+  # This is a basic workflow to help you get started with Actions
+  name: Tessell Pipelines Code Build
+  
+  # Controls when the workflow will run
+  on:
+    workflow_call:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+  
+  # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  jobs:
+    # This workflow contains a single job called "build"
+    build:
+      # The type of runner that the job will run on
+      runs-on: self-hosted
+      outputs:
+        mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+        mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+        mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+        NEXUS_SERVER: nexus.tessell.cloud
+        NEXUS_PULL_REPOS_M2: tessell-m2-development
+        NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+        GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+        GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+        GROUP_NAME: "tessell.frp"
+        GOPATH: /home/github/go
+  
+      steps:
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+  
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Setup Go environment
+          uses: actions/setup-go@v4
+          with: 
+              go-version: 1.20.1
+        - run: |
+            go version
+            echo $GOPATH
+            echo $GOROOT
+            echo $PATH
+            cd /root/ 
+            ls
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            go env
+   
+        - name: Make clients
+          run: |
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            chmod +x setup
+            ./setup -b
+            ls
+          
+        - name: Push tar files to nexus
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          run: |
+            version=$(cat convoy.yaml | yq -r '.version')
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            os_type=("linux" "windows" "darwin")
+            services=("frpc" "frps")
+            for os in "${os_type[@]}"; do
+              for service in "${services[@]}"; do
+                if [[ ($os == "windows" || $os == "darwin") && $service == "frps" ]]; then
+                    continue
+                fi
+                echo "{$service}-{$os}"
+                mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=$version \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=./tessell-$service-$os-amd64.tar -DrepositoryId=nexus
+              done
+            done
+          
+        - name: Slack Notification
+          uses: act10ns/slack@v1.5.0
+          if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+          with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+  
+        - name: Get PR-Author,subject & body to send email
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          run: |
+            echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+            echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+   
+        - name: sending output
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          id: mail_info
+          run: |
+            echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+            echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+            echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+    
+            
+    post-build-status-to-convoy:
+      runs-on: self-hosted
+      needs: build
+      if: always()  
+      steps:
+        - name: Set up Python
+          uses: actions/setup-python@v2
+  
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+  
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install requests pybase64
+  
+        - uses: technote-space/workflow-conclusion-action@v3
+          with:
+            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+  
+        - name: POST API to Convoy
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          env:
+            API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+            COMMIT_HASH: "${{github.sha}}"
+            REPO: "${{github.repository}}"
+            BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+            USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+            STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+            SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          run: |
+            python - <<EOF
+            import requests
+            import json
+            import os
+            import time
+            import base64
+  
+            API_URL = os.environ.get('API_URL')
+            REPO = os.environ.get('REPO')
+            COMMIT_HASH = os.environ.get('COMMIT_HASH')
+            BASE_BRANCH = os.environ.get('BASE_BRANCH')
+            STATUS = (os.environ.get('STATUS')).upper()
+            CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+            CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+  
+            if not(bool(BASE_BRANCH)):
+              BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+            
+            OWNER = REPO.split("/")
+            REPO = OWNER[1]
+            
+            if STATUS == 'SUCCESS':
+              STATUS = 'SUCCESSFULL'
+            if STATUS == 'FAILURE':
+              STATUS = 'FAILED'
+  
+            payload = {
+              "repoName": REPO,
+              "commitHash": COMMIT_HASH,
+              "baseBranch": BASE_BRANCH,
+              "buildStatus": STATUS
+            }
+  
+            print(payload)
+            headers = {
+              'Content-Type': 'application/json',
+              'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            }
+  
+            max_retries = 3
+            retry_delay = 5 
+        
+            for _ in range(max_retries):
+                response = requests.post(API_URL, json=payload, headers=headers)
+                if response.status_code == 200:
+                    print(response.status_code)
+                    print(response.text)
+                    break
+                else:
+                    print(response.status_code)
+                    print(response.text)
+                    print(f"Retrying... ({max_retries - _} attempts left)")
+                    time.sleep(retry_delay)
+            else:
+                print("API request failed after retries.")
+                exit(1)
+            print("POST request Complete")
+            EOF
+  
+    send-mail:
+      uses: ./.github/workflows/email_dc.yaml
+      needs: build
+      with:
+        subject: ${{ needs.build.outputs.mail_subject_output }}
+        body: ${{ needs.build.outputs.mail_body_output }} 
+        to: ${{ needs.build.outputs.mail_id_output }}
+      secrets: inherit
+      if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+  

@@ -240,7 +240,9 @@ jobs:
                 modified_folders = set()
                 for file_data in files_data:
                     file_path = file_data['filename']
-                    folder_path = '/'.join(file_path.split('/')[:-1])  
+                    folder_path = file_path.split('/')[0] 
+                    if folder_path == 'convoy.yaml':
+                      continue 
                     modified_folders.add(folder_path)
         
                 print("Modified folders:")
