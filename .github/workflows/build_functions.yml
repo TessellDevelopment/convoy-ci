@@ -201,7 +201,7 @@ jobs:
     needs: build
     if: always() 
     env:
-      SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+      SLACK_WEBHOOK_URL: ${{secrets.CONVOY_ALERTS_SLACK_URL}}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
