@@ -201,7 +201,7 @@ jobs:
     needs: build
     if: always() 
     env:
-      SLACK_WEBHOOK_URL: ${{secrets.CONVOY_ALERTS_SLACK_URL}}
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
