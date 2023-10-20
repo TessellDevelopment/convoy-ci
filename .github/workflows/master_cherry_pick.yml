@@ -1,0 +1,48 @@
+name: Cherry Pick workflow
+
+on:
+  workflow_call:
+    inputs: 
+      head-repo: 
+        description: 'Head repo url to get changes'
+        required: true
+        type: string
+        
+  workflow_dispatch:
+
+jobs:
+  cherry-pick:
+    runs-on: self-hosted
+    env: 
+      URL: "${{inputs.head-repo}}"
+      REPO: "${{github.repository}}"
+    steps:
+      - name: Cherry Pick changes from FRP repo
+        run: |
+          #!/bin/bash
+          git remote add upstream $URL
+          git fetch upstream master
+          git checkout -b TDEVOPS-1004-master-cherry-pick
+          logs=$(git cherry-pick -m 1 upstream/master)
+          echo "$logs"
+          while IFS= read -r line; do
+            echo "$line"
+            if [[ $line == CONFLICT* ]]; then
+              file_path=$(echo "$line" | awk '{print $3}')
+              if [[ $file_path == 'Merge' ]]; then
+                file_path=$(echo "$line" | awk '{print $6}')
+                echo "$file_path"
+                git add $file_path
+              else
+                echo "$file_path"
+                git rm $file_path
+              fi
+            fi
+          done <<< "$logs"
+          git add .
+          git commit -m "TDEVOPS-1004 | Base Repo Merge changes"
+          git push origin TDEVOPS-1004-master-cherry-pick
+
+          curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -d '{"title": "TDEVOPS-1004 | FRP merge changes", "head": "TDEVOPS-1004-master-cherry-pick", "base": "main"}' \
+            "https://api.github.com/repos/$REPO/pulls"
