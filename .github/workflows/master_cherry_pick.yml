@@ -3,7 +3,7 @@ on:
   workflow_call:
     inputs: 
       base-repo: 
-        description: 'Head repo url to get changes'
+        description: 'Base repo url to get changes'
         required: true
         type: string
 
@@ -16,6 +16,11 @@ jobs:
       URL: "${{inputs.base-repo}}"
       REPO: "${{github.repository}}"
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
       - name: Cherry Pick changes from FRP repo
         run: |
           #!/bin/bash
