@@ -65,7 +65,7 @@
             ls
           
         - name: Push tar files to nexus
-          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
             version=$(cat convoy.yaml | yq -r '.version')
             mkdir -p $HOME/.m2
@@ -79,12 +79,15 @@
                     continue
                 fi
                 echo "{$service}-{$os}"
-                mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=$version \
-                -DgeneratePom=true -Dpackaging=tar \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                -Dfile=./tessell-$service-$os-amd64.tar -DrepositoryId=nexus
+                # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                # -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                # -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=$version \
+                # -DgeneratePom=true -Dpackaging=tar \
+                # -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                # -Dfile=./tessell-$service-$os-amd64.tar -DrepositoryId=nexus
+
+                chmod +x cherry-pick.sh
+                ./cherry-pick.sh
               done
             done
           
