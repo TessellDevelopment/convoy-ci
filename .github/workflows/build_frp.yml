@@ -54,14 +54,14 @@
    
         - name: Make clients
           run: |
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            echo $PATH
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            # echo "Building the service"
+            # export PATH=${PATH}:$GOPATH/bin
+            # echo $PATH
+            # export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
             
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            chmod +x setup
-            ./setup -b
+            # git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            # chmod +x setup
+            # ./setup -b
             ls
           
         - name: Push tar files to nexus
