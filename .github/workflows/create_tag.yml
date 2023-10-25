@@ -230,7 +230,19 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'multiple':
-                
+              payload = {
+                "type": yaml_data["artifactType"],
+                "artifacts": [
+                    {
+                        "type": artifact["artifactType"],
+                        "nexusUrl": artifact.get("nexusUrl", ""),
+                        "s3Url": artifact.get("s3Url", ""),
+                        "artifactNames": artifact.get("artifactNames", [])
+                    }
+                    for artifact in yaml_data["artifacts"]
+                ]
+              }
+              artifactMetadata = {"artifactMetadata": payload}
 
             elif type == 'nested':
                 artifacts = []
