@@ -82,3 +82,5 @@ jobs:
           sys.stdout.write(f"::set-output name=teams::{required_teams}\n")
           EOF
           
+
+# Read codeowners from base branch using raw content API and check necessary teams

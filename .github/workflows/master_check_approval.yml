@@ -2,6 +2,11 @@
 name: Check Required Approvals
 on:
   workflow_call:
+    inputs:
+      required-teams:
+        description: 'Teams required for approval in the PR'
+        required: true
+        type: string
  
 jobs:
   check-approval:
@@ -75,3 +80,5 @@ jobs:
                 exit 1
               fi
             done
+
+# Read teams from inputs and check if required approval is present or not
