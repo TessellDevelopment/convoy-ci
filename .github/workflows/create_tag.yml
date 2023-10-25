@@ -165,7 +165,7 @@ jobs:
 
   push-commit-details-to-convoy: 
     runs-on: self-hosted
-    needs: create-tag-on-merge
+    # needs: create-tag-on-merge
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -186,7 +186,8 @@ jobs:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
-          TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
+          # TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
+          TAG: 0.0.1
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
