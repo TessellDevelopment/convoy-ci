@@ -231,6 +231,7 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'multiple':
+                artifactMetadata["version"] = TAG
 
             elif type == 'nested':
                 artifacts = []
