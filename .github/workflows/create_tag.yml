@@ -301,14 +301,14 @@ jobs:
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
-          COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
+          COMMIT_MESSAGE = subprocess.check_output(['git','log','--pretty=format:%s','-n','1'])
           COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
           except FileNotFoundError:
               print(f"YAML file not found. Skipping this step.")
-              exit(0)
+              exit(0)--
           type = yaml_data.get('artifactType') 
           payload = { 
             "repoName": REPO,
