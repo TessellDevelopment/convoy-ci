@@ -127,7 +127,7 @@ jobs:
           echo "$VERSION"
           ls
 
-          aws s3 cp $FILE s3://tesselltools/terls/tessell/plugins/$PLUGIN_NAME/$VERSION/
+          aws s3 cp $FILE s3://tesselltools/terls/tessell/plugins/$VERSION/
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
