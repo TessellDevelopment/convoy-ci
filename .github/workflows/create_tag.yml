@@ -214,6 +214,8 @@ jobs:
             
             if type == 'dockerImage':
                 artifactMetadata["version"] = TAG
+                keys_to_exclude = ['artifactType']
+                artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'helmChart':
                 chart_path = yaml_data.get('chartPath')
@@ -226,6 +228,9 @@ jobs:
                 artifactMetadata["version"] = version if version else TAG
                 keys_to_exclude = ['artifactType', 'version']
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
+
+            elif type == 'multiple':
+                
 
             elif type == 'nested':
                 artifacts = []
