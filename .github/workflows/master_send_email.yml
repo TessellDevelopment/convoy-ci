@@ -1,4 +1,3 @@
-
 ---
 name: Send email on failure
 on:
@@ -7,10 +6,6 @@ on:
 jobs:
   send-email:
     runs-on: amd64
-    outputs:
-      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     steps:
       - name: Get PR-Author,subject & body to send email
         run: |
@@ -18,7 +13,6 @@ jobs:
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
    
       - name: sending output
-        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
         run: |
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
