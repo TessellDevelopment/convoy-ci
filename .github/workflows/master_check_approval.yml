@@ -49,17 +49,20 @@ jobs:
             fi
 
             ORG_NAME="TessellDevelopment"
-            REPO=${{github.repository}}
+            REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
-            LABELS=$(curl -s -H "Authorization: Bearer $TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}" | \
-              jq -r '.labels[].name' | tr '\n' ',' | sed 's/,$//')
-            IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
-            for LABEL in "${LABEL_ARRAY[@]}"; do
-              TEAM_NAME=$LABEL
+            TEAMS="${{inputs.required-teams}}"
+
+            # LABELS=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            #   -H "Accept: application/vnd.github.v3+json" \
+            #   "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}" | \
+            #   jq -r '.labels[].name' | tr '\n' ',' | sed 's/,$//')
+            # IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
+
+            IFS=' ' read -ra TEAMS_ARRAY <<< "$TEAMS"
+            for TEAM in "${TEAMS_ARRAY[@]}"; do
               FLAG=0
-              MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM_NAME/members" | jq -r '.[].login')
+              MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "https://api.github.com/orgs/$ORG_NAME/teams/$TEAM/members" | jq -r '.[].login')
               REVIEWERS=$(curl -L \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer $TOKEN" \
@@ -76,9 +79,7 @@ jobs:
                 done
               done
               if [ $FLAG -eq 0 ]; then
-                echo "Approval not present for $TEAM_NAME team."
+                echo "Approval not present for $TEAM team."
                 exit 1
               fi
             done
-
-# Read teams from inputs and check if required approval is present or not

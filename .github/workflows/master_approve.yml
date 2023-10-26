@@ -7,7 +7,6 @@ on:
 
 jobs:
   file-check:
-    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
     secrets: inherit
   
@@ -30,6 +29,8 @@ jobs:
     needs: read-codeowners
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_message.yml@TDEVOPS-827
     secrets: inherit
+    with:
+      required-teams: ${{needs.read-codeowners.outputs.required-teams}}
 
   check-approval:
     if: github.event.review.state == 'approved'
