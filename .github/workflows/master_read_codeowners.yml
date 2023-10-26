@@ -72,7 +72,7 @@ jobs:
                 changed_teams.update(team_name)
                 matched = True
                 break
-            else
+            else:
               changed_teams.update(team_patterns['*'])
 
           required_teams = ""
