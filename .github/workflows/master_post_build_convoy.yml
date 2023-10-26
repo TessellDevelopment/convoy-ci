@@ -103,10 +103,10 @@ jobs:
           print("POST request Complete")
           EOF
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v1.5.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}

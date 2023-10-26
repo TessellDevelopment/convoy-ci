@@ -81,16 +81,12 @@ jobs:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
 
-   slack-notif:
-    if: always()
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-    steps:
-      - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
-        with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}
+  send-mail:
+    needs: build
+    if: ${{ always() && (contains(github.event.pull_request.head.ref, 'TDEVOPS-827')) }}
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
+    secrets: inherit
 
-# Change user in Line 80
+
+# Change every ref to main
+# Change user in Line 80, branch in 86
