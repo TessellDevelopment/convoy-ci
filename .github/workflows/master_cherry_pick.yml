@@ -6,6 +6,14 @@ on:
         description: 'Base repo url to get changes'
         required: true
         type: string
+      jira:
+        description: 'Jira ID for cherry pick'
+        required: true
+        type: string
+      pr-title:
+        description: 'PR Title for cherry pick'
+        required: true
+        type: string
 
   workflow_dispatch:
 
@@ -15,6 +23,8 @@ jobs:
     env: 
       URL: "${{inputs.base-repo}}"
       REPO: "${{github.repository}}"
+      JIRA: "${{inputs.jira}}"
+      PR_TITLE: "${{inputs.pr-title}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,7 +37,7 @@ jobs:
           set +e
           git remote add upstream $URL
           git fetch upstream master
-          git checkout -b TDEVOPS-1004-master-cherry-pick
+          git checkout -b $JIRA
           logs=$(git cherry-pick -m 1 upstream/master)
           echo "$logs"
           while IFS= read -r line; do
@@ -45,9 +55,9 @@ jobs:
             fi
           done <<< "$logs"
           git add .
-          git commit -m "TDEVOPS-1004 | Base Repo Merge changes"
-          git push origin TDEVOPS-1004-master-cherry-pick
+          git commit -m "$PR_TITLE"
+          git push origin $JIRA
 
           curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -d '{"title": "TDEVOPS-1004 | FRP merge changes", "head": "TDEVOPS-1004-master-cherry-pick", "base": "main"}' \
+            -d '{"title": "$PR_TITLE", "head": "$JIRA", "base": "main"}' \
             "https://api.github.com/repos/$REPO/pulls"
