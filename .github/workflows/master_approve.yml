@@ -16,13 +16,6 @@ jobs:
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
     secrets: inherit
-    
-  # check-label:
-  #   needs: read-codeowners
-  #   uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_label.yml@TDEVOPS-827
-  #   with:
-  #     required-teams: ${{needs.read-codeowners.outputs.required-teams}}
-  #   secrets: inherit
 
   post-message: 
     if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}

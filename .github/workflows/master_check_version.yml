@@ -1,5 +1,5 @@
 ---
-name: Version Check
+name: Version Check in Nexus
 on:
   workflow_call:
 

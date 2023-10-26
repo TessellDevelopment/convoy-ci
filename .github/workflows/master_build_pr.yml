@@ -1,5 +1,5 @@
 ---
-name: Tessell Pipelines Code Build for PR
+name: Tessell Pipelines Code Build Pre Merge
 
 on:
   workflow_call:
