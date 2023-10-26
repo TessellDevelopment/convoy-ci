@@ -86,3 +86,4 @@ jobs:
           comment-id: ${{steps.check-message.outputs.comment-id}}
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           body: ${{steps.check-message.outputs.message}}
+          edit-mode: replace
