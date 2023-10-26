@@ -82,10 +82,9 @@ jobs:
 
   send-mail:
     needs: auto-merge
-    if: always() && (contains(github.event.pull_request.head.ref, 'TDEVOPS-827'))
+    if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
     secrets: inherit
 
 
 # Change every ref to main
-# Change user in Line 80, always and branch in 86

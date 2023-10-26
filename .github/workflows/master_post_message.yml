@@ -33,7 +33,7 @@ jobs:
           ORG_NAME="TessellDevelopment"
           REPO="${{github.repository}}"
           PR_NUMBER="${{ github.event.pull_request.number }}"
-          COMMIT_HASH="${{github.event.after}}"
+          COMMIT_HASH="${{github.event.pull_request.head.sha}}"
           TEAMS="${{inputs.required-teams}}"
           COMMENT_ID=$(curl -L \
             -H "Accept: application/vnd.github+json" \
