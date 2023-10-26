@@ -9,8 +9,6 @@ on:
         required: true
         type: string
 
-  workflow_dispatch:
-
 jobs:
   post-message:
     runs-on: amd64

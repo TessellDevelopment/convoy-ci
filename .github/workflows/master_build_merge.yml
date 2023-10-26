@@ -1,6 +1,5 @@
 ---
 name: Tessell Pipelines Code Build Post merge
-
 on:
   workflow_call:
     inputs:
@@ -13,13 +12,21 @@ on:
         required: true
         type: string
 
-  workflow_dispatch:
-
 jobs:
+
   build-amd:
     if: ${{inputs.type != 'GRAALVM' }}
     runs-on: amd64
     env:
+      LATEST_TAG: ${{inputs.tag}}
+      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
@@ -33,9 +40,10 @@ jobs:
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-arm:
+    if: ${{inputs.type}} == 'GRAALVM'
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -55,7 +63,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build and Push OPS
-        if: ${{inputs.type}} == 'GRAALVM'
+
         run: |
           # sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
 

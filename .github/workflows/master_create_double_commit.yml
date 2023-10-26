@@ -4,6 +4,7 @@ on:
   workflow_call:
 
 jobs:
+
   create-pr-for-double-merge:
     if: github.event.pull_request.merged == true
     runs-on: amd64
@@ -16,14 +17,14 @@ jobs:
           fetch-depth: 0
 
       - name: Get all the release branches
+        id: all_branches
         run: |
           branches+=("$(git branch -r | sed 's/^ *//g'| grep 'rel-')")
           declare -a br_arr=()
           for branch in $branches; do if [[ $branch == 'origin/rel-'* ]]; then br_arr+=($branch); fi ; done
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
-        id: all_branches
-
+        
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v6.3.3

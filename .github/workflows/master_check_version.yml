@@ -4,12 +4,12 @@ on:
   workflow_call:
 
 jobs:
+
   convoy-check:
     runs-on: amd64
     outputs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v2
         with:
@@ -32,16 +32,10 @@ jobs:
           fi
 
   version-check:
-    needs: convoy-check
     if: needs.convoy-check.outputs.check == 'true'
+    needs: convoy-check
     runs-on: amd64
     steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
       - run: |
           npm install js-yaml
           npm install fs

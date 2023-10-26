@@ -7,9 +7,8 @@ on:
         description: "Latest tag"
         value: ${{ jobs.find-latest-tag.outputs.tag_ref_output }}
   
-  workflow_dispatch:
-
 jobs:
+
   find-latest-tag:
     runs-on: amd64
     outputs:
@@ -19,17 +18,17 @@ jobs:
         with:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
-          
-      - name: Get branch name
-        shell: bash
-        run: |
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           echo "$GITHUB_CONTEXT"
+          
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
               
       - name: Get tags
         uses: nick-fields/retry@v2.8.1

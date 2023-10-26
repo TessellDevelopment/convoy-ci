@@ -10,9 +10,8 @@ on:
         description: "All Changed File output"
         value: ${{ jobs.file-check.outputs.changed-files }}
 
-  workflow_dispatch:
-
 jobs:
+
   file-check:
     runs-on: amd64
     outputs:

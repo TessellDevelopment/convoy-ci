@@ -3,19 +3,18 @@ name: Master CI Merge Workflows
 on:
   workflow_call:
 
-  workflow_dispatch:
-
 jobs:
+
   file-check:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
     secrets: inherit
 
   build-file:
-    runs-on: amd64
     if: needs.file-check.outputs.github-changes == 'false'
+    runs-on: amd64
+    needs: file-check
     outputs:
       type: ${{steps.build-type.outputs.type}}
-    needs: file-check
     steps:
       - uses: actions/checkout@v3
         with:

@@ -2,24 +2,18 @@
 name: Auto Merge Double Commit PRs
 on:
   workflow_call:
-
-  workflow_dispatch:
     
 jobs:
+
   auto-merge:
     runs-on: amd64
     env:
-       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-
+       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
-      - name: Get branch name
-        shell: bash
-        run: |
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.3

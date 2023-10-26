@@ -3,9 +3,8 @@ name: Build Status POST API to Convoy
 on:
   workflow_call:
     
-  workflow_dispatch:
-
 jobs:
+  
   post-build-status-to-convoy:
     runs-on: amd64
     env: 

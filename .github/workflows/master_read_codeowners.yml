@@ -13,9 +13,8 @@ on:
         description: 'Teams required for approval'
         value: ${{ jobs.read-codeowners.outputs.required-teams }}
 
-  workflow_dispatch:
-
 jobs:
+  
   read-codeowners:
     runs-on: amd64
     outputs:

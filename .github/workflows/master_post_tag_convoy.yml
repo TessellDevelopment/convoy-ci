@@ -8,9 +8,8 @@ on:
         required: true
         type: string
 
-  workflow_dispatch:
-
 jobs:
+  
   push-commit-details-to-convoy: 
     runs-on: amd64
     env:

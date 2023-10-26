@@ -3,9 +3,8 @@ name: Master CI PR Workflows
 on:
   workflow_call:
 
-  workflow_dispatch:
-
 jobs:
+  
   dev-checks:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-827
     secrets: inherit

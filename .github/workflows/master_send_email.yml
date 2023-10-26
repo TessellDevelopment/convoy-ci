@@ -4,6 +4,7 @@ on:
   workflow_call:
 
 jobs:
+  
   send-email:
     runs-on: amd64
     steps:

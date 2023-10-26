@@ -1,6 +1,5 @@
 ---
 name: Tessell Pipelines Code Build Pre Merge
-
 on:
   workflow_call:
     inputs:
@@ -9,9 +8,8 @@ on:
         required: true
         type: string
 
-  workflow_dispatch:
-
 jobs:
+
   build-amd:
     if: ${{inputs.type != 'GRAALVM' }}
     runs-on: amd64

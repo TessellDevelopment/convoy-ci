@@ -3,9 +3,8 @@ name: Master CI Approve Workflows
 on:
   workflow_call:
 
-  workflow_dispatch:
-
 jobs:
+  
   file-check:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_file_check.yml@TDEVOPS-827
     secrets: inherit
@@ -13,9 +12,10 @@ jobs:
   read-codeowners:
     needs: file-check
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_read_codeowners.yml@TDEVOPS-827
+    secrets: inherit
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
-    secrets: inherit
+
 
   post-message: 
     if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}

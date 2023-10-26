@@ -4,19 +4,20 @@
     workflow_call:
     
   jobs:
+
     dev-checks:
       runs-on: amd64
       steps:
+        - uses: actions/checkout@v3
+          with:
+            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            fetch-depth: 0
+
         - name: Dump GitHub context
           env:
             GITHUB_CONTEXT: ${{ toJson(github) }}
           run: |
             echo "$GITHUB_CONTEXT"
-  
-        - uses: actions/checkout@v3
-          with:
-            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-            fetch-depth: 0
   
         - name: Get branch name (merge)
           if: github.event_name != 'pull_request'
@@ -279,3 +280,4 @@
             fi
             done
               
+# Change check format for PR title format addition
