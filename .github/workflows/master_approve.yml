@@ -16,7 +16,6 @@ jobs:
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
 
-
   post-message: 
     if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     needs: read-codeowners

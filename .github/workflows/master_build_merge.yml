@@ -65,8 +65,9 @@ jobs:
       - name: Build and Push OPS
 
         run: |
+          cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+          cat $HOME/.m2/settings.xml
           sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-
           sudo mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                   -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                   -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
