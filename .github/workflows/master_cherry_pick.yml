@@ -6,7 +6,7 @@ on:
         description: 'Base repo url to get changes'
         required: true
         type: string
-      jira:
+      jira-id:
         description: 'Jira ID for cherry pick'
         required: true
         type: string
@@ -23,7 +23,7 @@ jobs:
     env: 
       URL: "${{inputs.base-repo}}"
       REPO: "${{github.repository}}"
-      JIRA: "${{inputs.jira}}"
+      JIRA_ID: "${{inputs.jira-id}}"
       PR_TITLE: "${{inputs.pr-title}}"
     steps:
       - name: Checkout code
@@ -37,7 +37,7 @@ jobs:
           set +e
           git remote add upstream $URL
           git fetch upstream master
-          git checkout -b $JIRA
+          git checkout -b $JIRA_ID
           logs=$(git cherry-pick -m 1 upstream/master)
           echo "$logs"
           while IFS= read -r line; do
@@ -56,8 +56,8 @@ jobs:
           done <<< "$logs"
           git add .
           git commit -m "$PR_TITLE"
-          git push origin $JIRA
+          git push origin $JIRA_ID
 
           curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -d '{"title": "$PR_TITLE", "head": "$JIRA", "base": "main"}' \
+            -d '{"title": "$PR_TITLE", "head": "$JIRA_ID", "base": "main"}' \
             "https://api.github.com/repos/$REPO/pulls"
