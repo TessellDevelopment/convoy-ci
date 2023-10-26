@@ -36,6 +36,11 @@ jobs:
 
       - name: Build OPS
         run: |
-          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          # sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
+          sudo rm -rf target
+
+      - name: Remove in case of failure
+        if: failure()
+        run: |
           sudo rm -rf target

@@ -41,9 +41,9 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
@@ -57,17 +57,22 @@ jobs:
       - name: Build and Push OPS
         if: ${{inputs.type}} == 'GRAALVM'
         run: |
-          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+          # sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
 
-          sudo mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                  -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
-                  -DgeneratePom=true -Dpackaging=zip \
-                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                  -Dfile=./target/function.zip -DrepositoryId=nexus
+          # sudo mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+          #         -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+          #         -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
+          #         -DgeneratePom=true -Dpackaging=zip \
+          #         -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+          #         -Dfile=./target/function.zip -DrepositoryId=nexus
           
           echo "${{env.LATEST_TAG}}"
           echo "Build and push successful"
+          sudo rm -rf target
+
+      - name: Remove in case of failure
+        if: failure()
+        run: |
           sudo rm -rf target
                   
       - name: Slack Notification
