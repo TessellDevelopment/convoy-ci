@@ -69,7 +69,7 @@ jobs:
         run: |
           PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
           if [ "$PR_COMMITS" -eq 1 ]; then
-            echo "One Commit present in DC."
+            echo "One Commit present in DC. Auto merge."
           else
             echo "More than one commit present in DC, need approval."
             exit 1
@@ -77,6 +77,20 @@ jobs:
     
   auto-merge:
     needs: check-commits
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )   
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
+
+   slack-notif:
+    if: always()
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}
+
+# Change user in Line 80
