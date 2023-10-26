@@ -6,10 +6,6 @@
   jobs:
     dev-checks:
       runs-on: amd64
-      # outputs:
-      #   mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-      #   mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-      #   mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
       steps:
         - name: Dump GitHub context
           env:
@@ -282,28 +278,4 @@
               echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
             fi
             done
-               
-    #     - name: Get PR-Author,subject & body to send email
-    #       if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-    #       run: |
-    #         echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
-    #         echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-   
-    #     - name: sending output
-    #       if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-    #       id: mail_info
-    #       run: |
-    #         echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
-    #         echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
-    #         echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-          
-    # send-mail:
-    #   uses: ./.github/workflows/email_dc.yaml
-    #   needs: dev-checks
-    #   with:
-    #     subject: ${{ needs.dev-checks.outputs.mail_subject_output }}
-    #     body: ${{ needs.dev-checks.outputs.mail_body_output }} 
-    #     to: ${{ needs.dev-checks.outputs.mail_id_output }}
-    #   secrets: inherit
-    #   if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-  
+              

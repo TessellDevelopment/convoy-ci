@@ -64,3 +64,11 @@ jobs:
     needs: build
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-827
     secrets: inherit
+
+  send-mail:
+    needs: create-double-commit
+    if: always() && (contains(github.event.pull_request.head.ref, 'TDEVOPS-827'))
+    uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
+    secrets: inherit
+
+# Change always and ref in line 70
