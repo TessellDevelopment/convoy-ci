@@ -177,8 +177,7 @@ jobs:
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           for OS in ${OS_NAMES[@]} ;do
             for CLOUD in ${CLOUD_NAMES[@]}; do
-              mv ./tessell/tessell-task-handler-$OS-$CLOUD.tar ./tessell/tessell-task-handler-$OS-$CLOUD-$VERSION.tar
-              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD-$VERSION.tar s3://tesselltools/terls/tessell/functions/$VERSION/
+              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD.tar s3://tesselltools/terls/tessell/functions/$VERSION/
             done
           done
 

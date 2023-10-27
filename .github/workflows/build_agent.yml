@@ -199,10 +199,8 @@ jobs:
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           for os in ${OS_NAMES[@]};do
-            mv package/tessell-agent-pkg-$os.tar package/tessell-agent-pkg-$os-$VERSION.tar
-            mv package/tessell-upgrader-pkg-$os.tar package/tessell-upgrader-pkg-$os-$VERSION.tar
-            aws s3 cp package/tessell-agent-pkg-$os-$VERSION.tar s3://tesselltools/terls/tessell/agent/$VERSION/
-            aws s3 cp package/tessell-upgrader-pkg-$os-$VERSION.tar s3://tesselltools/terls/tessell/agent/$VERSION/
+            aws s3 cp package/tessell-agent-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
+            aws s3 cp package/tessell-upgrader-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
           done  
 
       - name: Slack Notification
