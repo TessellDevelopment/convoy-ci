@@ -162,7 +162,7 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'multiple':
-              artifactMetadata = {"artifacts": []}
+              artifactMetadata["artifacts"] = []
               for item in yaml_data['artifacts']:
                 artifact = {
                     "type": item['artifactType'],
