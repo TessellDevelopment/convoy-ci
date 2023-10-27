@@ -165,7 +165,7 @@ jobs:
 
   push-commit-details-to-convoy: 
     runs-on: self-hosted
-    # needs: create-tag-on-merge
+    needs: create-tag-on-merge
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -186,8 +186,7 @@ jobs:
           API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
-          # TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
-          TAG: 0.0.1
+          TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
@@ -231,8 +230,15 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'multiple':
-                artifactMetadata["version"] = TAG
-
+              artifactMetadata = {"artifacts": []}
+              for item in yaml_data['artifacts']:
+                artifact = {
+                    "type": item['artifactType'],
+                    "version": TAG,
+                    "convoyConfig": {k: v for k, v in item.items() if k != 'artifactType'}
+                }
+                artifactMetadata["artifacts"].append(artifact)
+                
             elif type == 'nested':
                 artifacts = []
                 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
@@ -309,7 +315,7 @@ jobs:
                 yaml_data = yaml.safe_load(yaml_file)
           except FileNotFoundError:
               print(f"YAML file not found. Skipping this step.")
-              exit(0)--
+              exit(0)
           type = yaml_data.get('artifactType') 
           payload = { 
             "repoName": REPO,
