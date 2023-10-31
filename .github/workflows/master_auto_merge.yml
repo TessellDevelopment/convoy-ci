@@ -35,3 +35,4 @@ jobs:
            steps: ${{ toJson(steps) }}
            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
         if: failure()
+        

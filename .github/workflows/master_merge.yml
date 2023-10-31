@@ -66,8 +66,6 @@ jobs:
 
   send-mail:
     needs: create-double-commit
-    if: failure() && (contains(github.event.pull_request.head.ref, 'TDEVOPS-827'))
+    if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
     secrets: inherit
-
-# Change always and ref in line 70

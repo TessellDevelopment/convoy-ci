@@ -31,3 +31,5 @@ jobs:
           body: ${{ steps.mail_info.outputs.mail_body }}
           to: ${{ steps.mail_info.outputs.mail_id }},${{ secrets.CIPIPELINE_USER_EMAIL }}
           from: ${{ secrets.CIPIPELINE_USER_EMAIL }}
+
+# Change email action to use https://github.com/marketplace/actions/send-email with html template

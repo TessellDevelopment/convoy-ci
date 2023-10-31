@@ -44,16 +44,18 @@
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
               echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
             else
-              echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
-              PULL_REQUEST_TITLE="$PR_TITLE"
-              PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
-              if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-                echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
-                exit 1
-              else 
-                echo "PR Title is in the valid format."
-              fi  
+              echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'."
+              exit 1
             fi
+            PULL_REQUEST_TITLE="$PR_TITLE"
+            PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
+            if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
+              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
+              exit 1
+            else 
+              echo "PR Title is in the valid format."
+            fi  
+            
   
         - name: Set up Python
           uses: actions/setup-python@v2
@@ -280,4 +282,3 @@
             fi
             done
               
-# Change check format for PR title format addition
