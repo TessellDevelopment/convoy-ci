@@ -243,6 +243,7 @@ jobs:
           echo "Image 1: $IMAGE1"
           
       - name: tagging docker image with scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
            
@@ -253,6 +254,7 @@ jobs:
           
       
       - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
@@ -263,6 +265,7 @@ jobs:
             trivy-version: "0.29.1"
 
       - uses: actions/upload-artifact@v3
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
