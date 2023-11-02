@@ -95,7 +95,9 @@ jobs:
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
-    if: always()  
+    if: always() 
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -184,6 +186,14 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml

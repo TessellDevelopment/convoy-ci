@@ -215,14 +215,15 @@ jobs:
           for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
             engine=$(echo "$key" | cut -d',' -f1)
             os_type=$(echo "$key" | cut -d',' -f2)
-            mv ./${{ inputs.exporter_name }}-$os_type-$engine.tar ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar
-            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine-$VERSION.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/${{ inputs.exporter_name }}-$os_type-$engine/$VERSION/
+            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
           done
 
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
     if: always()  
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -311,3 +312,11 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()

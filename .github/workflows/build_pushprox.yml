@@ -207,11 +207,11 @@ jobs:
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }} 
           for os in ${OS_NAMES[@]};do
-            mv client-package/pushprox-client-$os.tar client-package/pushprox-client-$os-$VERSION.tar
-            aws s3 cp client-package/pushprox-client-$os-$VERSION.tar s3://tesselltools/terls/tessell/pushprox/pushprox-client-$os/$VERSION/
+            aws s3 cp client-package/pushprox-client-$os.tar s3://tesselltools/terls/tessell/pushprox/$VERSION/
           done
 
       - name: tagging docker image with scan (pull request)
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan 
 
@@ -221,6 +221,7 @@ jobs:
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           
       - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
@@ -231,6 +232,7 @@ jobs:
           trivy-version: "0.29.1"
 
       - name: sending scan report
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         uses: actions/upload-artifact@v3
         with:
           name: image-scan-report
@@ -272,7 +274,9 @@ jobs:
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
-    if: always()  
+    if: always() 
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -361,6 +365,14 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
           
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
