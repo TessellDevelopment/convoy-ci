@@ -217,7 +217,7 @@ jobs:
 
           payload = {
             "repoName": REPO,
-            "commitHash": COMMIT_HASH,
+            "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
