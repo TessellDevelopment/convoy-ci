@@ -62,6 +62,8 @@ jobs:
         run: |
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           go version
+          go mod tidy
+          go mod vendor -compat=1.20
           go install golang.org/x/tools/cmd/goimports
           which go
 
