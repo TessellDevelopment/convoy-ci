@@ -43,9 +43,15 @@ jobs:
           VERSION=$(yq '.version' convoy.yaml)
           AGENT_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
           TASKHANDLER_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+          ETCD_VERSION=$(yq '.etcdVersion' convoy.yaml)
+          PULSAR_VERSION=$(yq '.pulsarVersion' convoy.yaml)
+          MILVUSBASE_VERSION=$(yq '.milvusBaseVersion' convoy.yaml)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
+          echo "ETCD_VERSION=$ETCD_VERSION" >> $GITHUB_ENV
+          echo "PULSAR_VERSION=$PULSAR_VERSION" >> $GITHUB_ENV
+          echo "MILVUSBASE_VERSION=$MILVUSBASE_VERSION" >> $GITHUB_ENV
 
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
@@ -152,6 +158,15 @@ jobs:
         run: |
           docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/tessell-db-plugin-milvus-etcd:${{ env.ETCD_VERSION}}
+          docker tag tessellprod/tessell-db-plugin-milvus-etcd:${{ env.ETCD_VERSION}} tessellprod/tessell-db-plugin-milvus-etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/tessell-db-plugin-milvus-etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/tessell-db-plugin-milvus-pulsar:${{ env.PULSAR_VERSION}}
+          docker tag tessellprod/tessell-db-plugin-milvus-pulsar:${{ env.PULSAR_VERSION}} tessellprod/tessell-db-plugin-milvus-pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/tessell-db-plugin-milvus-pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/tessell-db-plugin-milvus-milvusbase:${{ env.MILVUSBASE_VERSION}}
+          docker tag tessellprod/tessell-db-plugin-milvus-milvusbase:${{ env.MILVUSBASE_VERSION}} tessellprod/tessell-db-plugin-milvus-milvusbase:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/tessell-db-plugin-milvus-milvusbase:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
