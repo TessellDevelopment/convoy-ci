@@ -184,6 +184,9 @@ jobs:
             import json
             import os
             exporter_name='${{ inputs.exporter_name }}'
+            ext='tar'
+            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
+              ext='tar.gz'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for engine in exporter_config:
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
@@ -201,7 +204,7 @@ jobs:
                             -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=0.1.0\
                             -DgeneratePom=true -Dpackaging=tar \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.tar -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine))
+                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine))
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
