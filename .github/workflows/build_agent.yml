@@ -62,6 +62,7 @@ jobs:
         run: |
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           go version
+          go install golang.org/x/tools/cmd/goimports
           which go
 
       - name: Install AWS CLI
@@ -86,7 +87,7 @@ jobs:
           echo $PATH
           export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
           go mod tidy
-          go install golang.org/x/tools/cmd/goimports
+          
 
           for os in ${OS_NAMES[@]};do
           echo "Building the service"
