@@ -210,7 +210,7 @@ jobs:
               """ 
 
       - name: Upload files to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           config="${{ inputs.exporter_config }}"
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
@@ -218,7 +218,13 @@ jobs:
           for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
             engine=$(echo "$key" | cut -d',' -f1)
             os_type=$(echo "$key" | cut -d',' -f2)
-            aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+            if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
+              echo ".tar.gz"
+              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+            else
+              echo ".tar"
+              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+            fi
           done
 
   post-build-status-to-convoy:
