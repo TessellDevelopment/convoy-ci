@@ -58,11 +58,11 @@ jobs:
           export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
           go env
 
-      # - name: Install dependencies
-      #   run: |
-      #     git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-      #     go version
-      #     which go
+      - name: Install dependencies
+        run: |
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          go version
+          which go
 
       - name: Install AWS CLI
         run: |
