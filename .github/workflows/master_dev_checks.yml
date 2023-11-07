@@ -49,6 +49,10 @@
             fi
             PULL_REQUEST_TITLE="$PR_TITLE"
             PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
+            if echo "$PULL_REQUEST_TITLE" | grep -Eq '^Double Commit'; then
+              echo "Double Commit PR."
+              exit 0
+            fi  
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
               echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
               exit 1
