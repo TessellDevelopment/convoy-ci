@@ -8,7 +8,7 @@ jobs:
   post-build-status-to-convoy:
     runs-on: amd64
     env: 
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - uses: actions/checkout@v3
         with:
