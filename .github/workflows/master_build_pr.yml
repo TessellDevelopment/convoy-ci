@@ -34,7 +34,7 @@ jobs:
 
       - name: Build OPS
         run: |
-          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
           if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
             docker build -f src/main/docker/Dockerfile.tailscale -t tsproxy .
