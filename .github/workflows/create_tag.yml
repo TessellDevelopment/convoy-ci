@@ -172,7 +172,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          ref: main
+          ref: ${{github.event.pull_request.base.ref}}
           fetch-depth: 0
 
       - name: Set up Python
@@ -298,7 +298,7 @@ jobs:
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
           
-          COMMIT_MESSAGE = subprocess.check_output(['git','log','--format=%B','-n','1'])
+          COMMIT_MESSAGE = subprocess.check_output(['git','log','--pretty=format:%s','-n','1'])
           COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
           try:
             with open('convoy.yaml', 'r') as yaml_file:
@@ -309,7 +309,7 @@ jobs:
           type = yaml_data.get('artifactType') 
           payload = { 
             "repoName": REPO,
-            "commitHash": COMMIT_HASH,
+            "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "baseBranch": BASE_BRANCH,
             "tag": TAG,
