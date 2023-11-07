@@ -40,7 +40,7 @@ jobs:
     secrets: inherit
 
   check-commits:
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
     needs: build
     runs-on: amd64
     env:
@@ -67,7 +67,7 @@ jobs:
       - name: Check Number of Commits
         run: |
           PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-          if [ "$PR_COMMITS" -eq 3 ]; then
+          if [ "$PR_COMMITS" -eq 4 ]; then
             echo "One Commit present in DC. Auto merge."
           else
             echo "More than one commit present in DC, need approval."
@@ -76,7 +76,7 @@ jobs:
     
   auto-merge:
     needs: check-commits
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'varenyatessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
 
@@ -88,4 +88,4 @@ jobs:
 
 
 # Change every ref to main
-# Change DC user to cipipeline
+# Change commit in line 70

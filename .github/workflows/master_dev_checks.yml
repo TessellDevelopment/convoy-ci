@@ -96,7 +96,7 @@
             PR_TITLE: ${{github.event.pull_request.title}}
             BRANCH: ${{ github.event.pull_request.head.ref}}
           run: |
-            if ([[ '${{ github.event.pull_request.user.login }}' != 'varenyatessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+            if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
               if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
                 echo "Revert Double commit Branch. Allowed"
               else   
