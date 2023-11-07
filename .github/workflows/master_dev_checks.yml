@@ -48,7 +48,7 @@
               exit 1
             fi
             PULL_REQUEST_TITLE="$PR_TITLE"
-            PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s[a-zA-Z0-9]+$"
+            PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
               echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
               exit 1
