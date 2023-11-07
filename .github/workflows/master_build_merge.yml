@@ -64,8 +64,8 @@ jobs:
 
       - name: Build and Push OPS
         run: |
-          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-          sudo mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
+          ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
               -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
               -DgroupId=tessellops.${REPO} -DartifactId=${REPO} -Dversion=${LATEST_TAG} \
               -DgeneratePom=true -Dpackaging=zip \
@@ -89,3 +89,10 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
           
+
+          mvn deploy:deploy-file -Dnexus_url=https://nexus.tessell.cloud/repository/tessell-m2-development \
+              -Dnexus_username=varenyatessell -Dnexus_password=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 \
+              -DgroupId=tessellops.portal-service -DartifactId=tessellops-portal-service -Dversion=0.1.0 \
+              -DgeneratePom=true -Dpackaging=zip \
+              -Durl=https://nexus.tessell.cloud/repository/tessell-m2-development \
+              -Dfile=./target/function.zip -DrepositoryId=nexus
