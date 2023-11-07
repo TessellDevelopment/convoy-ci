@@ -39,10 +39,9 @@ jobs:
           if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
             docker build -f src/main/docker/Dockerfile.tailscale -t tsproxy .
           fi
-          sudo rm -rf target
 
-      - name: Remove in case of failure
-        if: failure()
+      - name: Remove target
+        if: always()
         run: |
           sudo rm -rf target
           
