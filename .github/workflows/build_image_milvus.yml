@@ -183,7 +183,7 @@ jobs:
             plugin=".${image}Version"
             version=$(yq -r $plugin convoy.yaml)
             docker pull tessellprod/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version tesselldev/$image:0.0.1
+            docker tag tessellprod/$image:$version tesselldev/$image:0.0.1
             docker push tesselldev/$image:0.0.1
             docker tag tesselldev/$image:0.0.1 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.0.1
             docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.0.1
