@@ -156,6 +156,16 @@ jobs:
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
+          docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.1.0
+          docker pull tessellprod/etcd:${{ env.ETCD_VERSION}}
+          docker tag tessellprod/etcd:${{ env.ETCD_VERSION}} tesselldev/etcd:0.1.0
+          docker push tesselldev/etcd:0.1.0
+          docker pull tessellprod/pulsar:${{ env.PULSAR_VERSION}}
+          docker tag tessellprod/pulsar:${{ env.PULSAR_VERSION}} tesselldev/pulsar:0.1.0
+          docker push tesselldev/pulsar:0.1.0
+          docker pull tessellprod/milvus:${{ env.MILVUSBASE_VERSION}}
+          docker tag tessellprod/milvus:${{ env.MILVUSBASE_VERSION}} tesselldev/milvus:0.1.0
+          docker push tesselldev/milvus:0.1.0
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
@@ -165,16 +175,16 @@ jobs:
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull tessellprod/tessell-db-plugin-milvus-etcd:${{ env.ETCD_VERSION}}
-          docker tag tessellprod/tessell-db-plugin-milvus-etcd:${{ env.ETCD_VERSION}} tessellprod/tessell-db-plugin-milvus-etcd:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push tessellprod/tessell-db-plugin-milvus-etcd:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull tessellprod/tessell-db-plugin-milvus-pulsar:${{ env.PULSAR_VERSION}}
-          docker tag tessellprod/tessell-db-plugin-milvus-pulsar:${{ env.PULSAR_VERSION}} tessellprod/tessell-db-plugin-milvus-pulsar:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push tessellprod/tessell-db-plugin-milvus-pulsar:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull tessellprod/tessell-db-plugin-milvus-milvusbase:${{ env.MILVUSBASE_VERSION}}
-          docker tag tessellprod/tessell-db-plugin-milvus-milvusbase:${{ env.MILVUSBASE_VERSION}} tessellprod/tessell-db-plugin-milvus-milvusbase:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push tessellprod/tessell-db-plugin-milvus-milvusbase:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/etcd:${{ env.ETCD_VERSION }}
+          docker tag tessellprod/etcd:${{ env.ETCD_VERSION }} tessellprod/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/pulsar:${{ env.PULSAR_VERSION }}
+          docker tag tessellprod/pulsar:${{ env.PULSAR_VERSION }} tessellprod/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          docker pull tessellprod/milvus:${{ env.MILVUSBASE_VERSION }}
+          docker tag tessellprod/milvus:${{ env.MILVUSBASE_VERSION }} tessellprod/milvus:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push tessellprod/milvus:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
