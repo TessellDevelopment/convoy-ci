@@ -191,6 +191,7 @@ jobs:
             image-name: ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}   
+            trivy-version: 0.46.1
             
       - name: Upload image scan report
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
