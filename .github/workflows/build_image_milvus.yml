@@ -62,13 +62,13 @@ jobs:
           TASKHANDLER_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
           ETCD_VERSION=$(yq '.etcdVersion' convoy.yaml)
           PULSAR_VERSION=$(yq '.pulsarVersion' convoy.yaml)
-          MILVUSBASE_VERSION=$(yq '.milvusBaseVersion' convoy.yaml)
+          MILVUS_VERSION=$(yq '.milvusVersion' convoy.yaml)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
           echo "ETCD_VERSION=$ETCD_VERSION" >> $GITHUB_ENV
           echo "PULSAR_VERSION=$PULSAR_VERSION" >> $GITHUB_ENV
-          echo "MILVUSBASE_VERSION=$MILVUSBASE_VERSION" >> $GITHUB_ENV
+          echo "MILVUS_VERSION=$MILVUS_VERSION" >> $GITHUB_ENV
 
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
