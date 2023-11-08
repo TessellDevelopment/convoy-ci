@@ -31,6 +31,23 @@ jobs:
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+    
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set region ap-south-1
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 219776070323.dkr.ecr.ap-south-1.amazonaws.com
+
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -157,6 +174,17 @@ jobs:
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
 
+          images=("etcd" "pulsar" "milvus")
+          for image in "${images[@]}"; do
+            plugin=".${image}Version"
+            version=$(yq -r $plugin convoy.yaml)
+            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version tesselldev/$image:0.0.1
+            docker push tesselldev/$image:0.0.1
+            docker tag tesselldev/$image:0.0.1 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.0.1
+            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.0.1
+          done
+
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         run: |
@@ -166,15 +194,37 @@ jobs:
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull ${{env.DOCKERHUB_ORG}}/etcd:${{ env.ETCD_VERSION }}
-          docker tag ${{env.DOCKERHUB_ORG}}/etcd:${{ env.ETCD_VERSION }} tessellprod/etcd:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{env.DOCKERHUB_ORG}}/etcd:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull ${{env.DOCKERHUB_ORG}}/pulsar:${{ env.PULSAR_VERSION }}
-          docker tag ${{env.DOCKERHUB_ORG}}/pulsar:${{ env.PULSAR_VERSION }} tessellprod/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{env.DOCKERHUB_ORG}}/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
-          docker pull ${{env.DOCKERHUB_ORG}}/milvus:${{ env.MILVUSBASE_VERSION }}
-          docker tag ${{env.DOCKERHUB_ORG}}/milvus:${{ env.MILVUSBASE_VERSION }} tessellprod/milvus:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push ${{env.DOCKERHUB_ORG}}/milvus:${{ steps.latest_tag.outputs.tag_ref }}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+
+          images=("etcd" "pulsar" "milvus")
+          for image in "${images[@]}"; do
+            plugin=".${image}Version"
+            version=$(yq -r $plugin convoy.yaml)
+            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+          done
+
+          # docker pull ${{env.DOCKERHUB_ORG}}/etcd:${{ env.ETCD_VERSION }}
+          # docker tag ${{env.DOCKERHUB_ORG}}/etcd:${{ env.ETCD_VERSION }} tessellprod/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push ${{env.DOCKERHUB_ORG}}/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker tag tessellprod/etcd:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/etcd:${{ steps.latest_tag.outputs.tag_ref }}
+
+          # docker pull ${{env.DOCKERHUB_ORG}}/pulsar:${{ env.PULSAR_VERSION }}
+          # docker tag ${{env.DOCKERHUB_ORG}}/pulsar:${{ env.PULSAR_VERSION }} tessellprod/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push ${{env.DOCKERHUB_ORG}}/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker tag pulsar:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/pulsar:${{ steps.latest_tag.outputs.tag_ref }}
+          
+          # docker pull ${{env.DOCKERHUB_ORG}}/milvus:${{ env.MILVUSBASE_VERSION }}
+          # docker tag ${{env.DOCKERHUB_ORG}}/milvus:${{ env.MILVUSBASE_VERSION }} tessellprod/milvus:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push ${{env.DOCKERHUB_ORG}}/milvus:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker tag milvus:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/milvus:${{ steps.latest_tag.outputs.tag_ref }}
+          # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/milvus:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
