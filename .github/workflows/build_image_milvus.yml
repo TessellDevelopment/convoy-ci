@@ -156,16 +156,6 @@ jobs:
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
-          docker push ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.1.0
-          docker pull tessellprod/etcd:${{ env.ETCD_VERSION}}
-          docker tag tessellprod/etcd:${{ env.ETCD_VERSION}} tesselldev/etcd:0.1.0
-          docker push tesselldev/etcd:0.1.0
-          docker pull tessellprod/pulsar:${{ env.PULSAR_VERSION}}
-          docker tag tessellprod/pulsar:${{ env.PULSAR_VERSION}} tesselldev/pulsar:0.1.0
-          docker push tesselldev/pulsar:0.1.0
-          docker pull tessellprod/milvus:${{ env.MILVUSBASE_VERSION}}
-          docker tag tessellprod/milvus:${{ env.MILVUSBASE_VERSION}} tesselldev/milvus:0.1.0
-          docker push tesselldev/milvus:0.1.0
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
@@ -189,7 +179,6 @@ jobs:
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker images
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.VERSION}} ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
 
   
