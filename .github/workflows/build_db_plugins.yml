@@ -29,6 +29,8 @@ jobs:
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PUSH_REPOS_M2_DEV: tessell-repos-m2-development
+      
       
     steps:
       - name: Checkout code
@@ -98,6 +100,16 @@ jobs:
           ./gradlew pythonWheel --console plain \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            
+      - name: Build and push for  development (TEMP)
+        if:  ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        run: |
+          ./gradlew createMvnSettings uploadPlugin --console plain -Pversion=0.16868.0\
+            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2_DEV }}" 
 
       - name: Build and push
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
