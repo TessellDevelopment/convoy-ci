@@ -75,14 +75,13 @@ jobs:
               echo "Revert branch, skipping Format check"
               exit 0
           fi
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
-            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-\|^TDEVOPS-\|^TOPS-\|^SRE-''; then
           else
-            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
+            echo "Branch name does not start with 'TS-' or 'TDEVOPS-' or 'TOPS-' or 'SRE-'. Checking PR title format."
             PULL_REQUEST_TITLE="$PR_TITLE"
-            PATTERN="(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
+            PATTERN="(TS|TDEVOPS|TOPS|SRE)-[0-9]+\s\|\s"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
+              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' or 'SRE-XXXX | --'format."
               exit 1
             else 
               echo "PR Title is in the valid format."
