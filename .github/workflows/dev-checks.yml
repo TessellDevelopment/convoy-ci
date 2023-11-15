@@ -75,10 +75,10 @@ jobs:
               echo "Revert branch, skipping Format check"
               exit 0
           fi
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-\|^TDEVOPS-\|^TOPS-\|^SRE-'; then
-             echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-' or 'SRE-' " 
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS-|SRE-|TDEVOPS-|TOPS-)'; then
+            echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
           else
-            echo "Branch name does not start with 'TS-' or 'TDEVOPS-' or 'TOPS-' or 'SRE-'. Checking PR title format."
+            echo "Branch name does not start with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
             PULL_REQUEST_TITLE="$PR_TITLE"
             PATTERN="(TS|TDEVOPS|TOPS|SRE)-[0-9]+\s\|\s"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
