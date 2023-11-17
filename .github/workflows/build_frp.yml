@@ -23,8 +23,6 @@
         NEXUS_SERVER: nexus.tessell.cloud
         NEXUS_PULL_REPOS_M2: tessell-m2-development
         NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-        DOCKER_IMAGE_NAME: tessell-frps-linux
-        DOCKERHUB_ORG: "tesselldev"
         GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
         GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
         GROUP_NAME: "tessell.frp"
@@ -40,12 +38,6 @@
           uses: actions/checkout@v3
           with:
             fetch-depth: 0
-
-        - name: Set Docker Repository
-          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-          shell: bash
-          run: |
-            echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
         - name: Setup Go environment
           uses: actions/setup-go@v4
@@ -76,40 +68,13 @@
         - name: Build image
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
           run: |
-            docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} .
+            ./setup -i
 
         - name: Build and push to tessellProd
           if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
           run: |
-            version=$(cat convoy.yaml | yq -r '.version')
-            docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}
-            docker tag ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:latest ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:$version
-            docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:$version
+            ./setup -i -p
 
-        - name: Tagging docker image with scan
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          run: |
-            docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
-
-    
-        - name: Docker image scan
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          id: docker-image-scan
-          uses: azure/container-scan@v0.1
-          with:
-              severity-threshold: CRITICAL
-              image-name: ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
-              username: ${{ secrets.DOCKER_USERNAME }}
-              password: ${{ secrets.DOCKER_PASSWORD }}   
-              trivy-version: 0.46.1
-              
-        - name: Upload image scan report
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          uses: actions/upload-artifact@v3
-          with:
-              name: image-scan-report
-              path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-          
         - name: Push tar files to nexus
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
