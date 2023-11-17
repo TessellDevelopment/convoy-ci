@@ -39,6 +39,17 @@
           with:
             fetch-depth: 0
 
+        - name: Build image
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          run: |
+            go version
+            ./setup -i
+  
+        - name: Build and push to tessellProd
+          if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+          run: |
+            ./setup -i -p
+
         - name: Setup Go environment
           uses: actions/setup-go@v4
           with: 
@@ -64,16 +75,6 @@
             chmod +x setup
             ./setup -b
             ls
-
-        - name: Build image
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          run: |
-            ./setup -i
-
-        - name: Build and push to tessellProd
-          if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
-          run: |
-            ./setup -i -p
 
         - name: Push tar files to nexus
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
