@@ -43,6 +43,7 @@
           uses: actions/setup-go@v4
           with: 
               go-version: 1.20.1
+     
         - run: |
             go version
             echo $GOPATH
@@ -52,7 +53,13 @@
             ls
             export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
             go env
-   
+
+        - name: Login to Docker Hub
+          uses: docker/login-action@v1
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+    
         - name: Build image
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
           run: |
@@ -68,7 +75,7 @@
         - name: Build and push to tessellProd
           if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
           run: |
-            echo "Building the service"
+            echo "Building the Image"
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
