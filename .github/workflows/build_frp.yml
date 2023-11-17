@@ -59,7 +59,7 @@
             echo "Building the Image"
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.19.5/x64
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
             
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             chmod +x setup
