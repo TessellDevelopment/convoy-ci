@@ -39,19 +39,42 @@
           with:
             fetch-depth: 0
 
+        - name: Setup Go environment
+          uses: actions/setup-go@v4
+          with: 
+              go-version: 1.19.5
+        - run: |
+            go version
+            echo $GOPATH
+            echo $GOROOT
+            echo $PATH
+            cd /root/ 
+            ls
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.19.5/x64
+            go env
+
         - name: Build image
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
           run: |
-            go version
-            go install golang.org/x/tools/cmd/goimports
-            go get golang.org/x/tools/cmd/goimports
+            echo "Building the Image"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.19.5/x64
+            
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            chmod +x setup
             ./setup -i
   
         - name: Build and push to tessellProd
           if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
           run: |
-            go install golang.org/x/tools/cmd/goimports
-            go get golang.org/x/tools/cmd/goimports
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            chmod +x setup
             ./setup -i -p
 
         - name: Setup Go environment
