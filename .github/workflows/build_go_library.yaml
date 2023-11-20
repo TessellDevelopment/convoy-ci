@@ -183,7 +183,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to nexus
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
@@ -207,7 +207,7 @@ jobs:
               if engine == 'null':
                 exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                               -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=0.105.0\
+                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
                               -DgeneratePom=true -Dpackaging={ext} \
                               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                               -Dfile=./package/${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
@@ -216,7 +216,7 @@ jobs:
                 continue
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=0.105.0\
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
                             -DgeneratePom=true -Dpackaging={ext} \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                             -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
@@ -225,7 +225,7 @@ jobs:
               """ 
 
       - name: Upload files to S3 Bucket
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           config="${{ inputs.exporter_config }}"
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
@@ -234,14 +234,11 @@ jobs:
             engine=$(echo "$key" | cut -d',' -f1)
             os_type=$(echo "$key" | cut -d',' -f2)
             if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
-              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-              echo "Db-perf"
+              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
             elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoriametrics" ]]; then
-              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-              echo "Victoria"
+              aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
             else
-              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-              echo "Exporter"
+              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
             fi
           done
 
