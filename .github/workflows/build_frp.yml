@@ -70,6 +70,7 @@
             
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             chmod +x setup
+            go clean -modcache
             ./setup -i
 
         - name: Build and push to tessellProd
