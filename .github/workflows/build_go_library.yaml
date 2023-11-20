@@ -190,7 +190,7 @@ jobs:
             import os
             exporter_name='${{ inputs.exporter_name }}'
             ext='tar'
-            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' || '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
+            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' OR '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
               ext='tar.gz'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for engine in exporter_config:
