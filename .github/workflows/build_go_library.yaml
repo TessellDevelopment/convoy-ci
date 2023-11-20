@@ -190,7 +190,7 @@ jobs:
             import os
             exporter_name='${{ inputs.exporter_name }}'
             ext='tar'
-            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' OR '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
+            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
               ext='tar.gz'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for engine in exporter_config:
@@ -211,6 +211,8 @@ jobs:
                               -DgeneratePom=true -Dpackaging={ext} \
                               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                               -Dfile=./${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
+                if exit_code != 0:
+                  raise Exception('Command failed with exit code {}'.format(exit_code))
                 continue
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
