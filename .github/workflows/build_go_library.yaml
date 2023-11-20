@@ -77,6 +77,11 @@ jobs:
           exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for engine in exporter_config:
+            if engine == 'null':
+              exit_code = os.system(\"make service os={os_type}\".format(os_type=exporter_config[engine], engine=engine ))
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+              continue
             print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
             exit_code = os.system(\"make service os={os_type} engine={engine}\".format(os_type=exporter_config[engine], engine=engine ))
             if exit_code != 0:
@@ -185,7 +190,7 @@ jobs:
             import os
             exporter_name='${{ inputs.exporter_name }}'
             ext='tar'
-            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
+            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' || '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
               ext='tar.gz'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for engine in exporter_config:
@@ -199,6 +204,14 @@ jobs:
               exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
+              if engine == 'null':
+                exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=0.105.0\
+                              -DgeneratePom=true -Dpackaging={ext} \
+                              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                              -Dfile=./${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
+                continue
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                             -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=0.105.0\
@@ -210,7 +223,7 @@ jobs:
               """ 
 
       - name: Upload files to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           config="${{ inputs.exporter_config }}"
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
@@ -219,9 +232,14 @@ jobs:
             engine=$(echo "$key" | cut -d',' -f1)
             os_type=$(echo "$key" | cut -d',' -f2)
             if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+              echo "Db-perf"
+            elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoriametrics" ]]; then
+              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+              echo "Victoria"
             else
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+              # aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
+              echo "Exporter"
             fi
           done
 
