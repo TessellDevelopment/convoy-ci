@@ -210,7 +210,7 @@ jobs:
                               -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=0.105.0\
                               -DgeneratePom=true -Dpackaging={ext} \
                               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                              -Dfile=./${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
+                              -Dfile=./package/${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
                 continue
