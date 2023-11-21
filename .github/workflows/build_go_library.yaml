@@ -77,7 +77,7 @@ jobs:
           exporter_name='${{ inputs.exporter_name }}'
           exporter_config = json.loads('${{ inputs.exporter_config }}')
           for engine in exporter_config:
-            if engine == 'null':
+            if engine == 'any':
               exit_code = os.system(\"make service os={os_type}\".format(os_type=exporter_config[engine], engine=engine ))
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
@@ -204,7 +204,7 @@ jobs:
               exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
-              if engine == 'null':
+              if engine == 'any':
                 exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                               -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                               -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
