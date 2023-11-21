@@ -183,7 +183,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
@@ -198,6 +198,7 @@ jobs:
               if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
                 ext='tar.gz'
               if '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
+                ext='tar.gz'
                 file=f'${{ inputs.exporter_name }}-{os_type}'
                 print(file)
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
@@ -212,7 +213,7 @@ jobs:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=0.105.2\
                             -DgeneratePom=true -Dpackaging={ext} \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                             -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext, file=file))
@@ -221,7 +222,7 @@ jobs:
               """ 
 
       - name: Upload files to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           config="${{ inputs.exporter_config }}"
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
@@ -231,7 +232,7 @@ jobs:
             os_type=$(echo "$key" | cut -d',' -f2)
             if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
               aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoriametrics" ]]; then
+            elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoria-metrics" ]]; then
               aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
             else
               aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
