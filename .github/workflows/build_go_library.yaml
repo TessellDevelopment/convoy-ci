@@ -195,8 +195,9 @@ jobs:
               ext='tar'
               file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
               print(file)
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
+              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
                 ext='tar.gz'
+              if '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
                 file=f'${{ inputs.exporter_name }}-{os_type}'
                 print(file)
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
