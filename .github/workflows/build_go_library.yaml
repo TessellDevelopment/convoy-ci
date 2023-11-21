@@ -183,17 +183,20 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
             import os
             exporter_name='${{ inputs.exporter_name }}'
-            ext='tar'
-            if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
-              ext='tar.gz'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
             for engine in exporter_config:
+              os_type=exporter_config[engine]
+              ext='tar'
+              file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
+              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
+                ext='tar.gz'
+                file=f'${{ inputs.exporter_name }}-{os_type}'
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
               exit_code = os.system(\"mkdir -p $HOME/.m2\")
               if exit_code != 0:
@@ -204,22 +207,12 @@ jobs:
               exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
-              if engine == 'any':
-                exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
-                              -DgeneratePom=true -Dpackaging={ext} \
-                              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                              -Dfile=./package/${{ inputs.exporter_name }}-{os_type}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
-                if exit_code != 0:
-                  raise Exception('Command failed with exit code {}'.format(exit_code))
-                continue
               exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                             -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId=${{ inputs.exporter_name }}-{os_type}-{engine} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
+                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=0.105.1\
                             -DgeneratePom=true -Dpackaging={ext} \
                             -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./${{ inputs.exporter_name }}-{os_type}-{engine}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
+                            -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext))
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
