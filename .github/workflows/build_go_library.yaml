@@ -194,9 +194,11 @@ jobs:
               os_type=exporter_config[engine]
               ext='tar'
               file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoriametrics':
+              print(file)
+              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter' or '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
                 ext='tar.gz'
                 file=f'${{ inputs.exporter_name }}-{os_type}'
+                print(file)
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
               exit_code = os.system(\"mkdir -p $HOME/.m2\")
               if exit_code != 0:
