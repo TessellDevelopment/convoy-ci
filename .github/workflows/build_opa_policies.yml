@@ -160,7 +160,7 @@ jobs:
 
       - name: Build Package
         run: |
-            opa build ./security  --output bundles/opa-policies.tar.gz
+            opa build policies --output bundles/opa-policies.tar.gz
 
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
