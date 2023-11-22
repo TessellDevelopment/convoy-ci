@@ -185,7 +185,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
+          API_URL: http://convoy-devops.convoy-dev:8080/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
