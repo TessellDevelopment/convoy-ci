@@ -38,7 +38,7 @@ jobs:
           # fi
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
           LABEL=$(curl --location 'http://api.dev.convoy.tessell.cloud/devops/applications/app-groups/tessell/latest-main-release-label' \
-                  --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]' | cut -d '-' -f 2)
+                  --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]')
           echo "LABEL=$LABEL" >> $GITHUB_ENV 
 
       - name: Checkout code
