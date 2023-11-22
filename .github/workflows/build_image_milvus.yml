@@ -61,10 +61,8 @@ jobs:
       - name: Extract version
         id: extract-version
         run: | 
-          VERSION=$(yq '.version' convoy.yaml)
           AGENT_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
           TASKHANDLER_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
 
@@ -166,7 +164,7 @@ jobs:
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
                       --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
@@ -175,7 +173,7 @@ jobs:
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
