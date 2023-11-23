@@ -22,7 +22,8 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-
+      NEXUS_REPO_NPM: tessell-repos-npm-component
+      NEXUS_URL: nexus.tessell.cloud
     steps:
       - uses: actions/checkout@v3
         name: Checkout repos
@@ -37,6 +38,13 @@ jobs:
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
+
+      - name: Installing Common UI config
+        run: |
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
+          echo '"@tessell:registry" "https://${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}@${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
+          echo "always-auth=true" >> .npmrc
+          echo "_auth=$TOKEN" >> .npmrc
 
       - name: Build
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
