@@ -81,15 +81,15 @@
           run: |
             TAG=$(yq '.docker-image-tag' setup.yaml)
             IMAGE_NAME=$(yq '.service-name-server' setup.yaml)
+            echo "$TAG"
+            echo "$IMAGE_NAME"
             echo "Building the Image"
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
 
-            docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/$IMAGE_NAME:$TAG \
-                  --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-            
+            docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/$IMAGE_NAME:$TAG
             docker push ${{env.DOCKERHUB_ORG}}/$IMAGE_NAME:$TAG
 
         - name: Push tar files to nexus
