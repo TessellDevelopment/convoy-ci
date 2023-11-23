@@ -28,7 +28,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          if [[ ${{env.SOURCE_BRANCH}} == 'main' ]]; then
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
             LABEL=$(curl --location 'http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/citest/latest-main-release-label' \
                     --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]')
