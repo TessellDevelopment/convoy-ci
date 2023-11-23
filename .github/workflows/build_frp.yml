@@ -167,13 +167,13 @@
             REPO = OWNER[1]
             
             if STATUS == 'SUCCESS':
-              STATUS = 'SUCCESSFULL'
+              STATUS = 'SUCCESSFUL'
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
   
             payload = {
               "repoName": REPO,
-              "commitHash": COMMIT_HASH,
+              "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
               "buildStatus": STATUS
             }
