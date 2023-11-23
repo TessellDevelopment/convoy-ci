@@ -213,16 +213,16 @@ jobs:
 
           def get_artifacts(generates,TAG):
               artifacts=[]
-              for artifact in generates.items():
-                  for object in artifact[1]:
+              for artifact_type, artifact in generates.items():
+                  for object in artifact:
                     element={}
-                    element["type"] = artifact[0]
+                    element["type"] = artifact_type
                     element["key"] = object["key"]
                     element["name"] = object["name"]
                     try:
                       element["version"] = object["version"]
                     except: 
-                      if artifact[0] == 'helmCharts':
+                      if artifact_type == 'helmCharts':
                         chart_path = object["chartPath"]
                         with open(chart_path, 'r') as chart_yaml_content:
                           data = yaml.safe_load(chart_yaml_content)
