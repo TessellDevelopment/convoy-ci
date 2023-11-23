@@ -31,8 +31,8 @@ jobs:
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-            LABEL=$(curl --location 'http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label' \
-                    --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]')
+            LABEL=$(curl --location "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label' \
+                    --header 'Authorization: Basic $TOKEN" | jq -r '.["latest-main-release-label"]')
             if [ $? -eq 0 ]; then
               if [[ $LABEL == rel* ]]; then
                   echo "LABEL=$LABEL" >> $GITHUB_ENV
