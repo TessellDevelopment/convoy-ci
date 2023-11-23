@@ -33,6 +33,7 @@ jobs:
         run: |
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
+            echo "hello $TOKEN hello"
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
             URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
