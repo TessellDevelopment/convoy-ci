@@ -19,6 +19,9 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Get branch name
         shell: bash
         run: |
