@@ -45,6 +45,8 @@ jobs:
           echo '"@tessell:registry" "https://${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}@${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
           echo "always-auth=true" >> .npmrc
           echo "_auth=$TOKEN" >> .npmrc
+          cat .npmrc
+          cat .yarnrc
 
       - name: Build
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
