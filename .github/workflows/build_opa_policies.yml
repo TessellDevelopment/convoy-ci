@@ -35,10 +35,12 @@ jobs:
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            RESPONSE=$(curl --location "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label" \
+            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl --location "$URL" \
                     --header "Authorization: Basic $TOKEN")
             echo "$RESPONSE"
-            LABEL=$($RESPONSE | jq -r '.["latest-main-release-label"]')
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
             echo "$LABEL"
             if [ $? -eq 0 ]; then
               if [[ $LABEL == rel* ]]; then
