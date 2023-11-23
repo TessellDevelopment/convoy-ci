@@ -30,9 +30,20 @@ jobs:
         run: |
           if [[ ${{env.SOURCE_BRANCH}} == 'main' ]]; then
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
-            LABEL=$(curl --location 'http://api.dev.convoy.tessell.cloud/devops/applications/app-groups/tessell/latest-main-release-label' \
-                    --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]' | cut -d '-' -f 2)
-            echo "LABEL=$LABEL" >> $GITHUB_ENV 
+            LABEL=$(curl --location 'http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/tessell/latest-main-release-label' \
+                    --header 'Authorization: Basic $TOKEN' | jq -r '.["latest-main-release-label"]')
+            if [ $? -eq 0 ]; then
+              if [[ $LABEL == rel* ]]; then
+                  echo "LABEL=$LABEL" >> $GITHUB_ENV
+              else
+                  echo "Response: $LABEL"
+                  echo "Label does not start with 'rel'. Check response."
+                  exit 1 
+              fi
+            else
+                echo "Failed API request."
+                exit 1
+            fi
           else
             echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
           fi
@@ -229,7 +240,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
