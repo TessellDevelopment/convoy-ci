@@ -27,13 +27,20 @@
         GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
         GROUP_NAME: "tessell.frp"
         GOPATH: /home/github/go
+        DOCKERHUB_ORG: "tesselldev"
   
       steps:
         - name: Get branch name
           shell: bash
           run: |
             echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-  
+
+        - name: Set Docker Repository
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          shell: bash
+          run: |
+            echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+    
         - name: Checkout code
           uses: actions/checkout@v3
           with:
@@ -50,7 +57,6 @@
             echo $GOROOT
             echo $PATH
             cd /root/ 
-            ls
             export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
             go env
 
@@ -59,31 +65,6 @@
           with:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
-    
-        - name: Build image
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          run: |
-            echo "Building the Image"
-            export PATH=${PATH}:$GOPATH/bin
-            echo $PATH
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
-            
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            chmod +x setup
-            go clean -modcache
-            ./setup -i
-
-        - name: Build and push to tessellProd
-          if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
-          run: |
-            echo "Building the Image"
-            export PATH=${PATH}:$GOPATH/bin
-            echo $PATH
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
-            
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            chmod +x setup
-            ./setup -i -p
 
         - name: Make clients
           run: |
@@ -95,7 +76,21 @@
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             chmod +x setup
             ./setup -b
-            ls
+    
+        - name: Build and push image
+          run: |
+            TAG=$(yq '.docker-image-tag' setup.yaml)
+            IMAGE_NAME=$(yq '.service-name-server' setup.yaml)
+            echo "Building the Image"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+
+            docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/$IMAGE_NAME:$TAG \
+                  --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+            
+            docker push ${{env.DOCKERHUB_ORG}}/$IMAGE_NAME:$TAG
 
         - name: Push tar files to nexus
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
