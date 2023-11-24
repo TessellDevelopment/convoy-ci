@@ -15,18 +15,54 @@ jobs:
     needs: file-check
     outputs:
       type: ${{steps.build-type.outputs.type}}
+      label: ${{steps.get-label.outputs.LABEL}}
     steps:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          
+      - name: Get Label
+        id: get-label
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl --location "$URL" \
+                    --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [ $? -eq 0 ]; then
+              if [[ $LABEL == rel* ]]; then
+                  echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
+              else
+                  echo "Response: $LABEL"
+                  echo "Label does not start with 'rel'. Check response."
+                  exit 1 
+              fi
+            else
+                echo "Failed API request."
+                exit 1
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_OUTPUT
+          fi
           
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          build_line=$(grep 'build:' convoy.yaml)
-          build_type=$(echo "$build_line" | awk '{print $2}')
-          echo "type=$build_type" >> $GITHUB_OUTPUT
+          language=$(yq '.language' convoy.yaml)
+          echo "type=$language" >> $GITHUB_OUTPUT
   
   create-tag:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_tag.yml@TDEVOPS-827
@@ -51,6 +87,7 @@ jobs:
     with:
       type: ${{needs.build-file.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
+      lable: ${{needs.build-file.outputs.label}}
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}

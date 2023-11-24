@@ -41,14 +41,14 @@
                 echo "Revert branch, skipping Format check"
                 exit 0
             fi
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
+            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
               echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
             else
               echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'."
               exit 1
             fi
             PULL_REQUEST_TITLE="$PR_TITLE"
-            PATTERN="^(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
+            PATTERN="(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
             if echo "$PULL_REQUEST_TITLE" | grep -Eq '^Double Commit'; then
               echo "Double Commit PR."
               exit 0
@@ -59,7 +59,6 @@
             else 
               echo "PR Title is in the valid format."
             fi  
-            
   
         - name: Set up Python
           uses: actions/setup-python@v2

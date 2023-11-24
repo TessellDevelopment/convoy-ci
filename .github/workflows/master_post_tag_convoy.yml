@@ -31,7 +31,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/commits
+          API_URL: http://convoy-devops.convoy-dev:8080/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{ENV.TAG}}"
@@ -41,7 +41,7 @@ jobs:
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
         run: |
           python - <<EOF
-          
+            
           import yaml
           import requests
           import os
@@ -56,6 +56,31 @@ jobs:
                 except:
                     print(f'{key} not present in convoy.yaml')
             return data
+
+          def get_artifacts(generates,TAG):
+              artifacts=[]
+              for artifact_type, artifact in generates.items():
+                  for object in artifact:
+                    element={}
+                    element["type"] = artifact_type
+                    element["key"] = object["key"]
+                    element["name"] = object["name"]
+                    try:
+                      element["version"] = object["version"]
+                    except: 
+                      if artifact_type == 'helmCharts':
+                        chart_path = object["chartPath"]
+                        with open(chart_path, 'r') as chart_yaml_content:
+                          data = yaml.safe_load(chart_yaml_content)
+                        element["version"] = data.get('version')
+                      else:
+                        element["version"] = TAG
+                    try:
+                      element["extension"] = object["extension"]
+                    except:
+                      print("Extension Details not present")
+                    artifacts.append(element)
+              return artifacts
 
           def get_artifact_metadata(yaml_data, type):
             artifactMetadata = {"type": type}
@@ -82,7 +107,7 @@ jobs:
                 url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files'
                 res = requests.get(url, headers=headers)
                 files_data = res.json()
-        
+
                 modified_folders = set()
                 for file_data in files_data:
                     file_path = file_data['filename']
@@ -90,7 +115,7 @@ jobs:
                     if folder_path == 'convoy.yaml':
                       continue 
                     modified_folders.add(folder_path)
-        
+
                 print("Modified folders:")
                 for folder in modified_folders:
                     if '.github' in folder or len(folder) == 0:
@@ -120,7 +145,7 @@ jobs:
             }
             max_retries = 3
             retry_delay = 5 
-        
+
             for _ in range(max_retries):
                 response = requests.post(API_URL, json=payload, headers=headers)
                 if response.status_code == 200 or response.status_code == 409:
@@ -143,16 +168,15 @@ jobs:
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
-          
           COMMIT_MESSAGE = subprocess.check_output(['git','log','--pretty=format:%s','-n','1'])
           COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
+
           try:
             with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
           except FileNotFoundError:
               print(f"YAML file not found. Skipping this step.")
               exit(0)
-          type = yaml_data.get('artifactType') 
           payload = { 
             "repoName": REPO,
             "commitHash": COMMIT_HASH[:7],
@@ -161,8 +185,14 @@ jobs:
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
-          payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
-          print(f"Payload: {payload}")
+          generates = yaml_data.get('generates')
+          type = yaml_data.get('artifactType')
+          if generates != None:
+              payload["artifacts"] = get_artifacts(generates,TAG)
+              print(payload)
+          else: 
+              payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
+              print(f"Payload: {payload}")
           post_request(payload)
           EOF
 

@@ -11,24 +11,24 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'GRAALVM' }}
+    if: ${{inputs.type != 'quarkus' }}
     runs-on: amd64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
   
   build-arm:
-    if: ${{inputs.type == 'GRAALVM' }}
+    if: ${{inputs.type == 'quarkus' }}
     runs-on: ARM64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
