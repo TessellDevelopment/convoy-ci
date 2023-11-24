@@ -37,7 +37,7 @@ jobs:
             echo "$APP_GROUP"
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
-            RESPONSE=$(curl --location "$URL" --header "Authorization: Basic $TOKEN")
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
             echo "$RESPONSE"
             LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
             echo "$LABEL"
