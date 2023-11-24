@@ -25,6 +25,8 @@ jobs:
     if: ${{inputs.type == 'quarkus' }}
     runs-on: ARM64
     env:
+      DOCKERHUB_ORG: tesselldev
+      IMAGE_NAME: tessellops-tsproxy
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
@@ -37,7 +39,8 @@ jobs:
           sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           echo "Build successful"
           if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
-            docker build -f src/main/docker/Dockerfile.tailscale -t tsproxy .
+            docker build -f src/main/docker/Dockerfile.tailscale -t ${DOCKERHUB_ORG}/${IMAGE_NAME}:${{github.head_ref}} .
+            docker push ${DOCKERHUB_ORG}/${IMAGE_NAME}::${{github.head_ref}}
           fi
 
       - name: Remove target

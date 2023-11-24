@@ -52,6 +52,8 @@ jobs:
       LABEL: ${{inputs.label}}
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_ARTIFACT_REPO: tessell-artifacts
+      DOCKERHUB_ORG: tessellprod
+      IMAGE_NAME: tessellops-tsproxy
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
@@ -65,9 +67,14 @@ jobs:
       - name: Build and Push OPS
         run: |
           sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true          
-          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+          if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
+            docker build -f src/main/docker/Dockerfile.tailscale -t ${DOCKERHUB_ORG}/${IMAGE_NAME}:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/${IMAGE_NAME}:${LATEST_TAG}
+          else
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
               https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${LABEL}/tessellops/${REPO}/${REPO}-${LATEST_TAG}.zip
+          fi
           echo "Build and push successful"
 
       - name: Remove target
