@@ -39,10 +39,10 @@ jobs:
             echo "$URL"
             RESPONSE=$(curl --location "$URL" \
                     --header "Authorization: Basic $TOKEN")
-            echo "$RESPONSE"
-            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-            echo "$LABEL"
             if [ $? -eq 0 ]; then
+              echo "$RESPONSE"
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+              echo "$LABEL"
               if [[ $LABEL == rel-* ]]; then
                   echo "LABEL=$LABEL" >> $GITHUB_ENV
               else
