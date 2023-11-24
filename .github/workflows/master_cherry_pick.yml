@@ -2,15 +2,15 @@ name: Cherry Pick workflow
 on:
   workflow_call:
     inputs: 
-      base-repo: 
+      base_repo: 
         description: 'Base repo url to get changes'
         required: true
         type: string
-      jira-id:
+      jira_id:
         description: 'Jira ID for cherry pick'
         required: true
         type: string
-      pr-title:
+      pr_title:
         description: 'PR Title for cherry pick'
         required: true
         type: string
@@ -18,13 +18,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  cherry-pick:
+  cherry_pick:
     runs-on: self-hosted
     env: 
-      URL: "${{inputs.base-repo}}"
+      URL: "${{inputs.base_repo}}"
       REPO: "${{github.repository}}"
-      JIRA_ID: "${{inputs.jira-id}}"
-      PR_TITLE: "${{inputs.pr-title}}"
+      JIRA_ID: "${{inputs.jira_id}}"
+      PR_TITLE: "${{inputs.pr_title}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
