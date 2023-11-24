@@ -211,7 +211,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          aws s3 cp bundles/opa-policies.tar.gz s3://tessell-artifacts-dev/${{env.LABEL}}/opa-policies/opa-policies-$VERSION.tar.gz
+          aws s3 cp bundles/opa-policies.tar.gz s3://${{var.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/opa-policies/opa-policies-$VERSION.tar.gz
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
