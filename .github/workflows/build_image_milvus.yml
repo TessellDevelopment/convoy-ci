@@ -1,55 +1,35 @@
----
-# This is a basic workflow to help you get started with Actions
 name: Tessell Pipelines Code Build
-
-# Controls when the workflow will run
 on:
   workflow_call:
-    inputs:
-      exporter_config:
-        description: 'dictonary input for oracle exporter'
-        required: false
-        type: string
-        default: '{}'
-      exporter_name:
-        description: 'dictonary input for oracle exporter'
-        required: true
-        type: string
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: self-hosted
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
-      
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-      GOPATH: /home/github/go
-      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-      OS_NAMES: "linux windows"
+      DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
+      DOCKERHUB_ORG: "tesselldev"
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-          echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
-          
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+
+      - name: Set Docker Repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: Install AWS CLI
         run: |
@@ -57,36 +37,34 @@ jobs:
           chmod +x install-aws.sh
           sudo ./install-aws.sh "v2" "amd64"
           rm install-aws.sh
-
+    
       - run: aws --version
         shell: bash
 
       - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
           aws configure set region ap-south-1
+          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 219776070323.dkr.ecr.ap-south-1.amazonaws.com
 
-      - name: Make Clients for ${{ inputs.exporter_name }}
-        run: |
-          echo "Building the service"
-          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          python3 -c """
-          import json
-          import os
-          exporter_name='${{ inputs.exporter_name }}'
-          exporter_config = json.loads('${{ inputs.exporter_config }}')
-          for engine in exporter_config:
-            if engine == 'any':
-              exit_code = os.system(\"make service os={os_type}\".format(os_type=exporter_config[engine], engine=engine ))
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              continue
-            print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
-            exit_code = os.system(\"make service os={os_type} engine={engine}\".format(os_type=exporter_config[engine], engine=engine ))
-            if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-          """      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract version
+        id: extract-version
+        run: | 
+          AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+          TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
+          echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
+          echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
           
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
@@ -99,9 +77,9 @@ jobs:
                 core.setOutput('commit_id', "${{ github.sha }}" )
             }
             else{
-               core.setOutput('commit_id', "${{ github.event.after }}" )
+                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-            
+              
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -120,13 +98,14 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+        
             
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -181,64 +160,85 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-
-      - name: Pushing generated tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      
+      - name: Build image
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-            python3 -c """
-            import json
-            import os
-            exporter_name='${{ inputs.exporter_name }}'
-            exporter_config = json.loads('${{ inputs.exporter_config }}')
-            for engine in exporter_config:
-              os_type=exporter_config[engine]
-              ext='tar'
-              file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
-              print(file)
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
-                ext='tar.gz'
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
-                ext='tar.gz'
-                file=f'${{ inputs.exporter_name }}-{os_type}'
-                print(file)
-              print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
-              exit_code = os.system(\"mkdir -p $HOME/.m2\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                            -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
-                            -DgeneratePom=true -Dpackaging={ext} \
-                            -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext, file=file))
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              """ 
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
+                      --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
+                      --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                      --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
+                      --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
 
-      - name: Upload files to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      - name: Build and push to tessellProd
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         run: |
-          config="${{ inputs.exporter_config }}"
-          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          config=$(echo "$config" | sed 's/\\//g')
-          for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
-            engine=$(echo "$key" | cut -d',' -f1)
-            os_type=$(echo "$key" | cut -d',' -f2)
-            if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoria-metrics" ]]; then
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            else
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            fi
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
+                        --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
+                        --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                        --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
+                        --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
+          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+
+          images=("etcd" "pulsar" "milvus")
+          for image in "${images[@]}"; do
+            plugin=".${image}Version"
+            version=$(yq -r $plugin convoy.yaml)
+            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
           done
 
+      - name: Tagging docker image with scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        run: |
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
+
+  
+      - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+            severity-threshold: CRITICAL
+            image-name: ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}   
+            trivy-version: 0.46.1
+            
+      - name: Upload image scan report
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        uses: actions/upload-artifact@v3
+        with:
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+  
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+           
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
@@ -341,3 +341,13 @@ jobs:
             steps: ${{ toJson(steps) }}
             channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
+
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: build
+    with:
+      subject: ${{ needs.build.outputs.mail_subject_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
+      to: ${{ needs.build.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
