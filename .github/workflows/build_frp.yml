@@ -167,7 +167,7 @@
             REPO = OWNER[1]
             
             if STATUS == 'SUCCESS':
-              STATUS = 'SUCCESSFULL'
+              STATUS = 'SUCCESSFUL'
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
   
