@@ -178,6 +178,17 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
+      
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$TAG"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+          fi   
 
       - name: Build Package
         run: |
