@@ -1,6 +1,2 @@
-.github/workflows/** @TessellDevelopment/devops-eng
-.github/scripts/** @TessellDevelopment/devops-eng
-.github/actions/** @TessellDevelopment/devops-eng
-.github/CODEOWNERS @TessellDevelopment/devops-eng
-.github/pull_request_template.md @TessellDevelopment/devops-eng
+.github/** @TessellDevelopment/devops-eng
 .github/containerscan/allowedlist.yaml None
