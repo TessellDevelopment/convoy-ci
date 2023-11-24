@@ -142,7 +142,7 @@ jobs:
             echo "$RESPONSE"
             LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
             echo "$LABEL"
-            if [[ $LABEL == rel* ]]; then
+            if [[ $LABEL == rel-* ]]; then
                 echo "LABEL=$LABEL" >> $GITHUB_ENV
             else
                 echo "Response: $LABEL"
