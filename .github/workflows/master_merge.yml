@@ -61,8 +61,8 @@ jobs:
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          language=$(yq '.language' convoy.yaml)
-          echo "type=$language" >> $GITHUB_OUTPUT
+          framework=$(yq '.framework' convoy.yaml)
+          echo "type=$framework" >> $GITHUB_OUTPUT
   
   create-tag:
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_tag.yml@TDEVOPS-827
