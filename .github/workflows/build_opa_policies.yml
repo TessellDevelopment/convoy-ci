@@ -37,22 +37,16 @@ jobs:
             echo "$APP_GROUP"
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
-            RESPONSE=$(curl --location "$URL" \
-                    --header "Authorization: Basic $TOKEN")
-            if [ $? -eq 0 ]; then
-              echo "$RESPONSE"
-              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-              echo "$LABEL"
-              if [[ $LABEL == rel-* ]]; then
-                  echo "LABEL=$LABEL" >> $GITHUB_ENV
-              else
-                  echo "Response: $LABEL"
-                  echo "Label does not start with 'rel'. Check response."
-                  exit 1 
-              fi
+            RESPONSE=$(curl --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
             else
-                echo "Failed API request."
-                exit 1
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
             fi
           else
             echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
