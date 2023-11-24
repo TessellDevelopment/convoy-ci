@@ -188,6 +188,7 @@ jobs:
               echo "TAG and LABEL are on same release label: rel-$TAG"
           else
               echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
           fi   
 
       - name: Build Package
