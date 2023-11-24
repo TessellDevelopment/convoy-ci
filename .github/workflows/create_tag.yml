@@ -217,7 +217,7 @@ jobs:
                   for object in artifact:
                     element={}
                     element["type"] = artifact_type
-                    element["key"] = object["key"]
+                    element["releaseManifestKey"] = object["releaseManifestKey"]
                     element["name"] = object["name"]
                     try:
                       element["version"] = object["version"]
