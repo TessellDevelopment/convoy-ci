@@ -79,6 +79,7 @@ jobs:
         shell: bash
 
       - name: Configure AWS Credentials
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
@@ -185,7 +186,7 @@ jobs:
           tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
           label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
           if [ "$tag" == "$label" ]; then
-              echo "TAG and LABEL are on same release label: rel-$TAG"
+              echo "TAG and LABEL are on same release label: rel-$tag"
           else
               echo "TAG and LABEL are on different release label. Please check git tag and API response."
               exit 1
