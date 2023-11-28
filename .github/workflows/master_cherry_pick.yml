@@ -21,10 +21,10 @@ jobs:
   cherry_pick:
     runs-on: self-hosted
     env: 
-      URL: "${{inputs.base_repo}}"
-      REPO: "${{github.repository}}"
-      JIRA_ID: "${{inputs.jira_id}}"
-      PR_TITLE: "${{inputs.pr_title}}"
+      URL: ${{inputs.base_repo}}
+      REPO: ${{github.repository}}
+      JIRA_ID: ${{inputs.jira_id}}
+      PR_TITLE: ${{inputs.pr_title}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
