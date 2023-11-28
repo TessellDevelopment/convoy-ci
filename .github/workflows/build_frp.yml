@@ -182,7 +182,7 @@
             # Build frpc_darwin image
             cp ./dockerfiles/frpc-darwin/Dockerfile ./Dockerfile
             docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin .
-            if [[ ${{env.DOCKERHUB_ORG}} == 'tessellprod' ]]; then
+            if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:${{ steps.latest_tag.outputs.tag_ref }} 
             else
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin
@@ -192,7 +192,7 @@
             # Build frps_linux image
             cp ./dockerfiles/frps-linux/Dockerfile ./Dockerfile
             docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/tessell-frps-service .
-            if [[ ${{env.DOCKERHUB_ORG}} == 'tessellprod' ]]; then
+            if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frps-service:${{ steps.latest_tag.outputs.tag_ref }} 
             else
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frps-service
