@@ -43,7 +43,7 @@ jobs:
         run: |
           rm ~/.npmrc
           rm ~/.yarnrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
           echo '"@tessell:registry" "https://${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}@${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
           echo "always-auth=true" >> .npmrc
           echo "_auth=$TOKEN" >> .npmrc
