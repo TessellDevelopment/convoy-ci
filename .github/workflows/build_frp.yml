@@ -185,8 +185,6 @@
             if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
               docker tag ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:${{ steps.latest_tag.outputs.tag_ref }} 
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:${{ steps.latest_tag.outputs.tag_ref }} 
-            else
-              docker push ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin
             fi
             rm -rf Dockerfile
 
@@ -196,8 +194,6 @@
             if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
               docker tag ${{env.DOCKERHUB_ORG}}/tessell-frps-service:latest ${{env.DOCKERHUB_ORG}}/tessell-frps-service:${{ steps.latest_tag.outputs.tag_ref }} 
               docker push ${{env.DOCKERHUB_ORG}}/tessell-frps-service:${{ steps.latest_tag.outputs.tag_ref }} 
-            else
-              docker push ${{env.DOCKERHUB_ORG}}/tessell-frps-service
             fi
             rm -rf Dockerfile
 
@@ -260,7 +256,7 @@
                 -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                 -DgeneratePom=true -Dpackaging=tar \
                 -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                -Dfile=./tessell-$service-$os-amd64.tar -DrepositoryId=nexus
+                -Dfile=./tessell-$service-$os.tar -DrepositoryId=nexus
               done
             done
 
@@ -268,8 +264,6 @@
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
             VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-            mv tessell-frpc-linux-amd64.tar tessell-frpc-linux.tar
-            mv tessell-frpc-windows-amd64.tar tessell-frpc-windows.tar
             aws s3 cp tessell-frpc-linux.tar s3://tesselltools/terls/tessell/frp/$VERSION/
             aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
           
