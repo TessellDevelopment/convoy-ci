@@ -46,31 +46,6 @@
           with:
             fetch-depth: 0
             
-        - name: Set Label
-          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-          shell: bash
-          run: |
-            if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
-              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-              echo "$APP_GROUP"
-              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-              echo "$URL"
-              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
-              echo "$RESPONSE"
-              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-              echo "$LABEL"
-              if [[ $LABEL == rel-* ]]; then
-                  echo "LABEL=$LABEL" >> $GITHUB_ENV
-              else
-                  echo "Response: $LABEL"
-                  echo "Label does not start with 'rel'. Check response."
-                  exit 1 
-              fi
-            else
-              echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
-            fi
-            
         - name: Setup Go environment
           uses: actions/setup-go@v4
           with: 
@@ -306,8 +281,8 @@
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
             VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-            aws s3 cp tessell-frpc-linux.tar s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/frp/tessell-frpc-linux-$VERSION.tar
-            aws s3 cp tessell-frpc-windows.tar s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/frp/tessell-frpc-windows-$VERSION.tar
+            aws s3 cp tessell-frpc-linux.tar s3://tesselltools/terls/tessell/frp/$VERSION/
+            aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
           
         - name: Slack Notification
           uses: act10ns/slack@v1.5.0
