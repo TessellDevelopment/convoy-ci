@@ -388,7 +388,7 @@ jobs:
                 version = TAG
               payload["artifacts"] = get_artifacts(generates, version)
               print(payload)
-          else if type == None:
+          elif type == None:
               print(payload)
           else: 
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
