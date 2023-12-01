@@ -132,28 +132,36 @@ jobs:
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
 
       - name: Set Label
+        id: set_label
         shell: bash
         run: |
-          if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
-            echo "$RESPONSE"
-            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-            echo "$LABEL"
-            if [[ $LABEL == rel-* ]]; then
-                echo "LABEL=$LABEL" >> $GITHUB_ENV
+          if [ -f convoy.yaml ]; then
+            echo "convoy_exists=true" >> $GITHUB_OUTPUT
+            if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+              echo "$RESPONSE"
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+              echo "$LABEL"
+              if [[ $LABEL == rel-* ]]; then
+                  echo "LABEL=$LABEL" >> $GITHUB_ENV
+              else
+                  echo "Response: $LABEL"
+                  echo "Label does not start with 'rel'. Check response."
+                  exit 1 
+              fi
             else
-                echo "Response: $LABEL"
-                echo "Label does not start with 'rel'. Check response."
-                exit 1 
+              echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
             fi
-          else
-            echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
-          fi
+           else
+            echo "convoy.yaml not found"
+            echo "convoy_exists=false" >> $GITHUB_OUTPUT
+           fi 
 
       - name: Validate Label
+        if: ${{ steps.set_label.outputs.convoy_exists == 'true' }}
         run: |
           tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
           label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
@@ -243,31 +251,31 @@ jobs:
                 except:
                     print(f'{key} not present in convoy.yaml')
             return data
-
-          def get_artifacts(generates,TAG):
+          
+          def get_artifacts(generates, version):
               artifacts=[]
               for artifact_type, artifact in generates.items():
                   for object in artifact:
                     element={}
                     element["type"] = artifact_type
-                    element["releaseManifestKey"] = object["releaseManifestKey"]
-                    element["name"] = object["name"]
                     try:
-                      element["version"] = object["version"]
-                    except: 
-                      if artifact_type == 'helmCharts':
-                        chart_path = object["chartPath"]
-                        with open(chart_path, 'r') as chart_yaml_content:
-                          data = yaml.safe_load(chart_yaml_content)
-                        element["version"] = data.get('version')
-                      else:
-                        element["version"] = TAG
+                     element["releaseManifestKey"] = object["releaseManifestKey"] 
+                    except:
+                       print("Artifact excluded from Release Manifest") 
+                    element["name"] = object["name"]
+                    element["version"] = version
+                    if artifact_type == 'helmCharts':
+                      chart_path = object["chartPath"]
+                      with open(chart_path, 'r') as chart_yaml_content:
+                        data = yaml.safe_load(chart_yaml_content)
+                      element["version"] = data.get('version')
                     try:
                       element["extension"] = object["extension"]
                     except:
                       print("Extension Details not present")
                     artifacts.append(element)
               return artifacts
+          
 
           def get_artifact_metadata(yaml_data, type):
             artifactMetadata = {"type": type}
@@ -375,7 +383,10 @@ jobs:
           generates = yaml_data.get('generates')
           type = yaml_data.get('artifactType')
           if generates != None:
-              payload["artifacts"] = get_artifacts(generates,TAG)
+              version = yaml_data.get('version')
+              if version == None:
+                version = TAG
+              payload["artifacts"] = get_artifacts(generates, version)
               print(payload)
           else: 
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)

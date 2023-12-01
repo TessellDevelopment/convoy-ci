@@ -181,11 +181,11 @@ jobs:
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-
-          images=("etcd" "pulsar" "milvus")
-          for image in "${images[@]}"; do
-            plugin=".${image}Version"
-            version=$(yq -r $plugin convoy.yaml)
+          images=$(yq -r ".consumes.dockerImages" convoy.yaml )
+          for obj in $(echo "$images" | jq -r '.[] | @base64'); do
+            decoded_image=$(echo "$obj" | base64 --decode)
+            image=$(echo "$decoded_image" | jq -r '.name')
+            version=$(echo "$decoded_image" | jq -r '.version')
             docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
             docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
