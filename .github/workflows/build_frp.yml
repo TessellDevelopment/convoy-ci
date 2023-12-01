@@ -79,8 +79,8 @@
         - name: Configure AWS Credentials
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
-            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
             
         - name: Make clients
