@@ -389,7 +389,7 @@ jobs:
               payload["artifacts"] = get_artifacts(generates, version)
               print(payload)
           else if type == None:
-              post_request(payload)
+              print(payload)
           else: 
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
               print(f"Payload: {payload}")
