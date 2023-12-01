@@ -381,15 +381,15 @@ jobs:
             "pullRequestId": PR_ID,
           }
           generates = yaml_data.get('generates')
-          type = yaml_data.get('artifactType')
-          if type == None:
-              post_request(payload)
+          type = yaml_data.get('artifactType') 
           if generates != None:
               version = yaml_data.get('version')
               if version == None:
                 version = TAG
               payload["artifacts"] = get_artifacts(generates, version)
               print(payload)
+          else if type == None:
+              post_request(payload)
           else: 
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
               print(f"Payload: {payload}")
