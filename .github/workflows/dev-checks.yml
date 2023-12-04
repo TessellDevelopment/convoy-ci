@@ -552,8 +552,7 @@ jobs:
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
               var artifactType = data.artifactType
-              var language = data.language
-              if(language === 'terraform'){
+              if(artifactType === 'nested'){
                 modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
