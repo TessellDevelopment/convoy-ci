@@ -259,9 +259,10 @@ jobs:
                     element={}
                     element["type"] = artifact_type
                     try:
-                     element["releaseManifestKey"] = object["releaseManifestKey"] 
+                      element["releaseManifestKey"] = object["releaseManifestKey"] 
                     except:
-                       print("Artifact excluded from Release Manifest") 
+                        print("Artifact excluded from Release Manifest") 
+                        return
                     element["name"] = object["name"]
                     element["version"] = version
                     if artifact_type == 'helmCharts':
@@ -276,7 +277,6 @@ jobs:
                     artifacts.append(element)
               return artifacts
           
-
           def get_artifact_metadata(yaml_data, type):
             artifactMetadata = {"type": type}
             
@@ -387,6 +387,8 @@ jobs:
               if version == None:
                 version = TAG
               payload["artifacts"] = get_artifacts(generates, version)
+              if payload["artifacts"] == None:
+                del payload["artifacts"]
               print(payload)
           elif type == None:
               print(payload)
