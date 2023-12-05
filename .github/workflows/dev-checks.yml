@@ -160,14 +160,14 @@ jobs:
         run: |
           if [ ! -d "node_modules/@octokit/rest" ]; then
             npm cache clean --force
-            npm install @octokit/rest --legacy-peer-deps -g
+            sudo sudo npm install @octokit/rest --legacy-peer-deps -g
           fi
       - name: install node fetch 
         run: | 
-          npm install node-fetch -g
+          sudo sudo npm install node-fetch -g
 
       - name: Install dependencies
-        run: npm install js-yaml -g
+        run: sudo sudo npm install js-yaml -g
 
       - name: Check for merge conflicts
         uses: actions/github-script@v6.4.1
