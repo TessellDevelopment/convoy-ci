@@ -37,6 +37,9 @@ on:
 jobs:
   dev-checks:
     runs-on: self-hosted
+    env:
+      NEXUS_REPO_NPM: tessell-repos-npm-component
+      NEXUS_URL: nexus.tessell.cloud
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -147,14 +150,24 @@ jobs:
             echo "No double commit conflicts found in Branch or PR title."
           fi
 
+      - name: Adding Common UI config
+        run: |
+          set +e
+          rm ~/.npmrc
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
+          echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          cat .npmrc
+
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
           
-      # - name: Check for Jsonlint
-      #   run: |
-      #     set -e
-      #     git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
+      - name: Check for Jsonlint
+        run: |
+          set -e
+          git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
       - name: install octokit/rest
         run: |
