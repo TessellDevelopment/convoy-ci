@@ -287,21 +287,22 @@ jobs:
             if [ -f convoy.yaml ]; then
               if grep -q 'version:' convoy.yaml; then
                 echo "Version found in convoy.yaml"
+                
                 if [ -f gradle.properties ]; then
                   if grep -q '^\s*version=' gradle.properties; then
                     echo "Please remove version from gradle.properties"
                     exit 1
                   else
-                    echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
+                    echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
                   fi
                 fi
               else
                 echo "Version not found in convoy.yaml"
-                echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+                echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
               fi
             else
               echo "convoy.yaml not found"
-              echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+              echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
             fi
             
       - name: check for gradle properties version
@@ -329,9 +330,9 @@ jobs:
             });
             version_updated = false
              response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'gradle.properties') {
+               if (file_entry.filename == 'convoy.yaml') {
                    console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                   if (file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                        version_updated = true
                    }
                }
