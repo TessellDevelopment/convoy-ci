@@ -52,6 +52,7 @@ jobs:
         run: |
           set +e 
           cd ~
+          rm .npmrc
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
           echo "//${{ env.NEXUS_URL }}/repository/:_auth = $TOKEN" >> .npmrc
           echo "//${{ env.NEXUS_URL }}/repository/:always-auth = true" >> .npmrc 
