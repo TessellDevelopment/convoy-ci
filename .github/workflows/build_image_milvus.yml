@@ -181,17 +181,25 @@ jobs:
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          images=$(yq -r ".consumes.dockerImages" convoy.yaml )
-          for obj in $(echo "$images" | jq -r '.[] | @base64'); do
-            decoded_image=$(echo "$obj" | base64 --decode)
-            image=$(echo "$decoded_image" | jq -r '.name')
-            version=$(echo "$decoded_image" | jq -r '.version')
-            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-          done
+          while IFS=: read key value; do
+              if [[ $key =~ consumes ]]; then
+                  read -r _ consume_key
+                  while IFS=: read sub_key sub_value; do
+                      if [[ $sub_key =~ name ]]; then
+                          image=$(echo "$sub_value" | tr -d ' ')
+                      elif [[ $sub_key =~ version ]]; then
+                          version=$(echo "$sub_value" | tr -d ' ')
+                          echo $image
+                          echo $version
+                          docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+                          docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+                          docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+                          docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+                          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+                      fi
+                  done
+              fi
+          done < convoy.yaml
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
