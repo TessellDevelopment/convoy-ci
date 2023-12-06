@@ -37,6 +37,9 @@ on:
 jobs:
   dev-checks:
     runs-on: self-hosted
+    env:
+      NEXUS_REPO_NPM: tessell-repos-npm-component
+      NEXUS_URL: nexus.tessell.cloud
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -117,8 +120,8 @@ jobs:
               echo "Revert branch, skipping Jira Extraction"
               exit 0
           fi
-          jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-          jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
+          jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
+          jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
           extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
@@ -147,6 +150,16 @@ jobs:
             echo "No double commit conflicts found in Branch or PR title."
           fi
 
+      - name: Adding Common UI config
+        run: |
+          set +e
+          rm ~/.npmrc
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
+          echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          cat .npmrc
+
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
@@ -164,7 +177,7 @@ jobs:
           fi
       - name: install node fetch 
         run: | 
-          npm install node-fetch
+          npm install node-fetch 
 
       - name: Install dependencies
         run: npm install js-yaml
@@ -274,21 +287,22 @@ jobs:
             if [ -f convoy.yaml ]; then
               if grep -q 'version:' convoy.yaml; then
                 echo "Version found in convoy.yaml"
+                
                 if [ -f gradle.properties ]; then
                   if grep -q '^\s*version=' gradle.properties; then
                     echo "Please remove version from gradle.properties"
                     exit 1
                   else
-                    echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
+                    echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
                   fi
                 fi
               else
                 echo "Version not found in convoy.yaml"
-                echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+                echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
               fi
             else
               echo "convoy.yaml not found"
-              echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+              echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
             fi
             
       - name: check for gradle properties version
@@ -316,9 +330,9 @@ jobs:
             });
             version_updated = false
              response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'gradle.properties') {
+               if (file_entry.filename == 'convoy.yaml') {
                    console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                   if (file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                        version_updated = true
                    }
                }
