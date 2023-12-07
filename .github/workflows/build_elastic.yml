@@ -184,8 +184,9 @@ jobs:
           mkdir -p $PACKAGES_DIR
           cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
           cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+          cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
           pushd $PACKAGES_DIR
-          tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat
+          tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
           popd
           cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
           cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
