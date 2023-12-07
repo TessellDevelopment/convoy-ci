@@ -114,14 +114,14 @@ jobs:
         shell: bash
 
       - name: Configure AWS Credentials
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           aws configure set region ap-south-1
 
       - name: Set Label
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
@@ -343,32 +343,27 @@ jobs:
       #     private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
       #     private-key: ${{ secrets.DCT_PRIVATE_KEY }}
       #     private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-          
+
+      # - uses: actions/upload-artifact@v3
+      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      #   with:
+      #       name: image-scan-report
+      #       path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+
       - name: Push artifacts to nexus / S3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          while IFS=$'\t' read -r name extension _; do
+          while IFS=$'\t' read -r name extension path _; do
             echo "$name"
             echo "$extension"
-            path="cloudformation"
-            if [ "$name" == "roleassignment" ];then
-              path="arm"
-            fi
             echo "$path"
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
               --upload-file ./tessell/worker/infra/resources/$path/$name.$extension \
               https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
 
             aws s3 cp ./tessell/worker/infra/resources/$path/$name.$extension s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
-          done < <(yq e '.generates.artifacts[] | [.name, .extension] | @tsv' convoy.yaml)
-
-
-      - uses: actions/upload-artifact@v3
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        with:
-            name: image-scan-report
-            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+          done < <(yq e '.generates.artifacts[] | [.name, .extension .path] | @tsv' convoy.yaml)
     
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
