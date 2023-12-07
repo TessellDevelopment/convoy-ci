@@ -38,7 +38,8 @@ jobs:
           CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
           TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
           echo "$CHART_GITHUB_LOCATION"
-          echo "$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
+          echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+          echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
