@@ -215,11 +215,11 @@ jobs:
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
       - name: Upload tar file to S3 Bucket
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          # VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/filebeat/0.1.0/
-          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/filebeat/0.1.0/
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
 
             
       - name: Set Push repository
