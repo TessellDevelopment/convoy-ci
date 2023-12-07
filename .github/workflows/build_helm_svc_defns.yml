@@ -37,11 +37,13 @@ jobs:
           GITHUB_WORKSPACE=$(pwd)
           CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
           TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+          echo "$CHART_GITHUB_LOCATION"
+          echo "$TEMPLATE_REPO_GITHUB_LOCATION"
           echo "Cloning convoy-helm-template"
           git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
-          cp $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
-          cp $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+          cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+          cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
           cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
           ls -lrta ../helm-chart/values/apps/
           echo "Running package and push"
