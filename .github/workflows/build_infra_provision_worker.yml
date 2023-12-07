@@ -334,13 +334,13 @@ jobs:
             echo $name
             echo $extension
             path="cloudformation"
-            if [ "$name" == "roleassignment"]; then
+            if [ "$name" == "roleassignment" ]; then
               path="arm"
             fi
             echo "$path"
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-              --upload-file ./tessell/worker/infra/resources/$path/$name.$extension \
-              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
+              --upload-file "./tessell/worker/infra/resources/$path/$name.$extension" \
+              "https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
           done < <(yq e '.generates.artifacts[] | [.name, .extension] | @tsv' convoy.yaml)
 
 
