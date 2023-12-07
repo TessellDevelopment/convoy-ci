@@ -472,6 +472,8 @@ jobs:
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
+            const yaml = require("js-yaml");
+            const fs = require("fs");
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
@@ -489,21 +491,25 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              version_updated = true;
-              const excludeDirs = ['.github', '.gitignore', 'README.md'];
-              response.data.files.forEach(function(file_entry) {
-                if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
-                    version_updated = false;
-                }
-              });
-              response.data.files.forEach(function(file_entry) {
-                  if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
-                    version_updated = true;
-                }
-              });
-              if (version_updated == false ) {
-                core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+            yamlFile = fs.readFileSync("convoy.yaml", "utf8");
+            convoyYaml = yaml.load(yamlFile);
+            chartPath = convoyYaml['generates']['helmCharts'][0].chartPath
+            chartPath = chartPath.substring(2)
+            version_updated = true;
+            const excludeDirs = ['.github', '.gitignore', 'README.md'];
+            response.data.files.forEach(function(file_entry) {
+              if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
+                  version_updated = false;
               }
+            });
+            response.data.files.forEach(function(file_entry) {
+                if (file_entry.filename === chartPath && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+                  version_updated = true;
+              }
+            });
+            if (version_updated == false ) {
+              core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+            }
 
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
