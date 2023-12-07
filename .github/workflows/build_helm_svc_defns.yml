@@ -50,8 +50,7 @@ jobs:
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
           else
-            ./package-and-push -n $CHART_NAME -v ${{env.SOURCE_BRANCH}}
-          fi
+            ./package-and-push -n $CHART_NAME
     
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
