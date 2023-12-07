@@ -494,6 +494,7 @@ jobs:
             yamlFile = fs.readFileSync("convoy.yaml", "utf8");
             convoyYaml = yaml.load(yamlFile);
             chartPath = convoyYaml['generates']['helmCharts'][0].chartPath
+            chartPath = chartPath.substring(2)
             version_updated = true;
             const excludeDirs = ['.github', '.gitignore', 'README.md'];
             response.data.files.forEach(function(file_entry) {
