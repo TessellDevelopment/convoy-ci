@@ -330,13 +330,19 @@ jobs:
       - name: Push artifacts to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run:
-          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-            --upload-file ./tessell/worker/infra/resources/cloudformation/tessell-byoa-v8.yaml \
-            https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/tessell-byoa-v8/tessell-byoa-v8-${{ steps.latest_tag.outputs.tag_ref }}.yaml
+          while IFS=$'\t' read -r name extension _; do
+            echo $name
+            echo $extension
+            path="cloudformation"
+            if [ "$name" == "roleassignment"]; then
+              path="arm"
+            fi
+            echo "$path"
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+              --upload-file ./tessell/worker/infra/resources/$path/$name.$extension \
+              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
+          done < <(yq e '.generates.artifacts[] | [.name, .extension] | @tsv' convoy.yaml)
 
-          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-            --upload-file ./tessell/worker/infra/resources/arm/roleassignment.json\
-            https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/roleassignment/roleassignments-${{ steps.latest_tag.outputs.tag_ref }}.json
 
       - uses: actions/upload-artifact@v3
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
