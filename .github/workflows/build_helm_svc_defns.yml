@@ -49,14 +49,15 @@ jobs:
 
       - name: Package and Push 
         run: |
+          CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
           cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
           ls -lrta ../helm-chart/values/apps/
-          CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
           echo "Running package and push"
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
           else
             ./package-and-push -n $CHART_NAME
+          fi
     
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
