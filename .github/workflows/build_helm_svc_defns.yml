@@ -55,7 +55,7 @@ jobs:
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
           else
-            ./package-and-push --no-push $CHART_NAME
+            ./package-and-push --no-push -n $CHART_NAME
           fi
 
       - name: Get PR-Author,subject & body to send email
