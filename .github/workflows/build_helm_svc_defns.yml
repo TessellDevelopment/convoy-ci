@@ -31,21 +31,26 @@ jobs:
           echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
 
           
-      - name: Build and Push
+      - name: Configure convoy-helm-template
         run: |
-          CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
+          set +e
           GITHUB_WORKSPACE=$(pwd)
           CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
           TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
           echo "$CHART_GITHUB_LOCATION"
-          echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+          echo "$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
           echo "Cloning convoy-helm-template"
+          rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
-          cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+
+      - name: Package and Push 
+        run: |
+          cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
           ls -lrta ../helm-chart/values/apps/
+          CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
           echo "Running package and push"
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
