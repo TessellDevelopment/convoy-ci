@@ -359,11 +359,11 @@ jobs:
             echo "$extension"
             echo "$path"
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-              --upload-file ./tessell/worker/infra/resources/$path/$name.$extension \
+              --upload-file $path \
               https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
 
-            aws s3 cp ./tessell/worker/infra/resources/$path/$name.$extension s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
-          done < <(yq e '.generates.artifacts[] | [.name, .extension .path] | @tsv' convoy.yaml)
+            aws s3 cp $path s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension
+          done < <(yq e '.generates.artifacts[] | [.name, .extension .filePath] | @tsv' convoy.yaml)
     
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
