@@ -503,8 +503,6 @@ jobs:
               }
             });
             response.data.files.forEach(function(file_entry) {
-                console.log(chartPath)
-                console.log(file_entry.filename)
                 if (file_entry.filename === chartPath && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                   version_updated = true;
               }
