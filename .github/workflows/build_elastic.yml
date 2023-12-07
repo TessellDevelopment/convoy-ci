@@ -218,8 +218,8 @@ jobs:
         # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           # VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools-dev/terls/tessell/filebeat/0.1.0/
-          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools-dev/terls/tessell/filebeat/0.1.0/
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/tessell/filebeat/0.1.0/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/tessell/filebeat/0.1.0/
 
             
       - name: Set Push repository
