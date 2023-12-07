@@ -334,7 +334,7 @@ jobs:
             echo $name
             echo $extension
             path="cloudformation"
-            if [ "$name" == "roleassignment" ]; then
+            if [ "$name" == "roleassignment" ];then
               path="arm"
             fi
             echo "$path"
