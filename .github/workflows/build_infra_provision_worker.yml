@@ -34,6 +34,7 @@ jobs:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
+      NEXUS_ARTIFACT_REPO: tessell-artifacts
 
     steps:
       - name: Get branch name
@@ -42,8 +43,6 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
       
-           
-
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
@@ -101,6 +100,48 @@ jobs:
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+          aws configure set region ap-south-1
+
+      - name: Set Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://api.convoy.tessell.cloud/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
+          fi
 
       - name: Set up Docker Buildx
         id: buildx
@@ -226,6 +267,18 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
             
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$tag"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
+
       - name: Separating add-images
         run: |
           IFS=',' read -ra IMAGES <<< "${{ inputs.add_images }}"
@@ -287,14 +340,28 @@ jobs:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE2 }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }} 
-      
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
       - uses: actions/upload-artifact@v3
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+
+      - name: Push artifacts to nexus / S3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          while IFS=$'\t' read -r name extension path _; do
+            echo "$name"
+            echo "$extension"
+            echo "$path"
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                --upload-file "$path" \
+                "https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
+
+            aws s3 cp "$path" "s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
+          done < <(yq e '.generates.artifacts[] | [.name, .extension, .filePath] | @tsv' convoy.yaml)
     
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

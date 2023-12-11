@@ -251,6 +251,42 @@ jobs:
                 except:
                     print(f'{key} not present in convoy.yaml')
             return data
+
+          def get_artifacts_tf():
+            artifacts = []
+            GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+            url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
+            headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
+            res = requests.get(url, headers=headers)
+            files_data = res.json()
+          
+            modified_folders = set()
+            for file_data in files_data:
+              file_path = file_data['filename']
+              folder_path = file_path.split('/')[0] 
+              if folder_path == 'convoy.yaml':
+                continue 
+              modified_folders.add(folder_path)
+          
+            print("Modified folders:")
+            for folder in modified_folders:
+              if '.github' in folder or len(folder) == 0:
+                  continue
+              print(folder)  
+              path = f'./{folder}/convoy.yaml'
+              with open(path, 'r') as module_content:
+                  module_data = yaml.safe_load(module_content)
+              tf_module = module_data.get('generates')
+              for artifact_type, artifact in tf_module.items():
+                for object in artifact:
+                  element={}
+                  element["type"] = artifact_type
+                  element["releaseManifestKey"] = object["releaseManifestKey"] 
+                  element["name"] = object["name"]
+                  element["extension"] = object["extension"]
+                  element["version"] = module_data.get('version')
+                  artifacts.append(element)
+            return artifacts
           
           def get_artifacts(generates, version):
               artifacts=[]
@@ -299,7 +335,7 @@ jobs:
                 artifacts = []
                 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
                 headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files'
+                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
                 res = requests.get(url, headers=headers)
                 files_data = res.json()
 
@@ -382,6 +418,7 @@ jobs:
           }
           generates = yaml_data.get('generates')
           type = yaml_data.get('artifactType') 
+          language = yaml_data.get('language')
           if generates != None:
               version = yaml_data.get('version')
               if version == None:
@@ -389,6 +426,9 @@ jobs:
               payload["artifacts"] = get_artifacts(generates, version)
               if payload["artifacts"] == None:
                 del payload["artifacts"]
+              print(payload)
+          elif language == 'terraform':
+              payload["artifacts"] = get_artifacts_tf()
               print(payload)
           elif type == None:
               print(payload)
