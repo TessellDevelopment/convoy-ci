@@ -31,7 +31,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://convoy-devops.convoy-dev:8080/devops/git-metadata/commits
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{ENV.TAG}}"
@@ -41,7 +41,7 @@ jobs:
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
         run: |
           python - <<EOF
-            
+          
           import yaml
           import requests
           import os
@@ -57,31 +57,67 @@ jobs:
                     print(f'{key} not present in convoy.yaml')
             return data
 
-          def get_artifacts(generates,TAG):
+          def get_artifacts_tf():
+            artifacts = []
+            GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+            url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
+            headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
+            res = requests.get(url, headers=headers)
+            files_data = res.json()
+          
+            modified_folders = set()
+            for file_data in files_data:
+              file_path = file_data['filename']
+              folder_path = file_path.split('/')[0] 
+              if folder_path == 'convoy.yaml':
+                continue 
+              modified_folders.add(folder_path)
+          
+            print("Modified folders:")
+            for folder in modified_folders:
+              if '.github' in folder or len(folder) == 0:
+                  continue
+              print(folder)  
+              path = f'./{folder}/convoy.yaml'
+              with open(path, 'r') as module_content:
+                  module_data = yaml.safe_load(module_content)
+              tf_module = module_data.get('generates')
+              for artifact_type, artifact in tf_module.items():
+                for object in artifact:
+                  element={}
+                  element["type"] = artifact_type
+                  element["releaseManifestKey"] = object["releaseManifestKey"] 
+                  element["name"] = object["name"]
+                  element["extension"] = object["extension"]
+                  element["version"] = module_data.get('version')
+                  artifacts.append(element)
+            return artifacts
+          
+          def get_artifacts(generates, version):
               artifacts=[]
               for artifact_type, artifact in generates.items():
                   for object in artifact:
                     element={}
                     element["type"] = artifact_type
-                    element["key"] = object["key"]
-                    element["name"] = object["name"]
                     try:
-                      element["version"] = object["version"]
-                    except: 
-                      if artifact_type == 'helmCharts':
-                        chart_path = object["chartPath"]
-                        with open(chart_path, 'r') as chart_yaml_content:
-                          data = yaml.safe_load(chart_yaml_content)
-                        element["version"] = data.get('version')
-                      else:
-                        element["version"] = TAG
+                      element["releaseManifestKey"] = object["releaseManifestKey"] 
+                    except:
+                        print("Artifact excluded from Release Manifest") 
+                        return
+                    element["name"] = object["name"]
+                    element["version"] = version
+                    if artifact_type == 'helmCharts':
+                      chart_path = object["chartPath"]
+                      with open(chart_path, 'r') as chart_yaml_content:
+                        data = yaml.safe_load(chart_yaml_content)
+                      element["version"] = data.get('version')
                     try:
                       element["extension"] = object["extension"]
                     except:
                       print("Extension Details not present")
                     artifacts.append(element)
               return artifacts
-
+          
           def get_artifact_metadata(yaml_data, type):
             artifactMetadata = {"type": type}
             
@@ -104,7 +140,7 @@ jobs:
                 artifacts = []
                 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
                 headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files'
+                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
                 res = requests.get(url, headers=headers)
                 files_data = res.json()
 
@@ -186,15 +222,26 @@ jobs:
             "pullRequestId": PR_ID,
           }
           generates = yaml_data.get('generates')
-          type = yaml_data.get('artifactType')
+          type = yaml_data.get('artifactType') 
+          language = yaml_data.get('language')
           if generates != None:
-              payload["artifacts"] = get_artifacts(generates,TAG)
+              version = yaml_data.get('version')
+              if version == None:
+                version = TAG
+              payload["artifacts"] = get_artifacts(generates, version)
+              if payload["artifacts"] == None:
+                del payload["artifacts"]
+              print(payload)
+          elif language == 'terraform':
+              payload["artifacts"] = get_artifacts_tf()
+              print(payload)
+          elif type == None:
               print(payload)
           else: 
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
               print(f"Payload: {payload}")
           post_request(payload)
-          EOF
+          EOF  
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

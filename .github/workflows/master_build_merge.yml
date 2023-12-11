@@ -64,18 +64,46 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
       - name: Build and Push OPS
         run: |
-          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true          
-          if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
-            docker build -f src/main/docker/Dockerfile.tailscale -t ${DOCKERHUB_ORG}/${IMAGE_NAME}:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/${IMAGE_NAME}:${LATEST_TAG}
-          else
+          mvnw() {
+            NAME="$1"
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
-              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${LABEL}/tessellops/${REPO}/${REPO}-${LATEST_TAG}.zip
-          fi
-          echo "Build and push successful"
+              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
+          }
+          docker() {
+            IMAGE_NAME="$1"
+            FILE="$4"
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}}
+          }
+          makefile(){
+
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "$name"
+              echo "$buildFunction"
+              echo "$ext"
+              echo "$version"
+              echo "$file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          build "artifacts"
+          build "dockerImages"
 
       - name: Remove target
         if: always()

@@ -2,6 +2,7 @@
 name: Master CI Merge Workflows
 on:
   workflow_call:
+    
 
 jobs:
 
@@ -65,8 +66,11 @@ jobs:
           echo "type=$framework" >> $GITHUB_OUTPUT
   
   create-tag:
+    needs: build-file
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_create_tag.yml@TDEVOPS-827
     secrets: inherit
+    with:
+      label: ${{needs.build-file.outputs.label}}
 
   post-tag-to-convoy:
     needs: create-tag

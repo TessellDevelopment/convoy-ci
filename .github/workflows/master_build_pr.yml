@@ -26,7 +26,6 @@ jobs:
     runs-on: ARM64
     env:
       DOCKERHUB_ORG: tesselldev
-      IMAGE_NAME: tessellops-tsproxy
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
@@ -34,14 +33,42 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build OPS
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Build
         run: |
-          sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-          echo "Build successful"
-          if [ "${{github.repository}}" = "TessellDevelopment/tessellops-tsproxy-service" ]; then
-            docker build -f src/main/docker/Dockerfile.tailscale -t ${DOCKERHUB_ORG}/${IMAGE_NAME}:${{github.head_ref}} .
-            docker push ${DOCKERHUB_ORG}/${IMAGE_NAME}::${{github.head_ref}}
-          fi
+          mvnw() {
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+          }
+          docker() {
+            IMAGE_NAME="$1"
+            FILE="$4"
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}}
+          }
+          makefile(){
+
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "$name"
+              echo "$buildFunction"
+              echo "$ext"
+              echo "$version"
+              echo "$file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          build "artifacts"
+          build "dockerImages"
 
       - name: Remove target
         if: always()

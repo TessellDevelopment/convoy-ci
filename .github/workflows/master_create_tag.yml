@@ -2,6 +2,11 @@
 name: Create tag on release branch
 on:
   workflow_call:
+    inputs:
+      label:
+        description: 'Release label'
+        required: true
+        type: string
     outputs:
       tag:
         description: "New tag created post merge"
@@ -14,6 +19,7 @@ jobs:
     runs-on: amd64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      LABEL: ${{inputs.label}}
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     steps:
@@ -120,6 +126,17 @@ jobs:
 
             console.log('Ref updated.');
             core.setOutput('tag_ref', new_tag)  
+
+      - name: Validate Label
+        run: |
+          tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$TAG"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
 
       - name: Tag Output
         id: tag_output
