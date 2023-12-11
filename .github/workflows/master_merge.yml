@@ -22,42 +22,33 @@ jobs:
         with:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
-
-      - name: Get branch name
-        shell: bash
-        run: |
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           
       - name: Get Label
         id: get-label
         shell: bash
         run: |
-          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-            echo "$APP_GROUP"
-            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-            echo "$URL"
-            RESPONSE=$(curl --location "$URL" \
-                    --header "Authorization: Basic $TOKEN")
-            echo "$RESPONSE"
-            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-            echo "$LABEL"
-            if [ $? -eq 0 ]; then
-              if [[ $LABEL == rel* ]]; then
-                  echo "label=$LABEL" >> $GITHUB_OUTPUT
+          if [ -f convoy.yaml ]; then
+            if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+              echo "$RESPONSE"
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+              echo "$LABEL"
+              if [[ $LABEL == rel-* ]]; then
+                  echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
               else
                   echo "Response: $LABEL"
                   echo "Label does not start with 'rel'. Check response."
                   exit 1 
               fi
             else
-                echo "Failed API request."
-                exit 1
+              echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
             fi
-          else
-            echo "label=${{env.SOURCE_BRANCH}}" >> $GITHUB_OUTPUT
-          fi
+           else
+            echo "convoy.yaml not found"
+           fi 
           
       - name: Determine build type from Convoy
         id: build-type

@@ -8,23 +8,23 @@
     dev-checks:
       runs-on: amd64
       steps:
-        - uses: actions/checkout@v3
-          with:
-            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-            fetch-depth: 0
-
         - name: Dump GitHub context
           env:
             GITHUB_CONTEXT: ${{ toJson(github) }}
           run: |
             echo "$GITHUB_CONTEXT"
-  
+
+        - uses: actions/checkout@v3
+          with:
+            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            fetch-depth: 0
+
         - name: Get branch name (merge)
           if: github.event_name != 'pull_request'
           shell: bash
           run: |
             echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-  
+
         - name: Get branch name (pull request)
           if: github.event_name == 'pull_request'
           shell: bash
@@ -32,7 +32,7 @@
             echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
             echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
             echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
-          
+        
         - name: Check Format
           env:
             PR_TITLE: ${{ github.event.pull_request.title }}
@@ -41,28 +41,23 @@
                 echo "Revert branch, skipping Format check"
                 exit 0
             fi
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
-              echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
+            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS-|SRE-|TDEVOPS-|TOPS-)'; then
+              echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
             else
-              echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'."
-              exit 1
+              echo "Branch name does not start with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
+              PULL_REQUEST_TITLE="$PR_TITLE"
+              PATTERN="(TS|TDEVOPS|TOPS|SRE)-[0-9]+\s\|\s"
+              if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
+                echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' or 'SRE-XXXX | --' format."
+                exit 1
+              else 
+                echo "PR Title is in the valid format."
+              fi  
             fi
-            PULL_REQUEST_TITLE="$PR_TITLE"
-            PATTERN="(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
-            if echo "$PULL_REQUEST_TITLE" | grep -Eq '^Double Commit'; then
-              echo "Double Commit PR."
-              exit 0
-            fi  
-            if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
-              exit 1
-            else 
-              echo "PR Title is in the valid format."
-            fi  
-  
+
         - name: Set up Python
           uses: actions/setup-python@v2
-  
+
         - name: Install dependencies
           run: |
             python -m pip install --upgrade pip
@@ -77,10 +72,10 @@
                 echo "Revert branch, skipping Jira Extraction"
                 exit 0
             fi
-            jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-            jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
+            jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml)
+            jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml)
             extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
-  
+
         - name: Validate Jira Ticket
           run: |
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
@@ -106,6 +101,16 @@
               echo "No double commit conflicts found in Branch or PR title."
             fi
 
+        - name: Adding Common UI config
+          run: |
+            set +e
+            rm ~/.npmrc
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
+            echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
+            echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+            cat .npmrc
+
         - name: import packages for json lint
           run: |
             sudo sudo npm install jsonlint -g
@@ -114,7 +119,7 @@
           run: |
             set -e
             git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
-  
+
         - name: install octokit/rest
           run: |
             if [ ! -d "node_modules/@octokit/rest" ]; then
@@ -123,11 +128,11 @@
             fi
         - name: install node fetch 
           run: | 
-            npm install node-fetch
-  
+            npm install node-fetch 
+
         - name: Install dependencies
           run: npm install js-yaml
-  
+
         - name: Check for merge conflicts
           uses: actions/github-script@v6.4.1
           with:
