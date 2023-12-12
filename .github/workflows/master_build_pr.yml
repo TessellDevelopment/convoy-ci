@@ -34,6 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build
+        shell: bash
         run: |
           mvnw() {
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
@@ -58,7 +59,7 @@ jobs:
               echo "$version"
               echo "$file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
           build "artifacts"
           build "dockerImages"
