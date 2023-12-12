@@ -13,8 +13,6 @@ jobs:
   build-amd:
     if: ${{inputs.type != 'arm' }}
     runs-on: amd64
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,7 +24,6 @@ jobs:
     runs-on: ARM64
     env:
       DOCKERHUB_ORG: tesselldev
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

@@ -24,9 +24,6 @@ jobs:
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
-      NEXUS_SERVER: nexus.tessell.cloud
-      NEXUS_ARTIFACT_REPO: tessell-artifacts
-      REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
@@ -53,7 +50,6 @@ jobs:
       NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_ARTIFACT_REPO: tessell-artifacts
       DOCKERHUB_ORG: tessellprod
-      IMAGE_NAME: tessellops-tsproxy
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
@@ -95,6 +91,7 @@ jobs:
               $buildFunction "$name" "$ext" "$version" "$file"
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
+          set +e
           build "artifacts"
           build "dockerImages"
 

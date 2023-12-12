@@ -3,7 +3,6 @@ name: Master CI Merge Workflows
 on:
   workflow_call:
     
-
 jobs:
 
   file-check:
@@ -11,7 +10,6 @@ jobs:
     secrets: inherit
 
   build-file:
-    if: needs.file-check.outputs.github-changes == 'false'
     runs-on: amd64
     needs: file-check
     outputs:
@@ -76,6 +74,7 @@ jobs:
     secrets: inherit
 
   build:
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: [build-file,find-latest-tag]
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_build_merge.yml@TDEVOPS-827
     secrets: inherit
