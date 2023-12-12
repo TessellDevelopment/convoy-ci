@@ -19,7 +19,7 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'quarkus' }}
+    if: ${{inputs.type != 'arm' }}
     runs-on: amd64
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -85,7 +85,7 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}}
           }
           makefile(){
-            
+
           }
           build() {
             type="$1"

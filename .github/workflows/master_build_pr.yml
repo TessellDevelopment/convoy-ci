@@ -11,7 +11,7 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'quarkus' }}
+    if: ${{inputs.type != 'arm' }}
     runs-on: amd64
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
