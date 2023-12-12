@@ -62,6 +62,7 @@ jobs:
       label: ${{needs.build-file.outputs.label}}
 
   post-tag-to-convoy:
+    if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-827
     secrets: inherit

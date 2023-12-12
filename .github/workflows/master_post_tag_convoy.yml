@@ -241,7 +241,7 @@ jobs:
               payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
               print(f"Payload: {payload}")
           post_request(payload)
-          EOF  
+          EOF
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

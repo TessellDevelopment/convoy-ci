@@ -24,6 +24,8 @@ jobs:
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: tessellprod
+      REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
@@ -32,6 +34,38 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Build and Push
+        run: |
+          docker() {
+            IMAGE_NAME="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}}
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "$name"
+              echo "$buildFunction"
+              echo "$ext"
+              echo "$version"
+              echo "$file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
@@ -48,7 +82,7 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       NEXUS_SERVER: nexus.tessell.cloud
-      NEXUS_ARTIFACT_REPO: tessell-artifacts
+      NEXUS_ARTIFACT_REPO_OPS: tessellops-artifacts
       DOCKERHUB_ORG: tessellprod
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
@@ -60,6 +94,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+          aws --version
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets. }}
+          aws configure set aws_secret_access_key ${{ secrets. }}
+          aws configure set region ap-south-1
+          
       - name: Build and Push OPS
         run: |
           mvnw() {
@@ -67,7 +115,9 @@ jobs:
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
-              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
+              https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO_OPS}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
+            mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
+            aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
           }
           docker() {
             IMAGE_NAME="$1"
