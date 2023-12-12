@@ -28,8 +28,8 @@ jobs:
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          framework=$(yq '.framework' convoy.yaml)
-          echo "type=$framework" >> $GITHUB_OUTPUT
+          runner=$(yq '.runner' convoy.yaml)
+          echo "type=$runner" >> $GITHUB_OUTPUT
 
   build:
     needs: build-file
@@ -84,6 +84,3 @@ jobs:
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
     uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
     secrets: inherit
-
-
-# Change every ref to main

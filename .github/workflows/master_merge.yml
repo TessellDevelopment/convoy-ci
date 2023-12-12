@@ -53,8 +53,8 @@ jobs:
       - name: Determine build type from Convoy
         id: build-type
         run: |
-          framework=$(yq '.framework' convoy.yaml)
-          echo "type=$framework" >> $GITHUB_OUTPUT
+          runner=$(yq '.runner' convoy.yaml)
+          echo "type=$runner" >> $GITHUB_OUTPUT
   
   create-tag:
     needs: build-file
