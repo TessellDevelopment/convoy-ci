@@ -45,7 +45,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-arm:
-    if: ${{inputs.type}} == 'quarkus'
+    if: ${{inputs.type}} == 'arm'
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -63,10 +63,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - uses: aws-actions/setup-sam@v2
-        with:
-          use-installer: true
 
       - name: Build and Push OPS
         run: |
