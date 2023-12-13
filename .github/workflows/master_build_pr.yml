@@ -29,7 +29,7 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             sudo docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
@@ -58,6 +58,8 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
 
   build-arm:
     if: ${{inputs.type == 'arm' }}
@@ -108,4 +110,6 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
           

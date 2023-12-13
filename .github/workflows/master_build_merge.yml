@@ -45,7 +45,7 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
@@ -75,6 +75,8 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
@@ -156,6 +158,8 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
                   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
