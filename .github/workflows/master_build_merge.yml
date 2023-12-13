@@ -36,6 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build and Push
+        shell: bash
         run: |
           docker() {
             set -e
@@ -109,6 +110,7 @@ jobs:
           aws configure set region ap-south-1
           
       - name: Build and Push OPS
+        shell: bash
         run: |
           mvnw() {
             set -e
