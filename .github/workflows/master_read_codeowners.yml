@@ -24,7 +24,7 @@ jobs:
         with:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
-          ref: main
+          ref: ${{github.base_ref}}
  
       - name: Extract team names from CODEOWNERS
         id: extract-teams

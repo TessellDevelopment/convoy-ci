@@ -41,7 +41,7 @@ jobs:
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
               PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-              if [ "$PR_COMMITS" -eq 1 ]; then
+              if [ "$PR_COMMITS" -eq 2 ]; then
                 echo "One Commit present in DC."
                 exit 0
               else
