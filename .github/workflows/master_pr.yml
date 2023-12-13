@@ -14,7 +14,7 @@ jobs:
     secrets: inherit
 
   build-file:
-    runs-on: amd64
+    runs-on: non-build
     outputs:
       type: ${{steps.build-type.outputs.type}}
     needs: [dev-checks,version-check]
@@ -41,7 +41,7 @@ jobs:
   check-commits:
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
     needs: build
-    runs-on: amd64
+    runs-on: non-build
     env:
       REPO: ${{github.repository}}
       PR_NUMBER: ${{github.event.number}}

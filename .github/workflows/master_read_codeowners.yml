@@ -16,7 +16,7 @@ on:
 jobs:
   
   read-codeowners:
-    runs-on: amd64
+    runs-on: non-build
     outputs:
       required-teams: ${{steps.extract-teams.outputs.teams}}
     steps: 

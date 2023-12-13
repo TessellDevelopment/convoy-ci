@@ -18,12 +18,41 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Build and Push
+        run: |
+          docker() {
+            IMAGE_NAME="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            docker build -f $FILE -t $IMAGE_NAME .
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "$name"
+              echo "$buildFunction"
+              echo "$ext"
+              echo "$version"
+              echo "$file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
   
   build-arm:
     if: ${{inputs.type == 'arm' }}
     runs-on: ARM64
-    env:
-      DOCKERHUB_ORG: tesselldev
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -40,8 +69,7 @@ jobs:
             IMAGE_NAME="$1"
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${{github.head_ref}}
+            docker build -f $FILE -t $IMAGE_NAME .
           }
           build() {
             type="$1"

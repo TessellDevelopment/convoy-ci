@@ -6,7 +6,7 @@ on:
 jobs:
   
   post-build-status-to-convoy:
-    runs-on: amd64
+    runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:

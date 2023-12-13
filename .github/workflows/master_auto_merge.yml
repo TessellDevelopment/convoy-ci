@@ -6,7 +6,7 @@ on:
 jobs:
 
   auto-merge:
-    runs-on: amd64
+    runs-on: non-build
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
@@ -35,4 +35,3 @@ jobs:
            steps: ${{ toJson(steps) }}
            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
         if: failure()
-        

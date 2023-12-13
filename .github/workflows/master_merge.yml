@@ -10,7 +10,7 @@ jobs:
     secrets: inherit
 
   build-file:
-    runs-on: amd64
+    runs-on: non-build
     needs: file-check
     outputs:
       type: ${{steps.build-type.outputs.type}}

@@ -6,7 +6,7 @@ on:
 jobs:
   
   send-email:
-    runs-on: amd64
+    runs-on: non-build
     steps:
       - name: Get PR-Author,subject & body to send email
         run: |

@@ -10,7 +10,7 @@ on:
 jobs:
 
   find-latest-tag:
-    runs-on: amd64
+    runs-on: non-build
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     steps:
