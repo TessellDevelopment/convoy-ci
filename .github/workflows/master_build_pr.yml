@@ -28,7 +28,7 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
