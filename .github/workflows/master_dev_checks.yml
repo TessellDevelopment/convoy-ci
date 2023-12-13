@@ -169,13 +169,14 @@
               echo "Revert branch, skipping Jira Validation"
               exit 0
             fi
+            echo "${{env.JIRA}}"
             python3 - <<EOF
             import os
             from jira import JIRA
             user = os.environ.get('JIRA_USERNAME')
             try:
-              apikey = os.environ.get('JIRA')
-              jira_ticket = os.environ.get('JIRA_API_TOKEN')
+              apikey = os.environ.get('JIRA_API_TOKEN')
+              jira_ticket = os.environ.get('JIRA')
               options = {'server': 'https://tessell.atlassian.net'}
               jira = JIRA(options, basic_auth=(user, apikey) )
               try:
