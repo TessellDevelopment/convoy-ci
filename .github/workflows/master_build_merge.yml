@@ -45,9 +45,9 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
           build() {
@@ -128,8 +128,8 @@ jobs:
             IMAGE_NAME="$1"
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
           build() {
