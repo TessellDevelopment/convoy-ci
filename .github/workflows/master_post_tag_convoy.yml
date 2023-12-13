@@ -21,13 +21,13 @@ jobs:
           token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
           
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      # - name: Set up Python
+      #   uses: actions/setup-python@v2
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pyyaml pybase64
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install requests pyyaml pybase64
 
       - name: POST API to Convoy
         env:

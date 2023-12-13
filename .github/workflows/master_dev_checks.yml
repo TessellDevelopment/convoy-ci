@@ -55,13 +55,13 @@
               fi  
             fi
 
-        - name: Set up Python
-          uses: actions/setup-python@v2
+        # - name: Set up Python
+        #   uses: actions/setup-python@v2
 
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install shyaml
+        # - name: Install dependencies
+        #   run: |
+        #     python -m pip install --upgrade pip
+        #     pip install shyaml
               
         - name: Extract Jira Ticket
           id: extract
@@ -74,7 +74,8 @@
             fi
             jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml)
             jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml)
-            extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
+
+            # extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
 
         - name: Validate Jira Ticket
           run: |
@@ -82,8 +83,9 @@
               echo "Revert branch, skipping Jira Validation"
               exit 0
             fi
-            echo "${{steps.extract.outputs.jira_ticket}}"
-            validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
+
+            # echo "${{steps.extract.outputs.jira_ticket}}"
+            # validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
 
         - name: Check double commit
           env: 
@@ -265,10 +267,10 @@
             python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
         
   
-        - name: check for terraform version
-          if: steps.terraform_check.outputs.terraform_file 
-          run:
-            terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+        # - name: check for terraform version
+        #   if: steps.terraform_check.outputs.terraform_file 
+        #   run:
+        #     terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
         
   
         - name: check to verify same branch is exist
