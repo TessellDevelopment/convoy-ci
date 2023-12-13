@@ -19,9 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build and Push
+      - name: Build
         run: |
           docker() {
+            set -e
             IMAGE_NAME="$1"
             FILE="$4"
             if [[ "$FILE" == "null" ]]; then
@@ -36,7 +37,6 @@ jobs:
             if [[ -z "$check" ]]; then
               return
             fi
-            set -e
             while IFS=$'\t' read -r name buildFunction ext version file _; do
               echo "$name"
               echo "$buildFunction"
@@ -64,9 +64,11 @@ jobs:
         shell: bash
         run: |
           mvnw() {
+            set -e
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
           }
           docker() {
+            set -e
             IMAGE_NAME="$1"
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true

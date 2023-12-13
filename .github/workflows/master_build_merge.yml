@@ -38,6 +38,7 @@ jobs:
       - name: Build and Push
         run: |
           docker() {
+            set -e
             IMAGE_NAME="$1"
             FILE="$4"
             if [[ "$FILE" == "null" ]]; then
@@ -103,6 +104,7 @@ jobs:
       - name: Build and Push OPS
         run: |
           mvnw() {
+            set -e
             NAME="$1"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
@@ -112,6 +114,7 @@ jobs:
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
           }
           docker() {
+            set -e
             IMAGE_NAME="$1"
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
