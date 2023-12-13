@@ -75,8 +75,8 @@
 
             branch_name = os.environ.get('SOURCE_BRANCH')
             pr_title = os.environ.get('PR_TITLE')
-            jira_source = data.get('ci').get('bestPractices').get('jiraIdSource')
-            jira_match = data.get('ci').get('bestPractices').get('matchingRule')
+            jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
+            jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
 
             match_branch = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', branch_name)
             match_pr = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', pr_title)
