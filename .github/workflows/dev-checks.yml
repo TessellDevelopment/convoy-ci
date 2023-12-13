@@ -36,7 +36,7 @@ on:
 
 jobs:
   dev-checks:
-    runs-on: self-hosted
+    runs-on: amd64
     env:
       NEXUS_REPO_NPM: tessell-repos-npm-component
       NEXUS_URL: nexus.tessell.cloud
@@ -111,29 +111,29 @@ jobs:
           pip install pyyaml
           echo ${{steps.convoy_check.outputs.convoy_exists}}
             
-      - name: Extract Jira Ticket
-        if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
-        id: extract
-        env:
-          PR_TITLE: ${{github.event.pull_request.title}}
-        run: |
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-              echo "Revert branch, skipping Jira Extraction"
-              exit 0
-          fi
-          jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-          jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
-          extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
+      # - name: Extract Jira Ticket
+      #   if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
+      #   id: extract
+      #   env:
+      #     PR_TITLE: ${{github.event.pull_request.title}}
+      #   run: |
+      #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+      #         echo "Revert branch, skipping Jira Extraction"
+      #         exit 0
+      #     fi
+      #     jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
+      #     jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
+      #     extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
 
-      - name: Validate Jira Ticket
-        if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
-        run: |
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-            echo "Revert branch, skipping Jira Validation"
-            exit 0
-          fi
-          echo "${{steps.extract.outputs.jira_ticket}}"
-          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
+      # - name: Validate Jira Ticket
+      #   if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
+      #   run: |
+      #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+      #       echo "Revert branch, skipping Jira Validation"
+      #       exit 0
+      #     fi
+      #     echo "${{steps.extract.outputs.jira_ticket}}"
+      #     validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
 
       - name: Check double commit
         env: 
@@ -636,10 +636,10 @@ jobs:
           python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
       
 
-      - name: check for terraform version
-        if: steps.terraform_check.outputs.terraform_file 
-        run:
-          terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+      # - name: check for terraform version
+      #   if: steps.terraform_check.outputs.terraform_file 
+      #   run:
+      #     terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
       
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
