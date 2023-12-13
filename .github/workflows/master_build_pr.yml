@@ -30,6 +30,7 @@ jobs:
             fi
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             docker build -f $FILE -t $IMAGE_NAME .
+            set +e
           }
           build() {
             type="$1"
@@ -66,6 +67,7 @@ jobs:
           mvnw() {
             set -e
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            set +e
           }
           docker() {
             set -e
@@ -73,6 +75,7 @@ jobs:
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             docker build -f $FILE -t $IMAGE_NAME .
+            set +e
           }
           build() {
             type="$1"

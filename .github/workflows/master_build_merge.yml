@@ -47,6 +47,7 @@ jobs:
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
           }
           build() {
             type="$1"
@@ -112,6 +113,7 @@ jobs:
               https://${NEXUS_SERVER}/repository/${NEXUS_ARTIFACT_REPO_OPS}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
             mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
+            set +e
           }
           docker() {
             set -e
@@ -120,6 +122,7 @@ jobs:
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
           }
           build() {
             type="$1"
