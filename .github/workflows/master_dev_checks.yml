@@ -54,14 +54,6 @@
                 echo "PR Title is in the valid format."
               fi  
             fi
-
-        # - name: Set up Python
-        #   uses: actions/setup-python@v2
-
-        # - name: Install dependencies
-        #   run: |
-        #     python -m pip install --upgrade pip
-        #     pip install shyaml
               
         - name: Extract Jira Ticket
           id: extract
@@ -72,20 +64,129 @@
                 echo "Revert branch, skipping Jira Extraction"
                 exit 0
             fi
-            jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml)
-            jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml)
+            python3 - <<EOF
+            import os
+            import re
+            import sys
+            import yaml
 
-            # extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
+            with open('convoy.yaml', 'r') as file:
+                data = yaml.safe_load(file)
+
+            branch_name = os.environ.get('SOURCE_BRANCH')
+            pr_title = os.environ.get('PR_TITLE')
+            jira_source = data.get('ci').get('bestPractices').get('jiraIdSource')
+            jira_match = data.get('ci').get('bestPractices').get('matchingRule')
+
+            match_branch = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', branch_name)
+            match_pr = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', pr_title)
+                
+            if jira_match == 'ALL': 
+                if match_branch and match_pr and jira_source == 'BOTH':
+                    ticket_branch = match_branch.group(0)
+                    ticket_pr = match_pr.group(0)
+                    if ticket_branch == ticket_pr:
+                        print(f"Same Jira present in both Branch and PR:{ticket_branch}")
+                        sys.stdout.write(f"::set-output name=jira_ticket::{ticket_branch}\n")
+                        exit(0)
+                    else:
+                        raise Exception("Error: Different Jira present in both Branch and PR")
+                elif match_branch and jira_source == 'BRANCH_NAME_PREFIX':
+                    ticket = match_branch.group(0)
+                    print(f"Jira ticket extracted from Branch name:{ticket}")
+                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                    exit(0)
+                elif match_pr and jira_source == 'PR_TITLE_PREFIX':
+                    ticket = match_pr.group(0)
+                    print(f"Jira ticket extracted from PR Title:{ticket}")
+                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                    exit(0)
+                else:
+                    raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")   
+            elif jira_match == 'ANY':
+                    if jira_source == 'BRANCH_NAME_PREFIX':
+                        if match_branch:
+                            ticket = match_branch.group(0)
+                            print(f"Jira ticket extracted from Branch name:{ticket}")
+                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            exit(0)
+                        else: 
+                            print(f"No Jira ticket found in Branch name, checking in PR title")     
+                            if match_pr :
+                                ticket = match_pr.group(0)
+                                print(f"Jira ticket extracted from PR Title:{ticket}")
+                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                exit(0)
+                            else:
+                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+                    elif jira_source == 'PR_TITLE_PREFIX':
+                        if match_pr:
+                            ticket = match_pr.group(0)
+                            print(f"Jira ticket extracted from PR Title:{ticket}")
+                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            exit(0)
+
+                        else:
+                            print(f"No Jira ticket found in PR Title, checking in Branch name")     
+                            if match_branch:
+                                ticket = match_branch.group(0)
+                                print(f"Jira ticket extracted from Branch name:{ticket}")
+                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                exit(0)
+                            else:
+                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+                    elif jira_source == 'BOTH':
+                        if match_branch:
+                            ticket = match_branch.group(0)
+                            print(f"Jira ticket extracted from Branch name:{ticket}")
+                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            exit(0)
+                        else: 
+                            print(f"No Jira ticket found in Branch name, checking in PR title")     
+                            if match_pr:
+                                ticket = match_pr.group(0)
+                                print(f"Jira ticket extracted from PR Title:{ticket}")
+                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                exit(0)
+                            else:
+                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")            
+                    else: 
+                        raise Exception("Error: Invalid selection in Jira Source")         
+            elif jira_match == 'NONE':
+                print("No extraction of Jira ticket specified")
+                exit(0)
+            else: 
+                raise Exception("Invalid Jira Match type specified")
+            EOF
 
         - name: Validate Jira Ticket
+          env:
+            JIRA: ${{steps.extract.outputs.jira_ticket}}
+            JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+            JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           run: |
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
               echo "Revert branch, skipping Jira Validation"
               exit 0
             fi
-
-            # echo "${{steps.extract.outputs.jira_ticket}}"
-            # validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
+            python3 - <<EOF
+            import os
+            from jira import JIRA
+            user = os.environ.get('JIRA_USERNAME')
+            try:
+              apikey = os.environ.get('JIRA')
+              jira_ticket = os.environ.get('JIRA_API_TOKEN')
+              options = {'server': 'https://tessell.atlassian.net'}
+              jira = JIRA(options, basic_auth=(user, apikey) )
+              try:
+                  issue = jira.issue(jira_ticket)
+                  print("Ticket Summary=",issue.fields.summary)
+              except Exception as ex:
+                  print("Not a valid jira", jira_ticket)
+                  raise Exception(ex)
+            except Exception as ex:
+              raise Exception(ex)  
+            EOF
 
         - name: Check double commit
           env: 
@@ -267,10 +368,31 @@
             python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
         
   
-        # - name: check for terraform version
-        #   if: steps.terraform_check.outputs.terraform_file 
-        #   run:
-        #     terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+        - name: check for terraform version
+          if: steps.terraform_check.outputs.terraform_file 
+          env:
+            terraform_file: ${{ steps.terraform_check.outputs.terraform_file }}
+          run: |
+            python3 - <<EOF
+            import os
+            terraform_file = os.environ.get('terraform_file')
+            version_missing = False
+            for terraform_file in terraform_files.split(','):
+                with open(terraform_file, 'r') as file:
+                    tf_file = hcl2.load(file)
+                if 'terraform' in tf_file and 'required_providers' in tf_file['terraform'][0]:
+                    providers = tf_file['terraform'][0]['required_providers']
+                    for provider in providers:
+                        for _provider, provider_info in provider.items():
+                            for key  in provider_info:
+                                if key == 'version':
+                                    break
+                            else:
+                                print(f"{terraform_file}: version is not present for {_provider} ")
+                                version_missing = True
+                if version_missing:
+                    sys.exit(1)
+            EOF
         
   
         - name: check to verify same branch is exist
