@@ -131,8 +131,8 @@ jobs:
             IMAGE_NAME="$1"
             FILE="$4"
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
           build() {
@@ -159,8 +159,8 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
-          docker container prune --force
-          docker volume prune --force
+          sudo docker container prune --force
+          sudo docker volume prune --force
                   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

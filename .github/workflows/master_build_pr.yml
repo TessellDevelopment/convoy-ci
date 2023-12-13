@@ -113,6 +113,6 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
-          docker container prune --force
-          docker volume prune --force
+          sudo docker container prune --force
+          sudo docker volume prune --force
           
