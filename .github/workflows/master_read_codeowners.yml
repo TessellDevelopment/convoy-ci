@@ -38,7 +38,7 @@ jobs:
         env:
           changed-files: "${{ inputs.changed-files }}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import os
           import sys
           def extract_team_names(team_names):
