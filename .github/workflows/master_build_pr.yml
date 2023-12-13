@@ -51,7 +51,13 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-  
+
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+
   build-arm:
     if: ${{inputs.type == 'arm' }}
     runs-on: ARM64
@@ -99,5 +105,6 @@ jobs:
       - name: Remove target
         if: always()
         run: |
+          set +e
           sudo rm -rf target
           

@@ -69,6 +69,12 @@ jobs:
           build "dockerImages"
           build "helmCharts"
 
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: failure()
@@ -146,6 +152,7 @@ jobs:
       - name: Remove target
         if: always()
         run: |
+          set +e
           sudo rm -rf target
                   
       - name: Slack Notification
