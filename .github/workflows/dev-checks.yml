@@ -108,6 +108,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install shyaml
+          pip install pyyaml
           echo ${{steps.convoy_check.outputs.convoy_exists}}
             
       - name: Extract Jira Ticket
@@ -571,8 +572,8 @@ jobs:
             try{
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
-              var artifactType = data.artifactType
-              if(artifactType === 'nested'){
+              var language = data.language
+              if(language === 'terraform'){
                 modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
@@ -581,7 +582,7 @@ jobs:
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);
-                  exporter = dataDir.artifactNames
+                  exporter = dataDir.generates.artifacts[0].name
                   version = dataDir.version
                   try{
                     checkVersion('tessell-repos-m2-component',exporter,version);
@@ -592,25 +593,26 @@ jobs:
                 }
                 process.exit(0);
               }
-              else if(artifactType === 'helmChart'){
-                const path = data.chartPath
+              else if(language === 'helm'){
+                const path = data.generates.helmCharts[0].chartPath
                 const contentHelm = fs.readFileSync(path, 'utf8');
                 const dataHelm = yaml.load(contentHelm);
                 version = dataHelm.version
+                exporter = data.generates.helmCharts[0].name
+                nexusRepo = 'tessell-repos-helm-component'
+              }
+              else if(language === 'python'){
+                version = data.version
+                exporter = data.generates.artifacts[0].name
+                exporter = exporter.replaceAll('-','_')
+                nexusRepo = 'tessell-repos-py-component'
               }
               else{
                 version = data.version;
+                exporter = data.generates.artifacts[0].name
+                nexusRepo = 'tessell-repos-m2-component'
               }
-              nexusUrl = data.nexusUrl;
-              if(nexusUrl != undefined){
-                const parts = nexusUrl.split('/');
-                nexusRepo = parts[4];
-              }
-              artifacts = data.artifactNames;
-              if(artifacts != undefined){
-                exporter = artifacts[0];
-              }
-              if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+              if(version === undefined || exporter === undefined ){
                 console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                 process.exit(0);
               }
@@ -618,9 +620,6 @@ jobs:
               console.log("convoy.yaml not present in respository skipping check nexus version.")
               console.error('Error:', error.message)
               process.exit(0);
-            }
-            if(nexusRepo === 'tessell-repos-py-component'){
-              exporter = exporter.replaceAll('-','_')
             }
             try{
               checkVersion(nexusRepo,exporter,version)
