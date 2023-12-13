@@ -12,7 +12,7 @@ jobs:
 
   build-amd:
     if: ${{inputs.type != 'arm' }}
-    runs-on: amd64
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,6 +36,7 @@ jobs:
             if [[ -z "$check" ]]; then
               return
             fi
+            set -e
             while IFS=$'\t' read -r name buildFunction ext version file _; do
               echo "$name"
               echo "$buildFunction"
