@@ -58,11 +58,11 @@ jobs:
               return
             fi
             while IFS=$'\t' read -r name buildFunction ext version file _; do
-              echo "$name"
-              echo "$buildFunction"
-              echo "$ext"
-              echo "$version"
-              echo "$file"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
@@ -142,11 +142,11 @@ jobs:
               return
             fi
             while IFS=$'\t' read -r name buildFunction ext version file _; do
-              echo "$name"
-              echo "$buildFunction"
-              echo "$ext"
-              echo "$version"
-              echo "$file"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
