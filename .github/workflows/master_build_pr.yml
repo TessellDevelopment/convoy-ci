@@ -65,7 +65,7 @@ jobs:
         run: |
           mvnw() {
             set -e
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            sudo ./mvnwc install -Dnative -DskipTests -Dquarkus.native.container-build=true
           }
           docker() {
             set -e
