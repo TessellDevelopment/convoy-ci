@@ -22,7 +22,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          docker() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
@@ -76,7 +76,7 @@ jobs:
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             set +e
           }
-          docker() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"

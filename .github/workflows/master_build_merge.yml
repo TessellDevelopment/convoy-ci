@@ -38,7 +38,7 @@ jobs:
       - name: Build and Push
         shell: bash
         run: |
-          docker() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
@@ -123,7 +123,7 @@ jobs:
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
             set +e
           }
-          docker() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
