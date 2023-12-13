@@ -30,7 +30,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            sudo docker build -f $FILE -t $IMAGE_NAME .
+            echo "$FILE"
+            docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
           build() {
