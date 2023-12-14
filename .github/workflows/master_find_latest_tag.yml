@@ -32,7 +32,6 @@ jobs:
               
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -55,7 +54,6 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |

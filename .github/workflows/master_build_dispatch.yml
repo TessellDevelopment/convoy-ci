@@ -1,5 +1,5 @@
 ---
-  name: Master CI Merge Workflows
+  name: Master CI Build Dispatch Workflows
   on:
     workflow_call:
       
