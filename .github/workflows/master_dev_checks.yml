@@ -76,8 +76,8 @@
             jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
             jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
 
-            match_branch = re.search(rf'({supported_jira_tickets})-\d+', branch_name)
-            match_pr = re.search(rf'({supported_jira_tickets})-\d+', pr_title)
+            match_branch = re.search(rf'({supported_jira_tickets})\d+', branch_name)
+            match_pr = re.search(rf'({supported_jira_tickets})\d+', pr_title)
                 
             if jira_match == 'ALL': 
                 if match_branch and match_pr and jira_source == 'BOTH':
