@@ -24,9 +24,11 @@ jobs:
       - name: POST API to Convoy
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
+          GH_API_URL: "${{vars.GH_API_URL}}"
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{ENV.TAG}}"
+          OWNER: "${{github.repository_owner}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
@@ -52,7 +54,7 @@ jobs:
           def get_artifacts_tf():
             artifacts = []
             GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-            url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
+            url = f'{GH_API_URL}/repos/{OWNER}/{REPO}/pulls/{PR_ID}/files?per_page=100'
             headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
             res = requests.get(url, headers=headers)
             files_data = res.json()
@@ -132,7 +134,7 @@ jobs:
                 artifacts = []
                 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
                 headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
+                url = f'{GH_API_URL}/repos/{OWNER}/{REPO}/pulls/{PR_ID}/files?per_page=100'
                 res = requests.get(url, headers=headers)
                 files_data = res.json()
 

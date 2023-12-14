@@ -35,7 +35,7 @@ jobs:
           import os
           import sys
           def extract_team_names(team_names):
-            return [team.replace('@TessellDevelopment/', '') for team in team_names]
+            return [team.replace('@${{github.repository_owner}}/', '') for team in team_names]
 
           team_patterns = {}
           with open('.github/CODEOWNERS', 'r') as pattern_file:
