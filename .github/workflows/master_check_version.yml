@@ -43,7 +43,7 @@ jobs:
       - name: Check Version in Nexus 
         uses: actions/github-script@v6.3.3
         env:
-          NEXUS_URL: https://nexus.tessell.cloud/service/rest/v1/search?repository
+          NEXUS_URL: https://${{vars.NEXUS_SERVER_ENDPOINT}}/service/rest/v1/search?repository
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
         with:
@@ -113,7 +113,7 @@ jobs:
                   exporter = dataDir.generates.artifacts[0].name
                   version = dataDir.version
                   try{
-                    checkVersion('tessell-repos-m2-component',exporter,version);
+                    checkVersion('${{vars.NEXUS_PUSH_REPOS_M2}}',exporter,version);
                   } catch (e) {
                     console.error(e);
                     process.exit(1);
@@ -127,18 +127,18 @@ jobs:
                 const dataHelm = yaml.load(contentHelm);
                 version = dataHelm.version
                 exporter = data.generates.helmCharts[0].name
-                nexusRepo = 'tessell-repos-helm-component'
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
               }
               else if(language === 'python'){
                 version = data.version
                 exporter = data.generates.artifacts[0].name
                 exporter = exporter.replaceAll('-','_')
-                nexusRepo = 'tessell-repos-py-component'
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_PY}}'
               }
               else{
                 version = data.version;
                 exporter = data.generates.artifacts[0].name
-                nexusRepo = 'tessell-repos-m2-component'
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_M2}}'
               }
               if(version === undefined || exporter === undefined ){
                 console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
