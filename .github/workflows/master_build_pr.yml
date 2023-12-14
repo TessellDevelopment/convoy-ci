@@ -81,6 +81,11 @@ jobs:
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             set +e
           }
+          jarBuild() {
+            set -e
+            sudo ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+            set +e
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"

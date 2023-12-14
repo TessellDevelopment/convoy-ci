@@ -136,6 +136,13 @@ jobs:
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
             set +e
           }
+          jarBuild() {
+            set -e
+            NAME="$1"
+            EXT="$2"
+            # Add Build Commands
+            set +e
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
