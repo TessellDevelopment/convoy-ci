@@ -7,6 +7,9 @@
 
     dev-checks:
       runs-on: non-build
+      env:
+        NEXUS_REPO_NPM: tessell-repos-npm-component
+        NEXUS_URL: nexus.tessell.cloud
       steps:
         - name: Dump GitHub context
           env:
@@ -19,14 +22,7 @@
             token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             fetch-depth: 0
 
-        - name: Get branch name (merge)
-          if: github.event_name != 'pull_request'
-          shell: bash
-          run: |
-            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-
-        - name: Get branch name (pull request)
-          if: github.event_name == 'pull_request'
+        - name: Get branch name
           shell: bash
           run: |
             echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
@@ -41,14 +37,14 @@
                 echo "Revert branch, skipping Format check"
                 exit 0
             fi
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS-|SRE-|TDEVOPS-|TOPS-)'; then
+            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(${{vars.SUPPORTED_JIRA_PROJECTS}})'; then
               echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
             else
-              echo "Branch name does not start with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
+              echo "Branch name does not start with ${{vars.SUPPORTED_JIRA_PROJECTS}}. Checking PR title format."
               PULL_REQUEST_TITLE="$PR_TITLE"
-              PATTERN="(TS|TDEVOPS|TOPS|SRE)-[0-9]+\s\|\s"
+              PATTERN="(${{vars.SUPPORTED_JIRA_PROJECTS}})-[0-9]+\s\|\s"
               if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-                echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' or 'SRE-XXXX | --' format."
+                echo "Error: Pull request title is not in the required format. Please use ${{vars.SUPPORTED_JIRA_PROJECTS}}-XXXX format."
                 exit 1
               else 
                 echo "PR Title is in the valid format."
@@ -59,6 +55,7 @@
           id: extract
           env:
             PR_TITLE: ${{github.event.pull_request.title}}
+            SUPPORTED_JIRA_TICKETS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
           run: |
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
                 echo "Revert branch, skipping Jira Extraction"
@@ -73,13 +70,14 @@
             with open('convoy.yaml', 'r') as file:
                 data = yaml.safe_load(file)
 
+            supported_jira_tickets = os.environ.get('SUPPORTED_JIRA_TICKETS')
             branch_name = os.environ.get('SOURCE_BRANCH')
             pr_title = os.environ.get('PR_TITLE')
             jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
             jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
 
-            match_branch = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', branch_name)
-            match_pr = re.search(rf'(TS|TDEVOPS|TOPS)-\d+', pr_title)
+            match_branch = re.search(rf'({supported_jira_tickets})-\d+', branch_name)
+            match_pr = re.search(rf'({supported_jira_tickets})-\d+', pr_title)
                 
             if jira_match == 'ALL': 
                 if match_branch and match_pr and jira_source == 'BOTH':
@@ -212,7 +210,7 @@
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
             echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
             echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
-            echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+            echo "@tessell:registry=https://${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
             cat .npmrc
 
         - name: Install Packages
@@ -229,7 +227,8 @@
             set -e
             git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
-        - name: Check for merge conflicts
+        - name: Output PR diff 
+          id: pr_diff
           uses: actions/github-script@v6.4.1
           with:
             github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
@@ -249,6 +248,14 @@
                   head: head_commit,
                   base: base_commit
               });
+              core.setOutput('response', response) 
+
+        - name: Check for merge conflicts
+          uses: actions/github-script@v6.4.1
+          with:
+            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            script: |
+              response = ${{steps.pr_diff.outputs.response}}
               response.data.files.forEach(function(file_entry) {
                 console.log(file_entry.filename);
                 dir_name = file_entry.filename.split("/")[0];
@@ -267,27 +274,11 @@
         - name: Check DB Migration Scripts
           id: check_db_migration
           uses: actions/github-script@v6.4.1
-          if: github.event_name == 'pull_request'
           with:
             github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              console.log("base_commit " + base_commit);
-              console.log("head_commit " + head_commit); 
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
+              response = ${{steps.pr_diff.outputs.response}}
+              let path = "";
               response.data.files.forEach(function(file_entry) {
                 if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                      (file_entry.status == 'modified' || file_entry.status == 'removed')) {
@@ -295,9 +286,6 @@
                   console.log(file_entry.status);
                   core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
                 }
-              });
-              let path = "";
-              response.data.files.forEach(function(file_entry) {
                 if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
                   const lastSlashIndex = file_entry.filename.lastIndexOf("/");
                   path = file_entry.filename.substring(0, lastSlashIndex);
@@ -327,30 +315,20 @@
                 }
               });
   
+        - name: Check Version sequence of DB Scripts
+          id: check_db_version_seq
+          if: steps.check_db_migration.outputs.db_migration_dir
+          run:
+            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
+            
+      
         - name: check for terraform (code)
-          if : github.event_name == 'pull_request'
           id: terraform_check
           uses: actions/github-script@v6.3.3
           with:
             github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              console.log("base_commit " + base_commit);
-              console.log("head_commit " + head_commit); 
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
+              response = ${{steps.pr_diff.outputs.response}}
               var terraform_file = [] 
               response.data.files.forEach(function(file_entry) {
                 if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
@@ -360,23 +338,17 @@
                   console.log(terraform_file) ;
                 }
               });
-              core.setOutput('terraform_file' , terraform_file.join(','));
+              core.setOutput('terraform_files' , terraform_file.join(','));
 
-        - name: Check Version sequence of DB Scripts
-          id: check_db_version_seq
-          if: steps.check_db_migration.outputs.db_migration_dir
-          run:
-            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
-        
-  
+       
         - name: check for terraform version
-          if: steps.terraform_check.outputs.terraform_file 
+          if: steps.terraform_check.outputs.terraform_files 
           env:
-            terraform_file: ${{ steps.terraform_check.outputs.terraform_file }}
+            terraform_files: ${{ steps.terraform_check.outputs.terraform_files }}
           run: |
             python3 - <<EOF
             import os
-            terraform_file = os.environ.get('terraform_file')
+            terraform_files = os.environ.get('terraform_files')
             version_missing = False
             for terraform_file in terraform_files.split(','):
                 with open(terraform_file, 'r') as file:
