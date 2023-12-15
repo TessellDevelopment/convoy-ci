@@ -67,9 +67,13 @@ jobs:
           echo "$CHART_GITHUB_LOCATION"
           echo "$TEMPLATE_REPO_GITHUB_LOCATION"
           echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
-          echo "Cloning convoy-helm-template"
+          echo "Fetching convoy-helm-template from Nexus"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-          git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+          template_version=$(yq '.convoy-helm-template' Chart.yaml)
+          curl https://${GITHUB_USER}:${GITHUB_TOKEN}@nexus.tessell.cloud/repository/tessell-repos-helm-component/convoy-helm-template/$template_version/convoy-helm-template-$template_version.tgz \
+            --output convoy-helm-template.tgz
+          tar zxvf convoy-helm-template.tgz -C $TEMPLATE_REPO_GITHUB_LOCATION
+          ls $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
