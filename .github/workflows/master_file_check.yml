@@ -1,0 +1,47 @@
+name: Check Changed Files
+
+on:
+  workflow_call:
+    outputs:
+      github-changes:
+          description: "Github File Changes output"
+          value: ${{ jobs.file-check.outputs.github-changes }}
+      changed-files:
+        description: "All Changed File output"
+        value: ${{ jobs.file-check.outputs.changed-files }}
+
+jobs:
+
+  file-check:
+    runs-on: non-build
+    outputs:
+      github-changes: ${{ steps.set-output.outputs.github-changes }}
+      changed-files: ${{ steps.set-output.outputs.changed-files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+
+      - name: Check .github changes
+        id: changed-files-github
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            .github/**
+
+      - name: Check All file changes
+        id: changed-files-all
+        uses: tj-actions/changed-files@v39
+
+      - name: Set Output
+        id: set-output
+        run: |
+          echo "github-changes=${{ steps.changed-files-github.outputs.only_changed }}" >> $GITHUB_OUTPUT
+          echo "changed-files=${{ steps.changed-files-all.outputs.all_changed_and_modified_files }}" >> $GITHUB_OUTPUT
+          
