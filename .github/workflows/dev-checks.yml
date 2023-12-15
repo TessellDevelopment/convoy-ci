@@ -511,6 +511,18 @@ jobs:
               core.setFailed("Tessell Libraries must update the version in chart.yaml file")
             }
 
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            services/**
+
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
+
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
         env:
@@ -593,12 +605,19 @@ jobs:
                 process.exit(0);
               }
               else if(language === 'helm'){
-                const path = data.generates.helmCharts[0].chartPath
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                version = dataHelm.version
-                exporter = data.generates.helmCharts[0].name
-                nexusRepo = 'tessell-repos-helm-component'
+                const buildFunction = data.generates.helmCharts[0].buildFunction
+                if (buildFunction === 'helm-template' && ${{steps.changed-files.outputs.any_modified}} === 'false'){
+                  console.log("No change in services/**.Skipping version checks")
+                  process.exit(0);
+                }
+                else{
+                  const path = data.generates.helmCharts[0].chartPath
+                  const contentHelm = fs.readFileSync(path, 'utf8');
+                  const dataHelm = yaml.load(contentHelm);
+                  version = dataHelm.version
+                  exporter = data.generates.helmCharts[0].name
+                  nexusRepo = 'tessell-repos-helm-component'
+                }
               }
               else if(language === 'python'){
                 version = data.version
