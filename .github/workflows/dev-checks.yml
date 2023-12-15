@@ -601,7 +601,7 @@ jobs:
               }
               else if(language === 'helm'){
                 const buildFunction = data.generates.helmCharts[0].buildFunction
-                if (buildFunction === 'helm-template' && ${{steps.changed-files.outputs.any_modified}} === 'false'){
+                if (buildFunction === 'helm-template' && '${{steps.changed-files.outputs.any_modified}}' === 'false'){
                   console.log("No change in services/**.Skipping version checks")
                   process.exit(0);
                 }
