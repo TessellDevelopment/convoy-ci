@@ -70,9 +70,8 @@ jobs:
           echo "Fetching convoy-helm-template from Nexus"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
-          curl https://${GITHUB_USER}:${GITHUB_TOKEN}@nexus.tessell.cloud/repository/tessell-repos-helm-component/convoy-helm-template/$template_version/convoy-helm-template-$template_version.tgz \
-            --output convoy-helm-template.tgz
-          tar zxvf convoy-helm-template.tgz -C $TEMPLATE_REPO_GITHUB_LOCATION
+          helm pull convoy-helm-template --repo https://nexus.tessell.cloud/repository/tessell-repos-helm-component \
+            --username ${GITHUB_USER} --password ${GITHUB_USERNAME} --version $template_version --untar --untardir $TEMPLATE_REPO_GITHUB_LOCATION
           ls $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
