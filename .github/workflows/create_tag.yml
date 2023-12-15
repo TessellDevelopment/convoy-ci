@@ -446,7 +446,7 @@ jobs:
             "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "baseBranch": BASE_BRANCH,
-            "customVersion": CUSTOM_VERSION,
+            "usesCustomVersion": CUSTOM_VERSION,
             "tag": TAG,
             "pullRequestId": PR_ID,
           }

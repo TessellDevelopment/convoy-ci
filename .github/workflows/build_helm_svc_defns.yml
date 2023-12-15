@@ -66,9 +66,6 @@ jobs:
           echo "$CHART_GITHUB_LOCATION"
           echo "$TEMPLATE_REPO_GITHUB_LOCATION"
           echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
-          echo "Fetching convoy-helm-template from Nexus"
-          rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-          template_version=$(yq '.convoy-helm-template' Chart.yaml)
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
