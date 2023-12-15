@@ -518,11 +518,6 @@ jobs:
           files: |
             services/**
 
-      - name: Set Output
-        id: check-file-output
-        run: |
-          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
-
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
         env:
