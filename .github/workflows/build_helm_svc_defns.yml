@@ -71,7 +71,7 @@ jobs:
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
           helm pull convoy-helm-template --repo https://nexus.tessell.cloud/repository/tessell-repos-helm-component \
-            --username ${GITHUB_USER} --password ${GITHUB_USERNAME} --version $template_version --untar --untardir $TEMPLATE_REPO_GITHUB_LOCATION
+            --username ${{env.GITHUB_USER}} --password ${{env.GITHUB_TOKEN}} --version $template_version --untar --untardir $TEMPLATE_REPO_GITHUB_LOCATION
           ls $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
