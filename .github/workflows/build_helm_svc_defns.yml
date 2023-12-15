@@ -55,7 +55,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
+          echo "NEXUS_REPOS_HELM=${{vars.NEXUS_PUSH_REPOS_HELM}}" >> $GITHUB_ENV
 
       - name: Configure convoy-helm-template
         run: |
@@ -69,7 +69,7 @@ jobs:
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
-          git clone --branch $template_version https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+          git clone --branch $template_version https://github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
@@ -80,7 +80,7 @@ jobs:
           cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
           ls -lrta ../helm-chart/values/apps/
           echo "Running package and push"
-          if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
+          if [[ "${{env.NEXUS_REPOS_HELM}}" == "${{vars.NEXUS_PUSH_REPOS_HELM}}" ]]; then
             ./package-and-push --prod -n $CHART_NAME
           else
             ./package-and-push --no-push -n $CHART_NAME

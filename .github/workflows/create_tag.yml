@@ -162,7 +162,7 @@ jobs:
             language=$(yq '.language' convoy.yaml)
             version=$(yq '.version' convoy.yaml)
             if [[ "$language" == "helm" || "$version" != "null" ]]; then
-              echo "No Validation"
+              echo "No Validation for custom version as tag."
               echo "validate_label=false" >> $GITHUB_OUTPUT
             else
               echo "validate_label=true" >> $GITHUB_OUTPUT
