@@ -55,8 +55,10 @@ jobs:
               const contentHelm = fs.readFileSync(path, 'utf8');
               const dataHelm = yaml.load(contentHelm);
               new_tag = dataHelm.version
+              core.setOutput('custom_version', "true")  
             } else if (version !== undefined ){
               new_tag = version
+              core.setOutput('custom_version', "true")  
             } else{
               latest_tag = '0.0.0'
               // process multiple tags if any
@@ -113,6 +115,7 @@ jobs:
               // increase the minor version lineraly to get the new tag
               tag_parts = latest_tag.split('.')
               new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+              core.setOutput('custom_version', "false")  
             }
 
             // head of the branch needs to be tagged
@@ -148,6 +151,7 @@ jobs:
         id: tag_output
         run: |
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+          echo "custom_version=${{steps.create_tag.outputs.custom_version}}" >> $GITHUB_OUTPUT
 
       - name: Set Label
         id: set_label
@@ -254,6 +258,7 @@ jobs:
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
+          CUSTOM_VERSION: "${{needs.create-tag-on-merge.outputs.custom_version}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -422,6 +427,7 @@ jobs:
             
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          CUSTOM_VERSION = os.environ.get('CUSTOM_VERSION')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
@@ -439,6 +445,7 @@ jobs:
             "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "baseBranch": BASE_BRANCH,
+            "customVersion": CUSTOM_BRANCH,
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
