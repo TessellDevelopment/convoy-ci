@@ -46,63 +46,6 @@ jobs:
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
-
-            latest_tag = '0.0.0'
-            // process multiple tags if any
-            tags = "${{ env.TAGS }}".split(' ')
-            if (tags.length == 1) {
-              latest_tag = tags[0]
-            } else {
-              if ("${{ github.event.pull_request.base.ref }}" == "main") {
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("Checking tag " + tag)
-                  if (latest_tag == null) {
-                    latest_tag = tag
-                    continue
-                  }
-                  latest_parts = latest_tag.split(".")
-                  tag_parts = tag.split(".")
-                  for (i = 0; i < tag_parts.length; i++) {
-                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                      console.log("Skipping " + tag)
-                      break
-                    }
-                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                      latest_tag = tag
-                      console.log("Setting " + latest_tag)
-                      break
-                    }
-                  }
-                }
-              } else {
-                tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
-                latest_tag = tag_base.join(".") + ".0"
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("branch - Checking tag " + tag)
-                  tag_parts = tag.split(".")
-                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                    latest_parts = latest_tag.split(".")
-                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
-                      latest_tag = tag
-                    }
-                  }
-                }
-              }
-            }
-            console.log("Latest tag: " + latest_tag)
-
-            // check if we have
-            if ( latest_tag == '' || latest_tag === undefined) {
-              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-              process.exit(1);
-            }
-
-            // increase the minor version lineraly to get the new tag
-            tag_parts = latest_tag.split('.')
-            new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-            
             const content = fs.readFileSync('./convoy.yaml', 'utf8');
             const data = yaml.load(content);
             var language = data.language
@@ -114,6 +57,62 @@ jobs:
               new_tag = dataHelm.version
             } else if (version !== undefined ){
               new_tag = version
+            } else{
+              latest_tag = '0.0.0'
+              // process multiple tags if any
+              tags = "${{ env.TAGS }}".split(' ')
+              if (tags.length == 1) {
+                latest_tag = tags[0]
+              } else {
+                if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("Checking tag " + tag)
+                    if (latest_tag == null) {
+                      latest_tag = tag
+                      continue
+                    }
+                    latest_parts = latest_tag.split(".")
+                    tag_parts = tag.split(".")
+                    for (i = 0; i < tag_parts.length; i++) {
+                      if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                        console.log("Skipping " + tag)
+                        break
+                      }
+                      if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                        latest_tag = tag
+                        console.log("Setting " + latest_tag)
+                        break
+                      }
+                    }
+                  }
+                } else {
+                  tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
+                  latest_tag = tag_base.join(".") + ".0"
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("branch - Checking tag " + tag)
+                    tag_parts = tag.split(".")
+                    if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                      latest_parts = latest_tag.split(".")
+                      if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                        latest_tag = tag
+                      }
+                    }
+                  }
+                }
+              }
+              console.log("Latest tag: " + latest_tag)
+
+              // check if we have
+              if ( latest_tag == '' || latest_tag === undefined) {
+                console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+                process.exit(1);
+              }
+
+              // increase the minor version lineraly to get the new tag
+              tag_parts = latest_tag.split('.')
+              new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
             }
 
             // head of the branch needs to be tagged
