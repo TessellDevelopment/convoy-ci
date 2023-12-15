@@ -20,6 +20,7 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
+      custom_version_output: ${{ steps.tag_output.outputs.custom_version }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -258,7 +259,7 @@ jobs:
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
-          CUSTOM_VERSION: "${{needs.create-tag-on-merge.outputs.custom_version}}"
+          CUSTOM_VERSION: "${{needs.create-tag-on-merge.outputs.custom_version_output}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -445,7 +446,7 @@ jobs:
             "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "baseBranch": BASE_BRANCH,
-            "customVersion": CUSTOM_BRANCH,
+            "customVersion": CUSTOM_VERSION,
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
