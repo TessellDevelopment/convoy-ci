@@ -157,8 +157,8 @@ jobs:
             language=$(yq '.language' convoy.yaml)
             version=$(yq '.version' convoy.yaml)
             if [[ "$language" == "helm" || "$version" != "null" ]]; then
-                echo "No Validation"
-                echo "validate_label=false" >> $GITHUB_OUTPUT
+              echo "No Validation"
+              echo "validate_label=false" >> $GITHUB_OUTPUT
             else
               echo "validate_label=true" >> $GITHUB_OUTPUT
               if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
@@ -176,10 +176,11 @@ jobs:
                     echo "Label does not start with 'rel'. Check response."
                     exit 1 
                 fi
+              
+              else
+                echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
               fi
-            else
-              echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
-            fi
+            fi  
            else
             echo "convoy.yaml not found"
             echo "validate_label=false" >> $GITHUB_OUTPUT
