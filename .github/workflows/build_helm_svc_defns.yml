@@ -58,7 +58,7 @@ jobs:
           echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
 
       - name: Configure convoy-helm-template
-        if: ${{github.repository}} != 'TessellDevelopment/ci-test-repo-b'
+        if: ${{ github.repository != 'TessellDevelopment/ci-test-repo-b' }}
         run: |
           set +e
           GITHUB_WORKSPACE=$(pwd)
