@@ -33,7 +33,7 @@ jobs:
   build:
     runs-on: self-hosted
     needs: file-check
-    if: needs.file-check.outputs.any-modified == 'true'
+    if: ${{ needs.file-check.outputs.any-modified == 'true' || github.repository == 'TessellDevelopment/convoy-helm-template' }}
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -58,6 +58,7 @@ jobs:
           echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
 
       - name: Configure convoy-helm-template
+        if: ${{github.repository}} != 'TessellDevelopment/convoy-helm-template'
         run: |
           set +e
           GITHUB_WORKSPACE=$(pwd)
@@ -76,8 +77,12 @@ jobs:
       - name: Package and Push 
         run: |
           CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
-          cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
-          ls -lrta ../helm-chart/values/apps/
+          if [[ "${{github.repository}}" == "TessellDevelopment/convoy-helm-template" ]]; then
+            cd scripts
+          else
+            cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
+            ls -lrta ../helm-chart/values/apps/
+          fi
           echo "Running package and push"
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
