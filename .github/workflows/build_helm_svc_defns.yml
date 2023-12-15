@@ -33,7 +33,7 @@ jobs:
   build:
     runs-on: self-hosted
     needs: file-check
-    if: ${{ needs.file-check.outputs.any-modified == 'true' || github.repository == 'TessellDevelopment/convoy-helm-template' }}
+    if: needs.file-check.outputs.any-modified == 'true' 
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -58,7 +58,6 @@ jobs:
           echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
 
       - name: Configure convoy-helm-template
-        if: ${{ github.repository != 'TessellDevelopment/convoy-helm-template' }}
         run: |
           set +e
           GITHUB_WORKSPACE=$(pwd)
@@ -70,8 +69,10 @@ jobs:
           echo "Fetching convoy-helm-template from Nexus"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
-          helm pull convoy-helm-template --repo https://nexus.tessell.cloud/repository/tessell-repos-helm-component --username ${{env.GITHUB_USER}} --password ${{env.GITHUB_TOKEN}} --version $template_version --untar --untardir $TEMPLATE_REPO_GITHUB_LOCATION
-          ls $TEMPLATE_REPO_GITHUB_LOCATION
+          echo "Cloning convoy-helm-template"
+          rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+          template_version=$(yq '.convoy-helm-template' Chart.yaml)
+          git clone --branch $template_version https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
@@ -79,12 +80,8 @@ jobs:
       - name: Package and Push 
         run: |
           CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
-          if [[ "${{github.repository}}" == "TessellDevelopment/convoy-helm-template" ]]; then
-            cd scripts
-          else
-            cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
-            ls -lrta ../helm-chart/values/apps/
-          fi
+          cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
+          ls -lrta ../helm-chart/values/apps/
           echo "Running package and push"
           if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
             ./package-and-push --prod -n $CHART_NAME
