@@ -6,11 +6,11 @@ on:
 jobs:
   
   dev-checks:
-    uses: TessellDevelopment/tessell-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-827
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-827
     secrets: inherit
 
   version-check:
-    uses: TessellDevelopment/tessell-ci/.github/workflows/master_check_version.yml@TDEVOPS-827
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-827
     secrets: inherit
 
   build-file:
@@ -33,7 +33,7 @@ jobs:
 
   build:
     needs: build-file
-    uses: TessellDevelopment/tessell-ci/.github/workflows/master_build_pr.yml@TDEVOPS-827
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-827
     with:
       type: ${{needs.build-file.outputs.type}}
     secrets: inherit
@@ -76,11 +76,11 @@ jobs:
   auto-merge:
     needs: check-commits
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-    uses: TessellDevelopment/tessell-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-827 
     secrets: inherit 
 
   send-mail:
     needs: auto-merge
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/tessell-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-827 
     secrets: inherit
