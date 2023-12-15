@@ -28,6 +28,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install dependencies
+        run: npm install js-yaml
+
       - name: Find latest tag
         run: |
           latest_tags+=("$(git tag --contains '${{ github.event.pull_request.base.sha }}')")
@@ -41,6 +44,9 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+
             latest_tag = '0.0.0'
             // process multiple tags if any
             tags = "${{ env.TAGS }}".split(' ')
@@ -96,6 +102,19 @@ jobs:
             // increase the minor version lineraly to get the new tag
             tag_parts = latest_tag.split('.')
             new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+            
+            const content = fs.readFileSync('./convoy.yaml', 'utf8');
+            const data = yaml.load(content);
+            var language = data.language
+            var version = data.version
+            if (language === 'helm'){
+              const path = data.generates.helmCharts[0].chartPath
+              const contentHelm = fs.readFileSync(path, 'utf8');
+              const dataHelm = yaml.load(contentHelm);
+              new_tag = dataHelm.version
+            } else if (version !== undefined ){
+              new_tag = version
+            }
 
             // head of the branch needs to be tagged
             sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"

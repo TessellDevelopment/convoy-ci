@@ -5,8 +5,35 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  file-check:
+    runs-on: self-hosted
+    outputs:
+      any-modified: ${{steps.check-file-output.outputs.any-modified}}
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            Chart.yaml
+            services/**
+
+      - name: Set Output
+        id: check-file-output
+        run: |
+          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
+
+
   build:
     runs-on: self-hosted
+    needs: file-check
+    if: needs.file-check.outputs.any-modified == 'true'
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
