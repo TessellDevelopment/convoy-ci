@@ -21,7 +21,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_REPO_NPM: tessell-repos-npm-development
-      NEXUS_URL: https://nexus.tessell.cloud
+      NEXUS_URL: nexus.tessell.cloud
     steps:
       - uses: actions/checkout@v3
         name: Checkout repos  
@@ -50,10 +50,13 @@ jobs:
 
       - name: Set up .npmrc
         run: |
+          set +e 
           cd ~
-          head -n -1 .npmrc > temp && mv temp .npmrc
-          cat .npmrc
-          echo "@tessell:registry=${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
+          rm .npmrc
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{ env.NEXUS_URL }}/repository/:_auth = $TOKEN" >> .npmrc
+          echo "//${{ env.NEXUS_URL }}/repository/:always-auth = true" >> .npmrc 
+          echo "@tessell:registry=https://${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
           cat .npmrc
 
       - name: Publish the package
@@ -89,6 +92,8 @@ jobs:
     runs-on: self-hosted
     needs: build
     if: always()  
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -147,7 +152,7 @@ jobs:
 
           payload = {
             "repoName": REPO,
-            "commitHash": COMMIT_HASH,
+            "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
@@ -177,6 +182,14 @@ jobs:
               exit(1)
           print("POST request Complete")
           EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
 
   send-mail:
     uses: ./.github/workflows/email_dc.yaml

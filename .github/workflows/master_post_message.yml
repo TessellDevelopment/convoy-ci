@@ -1,0 +1,74 @@
+---
+name: Post message for review
+
+on:
+  workflow_call:
+    inputs:
+      required-teams:
+        description: 'Teams required for approval in the PR'
+        required: true
+        type: string
+
+jobs:
+  post-message:
+    runs-on: non-build
+    env:
+      TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+    steps: 
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+          
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+
+      - name: Check message exists
+        id: check-message
+        run: |
+          #!/bin/bash
+          ORG_NAME="${{github.repository_owner}}"
+          REPO="${{github.repository}}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          COMMIT_HASH="${{github.event.pull_request.head.sha}}"
+          TEAMS="${{inputs.required-teams}}"
+          COMMENT_ID=$(curl -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${{vars.GH_API_URL}}/repos/$REPO/issues/$PR_NUMBER/comments" | jq -r  '.[] | select(.body|test("^Commit hash.")) | .id')
+          echo "$COMMENT_ID"
+          MESSAGE="Commit hash: $COMMIT_HASH <br />Required Approvals:"
+          IFS=' ' read -ra TEAMS_ARRAY <<< "$TEAMS"
+          for TEAM in "${TEAMS_ARRAY[@]}"; do
+            MESSAGE="$MESSAGE <br /> - @${{github.repository_owner}}/$TEAM"
+          done
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          if [ -z "$COMMENT_ID" ]
+          then
+            echo "check=false" >> $GITHUB_OUTPUT
+          else
+            echo "check=true" >> $GITHUB_OUTPUT
+            echo "comment-id=$COMMENT_ID" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create message
+        if: steps.check-message.outputs.check == 'false'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          body: ${{steps.check-message.outputs.message}}
+
+      - name: Update message
+        if: steps.check-message.outputs.check == 'true'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{steps.check-message.outputs.comment-id}}
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          body: ${{steps.check-message.outputs.message}}
+          edit-mode: replace
+          
