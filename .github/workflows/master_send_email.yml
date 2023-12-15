@@ -1,0 +1,33 @@
+---
+name: Send email on failure
+on:
+  workflow_call:
+
+jobs:
+  
+  send-email:
+    runs-on: non-build
+    steps:
+      - name: Get PR-Author,subject & body to send email
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : FAILURE -- WORKFLOW : ${{ github.workflow }} -- EVENT : ${{ github.event_name }} -- BRANCH : ${{ env.SOURCE_BRANCH }} -- COMMIT_ID : ${{ github.sha }} -- REPO : ${{ github.repository }}" >> $GITHUB_ENV
+   
+      - name: sending output
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=FAILURE || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+
+      - name: Send Email to PR Author
+        uses: wadeww/send-email-action@master
+        with:
+          server_address:  ${{ secrets.EMAIL_SERVER_ADDRESS }}
+          port: ${{ secrets.EMAIL_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: ${{ steps.mail_info.outputs.mail_subject }}
+          body: ${{ steps.mail_info.outputs.mail_body }}
+          to: ${{ steps.mail_info.outputs.mail_id }},${{ secrets.CIPIPELINE_USER_EMAIL }}
+          from: ${{ secrets.CIPIPELINE_USER_EMAIL }}

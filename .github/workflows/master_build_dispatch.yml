@@ -1,0 +1,36 @@
+---
+  name: Master CI Build Dispatch Workflows
+  on:
+    workflow_call:
+      
+  jobs:
+  
+    build-file:
+      runs-on: non-build
+      outputs:
+        type: ${{steps.build-type.outputs.type}}
+        label: ${{steps.get-label.outputs.label}}
+      steps:
+        - uses: actions/checkout@v3
+          with:
+            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            fetch-depth: 0
+          
+        - name: Determine build type from Convoy
+          id: build-type
+          run: |
+            runner=$(yq '.runner' convoy.yaml)
+            echo "type=$runner" >> $GITHUB_OUTPUT
+  
+    find-latest-tag:
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-827
+      secrets: inherit
+  
+    build:
+      needs: [build-file,find-latest-tag]
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-827
+      secrets: inherit
+      with:
+        type: ${{needs.build-file.outputs.type}}
+        tag: ${{needs.find-latest-tag.outputs.tag}}
+        label: ${{needs.build-file.outputs.label}}

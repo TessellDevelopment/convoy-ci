@@ -1,0 +1,187 @@
+---
+name: Tessell Pipelines Code Build Post merge
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'This is used to determine build type'
+        required: true
+        type: string
+      tag:
+        description: 'Latest tag for upload'
+        required: true
+        type: string
+      label:
+        description: 'Release label for upload'
+        required: true
+        type: string
+
+jobs:
+
+  build-amd:
+    if: ${{inputs.type != 'arm' }}
+    runs-on: self-hosted
+    env:
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Login to docker
+        uses: docker/login-action@v2.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}   
+
+      - name: Build and Push
+        shell: bash
+        run: |
+          dockerBuild() {
+            set -e
+            IMAGE_NAME="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            echo "$FILE"
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+
+  build-arm:
+    if: ${{inputs.type}} == 'arm'
+    runs-on: ARM64
+    env:
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Login to Docker
+        run : |
+          sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
+          aws configure set region ap-south-1
+          
+      - name: Build and Push OPS
+        shell: bash
+        run: |
+          mvnwBuild() {
+            set -e
+            NAME="$1"
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+              --upload-file ./target/function.zip \
+              https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
+            sudo mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
+            aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
+            set +e
+          }
+          jarBuild() {
+            set -e
+            NAME="$1"
+            EXT="$2"
+            # Add Build Function
+            set +e
+          }
+          dockerBuild() {
+            set -e
+            IMAGE_NAME="$1"
+            FILE="$4"
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          sudo docker container prune --force
+          sudo docker volume prune --force
+                  
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+    
