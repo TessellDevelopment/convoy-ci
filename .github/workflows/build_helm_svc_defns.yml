@@ -69,7 +69,7 @@ jobs:
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
           template_version=$(yq '.convoy-helm-template' Chart.yaml)
-          git clone --branch $template_version https://github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+          git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
