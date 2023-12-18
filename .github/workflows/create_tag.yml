@@ -414,7 +414,7 @@ jobs:
             return
             
           REPO = os.environ.get('REPO')
-          OWNER = os.enviorn.get('OWNER')
+          OWNER = os.environ.get('OWNER')
           GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           CUSTOM_VERSION = os.environ.get('CUSTOM_VERSION')
