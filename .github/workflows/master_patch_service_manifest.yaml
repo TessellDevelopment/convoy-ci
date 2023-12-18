@@ -1,0 +1,61 @@
+---
+name: Service Manifest PATCH API to Convoy
+on:
+  workflow_call:
+    
+jobs:
+  
+  post-build-status-to-convoy:
+    runs-on: non-build
+    env: 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Get Label
+        shell: bash
+        run: |
+          if [ -f convoy.yaml ]; then
+            if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml) >> $GITHUB_ENV
+              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+              echo "$RESPONSE"
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+              echo "$LABEL"
+              if [[ $LABEL == rel-* ]]; then
+                  echo "LABEL=$LABEL" >> $GITHUB_ENV
+              else
+                  echo "Response: $LABEL"
+                  echo "Label does not start with 'rel'. Check response."
+                  exit 1 
+              fi
+            else
+              echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+            fi
+           else
+            echo "convoy.yaml not found"
+           fi 
+
+      - name: PATCH API to Convoy
+        run: |
+          curl --request PATCH \
+            http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/${{env.APP_GROUP}}/apps/{app_name}/service-manifest/${{env.LABEL}}
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
+          
