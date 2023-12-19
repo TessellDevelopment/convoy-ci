@@ -213,7 +213,7 @@ jobs:
             for artifact in artifacts:
                 file = artifact['name']
                 ext = artifact['extension']
-                print(file+'-'ext)
+                print(file+'-'+ext)
                 exit_code = os.system(\"mkdir -p $HOME/.m2\")
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
