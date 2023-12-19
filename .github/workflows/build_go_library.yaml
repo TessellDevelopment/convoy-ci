@@ -206,19 +206,19 @@ jobs:
             python3 -c """
             import json
             import os
+            import yaml
             exporter_name='${{ inputs.exporter_name }}'
             exporter_config = json.loads('${{ inputs.exporter_config }}')
+            with open('convoy.yaml', 'r') as yaml_file:
+              yaml_data = yaml.safe_load(yaml_file)
+            ext=yaml_data.get('generates').get('artifacts')[0].get('extension')
             for engine in exporter_config:
               os_type=exporter_config[engine]
-              ext='tar'
               file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
-              print(file)
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
-                ext='tar.gz'
               if '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
-                ext='tar.gz'
                 file=f'${{ inputs.exporter_name }}-{os_type}'
-                print(file)
+              print(file)
+              print(ext)
               print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
               exit_code = os.system(\"mkdir -p $HOME/.m2\")
               if exit_code != 0:
