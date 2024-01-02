@@ -201,7 +201,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to Nexus / S3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
@@ -225,14 +225,14 @@ jobs:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
                 exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                               -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
+                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=0.110.1262\
                               -DgeneratePom=true -Dpackaging={ext} \
                               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                               -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(ext=ext, file=file))
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
                 exit_code = os.system(\"aws s3 cp ./{file}.{ext} \
-                                s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/${{ steps.latest_tag.outputs.tag_ref }}/ \".format(ext=ext, file=file))
+                                s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/0.110.1262/ \".format(ext=ext, file=file))
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
