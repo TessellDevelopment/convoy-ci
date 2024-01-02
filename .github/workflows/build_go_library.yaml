@@ -201,7 +201,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: Pushing generated tar files to Nexus / S3
-        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
