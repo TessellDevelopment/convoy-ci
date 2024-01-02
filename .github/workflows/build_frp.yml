@@ -200,7 +200,7 @@
               echo $image
               echo $file
               docker build --no-cache -f $file -t ${{env.DOCKERHUB_ORG}}/$image .
-              docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:scan
               if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
                 docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
                 docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
