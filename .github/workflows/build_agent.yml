@@ -1,13 +1,11 @@
+---
 # This is a basic workflow to help you get started with Actions
 name: Tessell Pipelines Code Build
 
 # Controls when the workflow will run
 on:
   workflow_call:
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
@@ -20,22 +18,38 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-development
+      GOPATH: /home/github/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       OS_NAMES: "linux windows"
-      CLOUD_NAMES: "aws azure"
 
     steps:
-      - uses: actions/checkout@v3
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-          
+
+      - name: Set Pull repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-component" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          go version
+          go install golang.org/x/tools/cmd/goimports@latest
+          which go
+
       - name: Install AWS CLI
         run: |
           curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
@@ -52,22 +66,23 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
           aws configure set region ap-south-1
 
-      - name: create tar file 
+      - name: Make clients
         run: |
-          cd tessell;
-          for OS in ${OS_NAMES[@]} ;do
-           for CLOUD in ${CLOUD_NAMES[@]}; do
-            make OS=$OS CLOUD=$CLOUD package
-           done
+          for os in ${OS_NAMES[@]};do
+          echo "Building the service"
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          make os=$os package
+          make os=$os upgrader
+          make clean
+          ls -lrta package
           done
-          ls -l
-          
+
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             if (${{ github.event_name  == 'workflow_dispatch'}} ){
                 core.setOutput('commit_id', "${{ github.sha }}" )
@@ -75,7 +90,7 @@ jobs:
             else{
                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-            
+
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -94,14 +109,13 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-             
-            
+
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -150,6 +164,7 @@ jobs:
               }
             }
             console.log("Latest tag: " + latest_tag)
+
             // check if we have
             if ( latest_tag == '' || latest_tag === undefined) {
               console.log("Couldn't determine the latest tag, exiting. Retry manually..")
@@ -157,29 +172,44 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
 
-      - name: steps to upload tar files to nexus 
+      - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          for OS in ${OS_NAMES[@]} ;do
-           for CLOUD in ${CLOUD_NAMES[@]}; do
-              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                  -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                  -DgroupId=tessell.functions -DartifactId=tessell-task-handler-$OS-$CLOUD -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-                  -DgeneratePom=true -Dpackaging=tar \
-                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                  -Dfile=./tessell/tessell-task-handler-$OS-$CLOUD.tar -DrepositoryId=nexus
+            for os in ${OS_NAMES[@]};do
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=tessell.agent -DartifactId=tessell-agent-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=package/tessell-agent-pkg-$os.tar -DrepositoryId=nexus
+
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=tessell.agent -DartifactId=tessell-upgrader-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=package/tessell-upgrader-pkg-$os.tar -DrepositoryId=nexus
             done
-          done
 
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          for OS in ${OS_NAMES[@]} ;do
-            for CLOUD in ${CLOUD_NAMES[@]}; do
-              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD.tar s3://tesselltools/terls/tessell/functions/$VERSION/
-            done
-          done
+          for os in ${OS_NAMES[@]};do
+            aws s3 cp package/tessell-agent-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
+            aws s3 cp package/tessell-upgrader-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
+          done  
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
@@ -194,11 +224,12 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-  
+        
+
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
-    if: always() 
+    if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
@@ -307,3 +338,5 @@ jobs:
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+            

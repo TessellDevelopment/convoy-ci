@@ -56,6 +56,22 @@ jobs:
           cd mage
           go run bootstrap.go
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Make clients
         run: |
           echo "Building the service"
@@ -168,8 +184,9 @@ jobs:
           mkdir -p $PACKAGES_DIR
           cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
           cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+          cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
           pushd $PACKAGES_DIR
-          tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat
+          tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
           popd
           cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
           cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
@@ -177,7 +194,6 @@ jobs:
           tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
           popd
           
-            
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -197,8 +213,15 @@ jobs:
               -DgeneratePom=true -Dpackaging=tar.gz \
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
-              
-              
+
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+
+            
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
@@ -206,6 +229,7 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
               
       - name: tagging docker image with scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
            docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
       
@@ -217,6 +241,7 @@ jobs:
               
 
       - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
@@ -227,6 +252,7 @@ jobs:
           trivy-version: "0.29.1"
 
       - uses: actions/upload-artifact@v3
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
           name: image-scan-report
           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
@@ -234,7 +260,7 @@ jobs:
           
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        uses: sudo-bot/action-docker-sign@latest
+        uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
@@ -249,3 +275,106 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+
+  post-build-status-to-convoy:
+    runs-on: self-hosted
+    needs: build
+    if: always() 
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pybase64
+
+      - uses: technote-space/workflow-conclusion-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          python - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
+          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
+          
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFUL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
+          payload = {
+            "repoName": REPO,
+            "commitHash": COMMIT_HASH[:7],
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+
+          print(payload)
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+          }
+
+          max_retries = 3
+          retry_delay = 5 
+      
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()

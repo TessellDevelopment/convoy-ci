@@ -41,7 +41,23 @@ jobs:
           pwd
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "REPO_NAME=$(git ls-remote --get-url | xargs basename -s .git)" >> $GITHUB_ENV
-          
+     
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+  
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: finding the modified dir's
         id: modified_dir
         uses: actions/github-script@v6.3.3
@@ -65,7 +81,7 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              const excludedDirectories = ['.github','.gitignore'];
+              const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
               const modifiedFiles = response.data.files;
               const modifiedDirectories = [];
               response.data.files.forEach(file => {
@@ -93,14 +109,14 @@ jobs:
               echo "building  ${DIR}"
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
+              VERSION=$(yq .version convoy.yaml)
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
               terraform_build $PWD $ARTIFACT_FILE
             fi
           done
           ls -lrta $BUILD_DIR
 
-      - name: Upload terraform modules to nexus
+      - name: Upload terraform modules to nexus / S3 bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
@@ -114,8 +130,8 @@ jobs:
             if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
               ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
               cd $BASE_DIR/$DIR
-              VERSION=$(cat version.txt | awk -F "=" {'print $2'})
-              echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
+              VERSION=$(yq .version convoy.yaml)
+              echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE $VERSION
               terraform_build $PWD $ARTIFACT_FILE
 
               mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
@@ -124,7 +140,9 @@ jobs:
                 -DgeneratePom=true -Dpackaging=zip \
                 -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
                 -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
-
+              
+              aws s3 cp $ARTIFACT_FILE s3://tessell-terraform-modules-terls/$DIR/$VERSION/
+               
             fi
           done
 
@@ -149,7 +167,111 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
+  
+          
+  post-build-status-to-convoy:
+    runs-on: self-hosted
+    needs: build
+    if: always()
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pybase64
+
+      - uses: technote-space/workflow-conclusion-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          python - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
+          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
+          
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFUL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
+          payload = {
+            "repoName": REPO,
+            "commitHash": COMMIT_HASH[:7],
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+
+          print(payload)
+          headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+          }
+
+          max_retries = 3
+          retry_delay = 5 
+      
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
+          
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build

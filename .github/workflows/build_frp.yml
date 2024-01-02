@@ -1,0 +1,412 @@
+---
+  # This is a basic workflow to help you get started with Actions
+  name: Tessell Pipelines Code Build
+  
+  # Controls when the workflow will run
+  on:
+    workflow_call:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+  
+  # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  jobs:
+    # This workflow contains a single job called "build"
+    build:
+      # The type of runner that the job will run on
+      runs-on: self-hosted
+      outputs:
+        mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+        mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+        mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+        NEXUS_SERVER: nexus.tessell.cloud
+        NEXUS_PULL_REPOS_M2: tessell-m2-development
+        NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+        GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
+        GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+        GROUP_NAME: "tessell.frp"
+        GOPATH: /home/github/go
+        DOCKERHUB_ORG: "tesselldev"
+  
+      steps:
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+        - name: Set Docker Repository
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          shell: bash
+          run: |
+            echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+    
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+            
+        - name: Setup Go environment
+          uses: actions/setup-go@v4
+          with: 
+              go-version: 1.20.1
+     
+        - run: |
+            go version
+            echo $GOPATH
+            echo $GOROOT
+            echo $PATH
+            cd /root/ 
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            go env
+
+        - name: Login to Docker Hub
+          uses: docker/login-action@v1
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+
+        - name: Install AWS CLI
+          run: |
+            curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+            chmod +x install-aws.sh
+            sudo ./install-aws.sh "v2" "amd64"
+            rm install-aws.sh
+
+        - run: aws --version
+          shell: bash
+  
+        - name: Configure AWS Credentials
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          run: |
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
+            
+        - name: Make clients
+          run: |
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            chmod +x setup
+            ./setup -b
+    
+        - name: getting commit id for workflow_dispatch
+          uses: actions/github-script@v6.3.3
+          id: find_commit
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+            github-token: ${{ secrets.CIPIPELINE_USER_PASSWORD  }}
+            script: |
+              if (${{ github.event_name  == 'workflow_dispatch'}} ){
+                  core.setOutput('commit_id', "${{ github.sha }}" )
+              }
+              else{
+                  core.setOutput('commit_id', "${{ github.event.after }}" )
+              }
+              
+        - name: Get tags
+          uses: nick-fields/retry@v2.8.1
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+            timeout_seconds: 10
+            max_attempts: 3
+            retry_on: error
+            command: |
+              git fetch --all
+              git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
+              latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
+              if [[ "$latest_tags" == '' ]]; then 
+                echo " Tag is Empty"
+                exit 1
+              fi
+              echo "Tag is present: $latest_tags"       
+              for tag in $latest_tags; do tag_arr+=($tag); done
+              echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+              
+        - name: Find latest tag
+          uses: actions/github-script@v6.3.3
+          id: latest_tag
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          with:
+            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+            script: |
+              console.log("Tags are " + "${{ env.TAGS }}")
+              latest_tag = '0.0.0'
+              // process multiple tags if any
+              tags = "${{ env.TAGS }}".split(' ')
+              if (tags.length == 1) {
+                console.log("There is only one tag. Using it." + tags[0])
+                latest_tag = tags[0]
+              } else {
+                if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("Checking tag " + tag)
+                    if (latest_tag == null) {
+                      latest_tag = tag
+                      continue
+                    }
+                    latest_parts = latest_tag.split(".")
+                    tag_parts = tag.split(".")
+                    for (i = 0; i < tag_parts.length; i++) {
+                      if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                        console.log("Skipping " + tag)
+                        break
+                      }
+                      if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                        latest_tag = tag
+                        console.log("Setting " + latest_tag)
+                        break
+                      }
+                    }
+                  }
+                } else {
+                  tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                  latest_tag = tag_base.join(".") + ".0"
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("branch - Checking tag " + tag)
+                    tag_parts = tag.split(".")
+                    if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                      latest_parts = latest_tag.split(".")
+                      if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                        latest_tag = tag
+                      }
+                    }
+                  }
+                }
+              }
+              console.log("Latest tag: " + latest_tag)
+              // check if we have
+              if ( latest_tag == '' || latest_tag === undefined) {
+                console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+                process.exit(1);
+              }
+              core.setOutput('tag_ref', latest_tag)
+
+        - name: Build and push image
+          run: |
+            echo "Building the Image"
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+
+            # Build frpc_darwin image
+            cp ./dockerfiles/frpc-darwin/Dockerfile ./Dockerfile
+            docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin .
+            if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
+              docker tag ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:${{ steps.latest_tag.outputs.tag_ref }} 
+              docker push ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:${{ steps.latest_tag.outputs.tag_ref }} 
+            fi
+            rm -rf Dockerfile
+
+            # Build frps_linux image
+            cp ./dockerfiles/frps-linux/Dockerfile ./Dockerfile
+            docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/tessell-frps-service .
+            if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
+              docker tag ${{env.DOCKERHUB_ORG}}/tessell-frps-service:latest ${{env.DOCKERHUB_ORG}}/tessell-frps-service:${{ steps.latest_tag.outputs.tag_ref }} 
+              docker push ${{env.DOCKERHUB_ORG}}/tessell-frps-service:${{ steps.latest_tag.outputs.tag_ref }} 
+            fi
+            rm -rf Dockerfile
+
+        - name: Tagging docker image with scan
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          run: |
+            docker tag ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
+            docker tag ${{env.DOCKERHUB_ORG}}/tessell-frps-service:latest ${{env.DOCKERHUB_ORG}}/tessell-frps-service:scan
+  
+    
+        - name: Docker image scan
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          id: docker-image-scan-frpc
+          uses: azure/container-scan@v0.1
+          with:
+              severity-threshold: CRITICAL
+              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
+              username: ${{ secrets.DOCKER_USERNAME }}
+              password: ${{ secrets.DOCKER_PASSWORD }}   
+              trivy-version: 0.46.1
+              
+        - name: Upload image scan report
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          uses: actions/upload-artifact@v3
+          with:
+              name: image-scan-report
+              path: ${{ steps.docker-image-scan-frpc.outputs.scan-report-path }}
+
+        - name: Docker image scan
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          id: docker-image-scan-frps
+          uses: azure/container-scan@v0.1
+          with:
+              severity-threshold: CRITICAL
+              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps-service:scan
+              username: ${{ secrets.DOCKER_USERNAME }}
+              password: ${{ secrets.DOCKER_PASSWORD }}   
+              trivy-version: 0.46.1
+              
+        - name: Upload image scan report
+          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+          uses: actions/upload-artifact@v3
+          with:
+              name: image-scan-report
+              path: ${{ steps.docker-image-scan-frps.outputs.scan-report-path }}
+
+        - name: Push tar files to nexus
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          run: |
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            os_type=("linux" "windows")
+            services=("frpc")
+            for os in "${os_type[@]}"; do
+              for service in "${services[@]}"; do
+                echo "{$service}-{$os}"
+                mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=./tessell-$service-$os.tar -DrepositoryId=nexus
+              done
+            done
+
+        - name: Upload tar file to S3 Bucket
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          run: |
+            VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+            aws s3 cp tessell-frpc-linux.tar s3://tesselltools/terls/tessell/frp/$VERSION/
+            aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
+          
+        - name: Slack Notification
+          uses: act10ns/slack@v1.5.0
+          if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+          with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+  
+        - name: Get PR-Author,subject & body to send email
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          run: |
+            echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+            echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+   
+        - name: sending output
+          if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+          id: mail_info
+          run: |
+            echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+            echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+            echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+    
+            
+    post-build-status-to-convoy:
+      runs-on: self-hosted
+      needs: build
+      if: always()  
+      steps:
+        - name: Set up Python
+          uses: actions/setup-python@v2
+  
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+  
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install requests pybase64
+  
+        - uses: technote-space/workflow-conclusion-action@v3
+          with:
+            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+  
+        - name: POST API to Convoy
+          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+          env:
+            API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+            COMMIT_HASH: "${{github.sha}}"
+            REPO: "${{github.repository}}"
+            BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+            USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+            STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+            SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          run: |
+            python - <<EOF
+            import requests
+            import json
+            import os
+            import time
+            import base64
+  
+            API_URL = os.environ.get('API_URL')
+            REPO = os.environ.get('REPO')
+            COMMIT_HASH = os.environ.get('COMMIT_HASH')
+            BASE_BRANCH = os.environ.get('BASE_BRANCH')
+            STATUS = (os.environ.get('STATUS')).upper()
+            CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+            CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+  
+            if not(bool(BASE_BRANCH)):
+              BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+            
+            OWNER = REPO.split("/")
+            REPO = OWNER[1]
+            
+            if STATUS == 'SUCCESS':
+              STATUS = 'SUCCESSFUL'
+            if STATUS == 'FAILURE':
+              STATUS = 'FAILED'
+  
+            payload = {
+              "repoName": REPO,
+              "commitHash": COMMIT_HASH[:7],
+              "baseBranch": BASE_BRANCH,
+              "buildStatus": STATUS
+            }
+  
+            print(payload)
+            headers = {
+              'Content-Type': 'application/json',
+              'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            }
+  
+            max_retries = 3
+            retry_delay = 5 
+        
+            for _ in range(max_retries):
+                response = requests.post(API_URL, json=payload, headers=headers)
+                if response.status_code == 200:
+                    print(response.status_code)
+                    print(response.text)
+                    break
+                else:
+                    print(response.status_code)
+                    print(response.text)
+                    print(f"Retrying... ({max_retries - _} attempts left)")
+                    time.sleep(retry_delay)
+            else:
+                print("API request failed after retries.")
+                exit(1)
+            print("POST request Complete")
+            EOF
+  
+    send-mail:
+      uses: ./.github/workflows/email_dc.yaml
+      needs: build
+      with:
+        subject: ${{ needs.build.outputs.mail_subject_output }}
+        body: ${{ needs.build.outputs.mail_body_output }} 
+        to: ${{ needs.build.outputs.mail_id_output }}
+      secrets: inherit
+      if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+  
