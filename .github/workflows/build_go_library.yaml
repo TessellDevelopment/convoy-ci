@@ -70,7 +70,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with: 
-            go-version: 1.21.5
+            go-version: ${{vars.GO_VERSION}}
     
       - run: |
           go version
@@ -78,14 +78,14 @@ jobs:
           echo $GOROOT
           echo $PATH
           cd /root/ 
-          export GOROOT=/home/github/actions-runner/_work/_tool/go/1.21.5/x64
+          export GOROOT=${{github.workspace}}/_tool/go/${{vars.GO_VERSION}}/x64
           go env
 
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           export PATH=${PATH}:$GOPATH/bin
           echo $PATH
-          export GOROOT=/home/github/actions-runner/_work/_tool/go/1.21.5/x64
+          export GOROOT=${{github.workspace}}/_tool/go/${{vars.GO_VERSION}}/x64
           
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
@@ -217,8 +217,9 @@ jobs:
                 m2_directory = os.path.join(os.environ['HOME'], '.m2')
                 os.makedirs(m2_directory, exist_ok=True)
                 settings_xml_path = os.path.join(m2_directory, 'settings.xml')
-                os.system(f"cp .github/scripts/settings.xml {settings_xml_path}")
-                exit_code = os.system(f"cat {settings_xml_path}")
+                print(settings_xml_path)
+                os.system(f'cp .github/scripts/settings.xml {settings_xml_path}'')
+                exit_code = os.system(f'cat {settings_xml_path}')
                 if exit_code != 0:
                   raise Exception(f'Command failed with exit code {exit_code}')
                 exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
