@@ -61,13 +61,11 @@ jobs:
       - name: Extract version
         id: extract-version
         run: | 
-          VERSION=$(yq '.version' convoy.yaml)
-          AGENT_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
-          TASKHANDLER_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+          TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
-
+          
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
@@ -166,7 +164,7 @@ jobs:
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
                       --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
@@ -174,8 +172,9 @@ jobs:
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        shell: bash
         run: |
-          docker build -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
@@ -183,22 +182,20 @@ jobs:
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-
-          images=("etcd" "pulsar" "milvus")
-          for image in "${images[@]}"; do
-            plugin=".${image}Version"
-            version=$(yq -r $plugin convoy.yaml)
+          while IFS=$'\t' read -r image version _; do
+            echo $image
+            echo $version
             docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
             docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-          done
+          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.VERSION}} ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
 
   
       - name: Docker image scan
@@ -305,7 +302,7 @@ jobs:
 
           payload = {
             "repoName": REPO,
-            "commitHash": COMMIT_HASH,
+            "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }

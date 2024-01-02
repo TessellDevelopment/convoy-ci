@@ -1,0 +1,123 @@
+---
+name: Tessell Pipelines Code Build Pre Merge
+on:
+  workflow_call:
+    inputs:
+      type:
+        description: 'This is used to determine build type'
+        required: true
+        type: string
+
+jobs:
+
+  build-amd:
+    if: ${{inputs.type != 'arm' }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        shell: bash
+        run: |
+          dockerBuild() {
+            set -e
+            IMAGE_NAME="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            echo "Complete"
+            echo "$FILE"
+            echo "Starting Docker"
+            docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
+
+  build-arm:
+    if: ${{inputs.type == 'arm' }}
+    runs-on: ARM64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        shell: bash
+        run: |
+          mvnwBuild() {
+            set -e
+            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            set +e
+          }
+          jarBuild() {
+            set -e
+            sudo ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+            set +e
+          }
+          dockerBuild() {
+            set -e
+            IMAGE_NAME="$1"
+            FILE="$4"
+            mvnwBuild
+            sudo docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            while IFS=$'\t' read -r name buildFunction ext version file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+
+      - name: Remove target
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          sudo docker container prune --force
+          sudo docker volume prune --force
+          

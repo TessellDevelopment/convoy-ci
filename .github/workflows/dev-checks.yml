@@ -37,6 +37,9 @@ on:
 jobs:
   dev-checks:
     runs-on: self-hosted
+    env:
+      NEXUS_REPO_NPM: tessell-repos-npm-component
+      NEXUS_URL: nexus.tessell.cloud
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -75,14 +78,14 @@ jobs:
               echo "Revert branch, skipping Format check"
               exit 0
           fi
-          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TDEVOPS-' || echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^TOPS-'; then
-            echo "Branch name starts with 'TS-' or 'revert-' or 'TDEVOPS-'or 'TOPS-" 
+          if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(TS-|SRE-|TDEVOPS-|TOPS-)'; then
+            echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
           else
-            echo "Branch name does not start with 'TS-' or 'revert-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
+            echo "Branch name does not start with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'. Checking PR title format."
             PULL_REQUEST_TITLE="$PR_TITLE"
-            PATTERN="(TS|TDEVOPS|TOPS)-[0-9]+\s\|\s"
+            PATTERN="(TS|TDEVOPS|TOPS|SRE)-[0-9]+\s\|\s"
             if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' format."
+              echo "Error: Pull request title is not in the required format. Please use 'TS-XXXX | --' or 'TDEVOPS-XXXX | --' or 'TOPS-XXXX | --' or 'SRE-XXXX | --' format."
               exit 1
             else 
               echo "PR Title is in the valid format."
@@ -117,8 +120,8 @@ jobs:
               echo "Revert branch, skipping Jira Extraction"
               exit 0
           fi
-          jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-          jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
+          jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
+          jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
           extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
 
       - name: Validate Jira Ticket
@@ -147,6 +150,16 @@ jobs:
             echo "No double commit conflicts found in Branch or PR title."
           fi
 
+      - name: Adding Common UI config
+        run: |
+          set +e
+          rm ~/.npmrc
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
+          echo "//${{env.NEXUS_URL}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
+          echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          cat .npmrc
+
       - name: import packages for json lint
         run: |
           sudo sudo npm install jsonlint -g
@@ -164,7 +177,7 @@ jobs:
           fi
       - name: install node fetch 
         run: | 
-          npm install node-fetch
+          npm install node-fetch 
 
       - name: Install dependencies
         run: npm install js-yaml
@@ -274,21 +287,22 @@ jobs:
             if [ -f convoy.yaml ]; then
               if grep -q 'version:' convoy.yaml; then
                 echo "Version found in convoy.yaml"
+                
                 if [ -f gradle.properties ]; then
                   if grep -q '^\s*version=' gradle.properties; then
                     echo "Please remove version from gradle.properties"
                     exit 1
                   else
-                    echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
+                    echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
                   fi
                 fi
               else
                 echo "Version not found in convoy.yaml"
-                echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+                echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
               fi
             else
               echo "convoy.yaml not found"
-              echo "check_version_in_gradle=true" >> $GITHUB_OUTPUT
+              echo "check_version_in_gradle=false" >> $GITHUB_OUTPUT
             fi
             
       - name: check for gradle properties version
@@ -316,9 +330,9 @@ jobs:
             });
             version_updated = false
              response.data.files.forEach(function(file_entry) {
-               if (file_entry.filename == 'gradle.properties') {
+               if (file_entry.filename == 'convoy.yaml') {
                    console.log(file_entry.patch)
-                   if (file_entry.patch.includes("-version=") && file_entry.patch.includes("+version=")) {
+                   if (file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                        version_updated = true
                    }
                }
@@ -458,6 +472,8 @@ jobs:
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
+            const yaml = require("js-yaml");
+            const fs = require("fs");
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
             if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
@@ -475,21 +491,25 @@ jobs:
                 head: head_commit,
                 base: base_commit
             });
-              version_updated = true;
-              const excludeDirs = ['.github', '.gitignore', 'README.md'];
-              response.data.files.forEach(function(file_entry) {
-                if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
-                    version_updated = false;
-                }
-              });
-              response.data.files.forEach(function(file_entry) {
-                  if (file_entry.filename === 'helm-chart/Chart.yaml' && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
-                    version_updated = true;
-                }
-              });
-              if (version_updated == false ) {
-                core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+            yamlFile = fs.readFileSync("convoy.yaml", "utf8");
+            convoyYaml = yaml.load(yamlFile);
+            chartPath = convoyYaml['generates']['helmCharts'][0].chartPath
+            chartPath = chartPath.substring(2)
+            version_updated = true;
+            const excludeDirs = ['.github', '.gitignore', 'README.md'];
+            response.data.files.forEach(function(file_entry) {
+              if (!excludeDirs.some(dir => file_entry.filename.startsWith(dir))) {
+                  version_updated = false;
               }
+            });
+            response.data.files.forEach(function(file_entry) {
+                if (file_entry.filename === chartPath && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
+                  version_updated = true;
+              }
+            });
+            if (version_updated == false ) {
+              core.setFailed("Tessell Libraries must update the version in chart.yaml file")
+            }
 
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
