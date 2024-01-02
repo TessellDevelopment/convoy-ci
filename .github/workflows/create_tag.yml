@@ -226,13 +226,15 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          HEAD_BRANCH: "${{github.head_ref}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          OWNER: ${{github.repository_owner}}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
         run: |
           python - <<EOF
@@ -244,6 +246,18 @@ jobs:
           import base64
           import subprocess
 
+          def get_directories():
+            headers = {
+                'Authorization': f'Bearer {GITHUB_TOKEN}',
+                'Accept': 'application/vnd.github.v3+json',
+            }
+            url = f'${{vars.GH_API_URL}}/repos/{OWNER}/{REPO}/contents'
+            params = {'ref': HEAD_BRANCH}
+            response = requests.get(url, headers=headers, params=params)
+            contents = response.json()
+            directories = [item['name'] for item in contents if item['type'] == 'dir' and item['name'] != '.github']
+            return directories
+
           def delete_keys(data, keys_to_exclude):
             for key in keys_to_exclude:
                 try:
@@ -254,21 +268,8 @@ jobs:
 
           def get_artifacts_tf():
             artifacts = []
-            GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-            url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
-            headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-            res = requests.get(url, headers=headers)
-            files_data = res.json()
-          
-            modified_folders = set()
-            for file_data in files_data:
-              file_path = file_data['filename']
-              folder_path = file_path.split('/')[0] 
-              if folder_path == 'convoy.yaml':
-                continue 
-              modified_folders.add(folder_path)
-          
-            print("Modified folders:")
+            modified_folders = get_directories()
+            print("Terraform Folders")
             for folder in modified_folders:
               if '.github' in folder or len(folder) == 0:
                   continue
@@ -332,22 +333,8 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'nested':
-                artifacts = []
-                GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-                headers = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
-                url = f'https://api.github.com/repos/TessellDevelopment/{REPO}/pulls/{PR_ID}/files?per_page=100'
-                res = requests.get(url, headers=headers)
-                files_data = res.json()
-
-                modified_folders = set()
-                for file_data in files_data:
-                    file_path = file_data['filename']
-                    folder_path = file_path.split('/')[0] 
-                    if folder_path == 'convoy.yaml':
-                      continue 
-                    modified_folders.add(folder_path)
-
-                print("Modified folders:")
+                modified_folders = get_directories()
+                print("Terraform folders:")
                 for folder in modified_folders:
                     if '.github' in folder or len(folder) == 0:
                         continue
@@ -395,7 +382,10 @@ jobs:
             return
             
           REPO = os.environ.get('REPO')
+          OWNER = os.environ.get('OWNER')
+          GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          HEAD_BRANCH = os.environ.get('HEAD_BRANCH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
