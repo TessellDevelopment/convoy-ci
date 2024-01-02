@@ -218,7 +218,7 @@ jobs:
                 os.makedirs(m2_directory, exist_ok=True)
                 settings_xml_path = os.path.join(m2_directory, 'settings.xml')
                 print(settings_xml_path)
-                os.system(f'cp .github/scripts/settings.xml {settings_xml_path}'')
+                os.system(f'cp .github/scripts/settings.xml {settings_xml_path}')
                 exit_code = os.system(f'cat {settings_xml_path}')
                 if exit_code != 0:
                   raise Exception(f'Command failed with exit code {exit_code}')
