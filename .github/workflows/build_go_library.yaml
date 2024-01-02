@@ -217,14 +217,13 @@ jobs:
                 m2_directory = os.path.join(os.environ['HOME'], '.m2')
                 os.makedirs(m2_directory, exist_ok=True)
                 settings_xml_path = os.path.join(m2_directory, 'settings.xml')
-                print(settings_xml_path)
                 os.system(f'cp .github/scripts/settings.xml {settings_xml_path}')
                 exit_code = os.system(f'cat {settings_xml_path}')
                 if exit_code != 0:
                   raise Exception(f'Command failed with exit code {exit_code}')
                 exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                               -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=0.0.12620\
+                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
                               -DgeneratePom=true -Dpackaging={ext} \
                               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                               -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(ext=ext, file=file))
