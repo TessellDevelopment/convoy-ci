@@ -10,6 +10,11 @@ on:
         required: false
         type: string
         default: 'false'
+      debug_mode:
+        description: 'Enabling debug mode '
+        required: false
+        type: string
+        default: 'false'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -41,12 +46,14 @@ jobs:
         run: |
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
           
+          
       - name: Set java home for java_17
         if:  ${{ inputs.java_17 == 'true' }} 
         shell: bash
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
           echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
+          
           
       - name: check whether java varibale 
         if:  ${{ inputs.java_17 == 'true' }} 
@@ -55,11 +62,17 @@ jobs:
           echo $JAVA_HOME
           echo $PATH
           java -version
+          
+      - name: Build in Debug mode
+        if: ${{ inputs.debug_mode == 'true' }} 
+        run: |
+          echo "DEBUG_OPTION=--debug --stacktrace" >> $GITHUB_ENV
+          
 
       - name: Build
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          ./gradlew mavenPackage --console plain --stacktrace \
+          ./gradlew mavenPackage --console plain ${{ env.DEBUG_OPTION}} \
             -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -68,7 +81,7 @@ jobs:
       - name: Build with Gradle
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          ./gradlew mavenDeploy --console plain  \
+          ./gradlew mavenDeploy --console plain  ${{ env.DEBUG_OPTION}} \
             -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
