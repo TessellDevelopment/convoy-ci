@@ -78,14 +78,14 @@ jobs:
           echo $GOROOT
           echo $PATH
           cd /root/ 
-          export GOROOT=${{github.workspace}}/_tool/go/${{vars.GO_VERSION}}/x64
+          export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
           go env
 
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
           export PATH=${PATH}:$GOPATH/bin
           echo $PATH
-          export GOROOT=${{github.workspace}}/_tool/go/${{vars.GO_VERSION}}/x64
+          export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
           
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
