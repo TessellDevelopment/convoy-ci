@@ -200,19 +200,12 @@
               echo $image
               echo $file
               docker build --no-cache -f $file -t ${{env.DOCKERHUB_ORG}}/$image .
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
               if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
                 docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
                 docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
               fi
             done < <(yq e '.generates.dockerImages[] | [.name, .dockerfile] | @tsv' convoy.yaml)
-
-
-        - name: Tagging docker image with scan
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          run: |
-            docker tag ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:latest ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
-            docker tag ${{env.DOCKERHUB_ORG}}/tessell-frps-service:latest ${{env.DOCKERHUB_ORG}}/tessell-frps-service:scan
-  
     
         - name: Docker image scan
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -238,7 +231,7 @@
           uses: azure/container-scan@v0.1
           with:
               severity-threshold: CRITICAL
-              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps-service:scan
+              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps:scan
               username: ${{ secrets.DOCKER_USERNAME }}
               password: ${{ secrets.DOCKER_PASSWORD }}   
               trivy-version: 0.46.1
