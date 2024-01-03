@@ -9,15 +9,18 @@ jobs:
     runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
 
       - name: PATCH API to Convoy
         run: |
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64)
-          curl --location --request PATCH 'http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/service-manifest' \
-            --header 'Authorization: Basic $TOKEN' \
-            --data ''
-
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo $TOKEN
+          RESPONSE=$(curl --location --request PATCH "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/service-manifest" \
+            --header "Authorization: Basic $TOKEN" \
+            --data '')
+          echo "$RESPONSE"
+          
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         with:
