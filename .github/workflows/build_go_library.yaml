@@ -67,8 +67,26 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
           aws configure set region ap-south-1
 
+      - name: Setup Go environment
+        uses: actions/setup-go@v4
+        with: 
+            go-version: ${{vars.GO_VERSION}}
+    
+      - run: |
+          go version
+          echo $GOPATH
+          echo $GOROOT
+          echo $PATH
+          cd /root/ 
+          export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
+          go env
+
       - name: Make Clients for ${{ inputs.exporter_name }}
         run: |
+          export PATH=${PATH}:$GOPATH/bin
+          echo $PATH
+          export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
+          
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           python3 -c """
@@ -182,62 +200,40 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
 
-      - name: Pushing generated tar files to nexus
+      - name: Pushing generated tar files to Nexus / S3
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
             import json
             import os
-            exporter_name='${{ inputs.exporter_name }}'
-            exporter_config = json.loads('${{ inputs.exporter_config }}')
-            for engine in exporter_config:
-              os_type=exporter_config[engine]
-              ext='tar'
-              file=f'${{ inputs.exporter_name }}-{os_type}-{engine}'
-              print(file)
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-db-perf-insights-exporter':
-                ext='tar.gz'
-              if '${{github.repository}}' == 'TessellDevelopment/tessell-victoria-metrics':
-                ext='tar.gz'
-                file=f'${{ inputs.exporter_name }}-{os_type}'
-                print(file)
-              print(\"{exporter_name}-{os_type}-{engine}\".format(os_type=exporter_config[engine], engine=engine,exporter_name=exporter_name )) 
-              exit_code = os.system(\"mkdir -p $HOME/.m2\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cp .github/scripts/settings.xml $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"cat $HOME/.m2/settings.xml\")
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
-              exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                            -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                            -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
-                            -DgeneratePom=true -Dpackaging={ext} \
-                            -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                            -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(os_type=exporter_config[engine], engine=engine, ext=ext, file=file))
-              if exit_code != 0:
-                raise Exception('Command failed with exit code {}'.format(exit_code))
+            import yaml
+            with open('convoy.yaml', 'r') as yaml_file:
+              yaml_data = yaml.safe_load(yaml_file)
+            artifacts = yaml_data.get('generates').get('artifacts')
+            for artifact in artifacts:
+                file = artifact['name']
+                ext = artifact['extension']
+                print(file+'-'+ext)
+                m2_directory = os.path.join(os.environ['HOME'], '.m2')
+                os.makedirs(m2_directory, exist_ok=True)
+                settings_xml_path = os.path.join(m2_directory, 'settings.xml')
+                os.system(f'cp .github/scripts/settings.xml {settings_xml_path}')
+                exit_code = os.system(f'cat {settings_xml_path}')
+                if exit_code != 0:
+                  raise Exception(f'Command failed with exit code {exit_code}')
+                exit_code = os.system(\"mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                              -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
+                              -DgeneratePom=true -Dpackaging={ext} \
+                              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                              -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(ext=ext, file=file))
+                if exit_code != 0:
+                  raise Exception('Command failed with exit code {}'.format(exit_code))
+                exit_code = os.system(\"aws s3 cp ./{file}.{ext} \
+                                s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/${{ steps.latest_tag.outputs.tag_ref }}/ \".format(ext=ext, file=file))
+                if exit_code != 0:
+                  raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
-
-      - name: Upload files to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          config="${{ inputs.exporter_config }}"
-          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          config=$(echo "$config" | sed 's/\\//g')
-          for key in $(echo "$config" | jq -r 'keys[] as $k | "\($k),\(.[$k])"'); do
-            engine=$(echo "$key" | cut -d',' -f1)
-            os_type=$(echo "$key" | cut -d',' -f2)
-            if [[ ${{ github.repository }} == "TessellDevelopment/tessell-db-perf-insights-exporter" ]]; then
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            elif [[ ${{ github.repository }} == "TessellDevelopment/tessell-victoria-metrics" ]]; then
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type.tar.gz s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            else
-              aws s3 cp ./${{ inputs.exporter_name }}-$os_type-$engine.tar s3://tesselltools/terls/tessell/${{ inputs.exporter_name }}/$VERSION/
-            fi
-          done
 
   post-build-status-to-convoy:
     runs-on: self-hosted

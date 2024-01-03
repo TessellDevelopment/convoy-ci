@@ -99,12 +99,15 @@ jobs:
           export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           cp configs/qarel.json config.json
+          source qavenv/bin/activate
           make clients -B
 
       - name: Dry run
         id: dry_run_check
         shell: bash
         run: |
+          
+          source qavenv/bin/activate
           python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
       
       - name: Extract version
