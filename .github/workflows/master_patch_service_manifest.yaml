@@ -16,7 +16,7 @@ jobs:
         run: |
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
           echo $TOKEN
-          RESPONSE=$(curl --location --request PATCH "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/service-manifest" \
+          RESPONSE=$(curl --location --request PATCH "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/service-manifest" \
             --header "Authorization: Basic $TOKEN" \
             --data '')
           echo "$RESPONSE"
