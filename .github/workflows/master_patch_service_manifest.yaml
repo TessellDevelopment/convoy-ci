@@ -5,7 +5,7 @@ on:
     
 jobs:
   
-  post-build-status-to-convoy:
+  patch-service-manifest-to-convoy:
     runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
