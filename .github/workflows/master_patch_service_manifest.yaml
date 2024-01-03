@@ -21,6 +21,8 @@ jobs:
             --header "Authorization: Basic $TOKEN" \
             --data '')
           echo "$RESPONSE"
+          if [[ "$RESPONSE" != "Successfully updated repo_manifest in the redis" ]]; then
+            exit 1
           
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
