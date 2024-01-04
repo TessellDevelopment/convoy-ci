@@ -182,6 +182,17 @@ jobs:
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+              echo "Building $image Image"
+              docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} .
+              docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+
           while IFS=$'\t' read -r image version _; do
             echo $image
             echo $version
