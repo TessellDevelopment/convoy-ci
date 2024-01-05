@@ -29,7 +29,6 @@ jobs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
-      
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
@@ -359,3 +358,14 @@ jobs:
             steps: ${{ toJson(steps) }}
             channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
+
+
+  send-mail:
+    uses: ./.github/workflows/email_dc.yaml
+    needs: build
+    with:
+      subject: ${{ needs.build.outputs.mail_subject_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
+      to: ${{ needs.build.outputs.mail_id_output }}
+    secrets: inherit
+    if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
