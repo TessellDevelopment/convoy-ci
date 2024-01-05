@@ -180,7 +180,7 @@ jobs:
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
+          # docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
           
