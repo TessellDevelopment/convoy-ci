@@ -14,8 +14,9 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
-      DOCKERHUB_ORG: "tesselldev"
-
+      DOCKERHUB_ORG: "tessellprod"  
+# Change dockerhub org
+# Change version to latest tag and uncomment push to tessellprod
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
