@@ -14,7 +14,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
-      DOCKERHUB_ORG: "tessellprod"  
+      DOCKERHUB_ORG: "tesselldev"  
 # Change dockerhub org
 # Change version to latest tag and uncomment push to tessellprod
     steps:
@@ -185,7 +185,10 @@ jobs:
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
           
           while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+            echo "$image"
+            echo "$function"
+            echo "$file"
+            if [[ "$function" == "dockerBuild" && $file != null ]]; then
               echo "Building $image Image"
               docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 .
               docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
