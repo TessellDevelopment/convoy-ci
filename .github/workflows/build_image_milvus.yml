@@ -175,14 +175,14 @@ jobs:
         # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.110.18127 \
-                        --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
-                        --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                        --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
-                        --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
+          # docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.110.18127 \
+          #               --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
+          #               --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+          #               --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
+          #               --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           # docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
-          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
+          # docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
+          # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:0.110.18127
           
           while IFS=$'\t' read -r image function file _; do
             echo "$image"
@@ -190,21 +190,21 @@ jobs:
             echo "$file"
             if [[ "$function" == "dockerBuild" && $file != null ]]; then
               echo "Building $image Image"
-              docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 .
-              docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
-              docker tag ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
-              docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
+              # docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 .
+              # docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
+              # docker tag ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
+              # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
           while IFS=$'\t' read -r image version _; do
             echo $image
             echo $version
-            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
-            docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
-            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
+            # docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            # docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
+            # docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
+            # docker tag ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
+            # docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:0.110.18127
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
