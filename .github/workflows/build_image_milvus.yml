@@ -188,7 +188,7 @@ jobs:
             echo "$image"
             echo "$function"
             echo "$file"
-            if [[ "$function" == "dockerBuild" && $file != null ]]; then
+            if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
               echo "Building $image Image"
               # docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.110.18127 .
               # docker push ${{env.DOCKERHUB_ORG}}/$image:0.110.18127
