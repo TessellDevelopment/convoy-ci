@@ -45,7 +45,7 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
           aws configure set region ap-south-1
-          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 219776070323.dkr.ecr.ap-south-1.amazonaws.com
+          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -179,16 +179,16 @@ jobs:
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
               echo "Building $image Image"
               docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} .
               docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-              docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-              docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -198,19 +198,20 @@ jobs:
             docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
             docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
+          docker tag ${{env.DOCKERHUB_ORG}}/bookie:latest ${{env.DOCKERHUB_ORG}}/bookie:scan
+          docker tag ${{env.DOCKERHUB_ORG}}/zookeeper:latest ${{env.DOCKERHUB_ORG}}/zookeeper:scan
 
-  
       - name: Docker image scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        id: docker-image-scan
+        id: docker-image-scan-plugin
         uses: azure/container-scan@v0.1
         with:
             severity-threshold: CRITICAL
@@ -224,7 +225,43 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
             name: image-scan-report
-            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+            path: ${{ steps.docker-image-scan-plugin.outputs.scan-report-path }}
+  
+      - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: docker-image-scan-bookie
+        uses: azure/container-scan@v0.1
+        with:
+            severity-threshold: CRITICAL
+            image-name: ${{env.DOCKERHUB_ORG}}/bookie:scan
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}   
+            trivy-version: 0.46.1
+            
+      - name: Upload image scan report
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        uses: actions/upload-artifact@v3
+        with:
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan-bookie.outputs.scan-report-path }}
+  
+      - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: docker-image-scan-zookeeper
+        uses: azure/container-scan@v0.1
+        with:
+            severity-threshold: CRITICAL
+            image-name: ${{env.DOCKERHUB_ORG}}/zookeeper:scan
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}   
+            trivy-version: 0.46.1
+            
+      - name: Upload image scan report
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        uses: actions/upload-artifact@v3
+        with:
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan-zookeeper.outputs.scan-report-path }}
   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
