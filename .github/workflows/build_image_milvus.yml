@@ -169,6 +169,13 @@ jobs:
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
 
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
+              echo "Building $image Image"
+              docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} .
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
