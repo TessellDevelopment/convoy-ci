@@ -246,7 +246,7 @@ jobs:
           import base64
           import subprocess
 
-          def tf_modules_folders():
+          def get_tf_modules_folders():
             headers = {
                 'Authorization': f'Bearer {GITHUB_TOKEN}',
                 'Accept': 'application/vnd.github.v3+json',
@@ -268,9 +268,9 @@ jobs:
 
           def get_artifacts_tf():
             artifacts = []
-            modified_folders = tf_modules_folders()
+            tf_modules_folders = get_tf_modules_folders()
             print("Terraform Folders")
-            for folder in modified_folders:
+            for folder in tf_modules_folders:
               if '.github' in folder or len(folder) == 0:
                   continue
               print(folder)  
@@ -333,9 +333,9 @@ jobs:
                 artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
 
             elif type == 'nested':
-                modified_folders = tf_modules_folders()
+                tf_modules_folders = get_tf_modules_folders()
                 print("Terraform folders:")
-                for folder in modified_folders:
+                for folder in tf_modules_folders:
                     print(folder)  
                     path = f'./{folder}/convoy.yaml'
                     with open(path, 'r') as module_content:
