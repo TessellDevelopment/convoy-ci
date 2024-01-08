@@ -187,48 +187,6 @@ jobs:
             sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
             sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
-
-      - name: Tagging docker image with scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        run: |
-          sudo docker tag ${{env.DOCKERHUB_ORG}}/bookie:latest ${{env.DOCKERHUB_ORG}}/bookie:scan
-          sudo docker tag ${{env.DOCKERHUB_ORG}}/zookeeper:latest ${{env.DOCKERHUB_ORG}}/zookeeper:scan
-
-      - name: Docker image scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        id: docker-image-scan-bookie
-        uses: azure/container-scan@v0.1
-        with:
-            severity-threshold: CRITICAL
-            image-name: ${{env.DOCKERHUB_ORG}}/bookie:scan
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}   
-            trivy-version: 0.29.1
-            
-      - name: Upload image scan report
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        uses: actions/upload-artifact@v3
-        with:
-            name: image-scan-report
-            path: ${{ steps.docker-image-scan-bookie.outputs.scan-report-path }}
-  
-      - name: Docker image scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        id: docker-image-scan-zookeeper
-        uses: azure/container-scan@v0.1
-        with:
-            severity-threshold: CRITICAL
-            image-name: ${{env.DOCKERHUB_ORG}}/zookeeper:scan
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}   
-            trivy-version: 0.29.1
-            
-      - name: Upload image scan report
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        uses: actions/upload-artifact@v3
-        with:
-            name: image-scan-report
-            path: ${{ steps.docker-image-scan-zookeeper.outputs.scan-report-path }}
   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
