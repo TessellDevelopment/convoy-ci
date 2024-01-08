@@ -45,11 +45,11 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
           aws configure set region ap-south-1
-          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      # - name: Login to Amazon ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v2
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
@@ -163,7 +163,7 @@ jobs:
       # - name: Build image
       #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
       #   run: |
-      #     docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
+      #     sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
       #                 --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
       #                 --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
       #                 --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
@@ -172,7 +172,7 @@ jobs:
       #     while IFS=$'\t' read -r image function file _; do
       #       if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
       #         echo "Building $image Image"
-      #         docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+      #         sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
       #       fi
       #     done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -180,41 +180,41 @@ jobs:
         # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.0.18127-1 \
+          sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.0.18127-1 \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
-          docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
+          sudo docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
+          sudo docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
+          sudo docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
           
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
               echo "Building $image Image"
-              docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 .
-              docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-              docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
-              docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 .
+              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
+              sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+              sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
           while IFS=$'\t' read -r image version _; do
             echo $image
             echo $version
-            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-            docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
-            docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+            sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
+            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
-          docker tag ${{env.DOCKERHUB_ORG}}/bookie:latest ${{env.DOCKERHUB_ORG}}/bookie:scan
-          docker tag ${{env.DOCKERHUB_ORG}}/zookeeper:latest ${{env.DOCKERHUB_ORG}}/zookeeper:scan
+          sudo docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
+          sudo docker tag ${{env.DOCKERHUB_ORG}}/bookie:latest ${{env.DOCKERHUB_ORG}}/bookie:scan
+          sudo docker tag ${{env.DOCKERHUB_ORG}}/zookeeper:latest ${{env.DOCKERHUB_ORG}}/zookeeper:scan
 
       - name: Docker image scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
