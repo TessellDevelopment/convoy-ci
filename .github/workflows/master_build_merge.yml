@@ -145,6 +145,7 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
+            echo "$FILE"
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
