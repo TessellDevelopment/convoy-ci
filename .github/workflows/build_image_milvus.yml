@@ -156,7 +156,7 @@ jobs:
           chmod +x ./images/bookie/script.sh
           chmod +x ./images/zookeeper/generate-zookeeper-config.sh
           while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && ! "$file" != "null" ]]; then
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
               sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
             fi
@@ -169,7 +169,7 @@ jobs:
           chmod +x ./images/bookie/script.sh
           chmod +x ./images/zookeeper/generate-zookeeper-config.sh
           while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && ! "$file" != "null" ]]; then
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
               sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} .
               sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
