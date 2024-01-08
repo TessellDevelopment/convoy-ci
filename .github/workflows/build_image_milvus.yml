@@ -45,10 +45,6 @@ jobs:
           export AWS_PROFILE=tessell-devqa-infra
           sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 219776070323.dkr.ecr.ap-south-1.amazonaws.com
 
-      # - name: Login to Amazon ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v2
-
       - name: Login to Docker
         run : |
           sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
@@ -156,42 +152,42 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
       
-      # - name: Build image
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-      #   run: |
-      #     sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
-      #                 --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
-      #                 --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-      #                 --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
-      #                 --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
+      - name: Build image
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        run: |
+          sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
+                      --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
+                      --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                      --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
+                      --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
 
-      #     while IFS=$'\t' read -r image function file _; do
-      #       if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
-      #         echo "Building $image Image"
-      #         sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
-      #       fi
-      #     done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
+              echo "Building $image Image"
+              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:0.0.18127-1 \
+          sudo docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          sudo docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
-          sudo docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
-          sudo docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18127-1
+          sudo docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          sudo docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          sudo docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
               echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 .
-              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-              sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
-              sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} .
+              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+              sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -199,10 +195,10 @@ jobs:
             echo $image
             echo $version
             sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:0.0.18127-1 ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
-            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:0.0.18127-1
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
