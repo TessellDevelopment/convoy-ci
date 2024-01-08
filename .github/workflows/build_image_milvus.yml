@@ -12,7 +12,7 @@ jobs:
     runs-on: ARM64
     needs: find-latest-tag
     env:
-      TAG: ${{needs.find-latest-tag.outputs.latest_tag}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       DOCKERHUB_ORG: "tesselldev"
     steps:
@@ -139,7 +139,7 @@ jobs:
     runs-on: self-hosted
     needs: find-latest-tag
     env:
-      TAG: ${{needs.find-latest-tag.outputs.latest_tag}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
       DOCKERHUB_ORG: "tesselldev"
@@ -209,8 +209,8 @@ jobs:
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{env.TAG}} \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                        --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
-                        --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
+                        --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
+                        --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
           docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
           docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
