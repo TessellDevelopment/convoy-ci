@@ -55,6 +55,7 @@ jobs:
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           chmod +x setup
           if [[ ${{github.repository}} == 'TessellDevelopment/elastic-agent' ]]; then
+            GOOS=linux GOARCH=amd64 go build .
             ./setup -i
           else
             ./setup -g -i
