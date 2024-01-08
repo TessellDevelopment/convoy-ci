@@ -90,6 +90,9 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
+            if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
             mvnwBuild
             sudo docker build -f $FILE -t $IMAGE_NAME .
             set +e
