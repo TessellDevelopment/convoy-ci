@@ -34,7 +34,7 @@ jobs:
         run: |
           curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
           chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
+          sudo ./install-aws.sh "v2" "arm64"
           rm install-aws.sh
     
       - run: aws --version
@@ -42,10 +42,8 @@ jobs:
 
       - name: Configure AWS Credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-          aws configure set region ap-south-1
-          sudo aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
+          export AWS_PROFILE=tessell-devqa-infra
+          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 219776070323.dkr.ecr.ap-south-1.amazonaws.com
 
       # - name: Login to Amazon ECR
       #   id: login-ecr
