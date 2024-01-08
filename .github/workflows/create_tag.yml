@@ -336,8 +336,6 @@ jobs:
                 modified_folders = tf_modules_folders()
                 print("Terraform folders:")
                 for folder in modified_folders:
-                    if '.github' in folder or len(folder) == 0:
-                        continue
                     print(folder)  
                     path = f'./{folder}/convoy.yaml'
                     with open(path, 'r') as module_content:
