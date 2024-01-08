@@ -154,6 +154,7 @@ jobs:
         run: |
           chmod +x ./images/bookie/script.sh
           chmod +x ./images/zookeeper/generate-zookeeper-config.sh
+          export DOCKER_BUILDKIT=0
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && ! -z "$file" ]]; then
               echo "Building $image Image"
