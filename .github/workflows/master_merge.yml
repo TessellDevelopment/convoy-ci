@@ -77,7 +77,7 @@ jobs:
 
   build:
     needs: [build-file,find-latest-tag]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-542-3
     secrets: inherit
     with:
       type: ${{needs.build-file.outputs.type}}
