@@ -9,7 +9,7 @@ jobs:
   file-check:
     runs-on: self-hosted
     outputs:
-      any-modified: ${{steps.check-file-output.outputs.any-modified}}
+      any-modified: ${{steps.changed-files.outputs.any_modified}}
     name: Check changed files
     steps:
       - uses: actions/checkout@v4
@@ -23,12 +23,6 @@ jobs:
           files: |
             Chart.yaml
             services/**
-
-      - name: Set Output
-        id: check-file-output
-        run: |
-          echo "any-modified=${{steps.changed-files.outputs.any_modified}}" >> $GITHUB_OUTPUT
-
 
   build:
     runs-on: self-hosted
@@ -68,7 +62,13 @@ jobs:
           echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-          template_version=$(yq '.convoy-helm-template' Chart.yaml)
+          template_version=$(yq --exit-status '.convoy-helm-template' convoy.yaml)
+          if [ $? -eq 0 ]; then
+              echo "convoy-helm-template version: $template_version"
+          else
+              echo "convoy-helm-template version not found.Exiting."
+              exit 1
+          fi
           git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
