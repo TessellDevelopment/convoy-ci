@@ -7,9 +7,6 @@ jobs:
   find-latest-tag:
     runs-on: self-hosted
     outputs:
-      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
       tag: ${{ steps.latest_tag.outputs.tag_ref }}
     steps:
       - name: Get branch name
@@ -114,6 +111,10 @@ jobs:
   build-arm-images:
     runs-on: ARM64
     needs: find-latest-tag
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       TAG: ${{needs.find-latest-tag.outputs.tag}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
