@@ -56,7 +56,7 @@ jobs:
           chmod +x setup
           if [[ ${{github.repository}} == 'TessellDevelopment/elastic-agent' ]]; then
             GOOS=linux GOARCH=amd64 go build .
-            ./setup -i
+            docker build -t ${{ env.DOCKER_IMAGE_NAME }} .
           else
             ./setup -g -i
           fi
