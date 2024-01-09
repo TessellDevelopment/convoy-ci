@@ -62,7 +62,7 @@ jobs:
           echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-          template_version=$(yq --exit-status '.convoy-helm-template' convoy.yaml)
+          template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
           if [ $? -eq 0 ]; then
               echo "convoy-helm-template version: $template_version"
           else
