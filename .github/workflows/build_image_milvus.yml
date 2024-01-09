@@ -7,7 +7,7 @@ jobs:
   find-latest-tag:
     runs-on: self-hosted
     outputs:
-      tag: ${{ steps.latest_tag.outputs.tag_ref }}
+      tag: 0.0.18127-4
     steps:
       - name: Get branch name
         shell: bash
@@ -153,21 +153,21 @@ jobs:
         run : |
           sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
       
-      - name: Build image
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        shell: bash
-        run: |
-          chmod +x ./images/bookie/script.sh
-          chmod +x ./images/zookeeper/generate-zookeeper-config.sh
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+      # - name: Build image
+      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      #   shell: bash
+      #   run: |
+      #     chmod +x ./images/bookie/script.sh
+      #     chmod +x ./images/zookeeper/generate-zookeeper-config.sh
+      #     while IFS=$'\t' read -r image function file _; do
+      #       if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+      #         echo "Building $image Image"
+      #         sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+      #       fi
+      #     done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
           chmod +x ./images/bookie/script.sh
@@ -182,15 +182,15 @@ jobs:
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
-          while IFS=$'\t' read -r image version _; do
-            echo $image
-            echo $version
-            sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+          # while IFS=$'\t' read -r image version _; do
+          #   echo $image
+          #   echo $version
+          #   sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+          #   sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+          #   sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+          #   sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+          #   sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+          # done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
