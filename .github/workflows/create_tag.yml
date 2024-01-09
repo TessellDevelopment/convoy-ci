@@ -20,6 +20,7 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
+      uses_custom_version_output: ${{ steps.tag_output.outputs.uses_custom_version }}
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
@@ -27,6 +28,9 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - name: Install dependencies
+        run: npm install js-yaml
 
       - name: Find latest tag
         run: |
@@ -41,61 +45,79 @@ jobs:
         with:
           github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
-            latest_tag = '0.0.0'
-            // process multiple tags if any
-            tags = "${{ env.TAGS }}".split(' ')
-            if (tags.length == 1) {
-              latest_tag = tags[0]
-            } else {
-              if ("${{ github.event.pull_request.base.ref }}" == "main") {
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("Checking tag " + tag)
-                  if (latest_tag == null) {
-                    latest_tag = tag
-                    continue
-                  }
-                  latest_parts = latest_tag.split(".")
-                  tag_parts = tag.split(".")
-                  for (i = 0; i < tag_parts.length; i++) {
-                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                      console.log("Skipping " + tag)
-                      break
-                    }
-                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                      latest_tag = tag
-                      console.log("Setting " + latest_tag)
-                      break
-                    }
-                  }
-                }
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const content = fs.readFileSync('./convoy.yaml', 'utf8');
+            const data = yaml.load(content);
+            var language = data.language
+            var version = data.version
+            if (language === 'helm'){
+              const path = data.generates.helmCharts[0].chartPath
+              const contentHelm = fs.readFileSync(path, 'utf8');
+              const dataHelm = yaml.load(contentHelm);
+              new_tag = dataHelm.version
+              core.setOutput('uses_custom_version', "true")  
+            } else if (version !== undefined ){
+              new_tag = version
+              core.setOutput('uses_custom_version', "true")  
+            } else{
+              latest_tag = '0.0.0'
+              // process multiple tags if any
+              tags = "${{ env.TAGS }}".split(' ')
+              if (tags.length == 1) {
+                latest_tag = tags[0]
               } else {
-                tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
-                latest_tag = tag_base.join(".") + ".0"
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("branch - Checking tag " + tag)
-                  tag_parts = tag.split(".")
-                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                    latest_parts = latest_tag.split(".")
-                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("Checking tag " + tag)
+                    if (latest_tag == null) {
                       latest_tag = tag
+                      continue
+                    }
+                    latest_parts = latest_tag.split(".")
+                    tag_parts = tag.split(".")
+                    for (i = 0; i < tag_parts.length; i++) {
+                      if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                        console.log("Skipping " + tag)
+                        break
+                      }
+                      if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                        latest_tag = tag
+                        console.log("Setting " + latest_tag)
+                        break
+                      }
+                    }
+                  }
+                } else {
+                  tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
+                  latest_tag = tag_base.join(".") + ".0"
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("branch - Checking tag " + tag)
+                    tag_parts = tag.split(".")
+                    if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                      latest_parts = latest_tag.split(".")
+                      if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                        latest_tag = tag
+                      }
                     }
                   }
                 }
               }
-            }
-            console.log("Latest tag: " + latest_tag)
+              console.log("Latest tag: " + latest_tag)
 
-            // check if we have
-            if ( latest_tag == '' || latest_tag === undefined) {
-              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-              process.exit(1);
-            }
+              // check if we have
+              if ( latest_tag == '' || latest_tag === undefined) {
+                console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+                process.exit(1);
+              }
 
-            // increase the minor version lineraly to get the new tag
-            tag_parts = latest_tag.split('.')
-            new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+              // increase the minor version lineraly to get the new tag
+              tag_parts = latest_tag.split('.')
+              new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+              core.setOutput('uses_custom_version', "false")  
+            }
 
             // head of the branch needs to be tagged
             sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
@@ -130,38 +152,49 @@ jobs:
         id: tag_output
         run: |
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+          echo "uses_custom_version=${{steps.create_tag.outputs.uses_custom_version}}" >> $GITHUB_OUTPUT
 
       - name: Set Label
         id: set_label
         shell: bash
         run: |
+          validate_label=false
           if [ -f convoy.yaml ]; then
-            echo "convoy_exists=true" >> $GITHUB_OUTPUT
-            if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
-              echo "$RESPONSE"
-              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-              echo "$LABEL"
-              if [[ $LABEL == rel-* ]]; then
-                  echo "LABEL=$LABEL" >> $GITHUB_ENV
-              else
-                  echo "Response: $LABEL"
-                  echo "Label does not start with 'rel'. Check response."
-                  exit 1 
-              fi
+            language=$(yq '.language' convoy.yaml)
+            version=$(yq '.version' convoy.yaml)
+            if [[ "$language" == "helm" ]]; then
+              echo "Helm repo, No validation needed using version as tag."
+            elif [[ "$version" != "null" ]]; then
+              echo "Version present in convoy.yaml, No validation needed using version as tag."
             else
-              echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
-            fi
+              validate_label=true
+              if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+                TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+                APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+                URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+                RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+                echo "$RESPONSE"
+                LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+                echo "$LABEL"
+                if [[ $LABEL == rel-* ]]; then
+                    echo "LABEL=$LABEL" >> $GITHUB_ENV
+                else
+                    echo "Response: $LABEL"
+                    echo "Label does not start with 'rel'. Check response."
+                    exit 1 
+                fi
+              
+              else
+                echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+              fi
+            fi  
            else
             echo "convoy.yaml not found"
-            echo "convoy_exists=false" >> $GITHUB_OUTPUT
            fi 
+           echo "validate_label=$validate_label" >> $GITHUB_OUTPUT
 
       - name: Validate Label
-        if: ${{ steps.set_label.outputs.convoy_exists == 'true' }}
+        if: ${{ steps.set_label.outputs.validate_label == 'true' }}
         run: |
           tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
           label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
@@ -228,6 +261,7 @@ jobs:
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
           COMMIT_HASH: "${{github.sha}}"
+          USES_CUSTOM_VERSION: "${{needs.create-tag-on-merge.outputs.uses_custom_version_output}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -383,6 +417,7 @@ jobs:
           OWNER = os.environ.get('OWNER')
           GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          USES_CUSTOM_VERSION = os.environ.get('USES_CUSTOM_VERSION')
           HEAD_BRANCH = os.environ.get('HEAD_BRANCH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
@@ -401,6 +436,7 @@ jobs:
             "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "baseBranch": BASE_BRANCH,
+            "usesCustomVersion": USES_CUSTOM_VERSION == "true",
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
