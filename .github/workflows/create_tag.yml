@@ -285,7 +285,7 @@ jobs:
                 'Authorization': f'Bearer {GITHUB_TOKEN}',
                 'Accept': 'application/vnd.github.v3+json',
             }
-            url = f'https://api.github.com/repos/{OWNER}/{REPO}/contents'
+            url = f'${{vars.GH_API_URL}}/repos/{OWNER}/{REPO}/contents'
             params = {'ref': HEAD_BRANCH}
             response = requests.get(url, headers=headers, params=params)
             contents = response.json()
@@ -370,8 +370,6 @@ jobs:
                 tf_modules_folders = get_tf_modules_folders()
                 print("Terraform folders:")
                 for folder in tf_modules_folders:
-                    if '.github' in folder or len(folder) == 0:
-                        continue
                     print(folder)  
                     path = f'./{folder}/convoy.yaml'
                     with open(path, 'r') as module_content:
