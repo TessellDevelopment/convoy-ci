@@ -51,16 +51,17 @@ jobs:
             const data = yaml.load(content);
             var language = data.language
             var version = data.version
+            var uses_custom_version = "false"
             if (language === 'helm'){
               const path = data.generates.helmCharts[0].chartPath
               const contentHelm = fs.readFileSync(path, 'utf8');
               const dataHelm = yaml.load(contentHelm);
               new_tag = dataHelm.version
-              core.setOutput('uses_custom_version', "true")  
-            } else if (version !== undefined ){
-              new_tag = version
-              core.setOutput('uses_custom_version', "true")  
+              uses_custom_version = "true"
             } else{
+              if (version !== undefined ){
+                uses_custom_version = "true"
+              }
               latest_tag = '0.0.0'
               // process multiple tags if any
               tags = "${{ env.TAGS }}".split(' ')
@@ -116,7 +117,7 @@ jobs:
               // increase the minor version lineraly to get the new tag
               tag_parts = latest_tag.split('.')
               new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-              core.setOutput('uses_custom_version', "false")  
+               
             }
 
             // head of the branch needs to be tagged
@@ -146,7 +147,8 @@ jobs:
                 sha: sha_to_tag
             });
             console.log('Ref updated.');
-            core.setOutput('tag_ref', new_tag)  
+            core.setOutput('tag_ref', new_tag) 
+            core.setOutput('uses_custom_version', uses_custom_version)  
 
       - name: Tag Output
         id: tag_output
