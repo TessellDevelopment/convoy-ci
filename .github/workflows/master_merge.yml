@@ -68,6 +68,7 @@ jobs:
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
+      uses_custom_version: ${{needs.create-tag.outputs.uses_custom_version}}
 
   find-latest-tag:
     if: needs.file-check.outputs.github-changes == 'false'
