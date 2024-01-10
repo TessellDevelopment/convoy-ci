@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install dependencies
-        run: npm install js-yaml
+        run: npm install js-yaml --force
 
       - name: Find latest tag
         run: |
