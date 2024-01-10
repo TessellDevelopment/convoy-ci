@@ -7,9 +7,9 @@ jobs:
   find-latest-tag:
     runs-on: self-hosted
     outputs:
-      tag: ${{ steps.latest_tag.outputs.tag_ref }}
+      tag: 0.111.18127
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
-      DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
+      DOCKERHUB_ORG: tessellprod
     steps:
       - name: Get branch name
         shell: bash
@@ -152,21 +152,21 @@ jobs:
         run : |
           sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
       
-      - name: Build image
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        shell: bash
-        run: |
-          chmod +x ./images/bookie/script.sh
-          chmod +x ./images/zookeeper/generate-zookeeper-config.sh
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+      # - name: Build image
+      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      #   shell: bash
+      #   run: |
+      #     chmod +x ./images/bookie/script.sh
+      #     chmod +x ./images/zookeeper/generate-zookeeper-config.sh
+      #     while IFS=$'\t' read -r image function file _; do
+      #       if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+      #         echo "Building $image Image"
+      #         sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+      #       fi
+      #     done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
           while IFS=$'\t' read -r image function file _; do
@@ -263,17 +263,17 @@ jobs:
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
       
-      - name: Build image
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        run: |
-          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
-                      --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
-                      --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                      --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
-                      --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
+      # - name: Build image
+      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      #   run: |
+      #     docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
+      #                 --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
+      #                 --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+      #                 --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
+      #                 --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
 
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{env.TAG}} \
