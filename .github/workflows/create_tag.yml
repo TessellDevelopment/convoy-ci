@@ -265,7 +265,6 @@ jobs:
           REPO: "${{github.event.pull_request.base.repo.name}}"
           TAG: "${{needs.create-tag-on-merge.outputs.tag_ref_output}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          HEAD_BRANCH: "${{github.head_ref}}"
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
           OWNER: ${{github.repository_owner}}
@@ -286,7 +285,7 @@ jobs:
                 'Accept': 'application/vnd.github.v3+json',
             }
             url = f'${{vars.GH_API_URL}}/repos/{OWNER}/{REPO}/contents'
-            params = {'ref': HEAD_BRANCH}
+            params = {'ref': BASE_BRANCH}
             response = requests.get(url, headers=headers, params=params)
             contents = response.json()
             directories = [item['name'] for item in contents if item['type'] == 'dir' and item['name'] != '.github']
@@ -418,7 +417,6 @@ jobs:
           GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           USES_CUSTOM_VERSION = os.environ.get('USES_CUSTOM_VERSION')
-          HEAD_BRANCH = os.environ.get('HEAD_BRANCH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           PR_ID = os.environ.get('PR_ID')
           TAG = os.environ.get('TAG')
