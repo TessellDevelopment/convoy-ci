@@ -4,26 +4,18 @@ on:
   workflow_dispatch:
 
 jobs:
-
-  build:
+  find-latest-tag:
     runs-on: self-hosted
     outputs:
-      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
-      DOCKERHUB_ORG: "tesselldev"
-
+      tag: ${{ steps.latest_tag.outputs.tag_ref }}
+      SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
+      DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
 
       - name: Set Docker Repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -31,55 +23,20 @@ jobs:
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh
-    
-      - run: aws --version
-        shell: bash
-
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-          aws configure set region ap-south-1
-          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 219776070323.dkr.ecr.ap-south-1.amazonaws.com
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - name: Extract version
-        id: extract-version
-        run: | 
-          AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
-          TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
-          echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
-          echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
-          
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             if (${{ github.event_name  == 'workflow_dispatch'}} ){
                 core.setOutput('commit_id', "${{ github.sha }}" )
             }
             else{
-                core.setOutput('commit_id', "${{ github.event.after }}" )
+              core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-              
+
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -98,14 +55,13 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-        
-            
+
       - name: Find latest tag
         uses: actions/github-script@v6.3.3
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -160,6 +116,152 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
+
+  build-arm-images:
+    runs-on: ARM64
+    needs: find-latest-tag
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
+      SOURCE_BRANCH: ${{needs.find-latest-tag.outputs.SOURCE_BRANCH}}
+      DOCKERHUB_ORG: ${{needs.find-latest-tag.outputs.DOCKERHUB_ORG}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "arm64"
+          rm install-aws.sh
+    
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          export AWS_PROFILE=tessell-devqa-infra
+          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 219776070323.dkr.ecr.ap-south-1.amazonaws.com
+
+      - name: Login to Docker
+        run : |
+          sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+      
+      - name: Build image
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        shell: bash
+        run: |
+          chmod +x ./images/bookie/script.sh
+          chmod +x ./images/zookeeper/generate-zookeeper-config.sh
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+              echo "Building $image Image"
+              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+
+      - name: Build and push to tessellProd
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        shell: bash
+        run: |
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+              echo "Building $image Image"
+              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} .
+              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+              sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+
+          while IFS=$'\t' read -r image version _; do
+            echo $image
+            echo $version
+            sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+  
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+
+      - name: Get PR-Author,subject & body to send email
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        run: |
+          echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
+          echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
+ 
+      - name: sending output
+        if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+        id: mail_info
+        run: |
+          echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
+          echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
+          echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+  
+       
+  build-plugin:
+    runs-on: self-hosted
+    needs: find-latest-tag
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      DOCKER_IMAGE_NAME: tessell-db-plugin-milvus
+      SOURCE_BRANCH: ${{needs.find-latest-tag.outputs.SOURCE_BRANCH}}
+      DOCKERHUB_ORG: ${{needs.find-latest-tag.outputs.DOCKERHUB_ORG}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+    
+      - run: aws --version
+        shell: bash
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set region ap-south-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract version
+        id: extract-version
+        run: | 
+          AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+          TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
+          echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
+          echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
       
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -174,23 +276,14 @@ jobs:
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{ steps.latest_tag.outputs.tag_ref }} \
+          docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{env.TAG}} \
                         --build-arg GITHUB_USER=${{secrets.CIPIPELINE_NEXUS_USERNAME}} \
                         --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                        --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
-                        --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
-          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          while IFS=$'\t' read -r image version _; do
-            echo $image
-            echo $version
-            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+                        --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
+                        --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
+          docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
+          docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
 
       - name: Tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -237,10 +330,11 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-           
+  
+    
   post-build-status-to-convoy:
     runs-on: self-hosted
-    needs: build
+    needs: [build-plugin,build-arm-images]
     if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
@@ -343,7 +437,7 @@ jobs:
 
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
-    needs: build
+    needs: [build-plugin,build-arm-images]
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
       body: ${{ needs.build.outputs.mail_body_output }} 
