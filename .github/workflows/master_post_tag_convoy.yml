@@ -40,7 +40,7 @@ jobs:
           OWNER: ${{github.repository_owner}}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
         run: |
-          python - <<EOF
+          python3 - <<EOF
           
           import yaml
           import requests
