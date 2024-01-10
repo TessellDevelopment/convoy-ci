@@ -56,7 +56,7 @@ jobs:
   
   create-tag:
     needs: build-file
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-1250-5
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
     secrets: inherit
     with:
       label: ${{needs.build-file.outputs.label}}
@@ -64,7 +64,7 @@ jobs:
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-1250-5
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@main
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
