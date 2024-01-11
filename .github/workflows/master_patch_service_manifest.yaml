@@ -1,0 +1,37 @@
+---
+name: Service Manifest PATCH API to Convoy
+on:
+  workflow_call:
+    
+jobs:
+  
+  patch-service-manifest-to-convoy:
+    runs-on: non-build
+    env: 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    steps:
+
+      - name: PATCH API to Convoy
+        run: |
+          set -e
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo $TOKEN
+          RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/service-manifest" \
+            --header "Authorization: Basic $TOKEN" \
+            --data '')
+          echo "$RESPONSE"
+          if [[ "$RESPONSE" == "200" ]]; then
+            echo "Successfully updated repo_manifest in the redis"
+          else
+            exit 1
+          fi
+          
+      - name: Slack Notification
+        uses: act10ns/slack@v1.5.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
+          
