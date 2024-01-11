@@ -39,6 +39,31 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: Set Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
+          fi
           
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -176,7 +201,18 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-            
+
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$tag"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
             
       - name: creating tar files
         run: |
@@ -220,6 +256,8 @@ jobs:
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
           aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/filebeat/filebeat-windows-$VERSION.tar.gz
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/filebeat/filebeat-linux-$VERSION.tar.gz
 
             
       - name: Set Push repository

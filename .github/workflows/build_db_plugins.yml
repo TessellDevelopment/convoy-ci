@@ -47,6 +47,31 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
 
+      - name: Set Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
+          fi
+
       - name: Create pip conf
         run: |
           # Create pip.conf and copy to /etc;
@@ -108,8 +133,8 @@ jobs:
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" 
-
-      - name: Upload tar file to S3 Bucket
+      
+      - name: Find Latest tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           repo="${{github.repository}}"
@@ -122,13 +147,31 @@ jobs:
           PLUGIN_NAME="${parts[0]}"
           PLUGIN_NAME=$(echo "$PLUGIN_NAME" | tr '_' '-')
           VERSION="${parts[1]}"
-          echo "$FILE"
-          echo "$PLUGIN_NAME"
-          echo "$VERSION"
+          echo "FILE=$FILE" >> $GITHUB_ENV
+          echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           ls
-          mv $FILE $PLUGIN_NAME
+          mv $FILE "$PLUGIN_NAME.tar.gz"
           ls
-          aws s3 cp $PLUGIN_NAME s3://tesselltools/terls/tessell/plugins/$VERSION/
+
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ env.VERSION }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$tag"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
+
+      - name: Upload tar file to S3 Bucket
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://tesselltools/terls/tessell/plugins/${{env.VERSION}}/
+          aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
+
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0

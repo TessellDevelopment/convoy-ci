@@ -43,6 +43,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
+          fi
+
       - name: Install dependencies
         run: |
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
@@ -172,6 +197,18 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
 
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$tag"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
+
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -201,6 +238,8 @@ jobs:
           for os in ${OS_NAMES[@]};do
             aws s3 cp package/tessell-agent-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
             aws s3 cp package/tessell-upgrader-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
+            aws s3 cp package/tessell-agent-pkg-$os.tar s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/agent/tessell-agent-pkg-$os-$VERSION.tar
+            aws s3 cp package/tessell-upgrader-pkg-$os.tar s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/agent/tessell-upgrader-pkg-$os-$VERSION.tar 
           done  
 
       - name: Slack Notification
