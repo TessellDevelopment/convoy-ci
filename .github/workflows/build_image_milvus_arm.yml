@@ -11,6 +11,9 @@ jobs:
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
       DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Get branch name
         shell: bash
         run: |
