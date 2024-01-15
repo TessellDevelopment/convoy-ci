@@ -56,7 +56,7 @@ jobs:
   
   create-tag:
     needs: build-file
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-1388
     secrets: inherit
     with:
       label: ${{needs.build-file.outputs.label}}
@@ -78,7 +78,7 @@ jobs:
 
   build:
     needs: [build-file,find-latest-tag]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-1388
     secrets: inherit
     with:
       type: ${{needs.build-file.outputs.type}}

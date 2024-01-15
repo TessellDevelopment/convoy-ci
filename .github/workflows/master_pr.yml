@@ -33,7 +33,7 @@ jobs:
 
   build:
     needs: build-file
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1388
     with:
       type: ${{needs.build-file.outputs.type}}
     secrets: inherit
