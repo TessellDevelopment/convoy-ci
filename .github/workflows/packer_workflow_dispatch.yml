@@ -3,27 +3,6 @@ name: Tessell Packer Wokflow Dispatch
 on:
   workflow_call:
   workflow_dispatch:
-    # inputs:
-    #   workflowType:
-    #     description: "Select for dry_run or actual artifact build-push"
-    #     required: true
-    #     default: "dry_run"
-    #     type: choice
-    #     options:
-    #       - dry_run
-    #       - build
-    #   branchName:
-    #     description: "Provide branch name or commit id"
-    #     required: false
-    #     default: "main"
-    #   accountId:
-    #     description: "Provide the AWS account for artifact sharing"
-    #     required: false
-    #     default: "none"
-    #   tags:
-    #     description: "Test scenario tags"
-    #     required: false
-    #     type: boolean
 
 jobs:
   build:
@@ -61,7 +40,7 @@ jobs:
           echo "SOURCE_BRANCH_NAME=$(echo ${GITHUB_EVENT_PATH#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
           echo $pull_request_number
-      #pull_request_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+
       - name: visible
         run: |
           echo ${{ env.SOURCE_BRANCH }}
@@ -138,7 +117,7 @@ jobs:
           mkdir -p ~/.packer.d/plugins
           echo ${{ env.TARGET_BRANCH }}
           echo ${BRANCH_NAME}
-          
+
           echo ${{ env.SOURCE_BRANCH }}
           echo ${{ github.head_ref }}
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run

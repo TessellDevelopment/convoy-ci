@@ -6,14 +6,6 @@ name: Tessell Pipelines Code Build
 
 on:
   workflow_call:
-  # pull_request:
-  #   types: ["opened", "closed", "synchronize"]
-  #   branches:
-  #     - "main"
-  #     - "rel-*"
-  #     - "TS-*"
-  #     - "TDEVOPS-*"
-  #     - "revert-*"
 
   # Allows you to run this workflow manually from the Actions
   workflow_dispatch:
@@ -108,85 +100,86 @@ jobs:
             else{
                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-      # - name: Get tags
-      #   uses: nick-fields/retry@v2.8.1
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   with:
-      #     timeout_seconds: 10
-      #     max_attempts: 3
-      #     retry_on: error
-      #     command: |
-      #       git fetch --all
-      #       git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
-      #       latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
-      #       if [[ "$latest_tags" == '' ]]; then
-      #         echo " Tag is Empty"
-      #         exit 1
-      #       fi
-      #       echo "Tag is present: $latest_tags"
-      #       for tag in $latest_tags; do tag_arr+=($tag); done
-      #       echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
 
-      # - name: Find latest tag
-      #   uses: actions/github-script@v6.3.3
-      #   id: latest_tag
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   with:
-      #     github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-      #     script: |
-      #       console.log("Tags are " + "${{ env.TAGS }}")
-      #       latest_tag = '0.0.0'
-      #       // process multiple tags if any
-      #       tags = "${{ env.TAGS }}".split(' ')
-      #       if (tags.length == 1) {
-      #         console.log("There is only one tag. Using it." + tags[0])
-      #         latest_tag = tags[0]
-      #       } else {
-      #         if ("${{ env.SOURCE_BRANCH }}" == "main") {
-      #           for (i in tags) {
-      #             tag = tags[i]
-      #             console.log("Checking tag " + tag)
-      #             if (latest_tag == null) {
-      #               latest_tag = tag
-      #               continue
-      #             }
-      #             latest_parts = latest_tag.split(".")
-      #             tag_parts = tag.split(".")
-      #             for (i = 0; i < tag_parts.length; i++) {
-      #               if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-      #                 console.log("Skipping " + tag)
-      #                 break
-      #               }
-      #               if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-      #                 latest_tag = tag
-      #                 console.log("Setting " + latest_tag)
-      #                 break
-      #               }
-      #             }
-      #           }
-      #         } else {
-      #           tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
-      #           latest_tag = tag_base.join(".") + ".0"
-      #           for (i in tags) {
-      #             tag = tags[i]
-      #             console.log("branch - Checking tag " + tag)
-      #             tag_parts = tag.split(".")
-      #             if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-      #               latest_parts = latest_tag.split(".")
-      #               if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
-      #                 latest_tag = tag
-      #               }
-      #             }
-      #           }
-      #         }
-      #       }
-      #       console.log("Latest tag: " + latest_tag)
-      #       // check if we have
-      #       if ( latest_tag == '' || latest_tag === undefined) {
-      #         console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-      #         process.exit(1);
-      #       }
-      #       core.setOutput('tag_ref', latest_tag)
+      - name: Get tags
+        uses: nick-fields/retry@v2.8.1
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          timeout_seconds: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            git fetch --all
+            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
+            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
+            if [[ "$latest_tags" == '' ]]; then
+              echo " Tag is Empty"
+              exit 1
+            fi
+            echo "Tag is present: $latest_tags"
+            for tag in $latest_tags; do tag_arr+=($tag); done
+            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+
+      - name: Find latest tag
+        uses: actions/github-script@v6.3.3
+        id: latest_tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          script: |
+            console.log("Tags are " + "${{ env.TAGS }}")
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              console.log("There is only one tag. Using it." + tags[0])
+              latest_tag = tags[0]
+            } else {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            console.log("Latest tag: " + latest_tag)
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+            core.setOutput('tag_ref', latest_tag)
 
       - name: Validate Images
         # this build runs when PR is created and on every push to PR
@@ -206,16 +199,7 @@ jobs:
           echo ${{ env.TARGET_BRANCH }}
           build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run
 
-      - name: Build and upload321
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
-          source $(share_aws_artifacts -sec)
-          mkdir -p ~/.packer.d/plugins
-          validate_all -r $PWD
-          build_all_artifacts -r $PWD -d
-
-      - name: Build and upload123
+      - name: Build and upload
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
