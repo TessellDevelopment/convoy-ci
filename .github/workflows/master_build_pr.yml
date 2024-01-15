@@ -36,6 +36,14 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
+          dockerMakefile(){
+            set -e
+            IMAGE_NAME="$1"
+            make service
+            makeBuild
+            docker build -t $IMAGE_NAME .
+            set +e
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
