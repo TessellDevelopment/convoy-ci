@@ -5,6 +5,7 @@ name: Tessell Pipelines Code Build
 # Controls when the workflow will run
 
 on:
+  workflow_call:
   pull_request:
     types: ["opened", "closed", "synchronize"]
     branches:

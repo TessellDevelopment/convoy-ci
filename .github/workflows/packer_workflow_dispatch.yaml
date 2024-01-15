@@ -1,6 +1,7 @@
 name: Tessell Packer Wokflow Dispatch
 
 on:
+  workflow_call:
   workflow_dispatch:
     inputs:
       workflowType:
