@@ -19,7 +19,7 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'arm' }}
+    if: ${{ inputs.type != 'arm' }}
     runs-on: self-hosted
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -99,7 +99,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-arm:
-    if: ${{inputs.type}} == 'arm'
+    if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
