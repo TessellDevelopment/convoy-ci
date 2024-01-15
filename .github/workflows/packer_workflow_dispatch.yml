@@ -3,27 +3,27 @@ name: Tessell Packer Wokflow Dispatch
 on:
   workflow_call:
   workflow_dispatch:
-    inputs:
-      workflowType:
-        description: "Select for dry_run or actual artifact build-push"
-        required: true
-        default: "dry_run"
-        type: choice
-        options:
-          - dry_run
-          - build
-      branchName:
-        description: "Provide branch name or commit id"
-        required: false
-        default: "main"
-      accountId:
-        description: "Provide the AWS account for artifact sharing"
-        required: false
-        default: "none"
-      tags:
-        description: "Test scenario tags"
-        required: false
-        type: boolean
+    # inputs:
+    #   workflowType:
+    #     description: "Select for dry_run or actual artifact build-push"
+    #     required: true
+    #     default: "dry_run"
+    #     type: choice
+    #     options:
+    #       - dry_run
+    #       - build
+    #   branchName:
+    #     description: "Provide branch name or commit id"
+    #     required: false
+    #     default: "main"
+    #   accountId:
+    #     description: "Provide the AWS account for artifact sharing"
+    #     required: false
+    #     default: "none"
+    #   tags:
+    #     description: "Test scenario tags"
+    #     required: false
+    #     type: boolean
 
 jobs:
   build:
