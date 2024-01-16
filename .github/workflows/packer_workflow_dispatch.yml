@@ -1,0 +1,108 @@
+name: Tessell Packer Wokflow Dispatch
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: non-build
+    outputs:
+      mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
+      mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
+      mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
+    env:
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
+      NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
+      NEXUS_PULL_REPOS_RAW: tessell-raw-development
+      BRANCH_NAME: ${{ inputs.branchName }}
+      DESTINATION_ACCOUNT: ${{ inputs.accountId }}
+      TAGS: '{"build-source": "workflow-dispatch"}'
+      AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
+      AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: "0"
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=$(echo ${{ github.event.ref }} | tr / -)" >> $GITHUB_ENV
+
+          echo $pull_request_number
+
+      - name: visible
+        run: |
+          echo ${{ env.SOURCE_BRANCH }}
+          echo ${{ env.TARGET_BRANCH }}
+          echo ${GITHUB_BASE_REF}
+          echo "Source branch is ${{ github.head_ref }}"
+          echo $TARGET_BRANCH_MAIN
+          echo $BRANCH_NAME
+          echo ${{ github.head_ref }}
+          cat ${GITHUB_EVENT_PATH} | jq '.'
+          echo ${{ env.AWS_ACCESS_KEY_ID }}
+          echo ${{ env.AWS_SECRET_ACCESS_KEY }}
+          
+
+      - name: Set Pull repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-component" >> $GITHUB_ENV
+
+      - name: Create pip conf
+        run: |
+          # Create pip.conf and copy to /etc;
+          # The --extra_index_url option of pip install does not work with username/password
+          # Also pip does not have separate option to specify creds.
+          echo "[global]" > pip.conf
+          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+          sudo cp pip.conf /etc/pip.conf
+        shell: bash
+
+      - name: Install packer software
+        run: |
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+          sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install packer
+          packer plugins install github.com/hashicorp/amazon
+
+      - name: Install dependencies
+        run: |
+          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0
+          find /usr/bin /usr/local/bin -name build_all_artifacts
+
+      - name: Dry-run artifacts Input-config
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
+        run: |
+          mkdir -p ~/.packer.d/plugins
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run
+
+      - name: Build artifacts Input-config
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        run: |
+          # source $(share_aws_artifacts -sec)
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run
+
+      - name: Share built artifacts
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
+        run: |
+          # source $(share_aws_artifacts -sec)
+          share_aws_artifacts -i $PWD/image_manifest_local.json
