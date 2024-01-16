@@ -12,7 +12,6 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
@@ -20,6 +19,8 @@ jobs:
       BRANCH_NAME: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
       TAGS: '{"build-source": "workflow-dispatch"}'
+      AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
 
     steps:
       - name: Checkout code
@@ -36,7 +37,6 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${{ github.event.ref }} | tr / -)" >> $GITHUB_ENV
-          echo "SOURCE_BRANCH_NAME=$(echo ${GITHUB_EVENT_PATH#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
           echo $pull_request_number
 
@@ -47,7 +47,11 @@ jobs:
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
           echo $TARGET_BRANCH_MAIN
+          echo $BRANCH_NAME
+          echo ${{ github.head_ref }}
           cat ${GITHUB_EVENT_PATH} | jq '.'
+          
+
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
@@ -84,35 +88,17 @@ jobs:
         run: |
           # cat $(share_aws_artifacts -sec)
           source $(share_aws_artifacts -sec)
-          export CURRENT_VERSION_TAG="2.0.1"
           mkdir -p ~/.packer.d/plugins
-          echo ${{ env.TARGET_BRANCH }}
-          echo ${BRANCH_NAME}
-          echo ${{ env.SOURCE_BRANCH }}
-          echo ${{ github.head_ref }}
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run
 
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source $(share_aws_artifacts -sec)
-          export CURRENT_VERSION_TAG="2.0.1"
-          mkdir -p ~/.packer.d/plugins
-          echo ${{ env.TARGET_BRANCH }}
-          echo ${BRANCH_NAME}
-
-          echo ${{ env.SOURCE_BRANCH }}
-          echo ${{ github.head_ref }}
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run
 
       - name: Share built artifacts
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
         run: |
           source $(share_aws_artifacts -sec)
-          export CURRENT_VERSION_TAG="2.0.1"
-          mkdir -p ~/.packer.d/plugins
-          echo ${{ env.TARGET_BRANCH }}
-          echo ${BRANCH_NAME}
-          echo ${{ env.SOURCE_BRANCH }}
-          echo ${{ github.head_ref }}
           share_aws_artifacts -i $PWD/image_manifest_local.json
