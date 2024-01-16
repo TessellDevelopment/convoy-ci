@@ -187,7 +187,6 @@ jobs:
       - name: Dry Run Input-config1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-          # source $(share_aws_artifacts -sec)
           export CURRENT_VERSION_TAG="2.0.1"
           build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run
 
