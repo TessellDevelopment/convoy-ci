@@ -50,6 +50,8 @@ jobs:
           echo $BRANCH_NAME
           echo ${{ github.head_ref }}
           cat ${GITHUB_EVENT_PATH} | jq '.'
+          echo ${{ env.AWS_ACCESS_KEY_ID }}
+          echo ${{ env.AWS_SECRET_ACCESS_KEY }}
           
 
       - name: Set Pull repository
@@ -86,8 +88,6 @@ jobs:
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
-          # cat $(share_aws_artifacts -sec)
-          source $(share_aws_artifacts -sec)
           mkdir -p ~/.packer.d/plugins
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run
 
