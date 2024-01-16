@@ -13,7 +13,6 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
@@ -56,30 +55,14 @@ jobs:
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
           echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-component" >> $GITHUB_ENV
 
-      - run: |
-          echo "Tags: $TAGS"
-          echo "branchName: $BRANCH_NAME"
-          echo "accountId: $DESTINATION_ACCOUNT"
-        name: user-build
-        env:
-          LEVEL: ${{ inputs.logLevel }}
-          # TAGS: ${{ inputs.tags }}
-          BRANCH_NAME: ${{ inputs.branchName }}
-          DESTINATION_ACCOUNT: ${{ inputs.accountId }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-          NEXUS_SERVER: nexus.tessell.cloud
-          NEXUS_PULL_REPOS_PY: tessell-py-development
-          NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
-          NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
-          NEXUS_PULL_REPOS_RAW: tessell-raw-development
       - name: Create pip conf
         run: |
           # Create pip.conf and copy to /etc;
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
           echo "[global]" > pip.conf
-          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
           echo "extra-index-url = https://pypi.org/simple" >> pip.conf
           sudo cp pip.conf /etc/pip.conf
         shell: bash
