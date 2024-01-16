@@ -25,6 +25,7 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+      CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
 
     steps:
       - name: Checkout code
@@ -56,7 +57,6 @@ jobs:
           cat ${GITHUB_EVENT_PATH} | jq '.'
           echo ${{ env.AWS_ACCESS_KEY_ID }}
           echo ${{ env.AWS_SECRET_ACCESS_KEY }}
-          
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -99,7 +99,7 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           # source $(share_aws_artifacts -sec)
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run $(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)
 
       - name: Share built artifacts
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
