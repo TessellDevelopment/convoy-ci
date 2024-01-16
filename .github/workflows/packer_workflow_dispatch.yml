@@ -98,11 +98,11 @@ jobs:
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
-          source $(share_aws_artifacts -sec)
+          # source $(share_aws_artifacts -sec)
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run
 
       - name: Share built artifacts
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
         run: |
-          source $(share_aws_artifacts -sec)
+          # source $(share_aws_artifacts -sec)
           share_aws_artifacts -i $PWD/image_manifest_local.json
