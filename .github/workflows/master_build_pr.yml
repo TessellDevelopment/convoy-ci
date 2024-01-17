@@ -36,6 +36,13 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
+          helm-chart(){
+            set -e
+            CHART_NAME="$1"
+            cd scripts
+            ./package-and-push --no-push -n $CHART_NAME
+            set +e
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
