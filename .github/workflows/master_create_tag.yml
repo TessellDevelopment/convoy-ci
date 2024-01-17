@@ -40,6 +40,7 @@ jobs:
           echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
           echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
           echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          cat .npmrc
 
       - name: Install dependencies
         run: npm install js-yaml --force
