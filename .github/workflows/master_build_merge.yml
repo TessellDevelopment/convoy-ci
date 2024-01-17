@@ -19,7 +19,7 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'arm' }}
+    if: ${{ inputs.type != 'arm' }}
     runs-on: self-hosted
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -55,6 +55,13 @@ jobs:
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
+          helm-chart(){
+            set -e
+            CHART_NAME="$1"
+            cd scripts
+            ./package-and-push --prod -n $CHART_NAME
             set +e
           }
           build() {
@@ -94,7 +101,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-arm:
-    if: ${{inputs.type}} == 'arm'
+    if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
