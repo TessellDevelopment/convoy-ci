@@ -19,7 +19,7 @@ on:
 jobs:
 
   build-amd:
-    if: ${{inputs.type != 'arm' }}
+    if: ${{ inputs.type != 'arm' }}
     runs-on: self-hosted
     env:
       LATEST_TAG: ${{inputs.tag}}
@@ -28,6 +28,9 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_REPO_NPM: tessell-repos-npm-component
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
@@ -55,6 +58,26 @@ jobs:
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
+          gradlewUI(){
+            set +e
+            rm ~/.npmrc
+            rm ~/.yarnrc
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            echo '"@tessell:registry" "https://${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
+            echo "always-auth=true" >> .npmrc
+            echo "_auth=$TOKEN" >> .npmrc
+            cat .npmrc
+            cat .yarnrc
+            set -e
+            ./gradlew zipUiBuild  publish --console plain \
+            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" \
+            -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
             set +e
           }
           build() {
@@ -94,7 +117,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-arm:
-    if: ${{inputs.type}} == 'arm'
+    if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
