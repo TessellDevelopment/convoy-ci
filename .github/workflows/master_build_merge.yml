@@ -58,9 +58,11 @@ jobs:
             set +e
           }
           helm-chart(){
+            set -e
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --prod -n $CHART_NAME
+            set +e
           }
           build() {
             type="$1"
