@@ -23,7 +23,6 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       LABEL: ${{inputs.label}}
-      NEXUS_REPO_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
       uses_custom_version: ${{ steps.tag_output.outputs.uses_custom_version }}
@@ -37,9 +36,9 @@ jobs:
           set +e
           rm ~/.npmrc
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
+          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
+          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
           cat .npmrc
 
       - name: Install dependencies

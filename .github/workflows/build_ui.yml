@@ -22,8 +22,6 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-      NEXUS_REPO_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_URL: nexus.tessell.cloud
     steps:
       - uses: actions/checkout@v3
         name: Checkout repos
@@ -45,7 +43,7 @@ jobs:
           rm ~/.npmrc
           rm ~/.yarnrc
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo '"@tessell:registry" "https://${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
+          echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
           echo "always-auth=true" >> .npmrc
           echo "_auth=$TOKEN" >> .npmrc
           cat .npmrc
