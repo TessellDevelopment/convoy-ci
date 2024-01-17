@@ -39,7 +39,7 @@ jobs:
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
           echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
           echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://nexus.tessell.cloud/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
           cat .npmrc
 
       - name: Install dependencies
