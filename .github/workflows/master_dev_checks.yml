@@ -212,19 +212,27 @@
             echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
             cat .npmrc
 
-        - name: Install Packages
+        - name: Import packages for json lint
           run: |
-            npm cache clean --force
-            if [ ! -d "node_modules/@octokit/rest" ]; then
-              npm install @octokit/rest --legacy-peer-deps
-            fi
             sudo sudo npm install jsonlint -g
-            npm install node-fetch js-yaml
             
         - name: Check for Jsonlint
           run: |
             set -e
             git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
+  
+        - name: Install octokit/rest
+          run: |
+            if [ ! -d "node_modules/@octokit/rest" ]; then
+              npm cache clean --force
+              npm install @octokit/rest --legacy-peer-deps
+            fi
+        - name: Install node fetch 
+          run: | 
+            npm install node-fetch 
+  
+        - name: Install dependencies
+          run: npm install js-yaml
 
         - name: Output PR diff 
           id: pr_diff
