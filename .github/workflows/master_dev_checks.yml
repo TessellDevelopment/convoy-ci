@@ -8,7 +8,7 @@
     dev-checks:
       runs-on: non-build
       env:
-        NEXUS_REPO_NPM: tessell-repos-npm-component
+        NEXUS_REPO_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
       steps:
         - name: Dump GitHub context
           env:

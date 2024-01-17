@@ -38,7 +38,7 @@ jobs:
   dev-checks:
     runs-on: self-hosted
     env:
-      NEXUS_REPO_NPM: tessell-repos-npm-component
+      NEXUS_REPO_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
       NEXUS_URL: nexus.tessell.cloud
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
