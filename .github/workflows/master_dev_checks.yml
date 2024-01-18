@@ -6,7 +6,7 @@
   jobs:
 
     dev-checks:
-      runs-on: self-hosted
+      runs-on: ui-runner
       steps:
         - name: Dump GitHub context
           env:
