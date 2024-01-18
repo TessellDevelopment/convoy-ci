@@ -6,7 +6,7 @@
   jobs:
 
     dev-checks:
-      runs-on: ui-runner
+      runs-on: non-build-test
       steps:
         - name: Dump GitHub context
           env:
@@ -210,14 +210,14 @@
             echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
             cat .npmrc
 
-        - name: Install Packages
-          run: |
-            npm cache clean --force
-            if [ ! -d "node_modules/@octokit/rest" ]; then
-              npm install @octokit/rest --legacy-peer-deps
-            fi
-            sudo sudo npm install jsonlint -g
-            npm install node-fetch js-yaml
+        # - name: Install Packages
+        #   run: |
+        #     npm cache clean --force
+        #     if [ ! -d "node_modules/@octokit/rest" ]; then
+        #       npm install @octokit/rest --legacy-peer-deps
+        #     fi
+        #     sudo sudo npm install jsonlint -g
+        #     npm install node-fetch js-yaml
 
         - name: Check for Jsonlint
           run: |

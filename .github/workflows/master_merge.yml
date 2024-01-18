@@ -56,7 +56,7 @@ jobs:
   
   create-tag:
     needs: build-file
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-1382
     secrets: inherit
     with:
       label: ${{needs.build-file.outputs.label}}
