@@ -36,7 +36,7 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
-          gradlewUI(){
+          gradlewUI() {
             set +e
             rm ~/.npmrc
             rm ~/.yarnrc
@@ -50,6 +50,13 @@ jobs:
             ./gradlew zipUiBuild --console plain --stacktrace \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
+          }
+          helm-chart() {
+            set -e
+            CHART_NAME="$1"
+            cd scripts
+            ./package-and-push --no-push -n $CHART_NAME
             set +e
           }
           build() {

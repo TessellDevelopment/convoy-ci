@@ -58,7 +58,7 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
-          gradlewUI(){
+          gradlewUI() {
             set +e
             rm ~/.npmrc
             rm ~/.yarnrc
@@ -76,6 +76,13 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
+            set +e
+          }
+          helm-chart() {
+            set -e
+            CHART_NAME="$1"
+            cd scripts
+            ./package-and-push --prod -n $CHART_NAME
             set +e
           }
           build() {

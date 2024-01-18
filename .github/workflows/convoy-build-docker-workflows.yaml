@@ -1,14 +1,9 @@
----
+# This is a basic workflow to help you get started with Actions
 name: Tessell Pipelines Code Build
 
 # Controls when the workflow will run
 on:
   workflow_call:
-    inputs:
-      plugin_base_dir:
-        description: 'plugin directory'
-        required: true
-        type: string
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -25,31 +20,34 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: nexus.tessell.cloud
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
-      
+      DOCKERHUB_ORG: "tesselldev"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4.7.0
+        with:
+          python-version: 3.9
 
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
+          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: Create pip conf
         run: |
-          # Create pip.conf and copy to /etc;
+          # Create pip.conf and copy to /etc; 
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
           echo "[global]" > pip.conf
@@ -59,27 +57,6 @@ jobs:
           sudo cp pip.conf /etc/pip.conf
         shell: bash
 
-      - name: Install dependencies ${{ inputs.plugin_base_dir }}
-        if: ${{ inputs.plugin_base_dir }}
-        run: |
-          if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt --dry-run; fi
-       
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh
-
-      - run: aws --version
-        shell: bash
-
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-          aws configure set region ap-south-1
-  
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -87,63 +64,156 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Test with pytest
-        if: false
-        run: |
-          pytest
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Wheel
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+      - name: Build and tag
         run: |
-          ./gradlew pythonWheel --console plain \
-            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          docker build -t ${{ env.DOCKER_IMAGE_NAME }}:scan \
+              --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
+              --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} .
 
-      - name: Build and push
+      - name: Docker image scan
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+            severity-threshold: CRITICAL
+            image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+            trivy-version: "0.29.1"
+
+      - uses: actions/upload-artifact@v3
+        with:
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+            
+      - name: getting commit id for workflow_dispatch
+        uses: actions/github-script@v6.4.1
+        id: find_commit
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            if (${{ github.event_name  == 'workflow_dispatch'}} ){
+                core.setOutput('commit_id', "${{ github.sha }}" )
+            }
+            else{
+               core.setOutput('commit_id', "${{ github.event.after }}" )
+            }
+            
+      - name: Get tags
+        uses: nick-fields/retry@v2.8.1
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          timeout_seconds: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            git fetch --all
+            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
+            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
+            if [[ "$latest_tags" == '' ]]; then 
+              echo " Tag is Empty"
+              exit 1
+            fi
+            echo "Tag is present: $latest_tags"       
+            for tag in $latest_tags; do tag_arr+=($tag); done
+            echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+      
+      
+      - name: Find latest tag
+        uses: actions/github-script@v6.3.3
+        id: latest_tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          script: |
+            console.log("Tags are " + "${{ env.TAGS }}")
+            latest_tag = '0.0.0'
+            // process multiple tags if any
+            tags = "${{ env.TAGS }}".split(' ')
+            if (tags.length == 1) {
+              console.log("There is only one tag. Using it." + tags[0])
+              latest_tag = tags[0]
+            } else {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("Checking tag " + tag)
+                  if (latest_tag == null) {
+                    latest_tag = tag
+                    continue
+                  }
+                  latest_parts = latest_tag.split(".")
+                  tag_parts = tag.split(".")
+                  for (i = 0; i < tag_parts.length; i++) {
+                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                      console.log("Skipping " + tag)
+                      break
+                    }
+                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                      latest_tag = tag
+                      console.log("Setting " + latest_tag)
+                      break
+                    }
+                  }
+                }
+              } else {
+                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
+                latest_tag = tag_base.join(".") + ".0"
+                for (i in tags) {
+                  tag = tags[i]
+                  console.log("branch - Checking tag " + tag)
+                  tag_parts = tag.split(".")
+                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                    latest_parts = latest_tag.split(".")
+                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                      latest_tag = tag
+                    }
+                  }
+                }
+              }
+            }
+            console.log("Latest tag: " + latest_tag)
+            // check if we have
+            if ( latest_tag == '' || latest_tag === undefined) {
+              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+              process.exit(1);
+            }
+            core.setOutput('tag_ref', latest_tag)
+     
+      - name: tagging docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          ./gradlew createMvnSettings uploadPlugin --console plain \
-            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" 
-
-      - name: Upload tar file to S3 Bucket
+           docker tag ${{ env.DOCKER_IMAGE_NAME }}:scan ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+      
+      - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          repo="${{github.repository}}"
-          plugin=$(echo "$repo" | cut -d '-' -f 4)
-          cd "tessell-db-plugin-$plugin"
-          cd build
-          FILE=$(ls | grep 'tessell_db_plugin')
-          BASENAME=$(basename "$FILE" .tar.gz)
-          IFS='-' read -ra parts <<< "$BASENAME"
-          PLUGIN_NAME="${parts[0]}"
-          PLUGIN_NAME=$(echo "$PLUGIN_NAME" | tr '_' '-')
-          VERSION="${parts[1]}"
-          echo "$FILE"
-          echo "$PLUGIN_NAME"
-          echo "$VERSION"
-          ls
-          mv $FILE $PLUGIN_NAME
-          ls
-          aws s3 cp $PLUGIN_NAME s3://tesselltools/terls/tessell/plugins/$VERSION/
-
+        uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+          
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -151,14 +221,13 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
-
+  
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
-    if: always()  
+    if: always() 
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -255,13 +324,15 @@ jobs:
             steps: ${{ toJson(steps) }}
             channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
-
+  
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+            
