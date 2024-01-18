@@ -29,6 +29,9 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
+            if [ -z "$FILE" ]; then
+              FILE="./Dockerfile"
+            fi
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             echo "Complete"
             echo "$FILE"
@@ -98,6 +101,9 @@ jobs:
             IMAGE_NAME="$1"
             FILE="$4"
             if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            if [ -z "$FILE" ]; then
               FILE="./Dockerfile"
             fi
             mvnwBuild

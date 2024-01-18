@@ -51,6 +51,9 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
+            if [ -z "$FILE" ]; then
+              FILE="./Dockerfile"
+            fi
             echo "$FILE"
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
@@ -154,6 +157,9 @@ jobs:
             FILE="$4"
             echo "$FILE"
             if [[ "$FILE" == "null" ]]; then
+              FILE="./Dockerfile"
+            fi
+            if [ -z "$FILE" ]; then
               FILE="./Dockerfile"
             fi
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true

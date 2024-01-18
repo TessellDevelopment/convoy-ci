@@ -209,15 +209,6 @@
             echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
             echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
             cat .npmrc
-
-        - name: Install Packages
-          run: |
-            npm cache clean --force
-            if [ ! -d "node_modules/@octokit/rest" ]; then
-              npm install @octokit/rest --legacy-peer-deps
-            fi
-            sudo sudo npm install jsonlint -g
-            npm install node-fetch js-yaml
             
         - name: Check for Jsonlint
           run: |
