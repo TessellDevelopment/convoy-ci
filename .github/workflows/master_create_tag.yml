@@ -31,6 +31,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Adding Common UI config
+        run: |
+          set +e
+          rm ~/.npmrc
+          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
+          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
+          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
+          cat .npmrc
+
       - name: Install dependencies
         run: npm install js-yaml --force
 
