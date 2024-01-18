@@ -19,7 +19,7 @@ jobs:
 
   create-tag-on-merge:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-    runs-on: non-build-test
+    runs-on: non-build
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       LABEL: ${{inputs.label}}
@@ -41,8 +41,8 @@ jobs:
           echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
           cat .npmrc
 
-      # - name: Install dependencies
-      #   run: npm install js-yaml --force
+      - name: Install dependencies
+        run: npm install js-yaml --force
 
       - name: Find latest tag
         id: latest_tag

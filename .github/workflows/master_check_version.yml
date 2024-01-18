@@ -6,7 +6,7 @@ on:
 jobs:
 
   convoy-check:
-    runs-on: non-build-test
+    runs-on: non-build
     outputs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
@@ -36,9 +36,9 @@ jobs:
     needs: convoy-check
     runs-on: non-build
     steps:
-      # - run: |
-      #     npm install js-yaml
-      #     npm install fs
+      - run: |
+          npm install js-yaml
+          npm install fs
         
       - name: Check Version in Nexus 
         uses: actions/github-script@v6.3.3
