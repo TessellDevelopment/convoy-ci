@@ -13,8 +13,6 @@ jobs:
   build-amd:
     if: ${{ inputs.type != 'arm' }}
     runs-on: self-hosted
-    env:
-      NEXUS_REPO_NPM: tessell-repos-npm-component
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -43,7 +41,7 @@ jobs:
             rm ~/.npmrc
             rm ~/.yarnrc
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
+            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
             echo "always-auth=true" >> .npmrc
             echo "_auth=$TOKEN" >> .npmrc
             cat .npmrc

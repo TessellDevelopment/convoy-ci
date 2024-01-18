@@ -29,8 +29,6 @@ jobs:
       GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-      NEXUS_REPO_NPM: tessell-repos-npm-component
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
@@ -65,7 +63,7 @@ jobs:
             rm ~/.npmrc
             rm ~/.yarnrc
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}/"' >> .yarnrc
+            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
             echo "always-auth=true" >> .npmrc
             echo "_auth=$TOKEN" >> .npmrc
             cat .npmrc
@@ -76,7 +74,7 @@ jobs:
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" \
+              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
             set +e
           }
