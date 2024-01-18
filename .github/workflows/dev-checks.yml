@@ -639,6 +639,15 @@ jobs:
         run:
           terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
       
+      - name: Run API-spec Validation
+        run: |
+          if [ -f "resources/duplicate_check/cheduplicate_check_component_paths.py" ]; then
+            set -e
+            python3 resources/duplicate_check/cheduplicate_check_component_paths.py
+          else
+            echo "Validation file not present. Skipping check."
+          fi
+      
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
         run: |
