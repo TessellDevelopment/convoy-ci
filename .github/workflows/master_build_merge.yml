@@ -48,10 +48,7 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
-            if [[ "$FILE" == "null" ]]; then
-              FILE="./Dockerfile"
-            fi
-            if [ -z "$FILE" ]; then
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
             echo "$FILE"
@@ -155,13 +152,10 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
+              FILE="./Dockerfile"
+            fi
             echo "$FILE"
-            if [[ "$FILE" == "null" ]]; then
-              FILE="./Dockerfile"
-            fi
-            if [ -z "$FILE" ]; then
-              FILE="./Dockerfile"
-            fi
             sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
             sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}

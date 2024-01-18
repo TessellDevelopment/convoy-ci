@@ -26,12 +26,10 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
-            if [[ "$FILE" == "null" ]]; then
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
-            if [ -z "$FILE" ]; then
-              FILE="./Dockerfile"
-            fi
+            echo "$FILE"
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             echo "Complete"
             echo "$FILE"
@@ -100,12 +98,10 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
-            if [[ "$FILE" == "null" ]]; then
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
-            if [ -z "$FILE" ]; then
-              FILE="./Dockerfile"
-            fi
+            echo "$FILE"
             mvnwBuild
             set -e
             sudo docker build -f $FILE -t $IMAGE_NAME .
