@@ -38,24 +38,6 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
-          npmBuild() {
-            set -e
-            npm install
-            npm run build
-            set +e 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
-            cat ~/.npmrc
-            set -e
-            version=$(cat convoy.yaml | yq -r '.version')
-            yq ".version = \"$version\"" package.json > tmp_package.json
-            mv tmp_package.json package.json
-            npm publish   
-            set +e
-          }
           gradlewUI() {
             set +e
             rm ~/.npmrc
@@ -77,6 +59,44 @@ jobs:
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --no-push -n $CHART_NAME
+            set +e
+          }
+          helm-template() {
+            GITHUB_WORKSPACE=$(pwd)
+            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+            echo "$CHART_GITHUB_LOCATION"
+            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "Cloning convoy-helm-template"
+            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+            git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+            echo "Copying the service values file"
+            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+            set -e
+            CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
+            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+            ls -lrta ../helm-chart/values/apps/
+            echo "Running package and push"
+            ./package-and-push --no-push -n $CHART_NAME
+            set +e
+          }
+          npmBuild() {
+            set -e
+            npm install
+            npm run build
+            set +e 
+            rm ~/.npmrc
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
+            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
+            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
+            cat ~/.npmrc
+            set -e
+            version=$(cat convoy.yaml | yq -r '.version')
+            yq ".version = \"$version\"" package.json > tmp_package.json
+            mv tmp_package.json package.json
+            npm publish   
             set +e
           }
           build() {
