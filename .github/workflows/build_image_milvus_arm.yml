@@ -7,7 +7,7 @@ jobs:
   find-latest-tag:
     runs-on: self-hosted
     outputs:
-      tag: 0.0.1412-1
+      tag: ${{ steps.latest_tag.outputs.tag_ref }}
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
       DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
@@ -169,7 +169,7 @@ jobs:
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
           sudo docker buildx use multiBuild
@@ -181,15 +181,15 @@ jobs:
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
-          # while IFS=$'\t' read -r image version _; do
-          #   echo $image
-          #   echo $version
-          #   sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-          #   sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-          #   sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-          #   sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-          #   sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-          # done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+          while IFS=$'\t' read -r image version _; do
+            echo $image
+            echo $version
+            sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
