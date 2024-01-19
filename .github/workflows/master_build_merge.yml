@@ -67,6 +67,7 @@ jobs:
           makeDocker() {
             set -e
             IMAGE_NAME="$1"
+            export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
             make service
             docker build -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
