@@ -163,7 +163,6 @@ jobs:
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker buildx create --name multiBuild
               sudo docker buildx use multiBuild
               sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
             fi
@@ -176,7 +175,6 @@ jobs:
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker buildx create --name multiBuild
               sudo docker buildx use multiBuild
               sudo docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
               sudo docker buildx build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
