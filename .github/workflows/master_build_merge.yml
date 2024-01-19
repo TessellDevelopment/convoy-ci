@@ -64,6 +64,14 @@ jobs:
             ./package-and-push --prod -n $CHART_NAME
             set +e
           }
+          makeDocker() {
+            set -e
+            IMAGE_NAME="$1"
+            make service
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
