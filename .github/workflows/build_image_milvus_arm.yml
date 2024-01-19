@@ -160,12 +160,10 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         shell: bash
         run: |
-          chmod +x ./images/bookie/script.sh
-          chmod +x ./images/zookeeper/generate-zookeeper-config.sh
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+              sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -176,8 +174,7 @@ jobs:
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} .
-              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
+              sudo docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
               sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
               sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
             fi
@@ -276,7 +273,7 @@ jobs:
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
-
+          
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
