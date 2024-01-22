@@ -7,9 +7,9 @@ jobs:
   find-latest-tag:
     runs-on: self-hosted
     outputs:
-      tag: 0.0.1412-2-10
+      tag: ${{ steps.latest_tag.outputs.tag_ref }}
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
-      DOCKERHUB_ORG: tessellprod
+      DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -156,20 +156,20 @@ jobs:
           sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
           sudo docker system prune --force
       
-      # - name: Build image
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-      #   shell: bash
-      #   run: |
-      #     sudo docker buildx use multiBuild
-      #     while IFS=$'\t' read -r image function file _; do
-      #       if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-      #         echo "Building $image Image"
-      #         sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
-      #       fi
-      #     done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+      - name: Build image
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        shell: bash
+        run: |
+          sudo docker buildx use multiBuild
+          while IFS=$'\t' read -r image function file _; do
+            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+              echo "Building $image Image"
+              sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
+            fi
+          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        # if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
           sudo docker buildx use multiBuild
