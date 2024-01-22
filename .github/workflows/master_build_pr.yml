@@ -48,7 +48,7 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
-            make service
+            make service_compile
             docker build -t $IMAGE_NAME .
             set +e
           }
