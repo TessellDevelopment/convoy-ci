@@ -197,8 +197,12 @@ jobs:
       - name: Push Docker Image to tessellprod
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
           docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+
+      - name: Push FLYWAY Image to tessellprod
+        if: ${{ env.FLYWAY_PUSH_OUTPUT == 'success' }}
+        run: |
+          docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
             
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
