@@ -256,16 +256,6 @@ jobs:
         with:
           name: image-scan-report
           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-          
-          
-      # - name: Sign and push docker image
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
-      #   with:
-      #     image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-      #     private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-      #     private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-      #     private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
       - name: Push Docker Image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}

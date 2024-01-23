@@ -269,24 +269,12 @@ jobs:
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-            
-      - name: Sign and push docker image
+
+      - name: Push Docker Image to tessellprod
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
-        with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-          
-      - name: Sign and push ${{ env.IMAGE1 }} docker image
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && inputs.add_images != '{}' }}
-        uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
-        with:
-          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}"
-          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+        run: |
+          docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          docker push "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE1 }}:${{ steps.latest_tag.outputs.tag_ref }}"
 
    
       - name: Slack Notification
