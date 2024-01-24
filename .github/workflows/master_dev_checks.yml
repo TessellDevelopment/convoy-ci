@@ -311,9 +311,9 @@
             
         - name: Run API-spec Validation
           run: |
-            if [ -f "resources/duplicate_check/cheduplicate_check_component_paths.py" ]; then
+            if [ -f ".github/scripts/duplicate_check_for_component_paths.py" ]; then
               set -e
-              python3 resources/duplicate_check/cheduplicate_check_component_paths.py
+              python3 .github/scripts/duplicate_check_for_component_paths.py
             else
               echo "Validation file not present. Skipping check."
             fi
