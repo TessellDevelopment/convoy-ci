@@ -307,9 +307,17 @@
           id: check_db_version_seq
           if: steps.check_db_migration.outputs.db_migration_dir
           run:
-            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
+            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"   
             
-      
+        - name: Run API-spec Validation
+          run: |
+            if [ -f ".github/scripts/duplicate_check_for_component_paths.py" ]; then
+              set -e
+              python3 .github/scripts/duplicate_check_for_component_paths.py
+            else
+              echo "Validation file not present. Skipping check."
+            fi
+            
         - name: check for terraform (code)
           id: terraform_check
           uses: actions/github-script@v6.3.3
