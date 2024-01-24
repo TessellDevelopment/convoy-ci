@@ -160,7 +160,7 @@ jobs:
                 process.exit(0);
               }
             } catch(error){
-              console.log("convoy.yaml not present in repository skipping check nexus version.")
+              console.log("convoy.yaml not present in repository or missing key. skipping check nexus version.")
               console.error('Error:', error.message)
               process.exit(0);
             }
