@@ -181,14 +181,15 @@ jobs:
           
           
       - name: Docker Image tag and check for flyway
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18693
+          docker push ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:0.0.18693
           if [ -d "flyway" ]; then
             echo "The 'flyway' directory exists in this repository."
             DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
             echo "DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration" >> $GITHUB_ENV
-            docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${{ steps.latest_tag.outputs.tag_ref }}
+            docker tag ${{env.DOCKERHUB_ORG_DEV}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:0.0.18693
+            docker push ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:0.0.18693
             echo "FLYWAY_PUSH_OUTPUT=success" >> $GITHUB_ENV
           else
             echo "The 'flyway' directory does not exists in this repository."
@@ -206,7 +207,7 @@ jobs:
       
           
       - name: sign and push flyway image to docker hub
-        if: ${{ env.FLYWAY_PUSH_OUTPUT == 'success' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_FLYWAY_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
