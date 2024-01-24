@@ -508,6 +508,13 @@ jobs:
               core.setFailed("Tessell Libraries must update the version in chart.yaml file")
             }
 
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            services/**
+
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
         env:
@@ -568,8 +575,8 @@ jobs:
             try{
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
-              var artifactType = data.artifactType
-              if(artifactType === 'nested'){
+              var language = data.language
+              if(language === 'terraform'){
                 modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
@@ -578,10 +585,10 @@ jobs:
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);
-                  exporter = dataDir.artifactNames
+                  exporter = dataDir.generates.artifacts[0].name
                   version = dataDir.version
                   try{
-                    checkVersion('tessell-repos-m2-component',exporter,version);
+                    checkVersion('${{vars.NEXUS_PUSH_REPOS_M2}}',exporter,version);
                   } catch (e) {
                     console.error(e);
                     process.exit(1);
@@ -589,35 +596,40 @@ jobs:
                 }
                 process.exit(0);
               }
-              else if(artifactType === 'helmChart'){
-                const path = data.chartPath
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                version = dataHelm.version
+              else if(language === 'helm'){
+                const buildFunction = data.generates.helmCharts[0].buildFunction
+                if (buildFunction === 'helm-template' && '${{steps.changed-files.outputs.any_modified}}' === 'false'){
+                  console.log("No change in services/**.Skipping version checks")
+                  process.exit(0);
+                }
+                else{
+                  const path = data.generates.helmCharts[0].chartPath
+                  const contentHelm = fs.readFileSync(path, 'utf8');
+                  const dataHelm = yaml.load(contentHelm);
+                  version = dataHelm.version
+                  exporter = data.generates.helmCharts[0].name
+                  nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
+                }
+              }
+              else if(language === 'python'){
+                version = data.version
+                exporter = data.generates.artifacts[0].name
+                exporter = exporter.replaceAll('-','_')
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_PY}}'
               }
               else{
                 version = data.version;
+                exporter = data.generates.artifacts[0].name
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_M2}}'
               }
-              nexusUrl = data.nexusUrl;
-              if(nexusUrl != undefined){
-                const parts = nexusUrl.split('/');
-                nexusRepo = parts[4];
-              }
-              artifacts = data.artifactNames;
-              if(artifacts != undefined){
-                exporter = artifacts[0];
-              }
-              if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+              if(version === undefined || exporter === undefined ){
                 console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                 process.exit(0);
               }
             } catch(error){
-              console.log("convoy.yaml not present in respository skipping check nexus version.")
+              console.log("convoy.yaml not present in repository or missing key. skipping check nexus version.")
               console.error('Error:', error.message)
               process.exit(0);
-            }
-            if(nexusRepo === 'tessell-repos-py-component'){
-              exporter = exporter.replaceAll('-','_')
             }
             try{
               checkVersion(nexusRepo,exporter,version)
