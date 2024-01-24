@@ -135,6 +135,7 @@ jobs:
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          ARTIFACT_GENERATED: "${{needs.file-check.outputs.any-modified}}"
         run: |
           python - <<EOF
           import requests
@@ -147,6 +148,7 @@ jobs:
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
           STATUS = (os.environ.get('STATUS')).upper()
           CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
           CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
@@ -166,6 +168,7 @@ jobs:
             "repoName": REPO,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
+            "artifactGenerated": ARTIFACT_GENERATED == "true"
             "buildStatus": STATUS
           }
 
