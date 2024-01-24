@@ -26,7 +26,7 @@ jobs:
 
   check-approval:
     needs: read-codeowners
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@TDEVOPS-1427
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
