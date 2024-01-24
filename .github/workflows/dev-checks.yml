@@ -130,8 +130,14 @@ jobs:
           supported_jira_projects = os.environ.get('SUPPORTED_JIRA_PROJECTS')
           branch_name = os.environ.get('SOURCE_BRANCH')
           pr_title = os.environ.get('PR_TITLE')
-          jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource') or data.get('ci').get('best-practices').get('jiraValidation').get('jiraIdSource')
-          jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule') or data.get('ci').get('best-practices').get('jiraValidation').get('matchingRule')
+          try:
+            jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource') 
+          except:
+            jira_source = data.get('ci').get('best-practices').get('jiraValidation').get('jiraIdSource')
+          try: 
+            jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule') 
+          except:
+            jira_match = data.get('ci').get('best-practices').get('jiraValidation').get('matchingRule')
 
           match_branch = re.search(rf'({supported_jira_projects})\d+', branch_name)
           match_pr = re.search(rf'({supported_jira_projects})\d+', pr_title)
