@@ -46,7 +46,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_REPO_NPM=tessell-repos-npm-component" >> $GITHUB_ENV    
+          echo "NEXUS_REPO_NPM=${{vars.NEXUS_PUSH_REPOS_NPM}}" >> $GITHUB_ENV    
 
       - name: Set up .npmrc
         run: |
@@ -54,9 +54,9 @@ jobs:
           cd ~
           rm .npmrc
           TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{ env.NEXUS_URL }}/repository/:_auth = $TOKEN" >> .npmrc
-          echo "//${{ env.NEXUS_URL }}/repository/:always-auth = true" >> .npmrc 
-          echo "@tessell:registry=https://${{ env.NEXUS_URL }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
+          echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> .npmrc
+          echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> .npmrc 
+          echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
           cat .npmrc
 
       - name: Publish the package
@@ -115,7 +115,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"

@@ -7,8 +7,6 @@
 
     dev-checks:
       runs-on: non-build
-      env:
-        NEXUS_REPO_NPM: tessell-repos-npm-component
       steps:
         - name: Dump GitHub context
           env:
@@ -207,19 +205,10 @@
             set +e
             rm ~/.npmrc
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:_auth = '$TOKEN'" >> .npmrc
-            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}:always-auth = true" >> .npmrc
-            echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_REPO_NPM}}" >> .npmrc
+            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
+            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
+            echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
             cat .npmrc
-
-        - name: Install Packages
-          run: |
-            npm cache clean --force
-            if [ ! -d "node_modules/@octokit/rest" ]; then
-              npm install @octokit/rest --legacy-peer-deps
-            fi
-            sudo sudo npm install jsonlint -g
-            npm install node-fetch js-yaml
             
         - name: Check for Jsonlint
           run: |
