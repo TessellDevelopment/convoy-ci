@@ -130,9 +130,9 @@ jobs:
           supported_jira_tickets = os.environ.get('SUPPORTED_JIRA_TICKETS')
           branch_name = os.environ.get('SOURCE_BRANCH')
           pr_title = os.environ.get('PR_TITLE')
-          jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-          jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
-
+          jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
+          jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
+          
           match_branch = re.search(rf'({supported_jira_tickets})\d+', branch_name)
           match_pr = re.search(rf'({supported_jira_tickets})\d+', pr_title)
               
