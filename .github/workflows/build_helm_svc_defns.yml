@@ -5,8 +5,29 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  file-check:
+    runs-on: self-hosted
+    outputs:
+      any-modified: ${{steps.changed-files.outputs.any_modified}}
+    name: Check changed files
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            Chart.yaml
+            services/**
+
   build:
     runs-on: self-hosted
+    needs: file-check
+    if: needs.file-check.outputs.any-modified == 'true' 
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -28,7 +49,7 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          echo "NEXUS_REPOS_HELM=tessell-repos-helm-component" >> $GITHUB_ENV
+          echo "NEXUS_REPOS_HELM=${{vars.NEXUS_PUSH_REPOS_HELM}}" >> $GITHUB_ENV
 
       - name: Configure convoy-helm-template
         run: |
@@ -41,7 +62,14 @@ jobs:
           echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION" >> $GITHUB_ENV
           echo "Cloning convoy-helm-template"
           rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-          git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+          template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+          if [ $? -eq 0 ]; then
+              echo "convoy-helm-template version: $template_version"
+          else
+              echo "convoy-helm-template version not found.Exiting."
+              exit 1
+          fi
+          git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
           echo "Copying the service values file"
           cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
           cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
@@ -52,7 +80,7 @@ jobs:
           cd ${{env.TEMPLATE_REPO_GITHUB_LOCATION}}/scripts
           ls -lrta ../helm-chart/values/apps/
           echo "Running package and push"
-          if [[ "${{env.NEXUS_REPOS_HELM}}" == "tessell-repos-helm-component" ]]; then
+          if [[ "${{env.NEXUS_REPOS_HELM}}" == "${{vars.NEXUS_PUSH_REPOS_HELM}}" ]]; then
             ./package-and-push --prod -n $CHART_NAME
           else
             ./package-and-push --no-push -n $CHART_NAME
@@ -148,7 +176,7 @@ jobs:
           }
 
           max_retries = 3
-          retry_delay = 5 
+          retry_delay = 20 
       
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
