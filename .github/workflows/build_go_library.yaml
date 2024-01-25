@@ -85,7 +85,7 @@ jobs:
       - run: aws --version
         shell: bash
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials Prod Asset
         run: |
           aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
@@ -236,7 +236,7 @@ jobs:
               exit 1
           fi   
 
-      - name: Pushing generated tar files to Nexus / S3
+      - name: Pushing generated tar files to Nexus / S3 Prod Asset
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
             python3 -c """
@@ -270,6 +270,33 @@ jobs:
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
               """ 
+
+      - name: Configure AWS Credentials for tessell-artifacts-dev
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+          aws configure set region ap-south-1 
+
+      - name: Upload tar file to S3 Bucket tessell-artifacts-dev
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          python3 -c """
+          import json
+          import os
+          import yaml
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          artifacts = yaml_data.get('generates').get('artifacts')
+          for artifact in artifacts:
+              file = artifact['name']
+              ext = artifact['extension']
+              version = "${{ steps.latest_tag.outputs.tag_ref }}""
+              print(file+'-'+version+ext)
+              exit_code = os.system(\"aws s3 cp ./{file}.{ext} \
+                  s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/{file}-{version}.{ext} \".format(ext=ext, file=file, version=version))
+              if exit_code != 0:
+                raise Exception('Command failed with exit code {}'.format(exit_code))
+            """ 
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
