@@ -225,60 +225,60 @@
                 exit 1
             fi   
 
-        - name: Build and push image
-          run: |
-            echo "Building the Image"
-            export PATH=${PATH}:$GOPATH/bin
-            echo $PATH
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+        # - name: Build and push image
+        #   run: |
+        #     echo "Building the Image"
+        #     export PATH=${PATH}:$GOPATH/bin
+        #     echo $PATH
+        #     export GOROOT=/home/github/actions-runner/_work/_tool/go/1.20.1/x64
+        #     git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
 
-            while IFS=$'\t' read -r image file _; do
-              echo $image
-              echo $file
-              docker build --no-cache -f $file -t ${{env.DOCKERHUB_ORG}}/$image .
-              docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:scan
-              if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
-                docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
-                docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
-              fi
-            done < <(yq e '.generates.dockerImages[] | [.name, .dockerfile] | @tsv' convoy.yaml)
+        #     while IFS=$'\t' read -r image file _; do
+        #       echo $image
+        #       echo $file
+        #       docker build --no-cache -f $file -t ${{env.DOCKERHUB_ORG}}/$image .
+        #       docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:scan
+        #       if [[ "${{env.DOCKERHUB_ORG}}" == "tessellprod" ]]; then
+        #         docker tag ${{env.DOCKERHUB_ORG}}/$image:latest ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
+        #         docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 
+        #       fi
+        #     done < <(yq e '.generates.dockerImages[] | [.name, .dockerfile] | @tsv' convoy.yaml)
     
-        - name: Docker image scan
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          id: docker-image-scan-frpc
-          uses: azure/container-scan@v0.1
-          with:
-              severity-threshold: CRITICAL
-              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
-              username: ${{ secrets.DOCKER_USERNAME }}
-              password: ${{ secrets.DOCKER_PASSWORD }}   
-              trivy-version: 0.46.1
+        # - name: Docker image scan
+        #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        #   id: docker-image-scan-frpc
+        #   uses: azure/container-scan@v0.1
+        #   with:
+        #       severity-threshold: CRITICAL
+        #       image-name: ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
+        #       username: ${{ secrets.DOCKER_USERNAME }}
+        #       password: ${{ secrets.DOCKER_PASSWORD }}   
+        #       trivy-version: 0.46.1
               
-        - name: Upload image scan report
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          uses: actions/upload-artifact@v3
-          with:
-              name: image-scan-report
-              path: ${{ steps.docker-image-scan-frpc.outputs.scan-report-path }}
+        # - name: Upload image scan report
+        #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        #   uses: actions/upload-artifact@v3
+        #   with:
+        #       name: image-scan-report
+        #       path: ${{ steps.docker-image-scan-frpc.outputs.scan-report-path }}
 
-        - name: Docker image scan
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          id: docker-image-scan-frps
-          uses: azure/container-scan@v0.1
-          with:
-              severity-threshold: CRITICAL
-              image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps:scan
-              username: ${{ secrets.DOCKER_USERNAME }}
-              password: ${{ secrets.DOCKER_PASSWORD }}   
-              trivy-version: 0.46.1
+        # - name: Docker image scan
+        #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        #   id: docker-image-scan-frps
+        #   uses: azure/container-scan@v0.1
+        #   with:
+        #       severity-threshold: CRITICAL
+        #       image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps:scan
+        #       username: ${{ secrets.DOCKER_USERNAME }}
+        #       password: ${{ secrets.DOCKER_PASSWORD }}   
+        #       trivy-version: 0.46.1
               
-        - name: Upload image scan report
-          if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          uses: actions/upload-artifact@v3
-          with:
-              name: image-scan-report
-              path: ${{ steps.docker-image-scan-frps.outputs.scan-report-path }}
+        # - name: Upload image scan report
+        #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        #   uses: actions/upload-artifact@v3
+        #   with:
+        #       name: image-scan-report
+        #       path: ${{ steps.docker-image-scan-frps.outputs.scan-report-path }}
 
         - name: Push tar files to nexus
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -291,21 +291,26 @@
             for os in "${os_type[@]}"; do
               for service in "${services[@]}"; do
                 echo "{$service}-{$os}"
-                mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-                -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-                -DgeneratePom=true -Dpackaging=tar \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-                -Dfile=./tessell-$service-$os.tar -DrepositoryId=nexus
+                # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                # -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                # -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                # -DgeneratePom=true -Dpackaging=tar \
+                # -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                # -Dfile=./tessell-$service-$os.tar -DrepositoryId=nexus
+
+                curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                    --upload-file ./tessell-$service-$os.tar \
+                    https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/frp/tessell-$service-$os-${{ steps.latest_tag.outputs.tag_ref }}.tar
+
               done
             done
 
-        - name: Upload tar file to S3 Bucket Prod Asset
-          if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-          run: |
-            VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-            aws s3 cp tessell-frpc-linux.tar s3://tesselltools/terls/tessell/frp/$VERSION/
-            aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
+        # - name: Upload tar file to S3 Bucket Prod Asset
+        #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        #   run: |
+        #     VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+        #     aws s3 cp tessell-frpc-linux.tar s3://tesselltools/terls/tessell/frp/$VERSION/
+        #     aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
 
         - name: Configure AWS Credentials for tessell-artifacts-dev
           run: |

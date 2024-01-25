@@ -166,10 +166,10 @@ jobs:
               exit 1
           fi   
 
-      - name: Upload tar file to S3 Bucket Prod Asset
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
+      # - name: Upload tar file to S3 Bucket Prod Asset
+      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      #   run: |
+      #     aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
 
       - name: Configure AWS Credentials for tessell-artifacts-dev
         run: |
@@ -177,13 +177,15 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           aws configure set region ap-south-1
 
-      - name: Upload tar file to S3 Bucket tessell-artifacts-dev
+      - name: Upload tar file to Nexus / S3 Bucket tessell-artifacts-dev
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                  --upload-file ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz \
+                  https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
+
           aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
   
-
-
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}

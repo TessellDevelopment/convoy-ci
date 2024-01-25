@@ -52,7 +52,7 @@ jobs:
       - run: aws --version
         shell: bash
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials Devqa-infra
         run: |
           aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
@@ -116,7 +116,7 @@ jobs:
           done
           ls -lrta $BUILD_DIR
 
-      - name: Upload terraform modules to nexus / S3 bucket
+      - name: Upload terraform modules to nexus / S3 Dev-qa infra bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
