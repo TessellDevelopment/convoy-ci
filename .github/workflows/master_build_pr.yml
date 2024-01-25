@@ -28,6 +28,8 @@ jobs:
           files: |
             Chart.yaml
             services/**
+            scripts/Dockerfile
+            scripts/initializeAutomation.sh
 
       - name: Build
         shell: bash
@@ -36,10 +38,19 @@ jobs:
             set -e
             go install golang.org/x/tools/cmd/goimports@latest
             ARTIFACT="$1"
-            OS=
-            SERVICE=
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             make os=$OS $SERVICE
             make clean
+            set +e
+          }
+          createPipConf(){
+            set -e
+            echo "[global]" > pip.conf
+            echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+            sudo cp pip.conf /etc/pip.conf
             set +e
           }
           dockerBuild() {
@@ -58,6 +69,14 @@ jobs:
             set -e
             mvnwBuild
             dockerBuild "$1" "$2" "$3" "$4"
+            set +e
+          }
+          functionBuild() {
+            set -e
+            ARTIFACT="$1"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            make OS=$OS CLOUD=$CLOUD package
             set +e
           }
           gradlewMaven() {
@@ -114,6 +133,16 @@ jobs:
               set +e
             fi
           }
+          makeBuild() {
+            set -e
+            make service
+            set +e
+          }
+          makeImage() {
+            set -e
+            make image
+            set +e
+          }
           mvnwBuild() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
@@ -137,7 +166,42 @@ jobs:
             npm publish   
             set +e
           }
-          zipBuild() {
+          qaBuild(){
+            set -e
+            createPipConf
+            setupQAEnv
+            export PYTHONPATH=lib
+            export GITHUB_USER="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}"
+            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            cp configs/qarel.json config.json
+            source qavenv/bin/activate
+            make clients -B
+            source qavenv/bin/activate
+            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            if [[ ${{steps.outputs.changed-files.any_modified}} == 'true' ]]; then
+              IMAGE_NAME="$1"
+              dockerBuild $IMAGE_NAME
+            fi
+            set +e
+          }
+          setupQAEnv() {
+            INSTALL_DIR=/usr/local/bin
+            sudo mkdir -p $INSTALL_DIR/openapitools
+            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+            python3 -m pip install --user virtualenv
+            python3 -m pip install yq wheel
+            python3 -m venv qavenv
+            source qavenv/bin/activate
+            python3 -m pip install -r scripts/requirements.txt
+            sudo python3 -m pip list | grep harness
+            python3 -m pip list | grep harness              
+          }
+          tsmZipBuild() {
             set -e
             ARTIFACT="$1"
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
@@ -152,14 +216,15 @@ jobs:
               return
             fi
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            while IFS=$'\t' read -r name buildFunction ext version file _; do
+            version=$(yq '.version' convoy.yaml)
+            while IFS=$'\t' read -r name buildFunction ext file _; do
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
           build "artifacts"
@@ -215,14 +280,15 @@ jobs:
             if [[ -z "$check" ]]; then
               return
             fi
-            while IFS=$'\t' read -r name buildFunction ext version file _; do
+            version=$(yq '.version' convoy.yaml)
+            while IFS=$'\t' read -r name buildFunction ext file _; do
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
           build "artifacts"
