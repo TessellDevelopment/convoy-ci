@@ -236,19 +236,19 @@ jobs:
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
-            # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-            #   -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-            #   -DgroupId=tessell.filebeat -DartifactId=filebeat-linux -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-            #   -DgeneratePom=true -Dpackaging=tar.gz \
-            #   -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-            #   -Dfile=./filebeat/build/distributions/filebeat-linux.tar.gz -DrepositoryId=nexus
-            # cat $HOME/.m2/settings.xml
-            # mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-            #   -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
-            #   -DgroupId=tessell.filebeat -DartifactId=filebeat-windows -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-            #   -DgeneratePom=true -Dpackaging=tar.gz \
-            #   -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
-            #   -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+              -DgroupId=tessell.filebeat -DartifactId=filebeat-linux -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+              -DgeneratePom=true -Dpackaging=tar.gz \
+              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+              -Dfile=./filebeat/build/distributions/filebeat-linux.tar.gz -DrepositoryId=nexus
+            cat $HOME/.m2/settings.xml
+            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+              -DgroupId=tessell.filebeat -DartifactId=filebeat-windows -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+              -DgeneratePom=true -Dpackaging=tar.gz \
+              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+              -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                   --upload-file ./filebeat/build/distributions/filebeat-linux.tar.gz \
@@ -259,12 +259,12 @@ jobs:
                   https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/filebeat/filebeat-windows-${{ steps.latest_tag.outputs.tag_ref }}.tar.gz
 
 
-      # - name: Upload tar file to S3 Bucket Prod Asset
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   run: |
-      #     VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-      #     aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
-      #     aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+      - name: Upload tar file to S3 Bucket Prod Asset
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
  
       - name: Configure AWS Credentials for tessell-artifacts-dev
         run: |
@@ -280,50 +280,50 @@ jobs:
           aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/filebeat/filebeat-linux-$VERSION.tar.gz
 
 
-      # - name: Set Push repository
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   shell: bash
-      #   run: |
-      #     echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
+      - name: Set Push repository
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
               
-      # - name: tagging docker image with scan
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-      #   run: |
-      #      docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
+      - name: tagging docker image with scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        run: |
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
       
-      # - name: tagging the latest tag
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   shell: bash
-      #   run: |
-      #      docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+      - name: tagging the latest tag
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+           docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
               
 
-      # - name: Docker image scan
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-      #   id: docker-image-scan
-      #   uses: azure/container-scan@v0.1
-      #   with:
-      #     severity-threshold: CRITICAL
-      #     image-name: ${{ env.IMAGE_NAME }}:scan
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
-      #     trivy-version: "0.29.1"
+      - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: docker-image-scan
+        uses: azure/container-scan@v0.1
+        with:
+          severity-threshold: CRITICAL
+          image-name: ${{ env.IMAGE_NAME }}:scan
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          trivy-version: "0.29.1"
 
-      # - uses: actions/upload-artifact@v3
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-      #   with:
-      #     name: image-scan-report
-      #     path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+      - uses: actions/upload-artifact@v3
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        with:
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
           
           
-      # - name: Sign and push docker image
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
-      #   with:
-      #     image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
-      #     private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
-      #     private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-      #     private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+      - name: Sign and push docker image
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
+        with:
+          image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
+          private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
+          private-key: ${{ secrets.DCT_PRIVATE_KEY }}
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
 
       - name: Slack Notification
