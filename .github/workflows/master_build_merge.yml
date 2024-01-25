@@ -86,24 +86,26 @@ jobs:
             set +e
           }
           helm-template() {
-            GITHUB_WORKSPACE=$(pwd)
-            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
-            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
-            echo "$CHART_GITHUB_LOCATION"
-            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
-            echo "Cloning convoy-helm-template"
-            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-            git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
-            echo "Copying the service values file"
-            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
-            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
-            set -e
-            CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
-            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
-            ls -lrta ../helm-chart/values/apps/
-            echo "Running package and push"
-            ./package-and-push --prod -n $CHART_NAME
-            set +e
+            if [[ ${{steps.outputs.changed-files.any_modified}} == 'true' ]]; then
+              GITHUB_WORKSPACE=$(pwd)
+              CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+              TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+              echo "$CHART_GITHUB_LOCATION"
+              echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+              echo "Cloning convoy-helm-template"
+              rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+              git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+              echo "Copying the service values file"
+              cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+              cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+              set -e
+              CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
+              cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+              ls -lrta ../helm-chart/values/apps/
+              echo "Running package and push"
+              ./package-and-push --prod -n $CHART_NAME
+              set +e
+            fi
           }
           npmBuild() {
             set -e
