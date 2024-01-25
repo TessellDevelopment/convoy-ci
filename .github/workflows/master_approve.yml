@@ -25,7 +25,6 @@ jobs:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
 
   check-approval:
-    if: github.event.review.state == 'approved'
     needs: read-codeowners
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit

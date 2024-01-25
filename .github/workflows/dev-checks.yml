@@ -104,32 +104,152 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install shyaml
+          pip install shyaml jira
           echo ${{steps.convoy_check.outputs.convoy_exists}}
-            
+                   
       - name: Extract Jira Ticket
         if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
         id: extract
         env:
           PR_TITLE: ${{github.event.pull_request.title}}
+          SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
               echo "Revert branch, skipping Jira Extraction"
               exit 0
           fi
-          jira_source=$(shyaml get-value ci.bestPractices.jiraValidation.jiraIdSource < convoy.yaml) || jira_source=$(shyaml get-value ci.best-practices.jiraValidation.jiraIdSource < convoy.yaml)
-          jira_match=$(shyaml get-value ci.bestPractices.jiraValidation.matchingRule < convoy.yaml) || jira_match=$(shyaml get-value ci.best-practices.jiraValidation.matchingRule < convoy.yaml)
-          extract_jira_id "${{env.SOURCE_BRANCH}}" "$PR_TITLE" "$jira_source" "$jira_match"
+          python3 - <<EOF
+          import os
+          import re
+          import sys
+          import yaml
+
+          with open('convoy.yaml', 'r') as file:
+              data = yaml.safe_load(file)
+
+          supported_jira_projects = os.environ.get('SUPPORTED_JIRA_PROJECTS')
+          branch_name = os.environ.get('SOURCE_BRANCH')
+          pr_title = os.environ.get('PR_TITLE')
+          try:
+            jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource') 
+          except:
+            jira_source = data.get('ci').get('best-practices').get('jiraValidation').get('jiraIdSource')
+          try: 
+            jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule') 
+          except:
+            jira_match = data.get('ci').get('best-practices').get('jiraValidation').get('matchingRule')
+
+          match_branch = re.search(rf'({supported_jira_projects})\d+', branch_name)
+          match_pr = re.search(rf'({supported_jira_projects})\d+', pr_title)
+              
+          if jira_match == 'ALL': 
+              if match_branch and match_pr and jira_source == 'BOTH':
+                  ticket_branch = match_branch.group(0)
+                  ticket_pr = match_pr.group(0)
+                  if ticket_branch == ticket_pr:
+                      print(f"Same Jira present in both Branch and PR:{ticket_branch}")
+                      sys.stdout.write(f"::set-output name=jira_ticket::{ticket_branch}\n")
+                      exit(0)
+                  else:
+                      raise Exception("Error: Different Jira present in both Branch and PR")
+              elif match_branch and jira_source == 'BRANCH_NAME_PREFIX':
+                  ticket = match_branch.group(0)
+                  print(f"Jira ticket extracted from Branch name:{ticket}")
+                  sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                  exit(0)
+              elif match_pr and jira_source == 'PR_TITLE_PREFIX':
+                  ticket = match_pr.group(0)
+                  print(f"Jira ticket extracted from PR Title:{ticket}")
+                  sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                  exit(0)
+              else:
+                  raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")   
+          elif jira_match == 'ANY':
+                  if jira_source == 'BRANCH_NAME_PREFIX':
+                      if match_branch:
+                          ticket = match_branch.group(0)
+                          print(f"Jira ticket extracted from Branch name:{ticket}")
+                          sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                          exit(0)
+                      else: 
+                          print(f"No Jira ticket found in Branch name, checking in PR title")     
+                          if match_pr :
+                              ticket = match_pr.group(0)
+                              print(f"Jira ticket extracted from PR Title:{ticket}")
+                              sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                              exit(0)
+                          else:
+                              raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+                  elif jira_source == 'PR_TITLE_PREFIX':
+                      if match_pr:
+                          ticket = match_pr.group(0)
+                          print(f"Jira ticket extracted from PR Title:{ticket}")
+                          sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                          exit(0)
+
+                      else:
+                          print(f"No Jira ticket found in PR Title, checking in Branch name")     
+                          if match_branch:
+                              ticket = match_branch.group(0)
+                              print(f"Jira ticket extracted from Branch name:{ticket}")
+                              sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                              exit(0)
+                          else:
+                              raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+                  elif jira_source == 'BOTH':
+                      if match_branch:
+                          ticket = match_branch.group(0)
+                          print(f"Jira ticket extracted from Branch name:{ticket}")
+                          sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                          exit(0)
+                      else: 
+                          print(f"No Jira ticket found in Branch name, checking in PR title")     
+                          if match_pr:
+                              ticket = match_pr.group(0)
+                              print(f"Jira ticket extracted from PR Title:{ticket}")
+                              sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                              exit(0)
+                          else:
+                              raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")            
+                  else: 
+                      raise Exception("Error: Invalid selection in Jira Source")         
+          elif jira_match == 'NONE':
+              print("No extraction of Jira ticket specified")
+              exit(0)
+          else: 
+              raise Exception("Invalid Jira Match type specified")
+          EOF
 
       - name: Validate Jira Ticket
         if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
+        env:
+          JIRA: ${{steps.extract.outputs.jira_ticket}}
+          JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
             echo "Revert branch, skipping Jira Validation"
             exit 0
           fi
-          echo "${{steps.extract.outputs.jira_ticket}}"
-          validate_jira_id '${{ secrets.JIRA_USERNAME }}' '${{ secrets.JIRA_API_TOKEN }}' '${{ steps.extract.outputs.jira_ticket }}'
+          echo "${{env.JIRA}}"
+          python3 - <<EOF
+          import os
+          from jira import JIRA
+          user = os.environ.get('JIRA_USERNAME')
+          try:
+            apikey = os.environ.get('JIRA_API_TOKEN')
+            jira_ticket = os.environ.get('JIRA')
+            options = {'server': 'https://tessell.atlassian.net'}
+            jira = JIRA(options, basic_auth=(user, apikey) )
+            try:
+                issue = jira.issue(jira_ticket)
+                print("Ticket Summary=",issue.fields.summary)
+            except Exception as ex:
+                print("Not a valid jira", jira_ticket)
+                raise Exception(ex)
+          except Exception as ex:
+            raise Exception(ex)  
+          EOF
 
       - name: Check double commit
         env: 
@@ -508,6 +628,13 @@ jobs:
               core.setFailed("Tessell Libraries must update the version in chart.yaml file")
             }
 
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            services/**
+
       - name: check for version in nexus 
         uses: actions/github-script@v6.3.3
         env:
@@ -568,8 +695,8 @@ jobs:
             try{
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
-              var artifactType = data.artifactType
-              if(artifactType === 'nested'){
+              var language = data.language
+              if(language === 'terraform'){
                 modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
@@ -578,10 +705,10 @@ jobs:
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);
-                  exporter = dataDir.artifactNames
+                  exporter = dataDir.generates.artifacts[0].name
                   version = dataDir.version
                   try{
-                    checkVersion('tessell-repos-m2-component',exporter,version);
+                    checkVersion('${{vars.NEXUS_PUSH_REPOS_M2}}',exporter,version);
                   } catch (e) {
                     console.error(e);
                     process.exit(1);
@@ -589,35 +716,40 @@ jobs:
                 }
                 process.exit(0);
               }
-              else if(artifactType === 'helmChart'){
-                const path = data.chartPath
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                version = dataHelm.version
+              else if(language === 'helm'){
+                const buildFunction = data.generates.helmCharts[0].buildFunction
+                if (buildFunction === 'helm-template' && '${{steps.changed-files.outputs.any_modified}}' === 'false'){
+                  console.log("No change in services/**.Skipping version checks")
+                  process.exit(0);
+                }
+                else{
+                  const path = data.generates.helmCharts[0].chartPath
+                  const contentHelm = fs.readFileSync(path, 'utf8');
+                  const dataHelm = yaml.load(contentHelm);
+                  version = dataHelm.version
+                  exporter = data.generates.helmCharts[0].name
+                  nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
+                }
+              }
+              else if(language === 'python'){
+                version = data.version
+                exporter = data.generates.artifacts[0].name
+                exporter = exporter.replaceAll('-','_')
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_PY}}'
               }
               else{
                 version = data.version;
+                exporter = data.generates.artifacts[0].name
+                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_M2}}'
               }
-              nexusUrl = data.nexusUrl;
-              if(nexusUrl != undefined){
-                const parts = nexusUrl.split('/');
-                nexusRepo = parts[4];
-              }
-              artifacts = data.artifactNames;
-              if(artifacts != undefined){
-                exporter = artifacts[0];
-              }
-              if(version === undefined || nexusUrl === undefined || artifacts === undefined ){
+              if(version === undefined || exporter === undefined ){
                 console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
                 process.exit(0);
               }
             } catch(error){
-              console.log("convoy.yaml not present in respository skipping check nexus version.")
+              console.log("convoy.yaml not present in repository or missing key. skipping check nexus version.")
               console.error('Error:', error.message)
               process.exit(0);
-            }
-            if(nexusRepo === 'tessell-repos-py-component'){
-              exporter = exporter.replaceAll('-','_')
             }
             try{
               checkVersion(nexusRepo,exporter,version)
@@ -638,6 +770,15 @@ jobs:
         if: steps.terraform_check.outputs.terraform_file 
         run:
           terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+      
+      - name: Run API-spec Validation
+        run: |
+          if [ -f ".github/scripts/duplicate_check_for_component_paths.py" ]; then
+            set -e
+            python3 .github/scripts/duplicate_check_for_component_paths.py
+          else
+            echo "Validation file not present. Skipping check."
+          fi
       
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
