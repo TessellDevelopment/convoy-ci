@@ -34,7 +34,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          agentBuild () {
+          agentBuild() {
             set -e
             go install golang.org/x/tools/cmd/goimports@latest
             ARTIFACT="$1"
@@ -52,6 +52,14 @@ jobs:
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
             set +e
+          }
+          dbPluginBuild() {
+            set -e
+            ARTIFACT="$1"
+            createPipConf
+            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run; fi
+            lintCheck
+            gradlewPythonwheel
           }
           dockerBuild() {
             set -e
@@ -84,6 +92,13 @@ jobs:
             echo ./gradlew mavenPackage --refresh-dependencies --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
+          }
+          gradlewPythonwheel() {
+            set -e
+            ./gradlew pythonWheel --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
@@ -132,6 +147,10 @@ jobs:
               ./package-and-push --no-push -n $CHART_NAME
               set +e
             fi
+          }
+          lintCheck() {
+            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
           makeBuild() {
             set -e

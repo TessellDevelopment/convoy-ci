@@ -96,6 +96,17 @@ jobs:
             sudo cp pip.conf /etc/pip.conf
             set +e
           }
+          dbPluginBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            createPipConf
+            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run; fi
+            gradlewUploadPlugin
+            cd $ARTIFACT/build
+            mv "$ARTIFACT-${LATEST_TAG}-$EXTENSION" "$ARTIFACT-$EXTENSION"
+            awsS3Push "$ARTIFACT-$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -133,6 +144,16 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
+            set +e
+          }
+          gradlewUploadPlugin() {
+            set -e
+            ./gradlew createMvnSettings uploadPlugin --console plain \
+              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" 
             set +e
           }
           gradlewUI() {
