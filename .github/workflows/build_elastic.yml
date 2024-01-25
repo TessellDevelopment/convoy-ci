@@ -96,6 +96,7 @@ jobs:
         run: |
           cd filebeat
           docker build -t  ${{ env.IMAGE_NAME }}  .   
+          
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v6.3.3
         id: find_commit
