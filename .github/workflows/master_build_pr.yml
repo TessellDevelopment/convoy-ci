@@ -24,6 +24,16 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          agentBuild () {
+            set -e
+            go install golang.org/x/tools/cmd/goimports@latest
+            ARTIFACT="$1"
+            OS=
+            SERVICE=
+            make os=$OS $SERVICE
+            make clean
+            set +e
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -31,11 +41,24 @@ jobs:
             if [[ "$FILE" == "null" ]]; then
               FILE="./Dockerfile"
             fi
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            echo "Complete"
             echo "$FILE"
             echo "Starting Docker"
             docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          dockerBuildOps() {
+            set -e
+            mvnwBuild
+            dockerBuild "$1" "$2" "$3" "$4"
+            set +e
+          }
+          gradlewMaven() {
+            set -e
+            echo ./gradlew mavenPackage --refresh-dependencies --console plain \
+              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
           gradlewUI() {
@@ -81,6 +104,11 @@ jobs:
             ./package-and-push --no-push -n $CHART_NAME
             set +e
           }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
           npmBuild() {
             set -e
             npm install
@@ -99,12 +127,21 @@ jobs:
             npm publish   
             set +e
           }
+          zipBuild() {
+            set -e
+            ARTIFACT="$1"
+            mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
+            unzip -l $ARTIFACT.zip
+            cd ..
+            set +e
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
             if [[ -z "$check" ]]; then
               return
             fi
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             while IFS=$'\t' read -r name buildFunction ext version file _; do
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
@@ -149,7 +186,7 @@ jobs:
             sudo ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
             set +e
           }
-          dockerBuild() {
+          dockerBuildOps() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"

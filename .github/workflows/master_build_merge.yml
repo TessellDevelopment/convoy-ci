@@ -42,9 +42,41 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}   
 
+      - name: Install AWS CLI
+        run: |
+          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
+          chmod +x install-aws.sh
+          sudo ./install-aws.sh "v2" "amd64"
+          rm install-aws.sh
+      
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Build and Push
         shell: bash
         run: |
+          agentBuild () {
+            set -e
+            go install golang.org/x/tools/cmd/goimports@latest
+            ARTIFACT="$1"
+            OS=
+            SERVICE=
+            make os=$OS $SERVICE
+            make clean
+            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
+            awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
+            set +e
+          }
+          awsS3Push(){
+            set -e
+            SOURCE="$1"
+            DESTINATION="$2"
+            aws s3 cp $SOURCE $DESTINATION
+            set +e
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -53,9 +85,25 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            set +e
+          }
+          dockerBuildOps() {
+            set -e
+            mvnwBuild
+            dockerBuild "$1" "$2" "$3" "$4"
+            set +e
+          }
+          gradlewMaven(){
+            set -e
+            echo ./gradlew mavenDeploy --console plain --refresh-dependencies \
+              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
+              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
             set +e
           }
           gradlewUI() {
@@ -105,6 +153,11 @@ jobs:
             ./package-and-push --prod -n $CHART_NAME
             set +e
           }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
           npmBuild() {
             set -e
             npm install
@@ -123,12 +176,41 @@ jobs:
             npm publish   
             set +e
           }
+          mvnDeploy() {
+            set -e
+            ARTIFACT_ID="$1"
+            EXTENSION="$2"
+            FILE="$3"
+            GROUP_ID="$4"
+            VERSION="$5"
+            mvn deploy:deploy-file -Dnexus_url=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
+                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+                -DgroupId=tessell.tsm-infra -DartifactId=$ARTIFACT -Dversion=$VERSION \
+                -DgeneratePom=true -Dpackaging=zip \
+                -Durl=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
+                -Dfile=build/$ARTIFACT.zip -DrepositoryId=nexus
+            set +e
+          }
+          tsmZipBuild() {
+            set -e
+            ARTIFACT="$1"
+            VERSION="$3"
+            mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
+            unzip -l $ARTIFACT.zip
+            cd ..
+            mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm-infra" "$VERSION"
+            set +e
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
             if [[ -z "$check" ]]; then
               return
             fi
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             while IFS=$'\t' read -r name buildFunction ext version file _; do
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
@@ -207,7 +289,7 @@ jobs:
             # Add Build Function
             set +e
           }
-          dockerBuild() {
+          dockerBuildOps() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
