@@ -36,10 +36,18 @@ jobs:
     needs: convoy-check
     runs-on: non-build
     steps:
-      - run: |
-          npm install js-yaml
-          npm install fs
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
         
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            services/**
+
       - name: Check Version in Nexus 
         uses: actions/github-script@v6.3.3
         env:
@@ -122,12 +130,19 @@ jobs:
                 process.exit(0);
               }
               else if(language === 'helm'){
-                const path = data.generates.helmCharts[0].chartPath
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                version = dataHelm.version
-                exporter = data.generates.helmCharts[0].name
-                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
+                const buildFunction = data.generates.helmCharts[0].buildFunction
+                if (buildFunction === 'helm-template' && '${{steps.changed-files.outputs.any_modified}}' === 'false'){
+                  console.log("No change in services/**.Skipping version checks")
+                  process.exit(0);
+                }
+                else{
+                  const path = data.generates.helmCharts[0].chartPath
+                  const contentHelm = fs.readFileSync(path, 'utf8');
+                  const dataHelm = yaml.load(contentHelm);
+                  version = dataHelm.version
+                  exporter = data.generates.helmCharts[0].name
+                  nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
+                }
               }
               else if(language === 'python'){
                 version = data.version
@@ -145,7 +160,7 @@ jobs:
                 process.exit(0);
               }
             } catch(error){
-              console.log("convoy.yaml not present in repository skipping check nexus version.")
+              console.log("convoy.yaml not present in repository or missing key. skipping check nexus version.")
               console.error('Error:', error.message)
               process.exit(0);
             }
