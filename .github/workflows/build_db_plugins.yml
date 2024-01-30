@@ -112,8 +112,7 @@ jobs:
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          # repo="${{github.repository}}"
-          repo="tessell-database-plugin-mssql"
+          repo="${{github.repository}}"
           plugin=$(echo "$repo" | cut -d '-' -f 4)
           cd "tessell-db-plugin-$plugin"
           cd build
