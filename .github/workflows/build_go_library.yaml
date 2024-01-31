@@ -298,7 +298,7 @@ jobs:
               file = artifact['name']
               ext = artifact['extension']
               exit_code = os.system(\"aws s3 cp ./{file}.{ext} \
-                  s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/{file}-${{ steps.latest_tag.outputs.tag_ref }}.{ext} \".format(ext=ext, file=file))
+                  s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{ inputs.exporter_name }}/{file}-${{ steps.latest_tag.outputs.tag_ref }}.{ext} \".format(ext=ext, file=file))
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
           """ 
