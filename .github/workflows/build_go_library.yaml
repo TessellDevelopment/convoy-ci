@@ -268,8 +268,7 @@ jobs:
 
                 exit_code = os.system(\"curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                                         --upload-file ./{file}.{ext} \
-                                        https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/${{ inputs.exporter_name }}/{file}-${{ steps.latest_tag.outputs.tag_ref }}.{ext}
-                                        \".format(ext=ext, file=file))
+                                        https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/${{ inputs.exporter_name }}/{file}-${{ steps.latest_tag.outputs.tag_ref }}.{ext}\".format(ext=ext, file=file))
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
 
