@@ -137,7 +137,8 @@ jobs:
       - name: Find Latest tag and rename artifact
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          repo="${{github.repository}}"
+          # repo="${{github.repository}}"
+          repo="TessellDevelopment/tessell-database-plugin-mssql"
           plugin=$(echo "$repo" | cut -d '-' -f 4)
           cd "tessell-db-plugin-$plugin"
           cd build
