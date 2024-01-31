@@ -185,6 +185,8 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
+            release_version = latest_tag.split(".").slice(0,2).join(".") + ".0"
+            core.setOutput('release_version', latest_tag.split(".").slice(0,2).join(".") + ".0")
      
       - name: tagging docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -199,7 +201,13 @@ jobs:
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-          
+
+      - name: Push image with release version
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && (github.repository == 'TessellDevelopment/tessell-deployment-utils' || github.repository == 'TessellDevelopment/ci-test-repo-b') }}
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE_NAME }}:scan "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.release_version }}"
+          docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.release_version }}"
+
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
