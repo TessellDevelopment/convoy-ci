@@ -194,7 +194,7 @@ jobs:
            docker tag ${{ env.DOCKER_IMAGE_NAME }}:scan ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Push image with release version
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && (github.repository == 'TessellDevelopment/tessell-deployment-utils' || github.repository == 'TessellDevelopment/ci-test-repo-b') }}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && github.repository == 'TessellDevelopment/tessell-deployment-utils' }}
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }}:scan "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.release_version }}"
           docker push "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.release_version }}"
