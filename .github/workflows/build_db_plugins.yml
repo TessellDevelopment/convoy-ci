@@ -166,10 +166,10 @@ jobs:
               exit 1
           fi   
 
-      - name: Upload tar file to S3 Bucket Prod Asset
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
+      # - name: Upload tar file to S3 Bucket Prod Asset
+      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      #   run: |
+      #     aws s3 cp ./${{env.PLUGIN_NAME}}/build/${{env.PLUGIN_NAME}}.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}-${{env.VERSION}}.tar.gz
 
       - name: Configure AWS Credentials for tessell-artifacts-dev
         run: |
