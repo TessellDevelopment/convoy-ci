@@ -48,7 +48,7 @@ jobs:
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="http://convoy.tessell.cloud/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="https://api.convoy.tessell.cloud/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
             echo "$RESPONSE"
