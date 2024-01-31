@@ -93,7 +93,7 @@ jobs:
     
 
       - name: Docker image scan
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0
         continue-on-error: true
@@ -103,7 +103,7 @@ jobs:
            password: ${{ secrets.DOCKER_PASSWORD }}
 
       - uses: actions/upload-artifact@v3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         continue-on-error: true
         with:
            name: image-scan-report
