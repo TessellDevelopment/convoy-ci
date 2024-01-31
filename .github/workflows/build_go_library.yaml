@@ -297,13 +297,11 @@ jobs:
           for artifact in artifacts:
               file = artifact['name']
               ext = artifact['extension']
-              version = "${{ steps.latest_tag.outputs.tag_ref }}"
-              print(file+'-'+version+ext)
               exit_code = os.system(\"aws s3 cp ./{file}.{ext} \
-                  s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/{file}-{version}.{ext} \".format(ext=ext, file=file, version=version))
+                  s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/{file}-${{ steps.latest_tag.outputs.tag_ref }}.{ext} \".format(ext=ext, file=file))
               if exit_code != 0:
                 raise Exception('Command failed with exit code {}'.format(exit_code))
-            """ 
+          """ 
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
