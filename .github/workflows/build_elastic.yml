@@ -121,7 +121,21 @@ jobs:
         run: |
           cd filebeat
           docker build -t  ${{ env.IMAGE_NAME }}  .   
-
+          
+      - name: getting commit id for workflow_dispatch
+        uses: actions/github-script@v6.3.3
+        id: find_commit
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          github-token: ${{ secrets.CIPIPELINE_USER_PASSWORD  }}
+          script: |
+            if (${{ github.event_name  == 'workflow_dispatch'}} ){
+                core.setOutput('commit_id', "${{ github.sha }}" )
+            }
+            else{
+                core.setOutput('commit_id', "${{ github.event.after }}" )
+            }
+              
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -131,8 +145,8 @@ jobs:
           retry_on: error
           command: |
             git fetch --all
-            git tag --contains '${{ github.event.after }}'
-            latest_tags+=("$(git tag --contains '${{ github.event.after }}')")
+            git tag --contains '${{ steps.find_commit.outputs.commit_id}}'
+            latest_tags+=("$(git tag --contains '${{ steps.find_commit.outputs.commit_id }}')")
             if [[ "$latest_tags" == '' ]]; then 
               echo " Tag is Empty"
               exit 1
@@ -140,6 +154,7 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
+      
 
       - name: Find latest tag
         uses: actions/github-script@v4
@@ -361,7 +376,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://convoy-devops.convoy:8080/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -410,7 +425,7 @@ jobs:
           }
 
           max_retries = 3
-          retry_delay = 5 
+          retry_delay = 20 
       
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
