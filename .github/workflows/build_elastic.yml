@@ -39,6 +39,31 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: Set Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="https://api.convoy.tessell.cloud/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          else
+            echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
+          fi
           
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -66,7 +91,7 @@ jobs:
       - run: aws --version
         shell: bash
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials Prod Asset
         run: |
           aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
@@ -191,7 +216,18 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-            
+
+      - name: Validate Label
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          tag=$(echo ${{ steps.latest_tag.outputs.tag_ref }} | cut -d '.' -f 2)
+          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+          if [ "$tag" == "$label" ]; then
+              echo "TAG and LABEL are on same release label: rel-$tag"
+          else
+              echo "TAG and LABEL are on different release label. Please check git tag and API response."
+              exit 1
+          fi   
             
       - name: creating tar files
         run: |
@@ -229,14 +265,36 @@ jobs:
               -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
-      - name: Upload tar file to S3 Bucket
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                  --upload-file ./filebeat/build/distributions/filebeat-linux.tar.gz \
+                  https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/filebeat/filebeat-linux-${{ steps.latest_tag.outputs.tag_ref }}.tar.gz
+
+            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                  --upload-file ./filebeat/build/distributions/filebeat-windows.tar.gz \
+                  https://${NEXUS_SERVER}/repository/${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}/${{env.LABEL}}/filebeat/filebeat-windows-${{ steps.latest_tag.outputs.tag_ref }}.tar.gz
+
+
+      - name: Upload tar file to S3 Bucket Prod Asset
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
           aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
+ 
+      - name: Configure AWS Credentials for tessell-artifacts-dev
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+          aws configure set region ap-south-1  
 
-            
+      - name: Upload tar file to S3 Bucket to tessell-artifacts-dev
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+          aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/filebeat/filebeat-windows-$VERSION.tar.gz
+          aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/filebeat/filebeat-linux-$VERSION.tar.gz
+
+
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
