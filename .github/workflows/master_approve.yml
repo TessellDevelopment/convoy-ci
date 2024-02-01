@@ -25,7 +25,6 @@ jobs:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
 
   check-update-branch: 
-    if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     needs: read-codeowners
     runs-on: non-build
     outputs:
@@ -39,6 +38,9 @@ jobs:
       - name: Check head commit
         id: check-commit
         run: |
+          if [[ ${{github.event.review.state}} == 'approved' ]]; then
+            exit 0
+          fi
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
           MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
           if [[ "$HEAD_COMMIT" == "$MERGE_COMMIT" ]]; then
