@@ -146,6 +146,33 @@ jobs:
             fi
           done
 
+      - name: Configure AWS Credentials for {BUCKET}
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+          aws configure set region ap-south-1
+      
+      
+      - name: Upload tar file to S3 Bucket {BUCKET}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        shell: bash
+        run: |
+          BASE_DIR=$PWD
+          BUILD_DIR=$BASE_DIR/build
+          mkdir -p $BUILD_DIR
+          DIRECTORIES="${{ steps.modified_dir.outputs.modifiedDirectories }}"
+          EXCLUDE_DIR=("build")
+          for DIR in $DIRECTORIES
+          do
+            if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
+              ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+              cd $BASE_DIR/$DIR
+              VERSION=$(yq .version convoy.yaml)
+            
+              aws s3 cp $ARTIFACT_FILE s3://{BUCKET}
+            fi
+          done
+          
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
