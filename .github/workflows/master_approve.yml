@@ -38,7 +38,7 @@ jobs:
       - name: Check head commit
         id: check-commit
         run: |
-          if [[ ${{github.event.review.state}} == 'approved' ]]; then
+          if [[ ! -z ${{github.event.review.state}} ]]; then
             exit 0
           fi
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
