@@ -41,7 +41,7 @@ jobs:
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
           MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
           if [[ "$HEAD_COMMIT" == "$MERGE_COMMIT" ]]; then
-            echo "Normal Commit"
+            echo "Push Commit to the PR"
             echo "update-branch=false" >> $GITHUB_OUTPUT
           else
             echo "Update branch merge commit"
@@ -49,8 +49,8 @@ jobs:
           fi
 
   check-approval:
-    needs: check-update-branch
-    if: github.event.review.state == 'approved' || ${{needs.check-update-branch.outputs.update-branch}} == "true"
+    needs: [check-update-branch,read-codeowners]
+    if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit
     with:
