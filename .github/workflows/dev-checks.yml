@@ -272,6 +272,7 @@ jobs:
         with:
           comment: "true"
           use_gitignore: "false"
+          json_extension: ".tmpl"
 
       - name: Adding Common UI config
         run: |
