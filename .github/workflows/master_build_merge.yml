@@ -202,7 +202,7 @@ jobs:
             set +e
           }
           helm-template() {
-            if [[ ${{steps.outputs.changed-files.any_modified}} == 'true' ]]; then
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               GITHUB_WORKSPACE=$(pwd)
               CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
               TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
@@ -313,7 +313,7 @@ jobs:
             make clients -B
             source qavenv/bin/activate
             python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
-            if [[ ${{steps.outputs.changed-files.any_modified}} == 'true' ]]; then
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               IMAGE_NAME="$1"
               VERSION="$3"
               docker build -t ${DOCKERHUB_ORG}/$IMAGE_NAME:$VERSION .
