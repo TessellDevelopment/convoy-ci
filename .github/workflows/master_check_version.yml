@@ -23,8 +23,13 @@ jobs:
               echo "Version found in convoy.yaml"
               echo "check=true" >> $GITHUB_OUTPUT
             else
-              echo "Version not found in convoy.yaml"
-              echo "check=false" >> $GITHUB_OUTPUT
+              if grep -q 'terraform' convoy.yaml; then
+                echo "Tf-module repository running version check"
+                echo "check=true" >> $GITHUB_OUTPUT
+              else
+                echo "Version not found in convoy.yaml"
+                echo "check=false" >> $GITHUB_OUTPUT
+              fi
             fi
           else
             echo "convoy.yaml not present, skipping version check."
