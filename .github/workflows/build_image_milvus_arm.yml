@@ -160,12 +160,11 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         shell: bash
         run: |
-          chmod +x ./images/bookie/script.sh
-          chmod +x ./images/zookeeper/generate-zookeeper-config.sh
+          sudo docker buildx use multiBuild
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image .
+              sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -173,13 +172,12 @@ jobs:
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
+          sudo docker buildx use multiBuild
           while IFS=$'\t' read -r image function file _; do
             if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
               echo "Building $image Image"
-              sudo docker build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} .
-              sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-              sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-              sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              sudo docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
+              sudo docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
             fi
           done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -187,10 +185,9 @@ jobs:
             echo $image
             echo $version
             sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-            sudo docker push ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}}
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
             sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+            sudo docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
@@ -276,7 +273,7 @@ jobs:
                       --build-arg GITHUB_TOKEN=${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                       --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
-
+          
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
@@ -305,7 +302,7 @@ jobs:
             image-name: ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}   
-            trivy-version: 0.46.1
+            trivy-version: "0.29.1"
             
       - name: Upload image scan report
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
