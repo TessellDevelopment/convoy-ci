@@ -24,8 +24,37 @@ jobs:
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
 
-  check-approval:
+  check-update-branch: 
     needs: read-codeowners
+    runs-on: non-build
+    outputs:
+      update-branch: ${{steps.check-commit.outputs.update-branch}}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          fetch-depth: 0
+
+      - name: Check head commit
+        id: check-commit
+        run: |
+          REVIEW_STATE="${{github.event.review.state}}"
+          if [[ ! -z "$REVIEW_STATE" ]]; then
+            exit 0
+          fi
+          HEAD_COMMIT=${{github.event.pull_request.base.sha}}
+          MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
+          if [[ "$HEAD_COMMIT" == "$MERGE_COMMIT" ]]; then
+            echo "Push Commit to the PR"
+            echo "update-branch=false" >> $GITHUB_OUTPUT
+          else
+            echo "Update branch merge commit"
+            echo "update-branch=true" >> $GITHUB_OUTPUT
+          fi
+
+  check-approval:
+    needs: [check-update-branch,read-codeowners]
+    if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit
     with:
