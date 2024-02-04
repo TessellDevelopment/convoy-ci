@@ -106,8 +106,7 @@ jobs:
         id: dry_run_check
         shell: bash
         run: |
-          
-          source qavenv/bin/activate
+          echo "Hello"
           python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
       
       - name: Extract version
