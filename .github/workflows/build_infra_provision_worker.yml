@@ -123,7 +123,7 @@ jobs:
         shell: bash
         run: |
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
             URL="http://api.convoy.tessell.cloud/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
@@ -408,7 +408,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -417,7 +417,7 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
