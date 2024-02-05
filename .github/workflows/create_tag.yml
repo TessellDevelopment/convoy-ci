@@ -280,7 +280,7 @@ jobs:
           PR_ID: "${{github.event.number}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           OWNER: ${{github.repository_owner}}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
         run: |
           python - <<EOF
           

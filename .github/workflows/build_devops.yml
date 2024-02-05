@@ -295,7 +295,7 @@ jobs:
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
