@@ -162,7 +162,7 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          API_KEY: ${{secrets.CONVOY_API_KEY}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
