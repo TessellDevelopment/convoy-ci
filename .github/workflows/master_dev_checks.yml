@@ -219,7 +219,6 @@
           id: pr_diff
           uses: actions/github-script@v6.4.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
             script: |
               head_commit = "${{ github.sha }}"
               base_commit = "${{ github.sha }}"
@@ -241,7 +240,6 @@
         - name: Check for merge conflicts
           uses: actions/github-script@v6.4.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               response.data.files.forEach(function(file_entry) {
@@ -263,7 +261,6 @@
           id: check_db_migration
           uses: actions/github-script@v6.4.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               let path = "";
@@ -322,7 +319,6 @@
           id: terraform_check
           uses: actions/github-script@v6.3.3
           with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               var terraform_file = [] 

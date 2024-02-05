@@ -101,7 +101,7 @@
           id: find_commit
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_PASSWORD  }}
+            github-token: ${{ secrets.GITHUB_TOKEN  }}
             script: |
               if (${{ github.event_name  == 'workflow_dispatch'}} ){
                   core.setOutput('commit_id', "${{ github.sha }}" )
