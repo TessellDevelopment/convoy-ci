@@ -227,7 +227,7 @@ jobs:
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'x-api-key:': API_KEY
+            'x-api-key': API_KEY
           }
 
           max_retries = 3
