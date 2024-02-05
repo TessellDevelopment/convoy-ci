@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           export PYTHONPATH=lib
-          export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
           cp configs/qarel.json config.json
           source qavenv/bin/activate
           make clients -B
