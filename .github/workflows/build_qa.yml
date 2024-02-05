@@ -45,6 +45,9 @@ jobs:
       NEXUS_HTTP: https
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKER_IMAGE_NAME: tessell-qa-runner
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
 
     steps:
       - name: Checkout code
