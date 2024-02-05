@@ -214,7 +214,7 @@ jobs:
   
        
   build-plugin:
-    runs-on: self-hosted
+    runs-on: test-build-runner
     needs: find-latest-tag
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
