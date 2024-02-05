@@ -271,7 +271,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
+          API_KEY: "${{secrets.CONVOY_AUTH_TOKEN}}"
           COMMIT_HASH: "${{github.sha}}"
           USES_CUSTOM_VERSION: "${{needs.create-tag-on-merge.outputs.uses_custom_version_output}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
@@ -398,10 +399,11 @@ jobs:
             
           def post_request(payload):
             API_URL = os.environ.get('API_URL')
-            CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-            CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
+            API_KEY = os.environ.get('API_KEY')
+            # CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
+            # CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
             headers = {
-              'Authorization': f'Bearer {CONVOY_AUTH_TOKEN}',
+              'x-api-key': API_KEY,
               'Content-Type': 'application/json'
             }
             max_retries = 3
