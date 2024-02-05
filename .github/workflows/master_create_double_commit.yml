@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          token: ${{ secrets.GITHUB_TOKEN  }}
           fetch-depth: 0
 
       - name: Get all the release branches
@@ -31,7 +31,7 @@ jobs:
         env: 
           PR_TITLE: ${{github.event.pull_request.title}}
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             const prTitle = process.env.PR_TITLE
             // Get base branch minor version of the PR

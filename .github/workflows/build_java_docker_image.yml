@@ -72,8 +72,6 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
         shell: bash
 
-      
-
       - name: Build and publish
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -122,7 +120,7 @@ jobs:
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
+          github-token: ${{ secrets.GITHUB_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -238,9 +236,9 @@ jobs:
   post-build-status-to-convoy:
     runs-on: self-hosted
     needs: build
-    if: always() 
+    if: always()  
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -257,7 +255,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -266,8 +264,7 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
@@ -279,12 +276,11 @@ jobs:
           import base64
 
           API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           STATUS = (os.environ.get('STATUS')).upper()
-          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
@@ -307,7 +303,7 @@ jobs:
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            'x-api-key': API_KEY
           }
 
           max_retries = 3

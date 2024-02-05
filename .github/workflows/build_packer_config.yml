@@ -120,7 +120,7 @@ jobs:
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.GITHUB_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'

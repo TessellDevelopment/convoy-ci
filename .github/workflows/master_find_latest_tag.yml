@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          token: ${{ secrets.GITHUB_TOKEN  }}
           fetch-depth: 0
 
       - name: Dump GitHub context
