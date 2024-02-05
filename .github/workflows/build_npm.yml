@@ -21,9 +21,9 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_REPO_NPM: tessell-repos-npm-development
-      NEXUS_URL: nexus.tessell.cloud
+      NEXUS_URL: ${{ vars.NEXUS_SERVER_ENDPOINT }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         name: Checkout repos  
 
       - name: Dump GitHub context

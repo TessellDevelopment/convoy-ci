@@ -19,7 +19,7 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash

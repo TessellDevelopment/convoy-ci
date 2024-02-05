@@ -27,7 +27,7 @@ jobs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
       uses_custom_version: ${{ steps.tag_output.outputs.uses_custom_version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 

@@ -12,7 +12,7 @@ jobs:
       DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash
@@ -134,7 +134,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Install AWS CLI
         run: |
@@ -228,7 +228,7 @@ jobs:
       DOCKERHUB_ORG: ${{needs.find-latest-tag.outputs.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Install AWS CLI
         run: |

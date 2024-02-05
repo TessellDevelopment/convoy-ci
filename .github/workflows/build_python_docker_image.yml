@@ -31,13 +31,13 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
     
       - name: Set up Python
         uses: actions/setup-python@v2

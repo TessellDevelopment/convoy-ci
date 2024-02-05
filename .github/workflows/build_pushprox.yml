@@ -20,7 +20,7 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
       GOPATH: /home/github/go
@@ -39,7 +39,7 @@ jobs:
           echo "DOCKER_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
           
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           

@@ -29,7 +29,7 @@ jobs:
       NEXUS_PULL_REPOS_M2: "tessell-m2-development"
       DOCKERHUB_ORG: "tesselldev"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Get branch name
         shell: bash
         run: |

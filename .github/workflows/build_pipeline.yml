@@ -21,11 +21,11 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       DOCKERHUB_ORG: "tesselldev"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash

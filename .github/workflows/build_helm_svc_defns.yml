@@ -12,7 +12,7 @@ jobs:
       any-modified: ${{steps.changed-files.outputs.any_modified}}
     name: Check changed files
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
@@ -40,7 +40,7 @@ jobs:
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_REPOS_HELM: tessell-repos-helm-development
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash

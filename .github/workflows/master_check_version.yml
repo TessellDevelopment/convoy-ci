@@ -11,7 +11,7 @@ jobs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           
@@ -37,7 +37,7 @@ jobs:
     runs-on: non-build
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 
         

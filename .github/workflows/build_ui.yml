@@ -23,7 +23,7 @@ jobs:
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         name: Checkout repos
 
       - name: Get branch name

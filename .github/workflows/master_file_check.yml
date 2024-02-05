@@ -18,7 +18,7 @@ jobs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
       changed-files: ${{ steps.set-output.outputs.changed-files }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 
 

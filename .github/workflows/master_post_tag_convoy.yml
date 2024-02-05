@@ -21,7 +21,7 @@ jobs:
       USES_CUSTOM_VERSION: "${{inputs.uses_custom_version}}"
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           token: ${{ secrets.GITHUB_TOKEN  }}
           fetch-depth: 0

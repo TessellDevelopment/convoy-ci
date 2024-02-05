@@ -19,13 +19,13 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash
@@ -241,4 +241,3 @@ jobs:
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
