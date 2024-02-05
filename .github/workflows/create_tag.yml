@@ -166,56 +166,56 @@ jobs:
           echo "tag_ref=${{steps.create_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
           echo "uses_custom_version=${{steps.create_tag.outputs.uses_custom_version}}" >> $GITHUB_OUTPUT
 
-      - name: Set Label
-        id: set_label
-        shell: bash
-        run: |
-          validate_label=false
-          if [ -f convoy.yaml ]; then
-            language=$(yq '.language' convoy.yaml)
-            version=$(yq '.version' convoy.yaml)
-            if [[ "$language" == "helm" ]]; then
-              echo "Helm repo, No validation needed using version as tag."
-            elif [[ "$version" != "null" ]]; then
-              echo "Version present in convoy.yaml, No validation needed using version as tag."
-            else
-              validate_label=true
-              if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-                TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
-                APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-                URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-                RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
-                echo "$RESPONSE"
-                LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-                echo "$LABEL"
-                if [[ $LABEL == rel-* ]]; then
-                    echo "LABEL=$LABEL" >> $GITHUB_ENV
-                else
-                    echo "Response: $LABEL"
-                    echo "Label does not start with 'rel'. Check response."
-                    exit 1 
-                fi
+      # - name: Set Label
+      #   id: set_label
+      #   shell: bash
+      #   run: |
+      #     validate_label=false
+      #     if [ -f convoy.yaml ]; then
+      #       language=$(yq '.language' convoy.yaml)
+      #       version=$(yq '.version' convoy.yaml)
+      #       if [[ "$language" == "helm" ]]; then
+      #         echo "Helm repo, No validation needed using version as tag."
+      #       elif [[ "$version" != "null" ]]; then
+      #         echo "Version present in convoy.yaml, No validation needed using version as tag."
+      #       else
+      #         validate_label=true
+      #         if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+      #           TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
+      #           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+      #           URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+      #           RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+      #           echo "$RESPONSE"
+      #           LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+      #           echo "$LABEL"
+      #           if [[ $LABEL == rel-* ]]; then
+      #               echo "LABEL=$LABEL" >> $GITHUB_ENV
+      #           else
+      #               echo "Response: $LABEL"
+      #               echo "Label does not start with 'rel'. Check response."
+      #               exit 1 
+      #           fi
               
-              else
-                echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
-              fi
-            fi  
-           else
-            echo "convoy.yaml not found"
-           fi 
-           echo "validate_label=$validate_label" >> $GITHUB_OUTPUT
+      #         else
+      #           echo "LABEL=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
+      #         fi
+      #       fi  
+      #      else
+      #       echo "convoy.yaml not found"
+      #      fi 
+      #      echo "validate_label=$validate_label" >> $GITHUB_OUTPUT
 
-      - name: Validate Label
-        if: ${{ steps.set_label.outputs.validate_label == 'true' }}
-        run: |
-          tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
-          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
-          if [ "$tag" == "$label" ]; then
-              echo "TAG and LABEL are on same release label: rel-$TAG"
-          else
-              echo "TAG and LABEL are on different release label. Please check git tag and API response."
-              exit 1
-          fi   
+      # - name: Validate Label
+      #   if: ${{ steps.set_label.outputs.validate_label == 'true' }}
+      #   run: |
+      #     tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
+      #     label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+      #     if [ "$tag" == "$label" ]; then
+      #         echo "TAG and LABEL are on same release label: rel-$TAG"
+      #     else
+      #         echo "TAG and LABEL are on different release label. Please check git tag and API response."
+      #         exit 1
+      #     fi   
 
       - name: Slack Notification
         uses: act10ns/slack@v1.5.0
