@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN  }}
           fetch-depth: 0
+          token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
       - name: Get all the release branches
         id: all_branches
@@ -24,7 +24,7 @@ jobs:
           for branch in $branches; do if [[ $branch == 'origin/rel-'* ]]; then br_arr+=($branch); fi ; done
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
-        
+
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v7.0.1

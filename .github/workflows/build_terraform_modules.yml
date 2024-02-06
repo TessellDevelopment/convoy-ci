@@ -65,7 +65,7 @@ jobs:
         id: modified_dir
         uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -194,7 +194,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}

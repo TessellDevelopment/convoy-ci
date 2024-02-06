@@ -35,6 +35,7 @@ jobs:
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
       NEXUS_ARTIFACT_REPO: tessell-artifacts
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
     steps:
       - name: Get branch name
@@ -126,7 +127,7 @@ jobs:
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="https://${CONVOY_PUBLIC_API_ENDPOINT}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="https://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
             echo "$RESPONSE"
@@ -408,7 +409,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}

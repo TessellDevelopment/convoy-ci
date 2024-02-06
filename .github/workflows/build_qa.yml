@@ -48,7 +48,6 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -128,7 +127,11 @@ jobs:
           DOCKERHUB_ORG: tesselldev
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
+                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
+                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
   
       - name: Build and push to tessellProd
@@ -137,7 +140,11 @@ jobs:
           DOCKERHUB_ORG: tessellprod
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
+                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
+                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
 
       - name: Get PR-Author,subject & body to send email
@@ -176,7 +183,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
