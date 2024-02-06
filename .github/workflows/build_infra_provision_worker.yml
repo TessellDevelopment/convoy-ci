@@ -127,7 +127,7 @@ jobs:
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="https://${CONVOY_PUBLIC_API_ENDPOINT}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="https://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
             echo "$RESPONSE"
