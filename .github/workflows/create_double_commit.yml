@@ -33,9 +33,6 @@ jobs:
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
         id: all_branches
 
-      - run: |
-          echo "token=${{secrets.CIPIPELINE_GITHUB_TOKEN}}" >> /tmp/token.txt
-
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v6.3.3
