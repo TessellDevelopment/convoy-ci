@@ -128,7 +128,13 @@ jobs:
           DOCKERHUB_ORG: tesselldev
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} 
+                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
+                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} \
+                        --build-arg DOCKER_USERNAME=${{env.DOCKER_USERNAME}} \
+                        --build-arg DOCKER_PASSWORD=${{env.DOCKER_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
   
       - name: Build and push to tessellProd
@@ -137,7 +143,13 @@ jobs:
           DOCKERHUB_ORG: tessellprod
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} .
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} 
+                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
+                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} \
+                        --build-arg DOCKER_USERNAME=${{env.DOCKER_USERNAME}} \
+                        --build-arg DOCKER_PASSWORD=${{env.DOCKER_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
 
       - name: Get PR-Author,subject & body to send email
