@@ -32,7 +32,6 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
-      GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
       NEXUS_ARTIFACT_REPO: tessell-artifacts
