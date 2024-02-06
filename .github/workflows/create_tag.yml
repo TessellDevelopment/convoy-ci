@@ -14,7 +14,7 @@ on:
 
 jobs:
   create-tag-on-merge:
-    runs-on: self-hosted
+    runs-on: non-build
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -28,19 +28,6 @@ jobs:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
-      - name: Adding Common UI config
-        run: |
-          set +e
-          rm ~/.npmrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
-          cat .npmrc
-
-      - name: Install dependencies
-        run: npm install js-yaml --force
 
       - name: Find latest tag
         run: |
