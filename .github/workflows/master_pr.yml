@@ -13,7 +13,7 @@ jobs:
       PR_NUMBER: ${{github.event.number}}
       GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
     steps:  
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
@@ -59,7 +59,7 @@ jobs:
     needs: [dev-checks,version-check]
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 

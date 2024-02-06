@@ -20,8 +20,9 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -45,7 +46,7 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash
@@ -69,11 +70,11 @@ jobs:
                 -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                 -DgroupId=${GROUP_NAME} -DartifactId=${ARTIFACT_NAME} -Dversion=$VERSION \
                 -DgeneratePom=true -Dpackaging=zip \
-                -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=build/${ARTIFACT_NAME}.zip -DrepositoryId=nexus
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
           status: ${{ job.status }}
@@ -95,26 +96,19 @@ jobs:
           echo "::set-output name=mail_body::${{ env.BODY }}"
 
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: build
     if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
-
+      
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
-
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
@@ -129,7 +123,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
@@ -188,7 +182,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

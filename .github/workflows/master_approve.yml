@@ -30,7 +30,7 @@ jobs:
     outputs:
       update-branch: ${{steps.check-commit.outputs.update-branch}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 

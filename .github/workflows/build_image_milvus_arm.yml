@@ -5,14 +5,14 @@ on:
 
 jobs:
   find-latest-tag:
-    runs-on: self-hosted
+    runs-on: non-build
     outputs:
       tag: ${{ steps.latest_tag.outputs.tag_ref }}
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
       DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash
@@ -27,7 +27,7 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -41,7 +41,7 @@ jobs:
             }
 
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -60,7 +60,7 @@ jobs:
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
 
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -134,7 +134,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Install AWS CLI
         run: |
@@ -149,7 +149,7 @@ jobs:
       - name: Configure AWS Credentials
         run: |
           export AWS_PROFILE=tessell-devqa-infra
-          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) 219776070323.dkr.ecr.ap-south-1.amazonaws.com
+          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) ${{ vars.TESSELL_DEV_ECR }}
 
       - name: Login to Docker
         run : |
@@ -191,7 +191,7 @@ jobs:
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -228,7 +228,7 @@ jobs:
       DOCKERHUB_ORG: ${{needs.find-latest-tag.outputs.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Install AWS CLI
         run: |
@@ -248,10 +248,10 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2.0.1
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -284,11 +284,11 @@ jobs:
                         --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{env.AGENT_VERSION}} .
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}} ${{ vars.TESSELL_DEV_ECR }}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
           docker push ${{vars.TESSELL_DEV_ECR}}/${{ env.DOCKER_IMAGE_NAME }}:${{env.TAG}}
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -311,26 +311,19 @@ jobs:
   
     
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: [build-plugin,build-arm-images]
     if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
-
+      
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
-
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
@@ -345,7 +338,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
@@ -404,7 +397,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

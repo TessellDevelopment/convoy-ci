@@ -20,7 +20,7 @@ jobs:
     outputs:
       required-teams: ${{steps.extract-teams.outputs.teams}}
     steps: 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           ref: ${{github.base_ref}}
