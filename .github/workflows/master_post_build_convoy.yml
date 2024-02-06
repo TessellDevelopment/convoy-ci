@@ -12,7 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN  }}
           fetch-depth: 0
 
       - name: Get branch name
@@ -22,7 +21,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         env:

@@ -103,7 +103,7 @@ jobs:
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             if (${{ github.event_name  == 'workflow_dispatch'}} ){
                 core.setOutput('commit_id', "${{ github.sha }}" )
@@ -137,7 +137,7 @@ jobs:
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -314,7 +314,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
