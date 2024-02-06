@@ -127,7 +127,7 @@ jobs:
           DOCKERHUB_ORG: tesselldev
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} 
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
                         --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
                         --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
@@ -140,7 +140,7 @@ jobs:
           DOCKERHUB_ORG: tessellprod
         run: |
           cd scripts
-          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} 
+          docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
                         --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
                         --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
