@@ -36,6 +36,7 @@ jobs:
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
       NEXUS_ARTIFACT_REPO: tessell-artifacts
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
     steps:
       - name: Get branch name
