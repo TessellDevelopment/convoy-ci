@@ -175,7 +175,7 @@ jobs:
 
       - uses: technote-space/workflow-conclusion-action@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}

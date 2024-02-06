@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN  }}
+          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           fetch-depth: 0
 
       - name: Get all the release branches
