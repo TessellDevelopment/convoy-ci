@@ -548,7 +548,7 @@ jobs:
                 console.log(terraform_file) ;
               }
             });
-            core.setOutput('terraform_file' , terraform_file.join(','));
+            core.setOutput('terraform_files' , terraform_file.join(','));
 
       - name: check for chart verison in chart.yaml 
         if : ${{ inputs.check_version_of_helm_chart == 'true' }}
