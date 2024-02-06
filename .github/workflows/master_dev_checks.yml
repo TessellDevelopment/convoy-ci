@@ -6,7 +6,7 @@
   jobs:
 
     dev-checks:
-      runs-on: non-build-test
+      runs-on: non-build
       steps:
         - name: Dump GitHub context
           env:
