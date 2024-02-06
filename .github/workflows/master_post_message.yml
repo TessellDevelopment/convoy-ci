@@ -57,7 +57,7 @@ jobs:
 
       - name: Create message
         if: steps.check-message.outputs.check == 'false'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
           token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Update message
         if: steps.check-message.outputs.check == 'true'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v4.0.0
         with:
           comment-id: ${{steps.check-message.outputs.comment-id}}
           token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}

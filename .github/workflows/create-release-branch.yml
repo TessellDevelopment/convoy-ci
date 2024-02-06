@@ -23,7 +23,7 @@ jobs:
 
       - name: Get repos to build
         id: all_repos
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -59,7 +59,7 @@ jobs:
 
       - name: create next release branch
         id: set_rel_branch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -80,7 +80,7 @@ jobs:
           new_branch: ${{ steps.set_rel_branch.outputs.next_rel_branch }}
 
       - name: Create tag and update ref
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |

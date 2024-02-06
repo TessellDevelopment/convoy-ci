@@ -21,7 +21,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
     steps:
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
@@ -69,7 +69,7 @@ jobs:
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -98,7 +98,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -110,7 +110,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -184,7 +184,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

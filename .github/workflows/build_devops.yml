@@ -29,15 +29,9 @@ jobs:
         uses: actions/checkout@v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
         with:
           python-version: 3.9
-
-      - name: Set up JDK 16
-        uses: actions/setup-java@v3.10.0
-        with:
-          java-version: '16'
-          distribution: 'adopt'
 
       - name: Get branch name & Repo Name
         shell: bash
@@ -86,7 +80,7 @@ jobs:
           pytest
 
       - name: Login to docker
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -116,7 +110,7 @@ jobs:
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -130,7 +124,7 @@ jobs:
             }
             
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -150,7 +144,7 @@ jobs:
       
       
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -224,9 +218,9 @@ jobs:
             image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
-            trivy-version: "0.29.1"
+            trivy-version: ${{ vars.TRIVY_VERSION }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.3.1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
             name: image-scan-report
@@ -242,7 +236,7 @@ jobs:
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -271,7 +265,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -283,7 +277,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -357,7 +351,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

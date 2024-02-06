@@ -16,20 +16,20 @@ jobs:
           fetch-depth: 0
 
       - name: Auto approve
-        uses: juliangruber/approve-pull-request-action@v2.0.3
+        uses: juliangruber/approve-pull-request-action@v2.0.4
         with:
           github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
           number: "${{ github.event.number }}"
 
       - name: Enable Auto Merge
-        uses: peter-evans/enable-pull-request-automerge@v2.5.0
+        uses: peter-evans/enable-pull-request-automerge@v3.0.0
         with:
           token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           pull-request-number: "${{ github.event.number }}"
           merge-method: squash
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}

@@ -31,7 +31,7 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
               
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -52,7 +52,7 @@ jobs:
         
         
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}

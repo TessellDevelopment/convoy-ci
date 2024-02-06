@@ -46,14 +46,13 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
           aws configure set region ap-south-1
-          # aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 219776070323.dkr.ecr.ap-south-1.amazonaws.com
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@v2.0.1
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -67,7 +66,7 @@ jobs:
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
           
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -81,7 +80,7 @@ jobs:
             }
               
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -101,7 +100,7 @@ jobs:
         
             
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -180,16 +179,16 @@ jobs:
                         --build-arg HANDLER_TAG=${{ENV.TASKHANDLER_VERSION}} \
                         --build-arg AGENT_TAG=${{ENV.AGENT_VERSION}} .
           docker push ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-          docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker tag ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }} ${{ vars.TESSELL_DEV_ECR }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
+          docker push ${{ vars.TESSELL_DEV_ECR }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
           while IFS=$'\t' read -r image version _; do
             echo $image
             echo $version
             docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
             docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
             docker push ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
-            docker push 219776070323.dkr.ecr.ap-south-1.amazonaws.com/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker tag ${{env.DOCKERHUB_ORG}}/$image:${{ steps.latest_tag.outputs.tag_ref }} ${{ vars.TESSELL_DEV_ECR }}/$image:${{ steps.latest_tag.outputs.tag_ref }}
+            docker push ${{ vars.TESSELL_DEV_ECR }}/$image:${{ steps.latest_tag.outputs.tag_ref }}
           done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
 
       - name: Tagging docker image with scan
@@ -207,17 +206,17 @@ jobs:
             image-name: ${{env.DOCKERHUB_ORG}}/${{ env.DOCKER_IMAGE_NAME }}:scan
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}   
-            trivy-version: "0.29.1"
+            trivy-version: ${{ vars.TRIVY_VERSION }}
             
       - name: Upload image scan report
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.1
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
   
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -246,7 +245,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -258,7 +257,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -332,7 +331,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

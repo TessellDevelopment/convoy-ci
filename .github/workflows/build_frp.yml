@@ -22,7 +22,7 @@
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
         NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
         NEXUS_PULL_REPOS_M2: tessell-m2-development
-        NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+        NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
         GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
         GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
         NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -49,7 +49,7 @@
             fetch-depth: 0
             
         - name: Setup Go environment
-          uses: actions/setup-go@v4
+          uses: actions/setup-go@v5.0.0
           with: 
               go-version: 1.20.1
      
@@ -63,7 +63,7 @@
             go env
 
         - name: Login to Docker Hub
-          uses: docker/login-action@v1
+          uses: docker/login-action@v3.0.0
           with:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
@@ -97,7 +97,7 @@
             ./setup -b
     
         - name: getting commit id for workflow_dispatch
-          uses: actions/github-script@v6.3.3
+          uses: actions/github-script@v7.0.1
           id: find_commit
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           with:
@@ -111,7 +111,7 @@
               }
               
         - name: Get tags
-          uses: nick-fields/retry@v2.8.1
+          uses: nick-fields/retry@v3.0.0
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           with:
             timeout_seconds: 10
@@ -130,7 +130,7 @@
               echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
               
         - name: Find latest tag
-          uses: actions/github-script@v6.3.3
+          uses: actions/github-script@v7.0.1
           id: latest_tag
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           with:
@@ -218,11 +218,11 @@
               image-name: ${{env.DOCKERHUB_ORG}}/tessell-frpc-darwin:scan
               username: ${{ secrets.DOCKER_USERNAME }}
               password: ${{ secrets.DOCKER_PASSWORD }}   
-              trivy-version: "0.29.1"
+              trivy-version: ${{ vars.TRIVY_VERSION }}
               
         - name: Upload image scan report
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4.3.1
           with:
               name: image-scan-report
               path: ${{ steps.docker-image-scan-frpc.outputs.scan-report-path }}
@@ -236,11 +236,11 @@
               image-name: ${{env.DOCKERHUB_ORG}}/tessell-frps:scan
               username: ${{ secrets.DOCKER_USERNAME }}
               password: ${{ secrets.DOCKER_PASSWORD }}   
-              trivy-version: "0.29.1"
+              trivy-version: ${{ vars.TRIVY_VERSION }}
               
         - name: Upload image scan report
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4.3.1
           with:
               name: image-scan-report
               path: ${{ steps.docker-image-scan-frps.outputs.scan-report-path }}
@@ -273,7 +273,7 @@
             aws s3 cp tessell-frpc-windows.tar s3://tesselltools/terls/tessell/frp/$VERSION/
           
         - name: Slack Notification
-          uses: act10ns/slack@v1.5.0
+          uses: act10ns/slack@v2.0.0
           if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
           with:
             status: ${{ job.status }}
@@ -303,7 +303,7 @@
         SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
       steps:
         - name: Set up Python
-          uses: actions/setup-python@v2
+          uses: actions/setup-python@v5.0.0
 
         - name: Get branch name
           shell: bash
@@ -315,7 +315,7 @@
             python -m pip install --upgrade pip
             pip install requests pybase64
 
-        - uses: technote-space/workflow-conclusion-action@v3
+        - uses: technote-space/workflow-conclusion-action@v3.0.3
           with:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

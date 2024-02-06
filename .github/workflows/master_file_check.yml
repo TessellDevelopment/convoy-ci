@@ -30,14 +30,14 @@ jobs:
 
       - name: Check .github changes
         id: changed-files-github
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             .github/**
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
 
       - name: Set Output
         id: set-output

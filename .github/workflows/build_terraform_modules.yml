@@ -21,6 +21,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -62,7 +63,7 @@ jobs:
 
       - name: finding the modified dir's
         id: modified_dir
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN  }}
           script: |
@@ -140,7 +141,7 @@ jobs:
                 -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
                 -DgroupId=${GROUP_NAME} -DartifactId=${DIR} -Dversion=$VERSION \
                 -DgeneratePom=true -Dpackaging=zip \
-                -Durl=https://${NEXUS_SERVER}/repository/tessell-repos-m2-component \
+                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
               
               aws s3 cp $ARTIFACT_FILE s3://tessell-terraform-modules-terls/$DIR/$VERSION/
@@ -149,7 +150,7 @@ jobs:
           done
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -179,7 +180,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -191,7 +192,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -265,7 +266,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

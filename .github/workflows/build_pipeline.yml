@@ -20,7 +20,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       DOCKERHUB_ORG: "tesselldev"
 
@@ -40,7 +40,7 @@ jobs:
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: Login to docker
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -67,7 +67,7 @@ jobs:
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -97,7 +97,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -109,7 +109,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -183,7 +183,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

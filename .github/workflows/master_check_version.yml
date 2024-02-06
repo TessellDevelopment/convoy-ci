@@ -43,13 +43,13 @@ jobs:
         
       - name: Changed files
         id: changed-files
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             services/**
 
       - name: Check Version in Nexus 
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         env:
           NEXUS_URL: https://${{vars.NEXUS_SERVER_ENDPOINT}}/service/rest/v1/search?repository
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}

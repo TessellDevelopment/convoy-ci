@@ -60,7 +60,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup OPA
-        uses: open-policy-agent/setup-opa@v2
+        uses: open-policy-agent/setup-opa@v2.1.0
         with:
           version: 0.58.0
 
@@ -82,7 +82,7 @@ jobs:
           aws configure set region ap-south-1
 
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -96,7 +96,7 @@ jobs:
             }
 
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -115,7 +115,7 @@ jobs:
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
 
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -210,7 +210,7 @@ jobs:
           aws s3 cp bundles/opa-policies.tar.gz s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/opa-policies/opa-policies-$VERSION.tar.gz
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
           status: ${{ job.status }}
@@ -240,7 +240,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
 
       - name: Get branch name
         shell: bash
@@ -252,7 +252,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pybase64
 
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -326,7 +326,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}
