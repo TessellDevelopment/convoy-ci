@@ -339,6 +339,7 @@
           run: |
             python3 - <<EOF
             import os
+            import hcl2
             terraform_files = os.environ.get('terraform_files')
             version_missing = False
             for terraform_file in terraform_files.split(','):
