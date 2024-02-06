@@ -259,24 +259,17 @@ jobs:
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
   
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: build
     if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v5.0.0
-
+      
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
@@ -293,7 +286,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
