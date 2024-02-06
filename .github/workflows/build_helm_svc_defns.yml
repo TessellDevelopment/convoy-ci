@@ -130,7 +130,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os

@@ -36,7 +36,7 @@ on:
 
 jobs:
   dev-checks:
-    runs-on: non-build
+    runs-on: non-build-test
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -266,28 +266,11 @@ jobs:
           echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
           echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
           cat .npmrc
-
-      - name: import packages for json lint
-        run: |
-          sudo sudo npm install jsonlint -g
           
       - name: Check for Jsonlint
         run: |
           set -e
           git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
-
-      - name: install octokit/rest
-        run: |
-          if [ ! -d "node_modules/@octokit/rest" ]; then
-            npm cache clean --force
-            npm install @octokit/rest --legacy-peer-deps
-          fi
-      - name: install node fetch 
-        run: | 
-          npm install node-fetch 
-
-      - name: Install dependencies
-        run: npm install js-yaml
 
       - name: Check for merge conflicts
         uses: actions/github-script@v7.0.1
@@ -748,11 +731,31 @@ jobs:
         run:
           python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
       
-
       - name: check for terraform version
-        if: steps.terraform_check.outputs.terraform_file 
-        run:
-          terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+        if: steps.terraform_check.outputs.terraform_files 
+        env:
+          terraform_files: ${{ steps.terraform_check.outputs.terraform_files }}
+        run: |
+          python3 - <<EOF
+          import os
+          terraform_files = os.environ.get('terraform_files')
+          version_missing = False
+          for terraform_file in terraform_files.split(','):
+              with open(terraform_file, 'r') as file:
+                  tf_file = hcl2.load(file)
+              if 'terraform' in tf_file and 'required_providers' in tf_file['terraform'][0]:
+                  providers = tf_file['terraform'][0]['required_providers']
+                  for provider in providers:
+                      for _provider, provider_info in provider.items():
+                          for key  in provider_info:
+                              if key == 'version':
+                                  break
+                          else:
+                              print(f"{terraform_file}: version is not present for {_provider} ")
+                              version_missing = True
+              if version_missing:
+                  sys.exit(1)
+          EOF
       
       - name: Run API-spec Validation
         run: |
