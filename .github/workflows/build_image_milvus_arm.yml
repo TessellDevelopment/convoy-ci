@@ -7,9 +7,9 @@ jobs:
   find-latest-tag:
     runs-on: non-build
     outputs:
-      tag: ${{ steps.latest_tag.outputs.tag_ref }}
+      tag: 0.0.1507
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
-      DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
+      DOCKERHUB_ORG: tesselldev
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
