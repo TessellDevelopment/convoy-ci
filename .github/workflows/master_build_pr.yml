@@ -120,7 +120,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
           build "artifacts"
