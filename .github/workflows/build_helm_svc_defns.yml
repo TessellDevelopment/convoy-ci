@@ -107,6 +107,7 @@ jobs:
     needs: build
     if: always()  
     env:
+      ARTIFACT_GENERATED: "${{needs.file-check.outputs.any-modified}}"
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
 
@@ -142,6 +143,7 @@ jobs:
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
           STATUS = (os.environ.get('STATUS')).upper()
 
           if not(bool(BASE_BRANCH)):
@@ -159,6 +161,7 @@ jobs:
             "repoName": REPO,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
+            "artifactGenerated": ARTIFACT_GENERATED == "true",
             "buildStatus": STATUS
           }
 
