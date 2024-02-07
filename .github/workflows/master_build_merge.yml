@@ -102,7 +102,7 @@ jobs:
 
   build-arm:
     if: ${{ inputs.type == 'arm' }}
-    runs-on: ARM64-test
+    runs-on: ARM64
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}

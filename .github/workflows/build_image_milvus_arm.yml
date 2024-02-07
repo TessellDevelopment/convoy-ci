@@ -7,9 +7,9 @@ jobs:
   find-latest-tag:
     runs-on: non-build
     outputs:
-      tag: 0.0.1507
+      tag: ${{ steps.latest_tag.outputs.tag_ref }}
       SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
-      DOCKERHUB_ORG: tesselldev
+      DOCKERHUB_ORG: ${{env.DOCKERHUB_ORG}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -121,7 +121,7 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
   build-arm-images:
-    runs-on: ARM64-test
+    runs-on: ARM64
     needs: find-latest-tag
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}

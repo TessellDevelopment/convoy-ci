@@ -74,7 +74,7 @@ jobs:
 
   build-arm:
     if: ${{inputs.type == 'arm' }}
-    runs-on: ARM64-test
+    runs-on: ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
