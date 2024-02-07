@@ -148,11 +148,16 @@ jobs:
            docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
            docker system prune --force
       
+      - name: Setup Docker builder
+        run: |
+          set +e
+          docker buildx rm multi-platform-builder
+          docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         shell: bash
         run: |
-            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             while IFS=$'\t' read -r image function file _; do
               if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
                 echo "Building $image Image"
@@ -164,7 +169,6 @@ jobs:
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             while IFS=$'\t' read -r image function file _; do
               if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
                 echo "Building $image Image"
