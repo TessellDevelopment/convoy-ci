@@ -102,7 +102,7 @@ jobs:
 
   build-arm:
     if: ${{ inputs.type == 'arm' }}
-    runs-on: ARM64
+    runs-on: ARM64-test
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
@@ -119,7 +119,7 @@ jobs:
 
       - name: Login to Docker
         run : |
-          sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+          docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
 
       - name: Configure AWS Credentials
         run: |
@@ -133,11 +133,11 @@ jobs:
           mvnwBuild() {
             set -e
             NAME="$1"
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
               https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
-            sudo mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
+            mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
             set +e
           }
@@ -156,9 +156,9 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-            sudo docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            sudo docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+             docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
           build() {
@@ -185,8 +185,8 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
-          sudo docker container prune --force
-          sudo docker volume prune --force
+          docker container prune --force
+          docker volume prune --force
                   
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
