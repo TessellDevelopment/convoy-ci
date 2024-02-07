@@ -136,16 +136,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "arm64"
-          rm install-aws.sh
-    
-      - run: aws --version
-        shell: bash
-
       - name: Configure AWS Credentials
         run: |
           aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -178,8 +168,11 @@ jobs:
             while IFS=$'\t' read -r image function file _; do
               if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
                 echo "Building $image Image"
-                docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
-                docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
+                # docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
+                # docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
+
+                docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
+                docker build -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
               fi
             done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
@@ -188,8 +181,10 @@ jobs:
               echo $version
               docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
               docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-              docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-              docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
+
+              # docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              # docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
+
             done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
