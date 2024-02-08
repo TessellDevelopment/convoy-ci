@@ -13,11 +13,10 @@ jobs:
   post-message:
     runs-on: non-build
     env:
-      TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+      TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
     steps: 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
           
       - name: Dump GitHub context
@@ -57,18 +56,18 @@ jobs:
 
       - name: Create message
         if: steps.check-message.outputs.check == 'false'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v4.0.0
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           body: ${{steps.check-message.outputs.message}}
 
       - name: Update message
         if: steps.check-message.outputs.check == 'true'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v4.0.0
         with:
           comment-id: ${{steps.check-message.outputs.comment-id}}
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           body: ${{steps.check-message.outputs.message}}
           edit-mode: replace
           

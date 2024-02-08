@@ -19,25 +19,20 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
+      GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       DOCKERHUB_ORG: "tesselldev"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5.0.0
         with:
           python-version: 3.9
-
-      - name: Set up JDK 16
-        uses: actions/setup-java@v3.10.0
-        with:
-          java-version: '16'
-          distribution: 'adopt'
 
       - name: Get branch name & Repo Name
         shell: bash
@@ -86,7 +81,7 @@ jobs:
           pytest
 
       - name: Login to docker
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -116,7 +111,7 @@ jobs:
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
 
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -130,7 +125,7 @@ jobs:
             }
             
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -150,7 +145,7 @@ jobs:
       
       
       - name: Find latest tag
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -224,9 +219,9 @@ jobs:
             image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
-            trivy-version: "0.29.1"
+            trivy-version: ${{ vars.TRIVY_VERSION }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.3.1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
             name: image-scan-report
@@ -242,7 +237,7 @@ jobs:
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
           
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -264,28 +259,21 @@ jobs:
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
   
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: build
-    if: always() 
+    if: always()  
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
-
+      
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
-
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
         with:
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -294,12 +282,11 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
@@ -307,12 +294,11 @@ jobs:
           import base64
 
           API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           STATUS = (os.environ.get('STATUS')).upper()
-          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
@@ -335,7 +321,7 @@ jobs:
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            'x-api-key': API_KEY
           }
 
           max_retries = 3
@@ -359,7 +345,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

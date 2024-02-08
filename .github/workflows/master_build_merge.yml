@@ -26,15 +26,15 @@ jobs:
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
-      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
@@ -49,7 +49,7 @@ jobs:
             scripts/initializeAutomation.sh
 
       - name: Login to docker
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}   
@@ -414,7 +414,7 @@ jobs:
           docker volume prune --force
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: failure()
         with:
           status: ${{ job.status }}
@@ -434,7 +434,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps: 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
@@ -511,7 +511,7 @@ jobs:
           sudo docker volume prune --force
                   
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: failure()
         with:
           status: ${{ job.status }}

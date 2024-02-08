@@ -17,7 +17,7 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
@@ -306,7 +306,7 @@ jobs:
     runs-on: ARM64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
