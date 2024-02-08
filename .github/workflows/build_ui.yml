@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           ENV_JSON="${{secrets.TESSELL_UI_ENV_SECRET}}"
-          echo "$json_data" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' > .env
+          echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' > .env
           cat .env
 
       - name: Build
