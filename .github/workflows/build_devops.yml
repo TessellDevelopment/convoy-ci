@@ -34,6 +34,12 @@ jobs:
         with:
           python-version: 3.9
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.0.0
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
       - name: Get branch name & Repo Name
         shell: bash
         run: |
