@@ -33,6 +33,13 @@ jobs:
         uses: actions/setup-python@v5.0.0
         with:
           python-version: 3.9
+        
+      - name: Set up Trivy
+        shell: bash
+        run: | 
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.17.2/trivy_0.17.2_Linux-64bit.deb
+          sudo dpkg -i trivy_0.17.2_Linux-64bit.deb
+          trivy -v
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
@@ -233,6 +240,12 @@ jobs:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
             
+      - name: Vulnerability scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: vaulnerability-scan
+        run: |
+          echo "hey"
+
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
