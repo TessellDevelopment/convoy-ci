@@ -19,14 +19,13 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: nexus.tessell.cloud
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
-      DOCKERHUB_ORG: tesselldev
+      DOCKERHUB_ORG: "tesselldev"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Get branch name
         shell: bash
@@ -51,12 +50,13 @@ jobs:
           echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
           echo "extra-index-url = https://pypi.org/simple" >> pip.conf
           sudo cp pip.conf /etc/pip.conf
+        shell: bash
 
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
           pip install flake8 pytest twine wheel
-          if [ -f requirements.txt ]; then pip install -r requirements.txt --dry-run; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Lint with flake8
         run: |
@@ -71,7 +71,7 @@ jobs:
           pytest
 
       - name: Login to docker
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -86,33 +86,31 @@ jobs:
       - name: Build and push
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          ./gradlew dockerTagsPush twineUpload --console plain \
-            -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-            -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+          ./gradlew dockerTagsPush --console plain \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
-            -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-
+    
 
       - name: Docker image scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
-        uses: azure/container-scan@v0.1
+        uses: azure/container-scan@v0
         with:
-           severity-threshold: CRITICAL
-           image-name: ${{ env.DOCKER_IMAGE_NAME }}
-           username: ${{ secrets.DOCKER_USERNAME }}
-           password: ${{ secrets.DOCKER_PASSWORD }}
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          trivy-version: ${{ vars.TRIVY_VERSION }}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4.3.1
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
            name: image-scan-report
            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
 
-
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -133,6 +131,100 @@ jobs:
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
         
+  post-build-status-to-convoy:
+    runs-on: non-build
+    needs: build
+    if: always()  
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    steps:
+      
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          python3 - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
+          
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFUL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
+
+          payload = {
+            "repoName": REPO,
+            "commitHash": COMMIT_HASH[:7],
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+
+          print(payload)
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY
+          }
+
+          max_retries = 3
+          retry_delay = 20 
+      
+          for _ in range(max_retries):
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                  break
+              else:
+                  print(response.status_code)
+                  print(response.text)
+                  print(f"Retrying... ({max_retries - _} attempts left)")
+                  time.sleep(retry_delay)
+          else:
+              print("API request failed after retries.")
+              exit(1)
+          print("POST request Complete")
+          EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
+
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build
@@ -142,5 +234,3 @@ jobs:
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            

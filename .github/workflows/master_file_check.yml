@@ -18,7 +18,7 @@ jobs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
       changed-files: ${{ steps.set-output.outputs.changed-files }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 
 
@@ -30,14 +30,14 @@ jobs:
 
       - name: Check .github changes
         id: changed-files-github
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             .github/**
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
 
       - name: Set Output
         id: set-output

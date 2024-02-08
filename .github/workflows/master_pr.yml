@@ -4,52 +4,17 @@ on:
   workflow_call:
 
 jobs:
-  
-  dev-checks:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-1382
-    secrets: inherit
-
-  version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382
-    secrets: inherit
-
-  build-file:
-    runs-on: non-build
-    outputs:
-      type: ${{steps.build-type.outputs.type}}
-    needs: [dev-checks,version-check]
-    steps:
-
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
-          fetch-depth: 0
-
-      - name: Determine build type from Convoy
-        id: build-type
-        run: |
-          runner=$(yq '.runner' convoy.yaml)
-          echo "type=$runner" >> $GITHUB_OUTPUT
-
-  build:
-    needs: build-file
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382
-    with:
-      type: ${{needs.build-file.outputs.type}}
-    secrets: inherit
 
   check-commits:
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-    needs: build
     runs-on: non-build
     env:
       REPO: ${{github.repository}}
       PR_NUMBER: ${{github.event.number}}
-      GITHUB_TOKEN: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
     steps:  
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
 
       - name: Check commits
@@ -57,7 +22,7 @@ jobs:
         run: |
           PR_COMMITS=$(curl -L \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+            -H "Authorization: Bearer ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
           echo "Number of commits in PR: $PR_COMMITS"
@@ -79,8 +44,40 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main 
     secrets: inherit 
 
+  dev-checks:
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-1382
+    secrets: inherit
+
+  version-check:
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382
+    secrets: inherit
+
+  build-file:
+    runs-on: non-build
+    outputs:
+      type: ${{steps.build-type.outputs.type}}
+    needs: [dev-checks,version-check]
+    steps:
+
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Determine build type from Convoy
+        id: build-type
+        run: |
+          runner=$(yq '.runner' convoy.yaml)
+          echo "type=$runner" >> $GITHUB_OUTPUT
+
+  build:
+    needs: build-file
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382
+    with:
+      type: ${{needs.build-file.outputs.type}}
+    secrets: inherit
+
   send-mail:
-    needs: auto-merge
+    needs: build
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main 
     secrets: inherit
