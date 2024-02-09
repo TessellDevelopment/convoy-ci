@@ -114,7 +114,7 @@ jobs:
               post_to_slack(response.text)
               exit(1)
           except Exception as e:
-            post_to_slack(response.text)
+            post_to_slack(e)
             exit(1) 
           EOF
 
