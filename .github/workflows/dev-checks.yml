@@ -262,7 +262,7 @@ jobs:
         with:
           comment: "true"
           use_gitignore: "false"
-          json_extension: ".tmpl"
+          json_extension: ".json.tmpl"
           
       - name: Check for Jsonlint
         run: |
