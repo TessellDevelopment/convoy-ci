@@ -245,7 +245,7 @@ jobs:
           CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.17.2/trivy_0.17.2_Linux-64bit.deb
-          sudo dpkg -i trivy_0.17.2_Linux-64bit.deb
+          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
           trivy -v
           trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
 
