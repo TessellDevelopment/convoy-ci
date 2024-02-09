@@ -262,7 +262,7 @@ jobs:
         uses: tj-actions/changed-files@v42.0.2
       
       - run: |
-          CHANGED_FILES=$(echo "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}" | sed 's/ /\n/g')
+          CHANGED_FILES="$(echo "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}" | sed 's/ /\n/g')"
           echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Validate YAML and .tmpl files
