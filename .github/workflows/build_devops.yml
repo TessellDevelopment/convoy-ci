@@ -51,14 +51,14 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
-          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
-          trivy -v
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
 
       - name: Create pip conf
         run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
+          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
+          trivy -v
           # Create pip.conf and copy to /etc; 
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
