@@ -80,7 +80,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --extra-index-url={{vars.NEXUS_PROTOCOL_LOCAL}}://pypi.org/simple
+          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --extra-index-url={{vars.NEXUS_PROTOCOL_LOCAL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
           find /usr/bin /usr/local/bin -name build_all_artifacts
 
       - name: Replicate given artifact
