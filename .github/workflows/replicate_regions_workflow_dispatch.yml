@@ -86,8 +86,7 @@ jobs:
       - name: Replicate given artifact
         # if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
-          mkdir -p ~/.packer.d/plugins
-          region_replication_wf -ct aws -rd $RESOURCE_ID
+          region_replication_wf -rd $RESOURCE_ID
 
       - uses: actions/upload-artifact@v3
         continue-on-error: true
