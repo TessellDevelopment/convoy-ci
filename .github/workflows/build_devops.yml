@@ -89,7 +89,7 @@ jobs:
           print(usergroup_id)
           mention = f'<!subteam^{str(usergroup_id)}>'
           print(mention)
-          full_message=f'{mention}\n vulnerability validation failed, please check \n```vulnerability```'
+          full_message=f'{mention}\n vulnerability validation failed, please check \n vulnerability'
           print(full_message)
           token=os.environ.get('SLACK_TOKEN')
           print(token)
