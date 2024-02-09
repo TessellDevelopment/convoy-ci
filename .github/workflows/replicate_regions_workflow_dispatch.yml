@@ -66,21 +66,21 @@ jobs:
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
           echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-component" >> $GITHUB_ENV
 
-      - name: Create pip conf
-        run: |
-          # Create pip.conf and copy to /etc;
-          # The --extra_index_url option of pip install does not work with username/password
-          # Also pip does not have separate option to specify creds.
-          echo "[global]" > pip.conf
-          echo "index =  {{vars.NEXUS_PROTOCOL_LOCAL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = {{vars.NEXUS_PROTOCOL_LOCAL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "extra-index-url = {{vars.NEXUS_PROTOCOL_LOCAL}}://pypi.org/simple" >> pip.conf
-          sudo cp pip.conf /etc/pip.conf
-        shell: bash
+      # - name: Create pip conf
+      #   run: |
+      #     # Create pip.conf and copy to /etc;
+      #     # The --extra_index_url option of pip install does not work with username/password
+      #     # Also pip does not have separate option to specify creds.
+      #     echo "[global]" > pip.conf
+      #     echo "index =  {{vars.NEXUS_PROTOCOL_LOCAL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+      #     echo "index-url = {{vars.NEXUS_PROTOCOL_LOCAL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+      #     echo "extra-index-url = {{vars.NEXUS_PROTOCOL_LOCAL}}://pypi.org/simple" >> pip.conf
+      #     sudo cp pip.conf /etc/pip.conf
+      #   shell: bash
 
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0
+          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --extra-index-url={{vars.NEXUS_PROTOCOL_LOCAL}}://pypi.org/simple
           find /usr/bin /usr/local/bin -name build_all_artifacts
 
       - name: Replicate given artifact
