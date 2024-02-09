@@ -260,8 +260,6 @@ jobs:
       - name: Check All file changes
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
-        with:
-          separator: "\n"
       
       - run: |
           echo "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
