@@ -59,6 +59,7 @@ jobs:
           {
             "result":[]
           }
+          EOF
           pip install requests
           python3 - <<EOF
           import requests
