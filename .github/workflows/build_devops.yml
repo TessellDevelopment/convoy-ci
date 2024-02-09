@@ -118,7 +118,8 @@ jobs:
               # exit(1)
           except Exception as e:
             post_to_slack(e)
-            # exit(1) 
+            print("yuooooooooo")
+            exit(1) 
           EOF
 
       - name: Set up JDK 17
