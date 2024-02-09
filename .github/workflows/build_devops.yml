@@ -46,12 +46,12 @@ jobs:
           CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
           trivy_version: ${{ vars.TRIVY_VERSION }}
         run: |
-          # docker pull python
-          # wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
-          # sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
-          # trivy -v
+          docker pull python
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
+          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
+          trivy -v
           # #trivy -v
-          # trivy image -f json -o trivy_image_scan_result.json --scanners vuln python:latest
+          trivy image -f json -o trivy_image_scan_result.json --scanners vuln python:latest
           # #trivy -v
           # #trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
           pip install requests
