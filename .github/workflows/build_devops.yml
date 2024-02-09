@@ -63,11 +63,9 @@ jobs:
           import os
           import time
           import base64
-
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
-
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
@@ -79,7 +77,6 @@ jobs:
             except SlackApiError as e:
               print(f"Error posting to Slack: {e.response['error']}")
               return False
-
           with open('trivy_image_scan_result.json') as user_file:
             parsed_json = json.load(user_file)
           payload = {
