@@ -14,9 +14,8 @@
           run: |
             echo "$GITHUB_CONTEXT"
 
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4.1.1
           with:
-            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             fetch-depth: 0
 
         - name: Get branch name
@@ -24,7 +23,7 @@
           run: |
             echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
             echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
-            echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
+            echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
         
         - name: Check Format
           env:
@@ -200,15 +199,12 @@
               echo "No double commit conflicts found in Branch or PR title."
             fi
 
-        - name: Adding Common UI config
-          run: |
-            set +e
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
-            echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
-            echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
-            cat .npmrc
+        - name: Validate YAML and .tmpl files
+          uses: GrantBirki/json-yaml-validate@v2.6.0
+          with:
+            comment: "true"
+            use_gitignore: "false"
+            json_extension: ".tmpl"
             
         - name: Check for Jsonlint
           run: |
@@ -217,9 +213,8 @@
 
         - name: Output PR diff 
           id: pr_diff
-          uses: actions/github-script@v6.4.1
+          uses: actions/github-script@v7.0.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
               head_commit = "${{ github.sha }}"
               base_commit = "${{ github.sha }}"
@@ -239,9 +234,8 @@
               core.setOutput('response', response) 
 
         - name: Check for merge conflicts
-          uses: actions/github-script@v6.4.1
+          uses: actions/github-script@v7.0.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               response.data.files.forEach(function(file_entry) {
@@ -261,9 +255,8 @@
         
         - name: Check DB Migration Scripts
           id: check_db_migration
-          uses: actions/github-script@v6.4.1
+          uses: actions/github-script@v7.0.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               let path = "";
@@ -320,9 +313,8 @@
             
         - name: check for terraform (code)
           id: terraform_check
-          uses: actions/github-script@v6.3.3
+          uses: actions/github-script@v7.0.1
           with:
-            github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             script: |
               response = ${{steps.pr_diff.outputs.response}}
               var terraform_file = [] 
@@ -344,6 +336,7 @@
           run: |
             python3 - <<EOF
             import os
+            import hcl2
             terraform_files = os.environ.get('terraform_files')
             version_missing = False
             for terraform_file in terraform_files.split(','):

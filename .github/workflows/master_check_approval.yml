@@ -14,7 +14,7 @@ jobs:
     runs-on: non-build
     steps:
         - name: Checkout code
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4.1.1
 
         - name: Dump GitHub context
           env:
@@ -27,7 +27,7 @@ jobs:
           run: |
             PR_COMMITS=$(curl -L \
               -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -H "Authorization: Bearer ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
             echo "Number of commits in PR: $PR_COMMITS"
@@ -35,7 +35,7 @@ jobs:
 
         - name: Check Approval
           env:
-            TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+            TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
             title="${{github.event.pull_request.head.ref}}"
             user="${{github.event.pull_request.user.login}}"
