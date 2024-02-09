@@ -34,6 +34,81 @@ jobs:
         with:
           python-version: 3.9       
 
+      - name: Vulnerability scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        id: vaulnerability-scan
+        env:
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+          REPO: "${{github.repository}}"
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+          SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+          DEVOPS_TEAM: ${{secrets.DEVOPS_TEAM_SLACK_ID}}
+          CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
+          trivy_version: ${{ vars.TRIVY_VERSION }}
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
+          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
+          trivy -v
+          trivy -v
+          trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+          python3 - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+
+          API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
+          REPO = os.environ.get('REPO')
+
+          def post_to_slack(message):
+            usergroup_id=os.environ.get('DEVOPS_TEAM')
+            mention = f"<!subteam^{usergroup_id}>"
+            full_message=f"{mention}\n vulnerability validation failed, please check \n```{message}```"
+            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
+            try:
+              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
+              return response["ok"]
+            except SlackApiError as e:
+              print(f"Error posting to Slack: {e.response['error']}")
+              return False
+
+          with open('trivy_image_scan_result.json') as user_file:
+            parsed_json = json.load(user_file)
+          payload = {
+            "repoName": REPO,
+            "CVE":parsed_json
+          }
+
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY
+          }
+          
+          max_retries = 3
+          retry_delay = 20 
+          
+          try:
+            response = requests.post(API_URL, json=payload, headers=headers)
+            if response.status_code == 200:
+              print(response.status_code)
+              print(response.text)
+            elif response.status_code == 409:
+              print(response.json())
+              print("Get approval for these vulnerabilities or fix them")
+              exit(1)
+            else:
+              print(response.status_code)
+              print(response.text)
+              post_to_slack(response.text)
+              exit(1)
+          except Exception as e:
+            post_to_slack(response.text)
+              exit(1) 
+          EOF
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
         with:
@@ -56,9 +131,6 @@ jobs:
 
       - name: Create pip conf
         run: |
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
-          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
-          trivy -v
           # Create pip.conf and copy to /etc; 
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
@@ -213,22 +285,6 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-     
-      - name: tagging docker image with scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        run: |
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-      
-      - name: Docker image scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
-        id: docker-image-scan
-        uses: azure/container-scan@v0.1
-        with:
-            severity-threshold: CRITICAL
-            image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-            trivy-version: ${{ vars.TRIVY_VERSION }}
 
       - uses: actions/upload-artifact@v4.3.1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -246,8 +302,8 @@ jobs:
           SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
           DEVOPS_TEAM: ${{secrets.DEVOPS_TEAM_SLACK_ID}}
           CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
+          trivy_version: ${{ vars.TRIVY_VERSION }}
         run: |
-
           trivy -v
           trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
 
