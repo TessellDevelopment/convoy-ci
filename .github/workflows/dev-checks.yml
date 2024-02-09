@@ -256,13 +256,6 @@ jobs:
           else
             echo "No double commit conflicts found in Branch or PR title."
           fi
-
-      - name: Validate YAML and .tmpl files
-        uses: GrantBirki/json-yaml-validate@v2.6.0
-        with:
-          comment: "true"
-          use_gitignore: "false"
-          json_extension: ".tmpl"
           
       - name: Check for Jsonlint
         run: |

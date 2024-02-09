@@ -86,12 +86,12 @@ jobs:
         run: |
           mvnwBuild() {
             set -e
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
+             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             set +e
           }
           jarBuild() {
             set -e
-            sudo ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             set +e
           }
           dockerBuild() {
@@ -104,7 +104,7 @@ jobs:
             echo "$FILE"
             mvnwBuild
             set -e
-            sudo docker build -f $FILE -t $IMAGE_NAME .
+            docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
           build() {
@@ -120,7 +120,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .version, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
           build "artifacts"
@@ -131,6 +131,6 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
-          sudo docker container prune --force
-          sudo docker volume prune --force
+          docker container prune --force
+          docker volume prune --force
           
