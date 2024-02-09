@@ -308,9 +308,8 @@ jobs:
           REPO: "${{github.repository}}"
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-          DEVOPS_TEAM: ${{secrets.DEVOPS_TEAM_SLACK_ID}}
-          CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
-          trivy_version: ${{ vars.TRIVY_VERSION }}
+          DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+          CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
           sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
