@@ -15,10 +15,8 @@ jobs:
       - name: PATCH API to Convoy
         run: |
           set -e
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
-          echo $TOKEN
           RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/service-manifest" \
-            --header "Authorization: Basic $TOKEN" \
+            --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}" \
             --data '')
           echo "$RESPONSE"
           if [[ "$RESPONSE" == "200" ]]; then
