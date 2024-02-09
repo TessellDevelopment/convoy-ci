@@ -269,7 +269,7 @@ jobs:
         with:
           comment: "true"
           # files: "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
-          files: " convoy.yaml
+          files: " convoy.yaml \n
                   .github/workflows/tessell_pipelines_build.yml
                 "
           use_gitignore: "false"
