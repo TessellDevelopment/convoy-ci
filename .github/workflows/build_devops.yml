@@ -62,9 +62,11 @@ jobs:
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           def post_to_slack(message):
+            print("post to slack")
+            print(message)
             usergroup_id=os.environ.get('DEVOPS_TEAM')
-            mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n```{message}```"
+            mention = f"<!subteam^{str(usergroup_id)}>"
+            full_message=f"{mention}\n vulnerability validation failed, please check \n```{str(message)}```"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
@@ -97,6 +99,7 @@ jobs:
               post_to_slack(response.text)
               exit(1)
           except Exception as e:
+            print(e)
             post_to_slack(response.text)
               exit(1) 
           EOF
