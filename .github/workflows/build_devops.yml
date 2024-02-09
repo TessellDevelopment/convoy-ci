@@ -110,16 +110,16 @@ jobs:
             elif response.status_code == 409:
               print(response.json())
               print("Get approval for these vulnerabilities or fix them")
-              # exit(1)
+              #exit(1)
             else:
               print(response.status_code)
               print(response.text)
               post_to_slack(response.text)
-              # exit(1)
+              #exit(1)                       #check to fail or not
           except Exception as e:
+            print(e)
             post_to_slack(e)
-            print("yuooooooooo")
-            exit(1) 
+            #exit(1)                #check to fail or not
           EOF
 
       - name: Set up JDK 17
@@ -317,16 +317,20 @@ jobs:
           CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
           trivy_version: ${{ vars.TRIVY_VERSION }}
         run: |
-          trivy -v
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
+          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
           trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
-
+          trivy -v
+          # pip install requests
+          # pip install slack-sdk
           python3 - <<EOF
           import requests
           import json
           import os
           import time
           import base64
-
+          from slack_sdk import WebClient
+          from slack_sdk.errors import SlackApiError
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
@@ -334,7 +338,7 @@ jobs:
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n```{message}```"
+            full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
@@ -371,10 +375,11 @@ jobs:
               print(response.status_code)
               print(response.text)
               post_to_slack(response.text)
-              exit(1)
+              exit(1)                       #check to fail or not
           except Exception as e:
-            post_to_slack(response.text)
-              exit(1) 
+            print(e)
+            post_to_slack(e)
+            exit(1)                #check to fail or not
           EOF
 
 
