@@ -86,15 +86,10 @@ jobs:
             "repoName": REPO,
             "CVE":parsed_json
           }
-
           headers = {
             'Content-Type': 'application/json',
             'x-api-key': API_KEY
           }
-
-          max_retries = 3
-          retry_delay = 20 
-          
           try:
             response = requests.post(API_URL, json=payload, headers=headers)
             if response.status_code == 200:
