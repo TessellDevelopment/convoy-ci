@@ -36,7 +36,7 @@ on:
 
 jobs:
   dev-checks:
-    runs-on: self-hosted
+    runs-on: non-build
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -48,9 +48,8 @@ jobs:
         run: |
           echo "$GITHUB_CONTEXT"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
 
       - name: Get branch name (merge)
@@ -65,7 +64,7 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
-          echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
       
       - name: Check Format
         env:
@@ -97,15 +96,6 @@ jobs:
           else
             echo "convoy_exists=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install shyaml jira
-          echo ${{steps.convoy_check.outputs.convoy_exists}}
                    
       - name: Extract Jira Ticket
         if: ${{ steps.convoy_check.outputs.convoy_exists == 'true' }}
@@ -273,43 +263,15 @@ jobs:
           comment: "true"
           use_gitignore: "false"
           json_extension: ".tmpl"
-
-      - name: Adding Common UI config
-        run: |
-          set +e
-          rm ~/.npmrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
-          cat .npmrc
-
-      - name: import packages for json lint
-        run: |
-          sudo sudo npm install jsonlint -g
           
       - name: Check for Jsonlint
         run: |
           set -e
           git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
-      - name: install octokit/rest
-        run: |
-          if [ ! -d "node_modules/@octokit/rest" ]; then
-            npm cache clean --force
-            npm install @octokit/rest --legacy-peer-deps
-          fi
-      - name: install node fetch 
-        run: | 
-          npm install node-fetch 
-
-      - name: Install dependencies
-        run: npm install js-yaml
-
       - name: Check for merge conflicts
-        uses: actions/github-script@v6.4.1
+        uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -343,10 +305,9 @@ jobs:
       
       - name: Check DB Migration Scripts
         id: check_db_migration
-        uses: actions/github-script@v6.4.1
+        uses: actions/github-script@v7.0.1
         if: github.event_name == 'pull_request'
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -430,10 +391,9 @@ jobs:
             fi
             
       - name: check for gradle properties version
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         if:  ${{ inputs.check_version_in_gradle_properties == 'true' && steps.check_convoy.outputs.check_version_in_gradle == 'true'}} 
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -467,9 +427,8 @@ jobs:
       
       - name: check for version in version_txt
         if:  ${{ inputs.check_version_in_version_txt == 'true' }}
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -504,9 +463,8 @@ jobs:
       - name: check for version in convoy.yaml in terraform modules repo
         if:  ${{ inputs.check_version_in_terraform_modules == 'true' }}
         id: terraform_file_check
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -558,9 +516,8 @@ jobs:
       - name: check for terraform (code)
         if : github.event_name == 'pull_request'
         id: terraform_check
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           script: |
             head_commit = "${{ github.sha }}"
             base_commit = "${{ github.sha }}"
@@ -588,13 +545,12 @@ jobs:
                 console.log(terraform_file) ;
               }
             });
-            core.setOutput('terraform_file' , terraform_file.join(','));
+            core.setOutput('terraform_files' , terraform_file.join(','));
 
       - name: check for chart verison in chart.yaml 
         if : ${{ inputs.check_version_of_helm_chart == 'true' }}
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
             const yaml = require("js-yaml");
             const fs = require("fs");
@@ -637,13 +593,13 @@ jobs:
 
       - name: Changed files
         id: changed-files
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             services/**
 
       - name: check for version in nexus 
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         env:
           NEXUS_URL: https://${{vars.NEXUS_SERVER_ENDPOINT}}/service/rest/v1/search?repository
           NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
@@ -772,11 +728,32 @@ jobs:
         run:
           python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"      
       
-
       - name: check for terraform version
-        if: steps.terraform_check.outputs.terraform_file 
-        run:
-          terraform_version_check "${{ steps.terraform_check.outputs.terraform_file }}"
+        if: steps.terraform_check.outputs.terraform_files 
+        env:
+          terraform_files: ${{ steps.terraform_check.outputs.terraform_files }}
+        run: |
+          python3 - <<EOF
+          import os
+          import hcl2
+          terraform_files = os.environ.get('terraform_files')
+          version_missing = False
+          for terraform_file in terraform_files.split(','):
+              with open(terraform_file, 'r') as file:
+                  tf_file = hcl2.load(file)
+              if 'terraform' in tf_file and 'required_providers' in tf_file['terraform'][0]:
+                  providers = tf_file['terraform'][0]['required_providers']
+                  for provider in providers:
+                      for _provider, provider_info in provider.items():
+                          for key  in provider_info:
+                              if key == 'version':
+                                  break
+                          else:
+                              print(f"{terraform_file}: version is not present for {_provider} ")
+                              version_missing = True
+              if version_missing:
+                  sys.exit(1)
+          EOF
       
       - name: Run API-spec Validation
         run: |

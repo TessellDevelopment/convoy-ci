@@ -30,9 +30,8 @@ jobs:
     outputs:
       update-branch: ${{steps.check-commit.outputs.update-branch}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
 
       - name: Check head commit

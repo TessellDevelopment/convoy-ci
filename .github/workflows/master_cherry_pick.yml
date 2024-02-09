@@ -27,7 +27,7 @@ jobs:
       PR_TITLE: ${{inputs.pr_title}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
       
@@ -58,6 +58,6 @@ jobs:
           git commit -m "$PR_TITLE"
           git push origin $JIRA_ID
 
-          curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+          curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
             -d '{"title": "${{ env.PR_TITLE }}", "head": "${{ env.JIRA_ID }}", "base": "main"}' \
             "https://api.github.com/repos/$REPO/pulls"

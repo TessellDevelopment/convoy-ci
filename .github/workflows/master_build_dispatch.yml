@@ -11,9 +11,8 @@
         type: ${{steps.build-type.outputs.type}}
         label: ${{steps.get-label.outputs.label}}
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4.1.1
           with:
-            token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
             fetch-depth: 0
           
         - name: Determine build type from Convoy

@@ -15,10 +15,8 @@ jobs:
       - name: PATCH API to Convoy
         run: |
           set -e
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo $TOKEN
           RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/service-manifest" \
-            --header "Authorization: Basic $TOKEN" \
+            --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}" \
             --data '')
           echo "$RESPONSE"
           if [[ "$RESPONSE" == "200" ]]; then
@@ -28,7 +26,7 @@ jobs:
           fi
           
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}
