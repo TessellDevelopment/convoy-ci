@@ -69,7 +69,7 @@ jobs:
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n```{message}```"
+            full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
