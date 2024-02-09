@@ -42,8 +42,8 @@ jobs:
           REPO: "${{github.repository}}"
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-          DEVOPS_TEAM: ${{secrets.DEVOPS_TEAM_SLACK_ID}}
-          CHANNEL_ID: ${{secrets.CONVOY_ALERTS_SLACK_CHANNEL}}
+          DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+          CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
           trivy_version: ${{ vars.TRIVY_VERSION }}
         run: |
           docker pull python
@@ -66,7 +66,8 @@ jobs:
             print(message)
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{str(usergroup_id)}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n```{str(message)}```"
+            print(mention)
+            full_message=f"{mention}\n vulnerability validation failed, please check \n```vulnerability```"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
