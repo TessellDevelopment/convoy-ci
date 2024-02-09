@@ -272,7 +272,7 @@ jobs:
           comment: "true"
           files: "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
           use_gitignore: "false"
-          json_extension: ".jsonc.tmpl"
+          json_extension: "jsonc.tmpl"
           allow_multiple_documents: "true"
           
       - name: Check for Jsonlint
