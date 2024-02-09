@@ -54,7 +54,7 @@ jobs:
           # trivy image -f json -o trivy_image_scan_result.json --scanners vuln python:latest
           # #trivy -v
           # #trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
-
+          pip install requests
           python3 - <<EOF
           import requests
           import json
