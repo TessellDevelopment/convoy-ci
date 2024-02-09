@@ -61,20 +61,6 @@ jobs:
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
-          # def post_to_slack(message):
-          #   print('post to slack')
-          #   print(message)
-          #   usergroup_id=os.environ.get('DEVOPS_TEAM')
-          #   mention = f'<!subteam^{str(usergroup_id)}>'
-          #   print(mention)
-          #   full_message=f'{mention}\n vulnerability validation failed, please check \n```vulnerability```'
-          #   client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-          #   try:
-          #     response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-          #     return response['ok']
-          #   except SlackApiError as e:
-          #     print(f'Error posting to Slack: {e.response['error']}')
-          #     return False
           with open('trivy_image_scan_result.json') as user_file:
             parsed_json = json.load(user_file)
           payload = {
