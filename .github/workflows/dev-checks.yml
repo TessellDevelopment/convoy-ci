@@ -262,7 +262,8 @@ jobs:
         with:
           comment: "true"
           use_gitignore: "false"
-          json_extension: ".tmpl"
+          json_extension: "jsonc.tmpl"
+          allow_multiple_documents: "true"
           
       - name: Check for Jsonlint
         run: |
