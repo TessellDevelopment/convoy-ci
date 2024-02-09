@@ -51,7 +51,7 @@ jobs:
           sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
           trivy -v
           trivy -v
-          trivy image -f json -o trivy_image_scan_result.json python:latest
+          trivy image -f json -o trivy_image_scan_result.json --scanners vuln python:latest
           python3 - <<EOF
           import requests
           import json
@@ -62,24 +62,24 @@ jobs:
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           def post_to_slack(message):
-            print("post to slack")
+            print('post to slack')
             print(message)
             usergroup_id=os.environ.get('DEVOPS_TEAM')
-            mention = f"<!subteam^{str(usergroup_id)}>"
+            mention = f'<!subteam^{str(usergroup_id)}>'
             print(mention)
-            full_message=f"{mention}\n vulnerability validation failed, please check \n```vulnerability```"
+            full_message=f'{mention}\n vulnerability validation failed, please check \n```vulnerability```'
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-              return response["ok"]
+              return response['ok']
             except SlackApiError as e:
-              print(f"Error posting to Slack: {e.response['error']}")
+              print(f'Error posting to Slack: {e.response['error']}')
               return False
           with open('trivy_image_scan_result.json') as user_file:
             parsed_json = json.load(user_file)
           payload = {
-            "repoName": REPO,
-            "CVE":parsed_json
+            'repoName': REPO,
+            'CVE':parsed_json
           }
           headers = {
             'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ jobs:
               print(response.text)
             elif response.status_code == 409:
               print(response.json())
-              print("Get approval for these vulnerabilities or fix them")
+              print('Get approval for these vulnerabilities or fix them')
               exit(1)
             else:
               print(response.status_code)
