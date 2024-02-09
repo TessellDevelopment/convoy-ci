@@ -61,13 +61,15 @@ jobs:
           }
           EOF
           pip install requests
+          pip install slack-sdk
           python3 - <<EOF
           import requests
           import json
           import os
           import time
           import base64
-          
+          from slack_sdk import WebClient
+          from slack_sdk.errors import SlackApiError
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
