@@ -136,59 +136,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "arm64"
-          rm install-aws.sh
-    
-      - run: aws --version
-        shell: bash
-
       - name: Configure AWS Credentials
         run: |
-          export AWS_PROFILE=tessell-devqa-infra
-          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-south-1) ${{ vars.TESSELL_DEV_ECR }}
+          aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          aws configure set region ap-south-1
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{ vars.TESSELL_DEV_ECR }}
 
       - name: Login to Docker
         run : |
-          sudo docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
-          sudo docker system prune --force
+           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+           docker system prune --force
       
+      - name: Setup Docker builder
+        run: |
+          set +e
+          docker buildx rm multi-platform-builder
+          docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         shell: bash
         run: |
-          sudo docker buildx use multiBuild
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              sudo docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+            while IFS=$'\t' read -r image function file _; do
+              if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+                echo "Building $image Image"
+                docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
+              fi
+            done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          sudo docker buildx use multiBuild
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              sudo docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
-              sudo docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+            while IFS=$'\t' read -r image function file _; do
+              if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+                echo "Building $image Image"
+                docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
+                docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
+              fi
+            done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
-          while IFS=$'\t' read -r image version _; do
-            echo $image
-            echo $version
-            sudo docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            sudo docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-            sudo docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-            sudo docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
-          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+            while IFS=$'\t' read -r image version _; do
+              echo $image
+              echo $version
+              docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
+            done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
   
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
