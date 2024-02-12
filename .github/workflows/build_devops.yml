@@ -352,7 +352,7 @@ jobs:
           with open('dockle_image_scan_result.json') as json_file:
             dockle_json = json.load(json_file)
           payload = {
-            "repoName": REPO,
+            "repository": REPO,
             "CVE":trivy_json,
             "DOCKER_BEST_PRACTICE":dockle_json,
           }
