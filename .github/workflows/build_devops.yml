@@ -92,7 +92,7 @@ jobs:
 
 
           payload = {
-            "repoName": REPO,
+            "repository": REPO,
             "CVE":{},
             "DOCKER_BEST_PRACTICE":{}
           }
