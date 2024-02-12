@@ -12,7 +12,7 @@ jobs:
 
   build-amd:
     if: ${{inputs.type != 'arm' }}
-    runs-on: self-hosted-test
+    runs-on: self-hosted
     env:
       API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
