@@ -38,7 +38,7 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: vaulnerability-scan1
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
           REPO: "${{github.repository}}"
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
