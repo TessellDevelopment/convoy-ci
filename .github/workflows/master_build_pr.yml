@@ -59,7 +59,7 @@ jobs:
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
             REPO = os.environ.get('REPO')
-  
+
             def post_to_slack(message):
               usergroup_id=os.environ.get('DEVOPS_TEAM')
               mention = f"<!subteam^{usergroup_id}>"
@@ -71,7 +71,7 @@ jobs:
               except SlackApiError as e:
                 print(f"Error posting to Slack: {e.response['error']}")
                 return False
-  
+
             with open('trivy_image_scan_result.json') as json_file:
               trivy_json = json.load(json_file)
             with open('dockle_image_scan_result.json') as json_file:
@@ -81,12 +81,12 @@ jobs:
               "CVE":trivy_json,
               "DOCKER_BEST_PRACTICE":dockle_json,
             }
-  
+
             headers = {
               'Content-Type': 'application/json',
               'x-api-key': API_KEY
             }
-  
+
             max_retries = 3
             retry_delay = 20 
             
@@ -108,7 +108,7 @@ jobs:
               print(e)
               post_to_slack(e)
               exit(1)                #check to fail or not
-            EOF
+          EOF
             set +e
           }
           helm-chart(){
