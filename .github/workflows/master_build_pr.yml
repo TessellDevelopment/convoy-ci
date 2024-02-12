@@ -14,12 +14,12 @@ jobs:
     if: ${{inputs.type != 'arm' }}
     runs-on: self-hosted-test
     env:
-      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
-      REPO: "${{github.repository}}"
       API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -56,7 +56,7 @@ jobs:
           import os
           from slack_sdk import WebClient
           from slack_sdk.errors import SlackApiError
-          API_URL = os.environ.get('API_URL')
+          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
 
@@ -91,7 +91,7 @@ jobs:
           retry_delay = 20 
           
           try:
-            response = requests.post(API_URL, json=payload, headers=headers)
+            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
             if response.status_code == 200:
               print(response.status_code)
               print(response.text)
@@ -150,12 +150,12 @@ jobs:
     if: ${{inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
-      REPO: "${{github.repository}}"
       API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -200,7 +200,7 @@ jobs:
             import os
             from slack_sdk import WebClient
             from slack_sdk.errors import SlackApiError
-            API_URL = os.environ.get('API_URL')
+            IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
             API_KEY = os.environ.get('API_KEY')
             REPO = os.environ.get('REPO')
   
@@ -235,7 +235,7 @@ jobs:
             retry_delay = 20 
             
             try:
-              response = requests.post(API_URL, json=payload, headers=headers)
+              response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
               if response.status_code == 200:
                 print(response.status_code)
                 print(response.text)
