@@ -93,7 +93,7 @@ jobs:
               print(response.status_code)
               print(response.text)
             elif response.status_code == 409:
-              print(response.json())
+              print(json.dumps(response.json(), indent=2))
               print("Get approval for these vulnerabilities or fix them")
               exit(1)
             else:
@@ -234,7 +234,7 @@ jobs:
               print(response.status_code)
               print(response.text)
             elif response.status_code == 409:
-              print(response.json())
+              print(json.dumps(response.json(), indent=2))
               print("Get approval for these vulnerabilities or fix them")
               exit(1)
             else:
