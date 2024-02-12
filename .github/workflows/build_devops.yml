@@ -314,21 +314,12 @@ jobs:
           DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
           CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
         run: |
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
-          sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
-          curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
-          sudo dpkg -i dockle.deb && rm dockle.deb
           trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln ${{ env.DOCKER_IMAGE_NAME }}:latest
           dockle -f json -o dockle_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
-          trivy -v
-          # pip install requests
-          # pip install slack-sdk
           python3 - <<EOF
           import requests
           import json
           import os
-          import time
-          import base64
           from slack_sdk import WebClient
           from slack_sdk.errors import SlackApiError
           API_URL = os.environ.get('API_URL')

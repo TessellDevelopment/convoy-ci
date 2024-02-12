@@ -12,7 +12,14 @@ jobs:
 
   build-amd:
     if: ${{inputs.type != 'arm' }}
-    runs-on: self-hosted
+    runs-on: self-hosted-test
+    env:
+      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -35,6 +42,73 @@ jobs:
             echo "$FILE"
             echo "Starting Docker"
             docker build -f $FILE -t $IMAGE_NAME .
+            imageScan $IMAGE_NAME
+            set +e
+          }
+          imageScan(){
+            set -e
+            IMAGE_NAME="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            python3 - <<EOF
+            import requests
+            import json
+            import os
+            from slack_sdk import WebClient
+            from slack_sdk.errors import SlackApiError
+            API_URL = os.environ.get('API_URL')
+            API_KEY = os.environ.get('API_KEY')
+            REPO = os.environ.get('REPO')
+  
+            def post_to_slack(message):
+              usergroup_id=os.environ.get('DEVOPS_TEAM')
+              mention = f"<!subteam^{usergroup_id}>"
+              full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
+              client = WebClient(token=os.environ.get('SLACK_TOKEN'))
+              try:
+                response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
+                return response["ok"]
+              except SlackApiError as e:
+                print(f"Error posting to Slack: {e.response['error']}")
+                return False
+  
+            with open('trivy_image_scan_result.json') as json_file:
+              trivy_json = json.load(json_file)
+            with open('dockle_image_scan_result.json') as json_file:
+              dockle_json = json.load(json_file)
+            payload = {
+              "repository": REPO,
+              "CVE":trivy_json,
+              "DOCKER_BEST_PRACTICE":dockle_json,
+            }
+  
+            headers = {
+              'Content-Type': 'application/json',
+              'x-api-key': API_KEY
+            }
+  
+            max_retries = 3
+            retry_delay = 20 
+            
+            try:
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                print(response.status_code)
+                print(response.text)
+              elif response.status_code == 409:
+                print(response.json())
+                print("Get approval for these vulnerabilities or fix them")
+                exit(1)
+              else:
+                print(response.status_code)
+                print(response.text)
+                post_to_slack(response.text)
+                exit(1)                       #check to fail or not
+            except Exception as e:
+              print(e)
+              post_to_slack(e)
+              exit(1)                #check to fail or not
+            EOF
             set +e
           }
           helm-chart(){
@@ -75,6 +149,13 @@ jobs:
   build-arm:
     if: ${{inputs.type == 'arm' }}
     runs-on: ARM64
+    env:
+      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -105,6 +186,73 @@ jobs:
             mvnwBuild
             set -e
             docker build -f $FILE -t $IMAGE_NAME .
+            imageScan $IMAGE_NAME
+            set +e
+          }
+          imageScan(){
+            set -e
+            IMAGE_NAME="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            python3 - <<EOF
+            import requests
+            import json
+            import os
+            from slack_sdk import WebClient
+            from slack_sdk.errors import SlackApiError
+            API_URL = os.environ.get('API_URL')
+            API_KEY = os.environ.get('API_KEY')
+            REPO = os.environ.get('REPO')
+  
+            def post_to_slack(message):
+              usergroup_id=os.environ.get('DEVOPS_TEAM')
+              mention = f"<!subteam^{usergroup_id}>"
+              full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
+              client = WebClient(token=os.environ.get('SLACK_TOKEN'))
+              try:
+                response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
+                return response["ok"]
+              except SlackApiError as e:
+                print(f"Error posting to Slack: {e.response['error']}")
+                return False
+  
+            with open('trivy_image_scan_result.json') as json_file:
+              trivy_json = json.load(json_file)
+            with open('dockle_image_scan_result.json') as json_file:
+              dockle_json = json.load(json_file)
+            payload = {
+              "repository": REPO,
+              "CVE":trivy_json,
+              "DOCKER_BEST_PRACTICE":dockle_json,
+            }
+  
+            headers = {
+              'Content-Type': 'application/json',
+              'x-api-key': API_KEY
+            }
+  
+            max_retries = 3
+            retry_delay = 20 
+            
+            try:
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                print(response.status_code)
+                print(response.text)
+              elif response.status_code == 409:
+                print(response.json())
+                print("Get approval for these vulnerabilities or fix them")
+                exit(1)
+              else:
+                print(response.status_code)
+                print(response.text)
+                post_to_slack(response.text)
+                exit(1)                       #check to fail or not
+            except Exception as e:
+              print(e)
+              post_to_slack(e)
+              exit(1)                #check to fail or not
+            EOF
             set +e
           }
           build() {
