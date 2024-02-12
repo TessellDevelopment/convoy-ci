@@ -46,6 +46,9 @@ jobs:
           CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
           trivy_version: ${{ vars.TRIVY_VERSION }}
         run: |
+          curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
+          sudo dpkg -i dockle.deb && rm dockle.deb
+          dockle -v
           # docker pull python
           # wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
           # sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
@@ -313,7 +316,7 @@ jobs:
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
           sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
-          trivy image -f json -o trivy_image_scan_result.json ${{ env.DOCKER_IMAGE_NAME }}:latest
+          trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln ${{ env.DOCKER_IMAGE_NAME }}:latest
           trivy -v
           # pip install requests
           # pip install slack-sdk
