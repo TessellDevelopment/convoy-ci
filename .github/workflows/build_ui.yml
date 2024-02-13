@@ -25,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
+        with:
+          fetch-depth: 0
 
       - name: Get branch name
         shell: bash
