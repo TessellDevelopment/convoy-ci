@@ -17,7 +17,7 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
+      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       GOPATH: /home/github/go
