@@ -266,7 +266,7 @@ jobs:
         run: |
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
-                      --build-arg AGENT_TAG=${{env.AGENT_VERSION}} 
+                      --build-arg AGENT_TAG=${{env.AGENT_VERSION}} \
                       --build-arg NEXUS_USERNAME=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
                       --build-arg NEXUS_PASSWORD=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
                       --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
@@ -280,7 +280,7 @@ jobs:
         run: |
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{env.TAG}} \
                         --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
-                        --build-arg AGENT_TAG=${{env.AGENT_VERSION}} 
+                        --build-arg AGENT_TAG=${{env.AGENT_VERSION}} \
                         --build-arg NEXUS_USERNAME=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
                         --build-arg NEXUS_PASSWORD=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
                         --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
