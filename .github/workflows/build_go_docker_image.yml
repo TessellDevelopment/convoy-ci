@@ -23,7 +23,7 @@ jobs:
       DOCKERHUB_ORG: "tesselldev"
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
 
     steps:
