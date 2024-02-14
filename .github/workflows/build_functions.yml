@@ -160,28 +160,28 @@ jobs:
             core.setOutput('tag_ref', latest_tag)
 
       - name: steps to upload tar files to nexus 
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        # if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           for OS in ${OS_NAMES[@]} ;do
            for CLOUD in ${CLOUD_NAMES[@]}; do
-              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+              mvn deploy:deploy-file -Dnexus_url=http://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
                   -Dnexus_username=${NEXUS_USER} -Dnexus_password=${NEXUS_PASSWORD} \
-                  -DgroupId=tessell.functions -DartifactId=tessell-task-handler-$OS-$CLOUD -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                  -DgroupId=tessell.functions -DartifactId=tessell-task-handler-$OS-$CLOUD -Dversion=0.0.1566 \
                   -DgeneratePom=true -Dpackaging=tar \
-                  -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                  -Durl=http://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                   -Dfile=./tessell/tessell-task-handler-$OS-$CLOUD.tar -DrepositoryId=nexus
             done
           done
 
-      - name: Upload tar file to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-        run: |
-          VERSION=${{ steps.latest_tag.outputs.tag_ref }}
-          for OS in ${OS_NAMES[@]} ;do
-            for CLOUD in ${CLOUD_NAMES[@]}; do
-              aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD.tar s3://tesselltools/terls/tessell/functions/$VERSION/
-            done
-          done
+      # - name: Upload tar file to S3 Bucket
+      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+      #   run: |
+      #     VERSION=${{ steps.latest_tag.outputs.tag_ref }}
+      #     for OS in ${OS_NAMES[@]} ;do
+      #       for CLOUD in ${CLOUD_NAMES[@]}; do
+      #         aws s3 cp ./tessell/tessell-task-handler-$OS-$CLOUD.tar s3://tesselltools/terls/tessell/functions/$VERSION/
+      #       done
+      #     done
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
