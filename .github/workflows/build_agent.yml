@@ -18,6 +18,7 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
+      NEXUS_PROTOCOL: ${{ vars.NEXUS_PROTOCOL_LOCAL }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       GOPATH: /home/github/go
@@ -180,18 +181,18 @@ jobs:
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
-            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                -Dnexus_username=${NEXUS_USER} -Dnexus_password=${NEXUS_PASSWORD} \
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=tessell.agent -DartifactId=tessell-agent-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                 -DgeneratePom=true -Dpackaging=tar \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=package/tessell-agent-pkg-$os.tar -DrepositoryId=nexus
 
-            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-                -Dnexus_username=${NEXUS_USER} -Dnexus_password=${NEXUS_PASSWORD} \
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=tessell.agent -DartifactId=tessell-upgrader-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                 -DgeneratePom=true -Dpackaging=tar \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=package/tessell-upgrader-pkg-$os.tar -DrepositoryId=nexus
             done
 
