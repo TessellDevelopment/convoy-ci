@@ -133,6 +133,7 @@ jobs:
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
