@@ -72,8 +72,8 @@ jobs:
           for os in ${OS_NAMES[@]};do
           echo "Building the service"
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-          make os=$os package
-          make os=$os upgrader
+          make os=$os NEXUS_PROTOCOL=${{vars.NEXUS_PROTOCOL_LOCAL}} NEXUS_SERVER_ENDPOINT=${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}} package
+          make os=$os NEXUS_PROTOCOL=${{vars.NEXUS_PROTOCOL_LOCAL}} NEXUS_SERVER_ENDPOINT=${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}} upgrader
           make clean
           ls -lrta package
           done
