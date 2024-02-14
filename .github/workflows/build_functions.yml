@@ -59,7 +59,7 @@ jobs:
           cd tessell;
           for OS in ${OS_NAMES[@]} ;do
            for CLOUD in ${CLOUD_NAMES[@]}; do
-            make OS=$OS CLOUD=$CLOUD package
+            make OS=$OS CLOUD=$CLOUD nexus_protocol=${{vars.NEXUS_PROTOCOL_LOCAL}} nexus_server_endpoint=${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}} package
            done
           done
           ls -l
