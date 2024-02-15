@@ -72,7 +72,7 @@ jobs:
             TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
             echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
             echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc
-            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
+            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}" >> ~/.npmrc
             cat ~/.npmrc
             set -e
             version="$3"
