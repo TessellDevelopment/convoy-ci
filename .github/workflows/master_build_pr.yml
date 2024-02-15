@@ -15,6 +15,7 @@ jobs:
     runs-on: ui-build
     env:
       NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}

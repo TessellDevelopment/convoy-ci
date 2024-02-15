@@ -33,6 +33,7 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
