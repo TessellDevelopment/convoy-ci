@@ -280,7 +280,7 @@ jobs:
           }
           opsImageBuild() {
             set -e
-            mnwBuild
+            mvnwBuild
             dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
