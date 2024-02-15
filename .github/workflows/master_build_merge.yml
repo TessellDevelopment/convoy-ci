@@ -192,6 +192,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            Chart.yaml
+            services/**
+
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:
