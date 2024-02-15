@@ -125,7 +125,7 @@ jobs:
           build "helmCharts"
 
   build-amd:
-    if: ${{ (inputs.type != 'arm' && inputs.type != 'ui-build' && inputs.type != 'ubuntu-latest') || inputs.type == 'amd' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}

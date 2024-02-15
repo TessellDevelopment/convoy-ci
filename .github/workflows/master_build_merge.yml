@@ -170,7 +170,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-amd:
-    if: ${{ (inputs.type != 'arm' && inputs.type != 'ui-build' && inputs.type != 'ubuntu-latest') || inputs.type == 'amd' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
       LATEST_TAG: ${{inputs.tag}}
