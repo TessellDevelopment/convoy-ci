@@ -229,7 +229,7 @@ jobs:
             set +e
           }
           helm-template() {
-            if [[ ${{steps.outputs.changed-files.any_modified}} == 'true' ]]; then
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
               GITHUB_WORKSPACE=$(pwd)
               CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
