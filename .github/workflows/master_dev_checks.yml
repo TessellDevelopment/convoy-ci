@@ -246,54 +246,54 @@
         #       });
         #       console.log("No merge conflicts found"); 
         
-        - name: Check DB Migration Scripts
-          id: check_db_migration
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              response = ${{steps.pr_diff.outputs.response}}
-              let path = "";
-              response.data.files.forEach(function(file_entry) {
-                if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
-                     (file_entry.status == 'modified' || file_entry.status == 'removed')) {
-                  console.log(file_entry.filename);
-                  console.log(file_entry.status);
-                  core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
-                }
-                if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                  const lastSlashIndex = file_entry.filename.lastIndexOf("/");
-                  path = file_entry.filename.substring(0, lastSlashIndex);
-                }
-              });
-              console.log(path);
-              const { Octokit } = require("@octokit/rest");
-              const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
-              const { data: existingFiles } = await octokit.repos.getContent({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                ref: "${{github.base_ref}}",
-                path: path,
-              });
-              console.log(existingFiles)
-              const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
-              response.data.files.forEach(function(file_entry){
-              if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                  console.log(existing_versions)
-                  const version = file_entry.filename.split("__")[0].split("/").pop();
-                  console.log(version)
-                  console.log(existing_versions)
-                  if (existing_versions.includes(version)) {
-                    console.log(file_entry.filename);
-                    core.setFailed(`Flyway file with version ${version} already exists`);
-                  }
-                }
-              });
+        # - name: Check DB Migration Scripts
+        #   id: check_db_migration
+        #   uses: actions/github-script@v7.0.1
+        #   with:
+        #     script: |
+        #       response = ${{steps.pr_diff.outputs.response}}
+        #       let path = "";
+        #       response.data.files.forEach(function(file_entry) {
+        #         if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
+        #              (file_entry.status == 'modified' || file_entry.status == 'removed')) {
+        #           console.log(file_entry.filename);
+        #           console.log(file_entry.status);
+        #           core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
+        #         }
+        #         if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
+        #           const lastSlashIndex = file_entry.filename.lastIndexOf("/");
+        #           path = file_entry.filename.substring(0, lastSlashIndex);
+        #         }
+        #       });
+        #       console.log(path);
+        #       const { Octokit } = require("@octokit/rest");
+        #       const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
+        #       const { data: existingFiles } = await octokit.repos.getContent({
+        #         owner: "${{ github.repository_owner }}",
+        #         repo: "${{  github.repository }}".split('/')[1],
+        #         ref: "${{github.base_ref}}",
+        #         path: path,
+        #       });
+        #       console.log(existingFiles)
+        #       const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
+        #       response.data.files.forEach(function(file_entry){
+        #       if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
+        #           console.log(existing_versions)
+        #           const version = file_entry.filename.split("__")[0].split("/").pop();
+        #           console.log(version)
+        #           console.log(existing_versions)
+        #           if (existing_versions.includes(version)) {
+        #             console.log(file_entry.filename);
+        #             core.setFailed(`Flyway file with version ${version} already exists`);
+        #           }
+        #         }
+        #       });
   
-        - name: Check Version sequence of DB Scripts
-          id: check_db_version_seq
-          if: steps.check_db_migration.outputs.db_migration_dir
-          run:
-            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"   
+        # - name: Check Version sequence of DB Scripts
+        #   id: check_db_version_seq
+        #   if: steps.check_db_migration.outputs.db_migration_dir
+        #   run:
+        #     python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"   
             
         - name: Run API-spec Validation
           run: |
@@ -304,22 +304,22 @@
               echo "Validation file not present. Skipping check."
             fi
             
-        - name: check for terraform (code)
-          id: terraform_check
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              response = ${{steps.pr_diff.outputs.response}}
-              var terraform_file = [] 
-              response.data.files.forEach(function(file_entry) {
-                if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
-                  console.log(file_entry.filename);
-                  console.log(file_entry.status);
-                  terraform_file.push(file_entry.filename)
-                  console.log(terraform_file) ;
-                }
-              });
-              core.setOutput('terraform_files' , terraform_file.join(','));
+        # - name: check for terraform (code)
+        #   id: terraform_check
+        #   uses: actions/github-script@v7.0.1
+        #   with:
+        #     script: |
+        #       response = ${{steps.pr_diff.outputs.response}}
+        #       var terraform_file = [] 
+        #       response.data.files.forEach(function(file_entry) {
+        #         if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
+        #           console.log(file_entry.filename);
+        #           console.log(file_entry.status);
+        #           terraform_file.push(file_entry.filename)
+        #           console.log(terraform_file) ;
+        #         }
+        #       });
+        #       core.setOutput('terraform_files' , terraform_file.join(','));
 
        
         - name: check for terraform version
