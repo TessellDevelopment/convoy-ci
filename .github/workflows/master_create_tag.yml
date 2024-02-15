@@ -31,16 +31,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Adding Common UI config
-        run: |
-          set +e
-          rm ~/.npmrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
-          cat .npmrc
-
       - name: Find latest tag
         id: latest_tag
         run: |
@@ -181,10 +171,9 @@ jobs:
             else
               validate_label=true
               if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-                TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
                 URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-                RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+                RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"
                 LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
                 echo "$LABEL"

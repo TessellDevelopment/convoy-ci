@@ -13,7 +13,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
-    runs-on: self-hosted
+    runs-on: ui-build
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -25,6 +25,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
+        with:
+          fetch-depth: 0
 
       - name: Get branch name
         shell: bash
@@ -48,6 +50,13 @@ jobs:
           echo "_auth=$TOKEN" >> .npmrc
           cat .npmrc
           cat .yarnrc
+
+      - name: Setting up .env
+        shell: bash
+        run: |
+          ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
+          echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
+          cat .env
 
       - name: Build
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -97,6 +106,11 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
+      
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
 
       - name: Get branch name
         shell: bash
@@ -104,9 +118,10 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-
+          
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
@@ -124,6 +139,7 @@ jobs:
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
@@ -143,13 +159,16 @@ jobs:
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = {
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
-
           print(payload)
           headers = {
             'Content-Type': 'application/json',
