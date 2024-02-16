@@ -253,8 +253,8 @@ jobs:
           createPipConf(){
             set -e
             echo "[global]" > pip.conf
-            echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
             set +e
@@ -367,6 +367,12 @@ jobs:
               set +e
             fi
           }
+          modifiedDir() {
+            set -e
+            modifiedFiles="${{steps.changed-files.outputs.all_changed_and_modified_files}}"
+            echo "$modifiedFiles"
+            set +e
+          }
           mvnwBuild() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
@@ -379,11 +385,11 @@ jobs:
             FILE="$3"
             GROUP_ID="$4"
             VERSION="$5"
-            mvn deploy:deploy-file -Dnexus_url=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
-                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
-                -Durl=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
+                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
             set +e
           }
@@ -440,28 +446,28 @@ jobs:
           }
           terraformBuild() {
             set -e
-#             modifiedDir
-#             echo "${{ env.modifiedDirectories }}"
-#             BASE_DIR=$PWD
-#             BUILD_DIR=$BASE_DIR/build
-#             mkdir -p $BUILD_DIR
-#             DIRECTORIES="${{ env.modifiedDirectories }}"
-#             EXCLUDE_DIR=("build")
-#             for DIR in $DIRECTORIES
-#             do
-#               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-#                 echo "building  ${DIR}"
-#                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
-#                 cd $BASE_DIR/$DIR
-#                 VERSION=$(yq .version convoy.yaml)
-#                 echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
-#                 terraform_build $PWD $ARTIFACT_FILE
-#                 # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
-#                 # awsConfigureDevqaInfra
-#                 # awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/""
-#               fi
-#             done
-#             ls -lrta $BUILD_DIR
+            modifiedDir
+            # echo "${{ env.modifiedDirectories }}"
+            # BASE_DIR=$PWD
+            # BUILD_DIR=$BASE_DIR/build
+            # mkdir -p $BUILD_DIR
+            # DIRECTORIES="${{ env.modifiedDirectories }}"
+            # EXCLUDE_DIR=("build")
+            # for DIR in $DIRECTORIES
+            # do
+            #   if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
+            #     echo "building  ${DIR}"
+            #     ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+            #     cd $BASE_DIR/$DIR
+            #     VERSION=$(yq .version convoy.yaml)
+            #     echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
+            #     terraform_build $PWD $ARTIFACT_FILE
+            #     # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
+            #     # awsConfigureDevqaInfra
+            #     # awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/""
+            #   fi
+            # done
+            # ls -lrta $BUILD_DIR
             set +e
           }
           tsmZipBuild() {
@@ -533,10 +539,8 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps: 
       - name: Checkout code
