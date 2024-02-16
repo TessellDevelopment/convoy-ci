@@ -207,7 +207,7 @@ jobs:
           functionBuild() {
             set -e
             ARTIFACT="$1"
-            cd tessell
+            cd tessell;
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             echo $OS
