@@ -19,12 +19,13 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       GROUP_NAME: "tessell.terraform_modules"
 
@@ -137,11 +138,11 @@ jobs:
               echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE $VERSION
               terraform_build $PWD $ARTIFACT_FILE
 
-              mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/tessell-m2-component \
-                -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+              mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=${GROUP_NAME} -DartifactId=${DIR} -Dversion=$VERSION \
                 -DgeneratePom=true -Dpackaging=zip \
-                -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=${ARTIFACT_FILE} -DrepositoryId=nexus
               
               aws s3 cp $ARTIFACT_FILE s3://tessell-terraform-modules-terls/$DIR/$VERSION/

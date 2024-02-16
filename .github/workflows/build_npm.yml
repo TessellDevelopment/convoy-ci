@@ -20,8 +20,11 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_REPO_NPM: tessell-repos-npm-development
-      NEXUS_URL: ${{ vars.NEXUS_SERVER_ENDPOINT }}
     steps:
       - uses: actions/checkout@v4.1.1
         name: Checkout repos  
@@ -53,10 +56,10 @@ jobs:
           set +e 
           cd ~
           rm .npmrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> .npmrc
-          echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> .npmrc 
-          echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
+          TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
+          echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> .npmrc
+          echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> .npmrc 
+          echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> .npmrc
           cat .npmrc
 
       - name: Publish the package

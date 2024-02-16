@@ -594,9 +594,9 @@ jobs:
       - name: check for version in nexus 
         uses: actions/github-script@v7.0.1
         env:
-          NEXUS_URL: https://${{vars.NEXUS_SERVER_ENDPOINT}}/service/rest/v1/search?repository
-          NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-          NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
+          NEXUS_URL: ${{vars.NEXUS_PROTOCOL_LOCAL}}://${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/service/rest/v1/search?repository
+          NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
         with:
           script: |
             const exp = require('constants');
@@ -616,7 +616,7 @@ jobs:
                   API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
                   echo $API_URL
                   echo $file
-                  response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
+                  response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL")
                   check="$(echo $response | grep $file)"
                   if [ ! -z "$check" ]
                       then
@@ -626,7 +626,7 @@ jobs:
                   
                   while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
                       continuationToken=$(echo $response | jq -r '.continuationToken')
-                      response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
+                      response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL&continuationToken=$continuationToken")
                       check="$(echo $response | grep $file)"
                       if [ ! -z "$check" ]
                       then
