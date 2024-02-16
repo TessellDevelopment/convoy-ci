@@ -188,6 +188,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       NEXUS_PULL_REPOS_M2: tessell-m2-development
+      GOPATH: /home/github/go
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
