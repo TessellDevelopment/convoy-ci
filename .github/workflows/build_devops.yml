@@ -69,9 +69,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade pip
-          pip install flake8 pytest twine wheel
-          python3 -m pip install -r ${{ env.REPO_NAME }}/requirements.txt --dry-run
+          python3 -m pip install --upgrade pip 
+          pip install flake8 pytest twine wheel 
+          python3 -m pip install -r ${{ env.REPO_NAME }}/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
 
       - name: Lint with flake8
         run: |
