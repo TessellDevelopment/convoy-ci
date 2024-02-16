@@ -158,8 +158,10 @@ jobs:
             set -e
             go install golang.org/x/tools/cmd/goimports@latest
             ARTIFACT="$1"
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
-            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            echo $OS
+            echo $SERVICE
             make os=$OS $SERVICE
             make clean
             set +e
