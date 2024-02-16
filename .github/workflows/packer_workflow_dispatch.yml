@@ -105,7 +105,7 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           # source $(share_aws_artifacts -sec)
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run $(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
