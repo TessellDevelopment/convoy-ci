@@ -228,13 +228,14 @@ jobs:
         run: |
           agentBuild () {
             set -e
-            go install golang.org/x/tools/cmd/goimports@latest
+            installGoDependencies
             ARTIFACT="$1"
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
             echo $OS
             echo $SERVICE
-            make os=$OS $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             make clean
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
             awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
@@ -368,6 +369,12 @@ jobs:
               ./package-and-push --prod -n $CHART_NAME
               set +e
             fi
+          }
+          installGoDependencies() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           modifiedDir() {
             set -e

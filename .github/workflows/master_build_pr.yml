@@ -156,13 +156,14 @@ jobs:
         run: |
           agentBuild() {
             set -e
-            go install golang.org/x/tools/cmd/goimports@latest
+            installGoDependencies
             ARTIFACT="$1"
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
             echo $OS
             echo $SERVICE
-            make os=$OS $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             make clean
             set +e
           }
@@ -261,6 +262,12 @@ jobs:
               ./package-and-push --no-push -n $CHART_NAME
               set +e
             fi
+          }
+          installGoDependencies() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           lintCheck() {
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
