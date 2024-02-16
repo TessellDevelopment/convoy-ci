@@ -163,7 +163,7 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
-          helm-chart() {
+          helm-chart(){
             set -e
             CHART_NAME="$1"
             cd scripts
