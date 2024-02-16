@@ -477,7 +477,7 @@ jobs:
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
             unzip -l $ARTIFACT.zip
             cd ..
-            mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm-infra" "$VERSION"
+            mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm.infra" "$VERSION"
             set +e
           }
           build() {
