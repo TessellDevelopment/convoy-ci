@@ -41,8 +41,8 @@ jobs:
     env:
       NEXUS_USERNAME: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
-      NEXUS_HTTP: https
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKER_IMAGE_NAME: tessell-qa-runner
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -63,8 +63,8 @@ jobs:
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
           echo "[global]" > pip.conf
-          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
           echo "extra-index-url = https://pypi.org/simple" >> pip.conf
           sudo cp pip.conf /etc/pip.conf
         shell: bash
@@ -128,8 +128,8 @@ jobs:
         run: |
           cd scripts
           docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
-                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
-                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
@@ -141,8 +141,8 @@ jobs:
         run: |
           cd scripts
           docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
-                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
-                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
