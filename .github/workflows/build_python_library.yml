@@ -56,7 +56,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -f requirements.txt ]; then python3 -m pip install -r requirements.txt --dry-run; fi
+          if [ -f requirements.txt ]; then python3 -m pip install -r requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
 
       - name: Lint with flake8
         run: |
