@@ -19,7 +19,8 @@ jobs:
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
 
@@ -51,8 +52,8 @@ jobs:
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
           echo "[global]" > pip.conf
-          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
           echo "extra-index-url = https://pypi.org/simple" >> pip.conf
           sudo cp pip.conf /etc/pip.conf
         shell: bash
@@ -77,8 +78,8 @@ jobs:
               --build-arg NEXUS_PASSWORD=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
               --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
               --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
-              --build-arg NEXUS_PROTOCOL=${{ vars.NEXUS_PROTOCOL_LOCAL }} \
-              --build-arg NEXUS_SERVER_ENDPOINT=${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }} .
+              --build-arg NEXUS_PROTOCOL=${{ env.NEXUS_PROTOCOL }} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${{ env.NEXUS_SERVER_ENDPOINT }} .
 
       - name: Docker image scan
         id: docker-image-scan
@@ -237,17 +238,23 @@ jobs:
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always() 
+    if: always()  
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
+
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
@@ -258,8 +265,7 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-          USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
@@ -269,14 +275,14 @@ jobs:
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           STATUS = (os.environ.get('STATUS')).upper()
-          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
@@ -289,17 +295,20 @@ jobs:
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = {
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
-
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            'x-api-key': API_KEY
           }
 
           max_retries = 3
