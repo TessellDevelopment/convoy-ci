@@ -366,7 +366,7 @@ jobs:
             echo "$path"
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file "$path" \
-                "https://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
+                "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
 
             aws s3 cp "$path" "s3://${{vars.ARTIFACTS_DEV_S3}}/${{env.LABEL}}/$name/$name-${{ steps.latest_tag.outputs.tag_ref }}.$extension"
           done < <(yq e '.generates.artifacts[] | [.name, .extension, .filePath] | @tsv' convoy.yaml)

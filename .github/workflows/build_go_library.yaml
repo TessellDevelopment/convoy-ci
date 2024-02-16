@@ -227,7 +227,7 @@ jobs:
                               -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                               -DgroupId=tessell.${{ inputs.exporter_name }} -DartifactId={file} -Dversion=${{ steps.latest_tag.outputs.tag_ref }}\
                               -DgeneratePom=true -Dpackaging={ext} \
-                              -Durl=https://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+                              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
                               -Dfile=./{file}.{ext} -DrepositoryId=nexus \".format(ext=ext, file=file))
                 if exit_code != 0:
                   raise Exception('Command failed with exit code {}'.format(exit_code))
