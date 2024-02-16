@@ -295,9 +295,10 @@ jobs:
           functionBuild() {
             set -e
             ARTIFACT="$1"
+            cd tessell
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
-            make OS=$OS CLOUD=$CLOUD package
+            make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "./tessell/$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
             awsS3Push "./tessell/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             set +e
