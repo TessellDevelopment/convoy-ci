@@ -164,6 +164,7 @@ jobs:
             echo $OS
             echo $SERVICE
             echo "Building Service"
+            make all
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             make clean
             set +e
