@@ -214,7 +214,7 @@ jobs:
       - name: tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
+           docker tag ${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
       
       - name: Docker image scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
