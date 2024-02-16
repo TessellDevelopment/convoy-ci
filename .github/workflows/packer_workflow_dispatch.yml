@@ -47,6 +47,11 @@ jobs:
 
           echo $pull_request_number
 
+      - name: Get arg for Cloud build type
+        shell: bash
+        run: |
+          echo "CLOUD_BUILD_TYPE_ARG=$(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)" >> $GITHUB_ENV
+
       - name: visible
         run: |
           echo ${{ env.SOURCE_BRANCH }}
@@ -59,6 +64,7 @@ jobs:
           cat ${GITHUB_EVENT_PATH} | jq '.'
           echo ${{ env.AWS_ACCESS_KEY_ID }}
           echo ${{ env.AWS_SECRET_ACCESS_KEY }}
+          echo $CLOUD_BUILD_TYPE_ARG
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -85,6 +91,7 @@ jobs:
           sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
           sudo apt-get update && sudo apt-get install packer
           packer plugins install github.com/hashicorp/amazon
+          mkdir -p ~/.packer.d/plugins
 
       - name: Install dependencies
         run: |
@@ -94,14 +101,13 @@ jobs:
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
-          mkdir -p ~/.packer.d/plugins
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           # source $(share_aws_artifacts -sec)
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run $(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)
+          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
