@@ -21,7 +21,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
       DOCKERHUB_ORG: "tesselldev"
 
     steps:
