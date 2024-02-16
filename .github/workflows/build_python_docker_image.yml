@@ -86,7 +86,7 @@ jobs:
           pip install flake8 pytest twine wheel
           if [ -f requirements.txt ]; then
             echo "Installing requirements."
-            python3 -m pip install -r requirements.txt;
+            python3 -m pip install -r requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
           fi
 
       - name: Lint with flake8
