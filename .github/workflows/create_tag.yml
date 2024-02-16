@@ -168,10 +168,9 @@ jobs:
             else
               validate_label=true
               if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-                TOKEN=$(echo -n '${{secrets.CIPIPELINE_GITHUB_USER}}:${{secrets.CIPIPELINE_GITHUB_TOKEN}}' | base64 -w 0)
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
                 URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-                RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+                RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"
                 LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
                 echo "$LABEL"
@@ -425,8 +424,10 @@ jobs:
           except FileNotFoundError:
               print(f"YAML file not found. Skipping this step.")
               exit(0)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = { 
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "commitMessage": COMMIT_MESSAGE,
             "committedAt": COMMITTED_AT,

@@ -10,11 +10,131 @@ on:
 
 jobs:
 
-  build-amd:
-    if: ${{ inputs.type != 'arm' }}
-    runs-on: self-hosted
+  build-ui:
+    if: ${{ inputs.type == 'ui-build' }}
+    runs-on: ui-build
     env:
       NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        shell: bash
+        run: |
+          gradlewUI() {
+            rm ~/.npmrc
+            rm ~/.yarnrc
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
+            echo "always-auth=true" >> .npmrc
+            echo "_auth=$TOKEN" >> .npmrc
+            cat .npmrc
+            cat .yarnrc
+            set -e
+            ./gradlew zipUiBuild --console plain --stacktrace \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
+          }
+          npmBuild() {
+            set -e
+            npm install
+            npm run build
+            set +e 
+            rm ~/.npmrc
+            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
+            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
+            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc
+            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
+            cat ~/.npmrc
+            set -e
+            version="$3"
+            yq ".version = \"$version\"" package.json > tmp_package.json
+            mv tmp_package.json package.json
+            npm publish   
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            while IFS=$'\t' read -r name buildFunction ext file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+  
+  build-ubuntu-latest:
+    if: ${{ inputs.type == 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Build
+        shell: bash
+        run: |
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            while IFS=$'\t' read -r name buildFunction ext file _; do
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction "$name" "$ext" "$version" "$file"
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
+  build-amd:
+    if: ${{ inputs.type == 'amd' }}
+    runs-on: self-hosted
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -103,23 +223,7 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
-          gradlewUI() {
-            set +e
-            rm ~/.npmrc
-            rm ~/.yarnrc
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
-            echo "always-auth=true" >> .npmrc
-            echo "_auth=$TOKEN" >> .npmrc
-            cat .npmrc
-            cat .yarnrc
-            set -e
-            ./gradlew zipUiBuild --console plain --stacktrace \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-            set +e
-          }
-          helm-chart() {
+          helm-chart(){
             set -e
             CHART_NAME="$1"
             cd scripts
@@ -128,19 +232,27 @@ jobs:
           }
           helm-template() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              CHART_NAME="$1"
               GITHUB_WORKSPACE=$(pwd)
               CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
               TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
               echo "$CHART_GITHUB_LOCATION"
               echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+              echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
               echo "Cloning convoy-helm-template"
               rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-              git clone https://github.com/TessellDevelopment/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+              template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+              if [ $? -eq 0 ]; then
+                  echo "convoy-helm-template version: $template_version"
+              else
+                  echo "convoy-helm-template version not found.Exiting."
+                  exit 1
+              fi
+              git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
               echo "Copying the service values file"
               cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
               cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
               set -e
-              CHART_NAME=$(grep 'name' convoy.yaml | awk '{print $2}')
               cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
               ls -lrta ../helm-chart/values/apps/
               echo "Running package and push"
@@ -173,22 +285,10 @@ jobs:
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             set +e
           }
-          npmBuild() {
+          opsImageBuild() {
             set -e
-            npm install
-            npm run build
-            set +e 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=https://${{ vars.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
-            cat ~/.npmrc
-            set -e
-            version=$(cat convoy.yaml | yq -r '.version')
-            yq ".version = \"$version\"" package.json > tmp_package.json
-            mv tmp_package.json package.json
-            npm publish   
+            mvnwBuild
+            dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
           pythonLibraryBuild() {
@@ -282,7 +382,6 @@ jobs:
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
@@ -293,7 +392,7 @@ jobs:
           build "helmCharts"
           build "terraform"
 
-      - name: Remove target
+      - name: Cleanup
         if: always()
         run: |
           set +e
@@ -304,6 +403,13 @@ jobs:
   build-arm:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -313,17 +419,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          mvnwBuild() {
-            set -e
-            sudo ./mvnw install -Dnative -DskipTests -Dquarkus.native.container-build=true
-            set +e
-          }
-          jarBuild() {
-            set -e
-            sudo ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
-            set +e
-          }
-          dockerBuildOps() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
@@ -331,9 +427,23 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            mvnwBuild
+            docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          jarBuild() {
             set -e
-            sudo docker build -f $FILE -t $IMAGE_NAME .
+            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
+          opsImageBuild() {
+            set -e
+            mvnwBuild
+            dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
           build() {
@@ -347,20 +457,19 @@ jobs:
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(/usr/local/bin/yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
           build "artifacts"
           build "dockerImages"
 
-      - name: Remove target
+      - name: Cleanup
         if: always()
         run: |
           set +e
           sudo rm -rf target
-          sudo docker container prune --force
-          sudo docker volume prune --force
+          docker container prune --force
+          docker volume prune --force
           
