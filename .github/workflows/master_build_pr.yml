@@ -213,6 +213,7 @@ jobs:
             echo $OS
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
+            cd ..
             set +e
           }
           gradlewMaven() {

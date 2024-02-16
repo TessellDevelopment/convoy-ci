@@ -301,8 +301,9 @@ jobs:
             echo $OS
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            mvnDeploy "$ARTIFACT" "tar" "./tessell/$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            awsS3Push "./tessell/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
+            awsS3Push "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            cd ..
             set +e
           }
           gradlewMaven(){
