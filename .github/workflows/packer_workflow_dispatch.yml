@@ -25,7 +25,7 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
-      CLOUD_BUILD_TYPE: $(case "$inputs.cloudType" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)
+      CLOUD_BUILD_TYPE: $(case ${{ inputs.cloudType }} in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)
 
     steps:
       - name: Checkout code
