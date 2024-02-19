@@ -273,7 +273,7 @@ jobs:
             cd $ARTIFACT/build
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            awsS3Push "$ARTIFACT-$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            awsS3Push "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
           }
           dockerBuild() {
             set -e
