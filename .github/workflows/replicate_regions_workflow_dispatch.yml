@@ -82,7 +82,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple \
+          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple \
                                         --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
 
@@ -90,7 +90,6 @@ jobs:
         # if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
           export PATH="/home/github/.local/bin:$PATH"
-          source ~/.bash_profile
           region_replication_wf -rd $RESOURCE_ID
 
       - uses: actions/upload-artifact@v3
