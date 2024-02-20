@@ -188,6 +188,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
       GOPATH: /home/github/go
     steps:
       - name: Checkout code
@@ -326,7 +327,7 @@ jobs:
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
+              -Pnexus_push_repo_py="${{ vars.NEXUS_PUSH_REPOS_PY }}" \
               -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" 
             set +e
           }
