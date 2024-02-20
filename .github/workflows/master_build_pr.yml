@@ -143,15 +143,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Changed files
+      - name: Check specific file changes
         id: changed-files
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             Chart.yaml
             services/**
             scripts/Dockerfile
             scripts/initializeAutomation.sh
+
+      - name: Check All file changes
+        id: changed-files-all
+        uses: tj-actions/changed-files@v42.0.2
 
       - name: Build
         shell: bash
@@ -290,7 +294,7 @@ jobs:
           }
           modifiedDir() {
             set -e
-            modifiedFiles="${{steps.changed-files.outputs.all_changed_and_modified_files}}"
+            modifiedFiles="${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
             echo "$modifiedFiles"
             set +e
           }
