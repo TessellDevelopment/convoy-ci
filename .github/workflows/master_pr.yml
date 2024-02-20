@@ -34,7 +34,7 @@ jobs:
     needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382-1
     with:
-      type: ${{needs.build-file.outputs.type}}
+      type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
 
   check-commits:

@@ -57,7 +57,7 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-1382
     secrets: inherit
     with:
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
@@ -75,13 +75,13 @@ jobs:
     secrets: inherit
 
   build:
-    needs: [build-file,find-latest-tag]
+    needs: [runner-check,find-latest-tag]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-1382-1
     secrets: inherit
     with:
-      type: ${{needs.build-file.outputs.type}}
+      type: ${{needs.runner-check.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}

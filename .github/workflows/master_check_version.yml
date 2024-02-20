@@ -125,7 +125,7 @@ jobs:
                 uniqueDirectories = [...new Set(directories)];
                 modifiedDir = uniqueDirectories.join(" ");
                 console.log(modifiedDir);
-                const directories = modifiedDir.split(' ');
+                directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
                   console.log(directories[i]);
                   const path = `./${directories[i]}/convoy.yaml`
