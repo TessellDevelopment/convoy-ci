@@ -389,8 +389,9 @@ jobs:
           }
           modifiedDir() {
             set -e
-            modifiedFiles="${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
-            echo "$modifiedFiles"
+            directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
+            directories=$(echo $directories | tr '\n' ' ')
+            echo $directories
             set +e
           }
           mvnwBuild() {
