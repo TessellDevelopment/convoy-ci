@@ -498,7 +498,7 @@ jobs:
                 terraform_build $PWD $ARTIFACT_FILE
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
-                # awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/""
+                awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/""
               fi
             done
             ls -lrta $BUILD_DIR

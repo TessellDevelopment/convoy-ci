@@ -126,8 +126,13 @@ jobs:
                 modifiedDir = uniqueDirectories.join(" ");
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
+                const excludeDirectories = ['.github', 'convoy.yaml','.gitignore','README.md'];
                 for (let i = 0; i < directories.length; i++) {
                   console.log(directories[i]);
+                  const directory = directories[i];
+                  if (excludeDirectories.includes(directory)) {
+                    continue;
+                  }
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);
