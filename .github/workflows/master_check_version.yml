@@ -122,16 +122,16 @@ jobs:
                 const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
                 modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
                 pathsArray = modifiedFiles.split(" ");
-                directories = pathsArray.map(path => path.split("/")[0]);
-                uniqueDirectories = [...new Set(directories)];
+                dir = pathsArray.map(path => path.split("/")[0]);
+                uniqueDirectories = [...new Set(dir)];
                 modifiedDir = uniqueDirectories.join(" ");
                 console.log(modifiedDir);
-                directories = modifiedDir.split(' ');
+                const directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
-                  if (excludedDirectories.includes(fileDirectory)) {
-                    continue
-                  }
                   console.log(directories[i]);
+                  if (excludedDirectories.includes(fileDirectory)) {
+                    continue;
+                  }
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);

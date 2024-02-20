@@ -296,7 +296,7 @@ jobs:
             set -e
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
-            return "$directories"
+            echo "$directories"
             set +e
           }
           mvnwBuild() {
@@ -380,7 +380,7 @@ jobs:
             BASE_DIR=$PWD
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
-            DIRECTORIES=$( modifiedDir )
+            DIRECTORIES=$(modifiedDir)
             EXCLUDE_DIR=("build")
             for DIR in $DIRECTORIES
             do
