@@ -221,14 +221,14 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
-          helm-chart() {
+          helmChart() {
             set -e
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --prod -n $CHART_NAME
             set +e
           }
-          helm-template() {
+          helmTemplate() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
               GITHUB_WORKSPACE=$(pwd)
@@ -313,10 +313,8 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps: 
       - name: Checkout code

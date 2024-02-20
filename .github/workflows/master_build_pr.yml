@@ -163,14 +163,14 @@ jobs:
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
-          helm-chart(){
+          helmChart(){
             set -e
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --no-push -n $CHART_NAME
             set +e
           }
-          helm-template() {
+          helmTemplate() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
               GITHUB_WORKSPACE=$(pwd)
