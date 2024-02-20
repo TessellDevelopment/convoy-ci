@@ -119,6 +119,7 @@ jobs:
               const data = yaml.load(content);
               var language = data.language
               if(language === 'terraform'){
+                const excludedDirectories = ['.github','.gitignore','convoy.yaml','README.md'];
                 modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
                 pathsArray = modifiedFiles.split(" ");
                 directories = pathsArray.map(path => path.split("/")[0]);
@@ -127,6 +128,9 @@ jobs:
                 console.log(modifiedDir);
                 directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
+                  if (excludedDirectories.includes(fileDirectory)) {
+                    continue
+                  }
                   console.log(directories[i]);
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
