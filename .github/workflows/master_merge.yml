@@ -9,11 +9,11 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
-  build-file:
+  runner-check:
     runs-on: non-build
     needs: file-check
     outputs:
-      type: ${{steps.build-type.outputs.type}}
+      type: ${{steps.runner-type.outputs.type}}
       label: ${{steps.get-label.outputs.label}}
     steps:
       - uses: actions/checkout@v4.1.1
@@ -46,14 +46,14 @@ jobs:
             echo "convoy.yaml not found"
            fi 
           
-      - name: Determine build type from Convoy
-        id: build-type
+      - name: Determine runner type from Convoy
+        id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
   
   create-tag:
-    needs: build-file
+    needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-1382
     secrets: inherit
     with:

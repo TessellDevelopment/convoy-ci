@@ -53,6 +53,10 @@ jobs:
           files: |
             services/**
 
+      - name: Check All file changes
+        id: changed-files-all
+        uses: tj-actions/changed-files@v42.0.2
+
       - name: Check Version in Nexus 
         uses: actions/github-script@v7.0.1
         env:
@@ -115,7 +119,11 @@ jobs:
               const data = yaml.load(content);
               var language = data.language
               if(language === 'terraform'){
-                modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
+                modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
+                pathsArray = modifiedFiles.split(" ");
+                directories = pathsArray.map(path => path.split("/")[0]);
+                uniqueDirectories = [...new Set(directories)];
+                modifiedDir = uniqueDirectories.join(" ");
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
                 for (let i = 0; i < directories.length; i++) {
