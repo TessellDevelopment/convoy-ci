@@ -138,7 +138,7 @@ jobs:
         shell: bash
         run: |
           gradlewPythonwheel() {
-            ./gradlew pythonWheel --console plain \
+            ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
