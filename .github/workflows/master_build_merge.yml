@@ -418,9 +418,9 @@ jobs:
             FILE_PATH="$1"
             GROUP="$2"
             FILE_NAME="$3"
-            curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
-                  --upload-file $FILE \
-                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$GROUP/$FILE_NAME
+            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                  --upload-file $FILE_PATH \
+                  ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
           }
           pythonLibraryBuild() {
             set -e
