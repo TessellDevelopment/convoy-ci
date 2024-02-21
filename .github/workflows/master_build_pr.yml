@@ -14,10 +14,10 @@ jobs:
     if: ${{inputs.type != 'arm' }}
     runs-on: self-hosted
     env:
-      API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -57,7 +57,7 @@ jobs:
           from slack_sdk import WebClient
           from slack_sdk.errors import SlackApiError
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          API_KEY = os.environ.get('API_KEY')
+          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
 
           def post_to_slack(message):
@@ -84,7 +84,7 @@ jobs:
 
           headers = {
             'Content-Type': 'application/json',
-            'x-api-key': API_KEY
+            'x-api-key': CONVOY_API_KEY
           }
           
           try:
@@ -100,11 +100,11 @@ jobs:
               print(response.status_code)
               print(response.text)
               post_to_slack(response.text)
-              exit(1)                      #check to fail or not
+              exit(1)
           except Exception as e:
             print(e)
             post_to_slack(e)
-            exit(1)               #check to fail or not
+            exit(1)
           EOF
             set +e
           }
@@ -147,10 +147,10 @@ jobs:
     if: ${{inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      CHANNEL_ID: ${{vars.SKGUPTA_CHANNEL_SLACK_ID}}
+      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -198,7 +198,7 @@ jobs:
           from slack_sdk import WebClient
           from slack_sdk.errors import SlackApiError
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          API_KEY = os.environ.get('API_KEY')
+          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
 
           def post_to_slack(message):
@@ -225,7 +225,7 @@ jobs:
 
           headers = {
             'Content-Type': 'application/json',
-            'x-api-key': API_KEY
+            'x-api-key': CONVOY_API_KEY
           }
           
           try:
@@ -241,11 +241,11 @@ jobs:
               print(response.status_code)
               print(response.text)
               post_to_slack(response.text)
-              exit(1)                       #check to fail or not
+              exit(1)
           except Exception as e:
             print(e)
             post_to_slack(e)
-            exit(1)                #check to fail or not
+            exit(1)
           EOF
             set +e
           }
