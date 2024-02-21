@@ -138,11 +138,9 @@ jobs:
         shell: bash
         run: |
           gradlewPythonwheel() {
-            set -e
             ./gradlew pythonWheel --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-            set +e
           }
           infraProvisionBuild() {
             set -e
@@ -155,6 +153,12 @@ jobs:
           lintCheck() {
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          }
+          pythonDockerBuild() {
+            set -e
+            lintCheck
+            gradlewPythonwheel
+            set +e
           }
           build() {
             type="$1"
@@ -325,11 +329,9 @@ jobs:
             set +e
           }
           modifiedDir() {
-            set -e
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
             echo "$directories"
-            set +e
           }
           mvnwBuild() {
             set -e

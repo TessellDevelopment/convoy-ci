@@ -178,7 +178,6 @@ jobs:
           rm install-aws.sh
 
       - name: Configure AWS Credentials
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
@@ -187,20 +186,33 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          awsS3Push(){
+          artifactPush() {
             set -e
+            ARTIFACT="$1"
+            EXT="$2"
+            FILE_PATH="$5"
+            pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT-${LATEST_TAG}.$EXT
+            awsS3Push $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
+            set +e
+          }
+          awsS3Push(){
             SOURCE="$1"
             DESTINATION="$2"
             aws s3 cp $SOURCE $DESTINATION
+          }
+          dockerPush() {
+            set -e
+            IMAGE="$1"
+            BASE_IMAGE="$6"
+            docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           gradlewDockerTag() {
-            set -e
             ./gradlew dockerTag --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-            set +e
           }
           infraProvisionBuild() {
             set -e
@@ -208,23 +220,6 @@ jobs:
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewDockerTag
-            set +e
-          }
-          infraProvisionArtifactPush() {
-            set -e
-            ARTIFACT="$1"
-            EXT="$2"
-            FILE_PATH="$5"
-            pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT
-            awsS3Push $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
-            set +e
-          }
-          infraProvisionDockerPush() {
-            set -e
-            IMAGE="$1"
-            BASE_IMAGE="$6"
-            docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           lintCheck() {
@@ -238,6 +233,12 @@ jobs:
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
                   --upload-file $FILE_PATH \
                   ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
+          }
+          pythonDockerBuild() {
+            set -e
+            lintCheck
+            gradlewDockerTag
+            set +e
           }
           build() {
             type="$1"
@@ -345,20 +346,16 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
           awsS3Push(){
-            set -e
             SOURCE="$1"
             DESTINATION="$2"
             aws s3 cp $SOURCE $DESTINATION
-            set +e
           }
           createPipConf(){
-            set -e
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
-            set +e
           }
           dbPluginBuild() {
             set -e
@@ -475,11 +472,9 @@ jobs:
             fi
           }
           modifiedDir() {
-            set -e
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
             echo "$directories"
-            set +e
           }
           mvnwBuild() {
             set -e
@@ -487,7 +482,6 @@ jobs:
             set +e
           }
           mvnDeploy() {
-            set -e
             ARTIFACT_ID="$1"
             EXTENSION="$2"
             FILE="$3"
@@ -499,7 +493,6 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
-            set +e
           }
           opaBuild() {
             set -e
