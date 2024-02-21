@@ -184,6 +184,7 @@ jobs:
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
@@ -235,7 +236,10 @@ jobs:
           awsConfigureDevqaInfra() {
             aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-            aws configure set region ap-south-1
+          }
+          awsConfigureTessellArtifacts() {
+            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
           awsS3Push(){
             set -e
@@ -394,11 +398,29 @@ jobs:
                 -Dfile=$FILE -DrepositoryId=nexus
             set +e
           }
+          opaBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="2"
+            setupOpa
+            ~/opa build policies --output bundles/opa-policies.tar.gz
+            awsConfigureTessellArtifacts
+            pushToNexus "./bundles/opa-policies.tar.gz" $ARTIFACT "$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            set +e
+          }
           opsImageBuild() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuild "$1" "$2" "$3" "$4"
             set +e
+          }
+          pushToNexus() {
+            FILE_PATH="$1"
+            GROUP="$2"
+            FILE_NAME="$3"
+            curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+                  --upload-file $FILE \
+                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/$GROUP/$FILE_NAME
           }
           pythonLibraryBuild() {
             set -e
@@ -407,6 +429,14 @@ jobs:
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             lintCheck
             gradlewTwineUpload
+          }
+          setupOpa() {
+            curl -L -o opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
+            chmod 755 ./opa
+            curl -L -o opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
+            curl -L -o opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
+            shasum -c opa_darwin_amd64.sha256
+            ~/opa version
           }
           terraformBuild() {
             set -e
