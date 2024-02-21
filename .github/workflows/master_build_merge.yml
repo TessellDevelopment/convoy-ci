@@ -432,7 +432,7 @@ jobs:
           }
           setupOpa() {
             curl -L -o opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
-            chmod 755 ./opa
+            chmod 755 ~/opa
             curl -L -o opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
             curl -L -o opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             shasum -c opa_darwin_amd64.sha256
