@@ -245,7 +245,15 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file filePath baseImage _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
@@ -254,13 +262,17 @@ jobs:
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
               $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @tsv" convoy.yaml)
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-                  
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -597,14 +609,26 @@ jobs:
               terraformBuild
               return
             fi
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              $buildFunction $name $ext $version $file
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
