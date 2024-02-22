@@ -209,7 +209,7 @@ jobs:
           }
           gradlewMaven() {
             set -e
-            echo ./gradlew mavenPackage --refresh-dependencies --console plain \
+            ./gradlew mavenPackage --refresh-dependencies --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
