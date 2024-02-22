@@ -156,6 +156,7 @@ jobs:
           }
           pythonDockerBuild() {
             set -e
+            rm pip.conf
             lintCheck
             gradlewPythonwheel
             set +e

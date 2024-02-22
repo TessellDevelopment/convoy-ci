@@ -192,13 +192,8 @@ jobs:
             EXT="$2"
             FILE_PATH="$5"
             pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT-${LATEST_TAG}.$EXT
-            awsS3Push $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
+            aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
-          }
-          awsS3Push(){
-            SOURCE="$1"
-            DESTINATION="$2"
-            aws s3 cp $SOURCE $DESTINATION
           }
           dockerPush() {
             set -e
@@ -236,6 +231,7 @@ jobs:
           }
           pythonDockerBuild() {
             set -e
+            rm pip.conf
             lintCheck
             gradlewDockerTag
             set +e
@@ -260,13 +256,6 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          docker container prune --force
-          docker volume prune --force
                   
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -345,11 +334,6 @@ jobs:
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
-          awsS3Push(){
-            SOURCE="$1"
-            DESTINATION="$2"
-            aws s3 cp $SOURCE $DESTINATION
-          }
           createPipConf(){
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
@@ -367,7 +351,7 @@ jobs:
             cd $ARTIFACT/build
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            awsS3Push "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
             cd ../..
           }
           dockerBuild() {
@@ -398,7 +382,7 @@ jobs:
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            awsS3Push "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             cd ..
             set +e
           }
@@ -502,7 +486,7 @@ jobs:
             ~/opa build policies --output bundles/opa-policies.tar.gz
             awsConfigureTessellArtifacts
             pushToNexus "./bundles/opa-policies.tar.gz" $ARTIFACT "$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            awsS3Push "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACTS/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACTS/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           opsImageBuild() {
@@ -552,7 +536,7 @@ jobs:
                 terraform_build $PWD $ARTIFACT_FILE
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
-                awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
+                aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
               fi
             done
             ls -lrta $BUILD_DIR
