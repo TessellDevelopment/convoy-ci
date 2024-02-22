@@ -231,9 +231,11 @@ jobs:
           }
           pythonDockerBuild() {
             set -e
+            IMAGE="$1"
             rm pip.conf
             lintCheck
             gradlewDockerTag
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           build() {
@@ -249,6 +251,8 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              echo "filePath: $filePath"
+              echo "baseImage: $baseImage"
               $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @tsv" convoy.yaml)
           }
@@ -334,6 +338,10 @@ jobs:
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
+          configureJava() {
+            echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+            echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
+          }
           createPipConf(){
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
@@ -397,6 +405,13 @@ jobs:
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
             set +e
           }
+          gradlewMavenDocker() {
+            ./gradlew mavenPackage dockerTag --console plain \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
+              -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
+          }
           gradlewTwineUpload(){
             set -e
             ./gradlew twineUpload --console plain \
@@ -454,6 +469,20 @@ jobs:
               ./package-and-push --prod -n $CHART_NAME
               set +e
             fi
+          }
+          javaDockerBuild() {
+            set -e
+            IMAGE="$1"
+            configureJava
+            gradlewMavenDocker
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            set +e
+          }
+          javaLibraryBuild() {
+            set -e
+            configureJava
+            gradlewMaven
+            set +e
           }
           modifiedDir() {
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)

@@ -116,7 +116,7 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3.0.0
-        
+
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:
@@ -220,10 +220,20 @@ jobs:
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
 
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build
         shell: bash
         run: |
-          createPipConf(){
+          configureJava() {
+            echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+            echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
+          }
+          createPipConf() {
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
@@ -277,6 +287,11 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
+          gradlewMavenDocker() {
+            ./gradlew mavenPackage docker --console plain \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          }
           gradlewPythonwheel() {
             set -e
             ./gradlew pythonWheel --console plain \
@@ -320,6 +335,22 @@ jobs:
               ./package-and-push --no-push -n $CHART_NAME
               set +e
             fi
+          }
+          javaDockerBuild() {
+            set -e
+            configureJava
+            gradlewMavenDocker
+            set +e
+          }
+          javaLibraryBuild() {
+            set -e
+            configureJava
+            ./gradlew mavenPackage --console plain --stacktrace \
+              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
           }
           lintCheck() {
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
