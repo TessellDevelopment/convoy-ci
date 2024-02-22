@@ -156,13 +156,6 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          docker container prune --force
-          docker volume prune --force
                   
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0

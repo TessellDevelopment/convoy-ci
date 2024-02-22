@@ -17,7 +17,7 @@ jobs:
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_SERVER_ENDPOINTL: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       BRANCH_NAME: ${{ inputs.branchName }}
       TAGS: '{"build-source": "workflow-dispatch"}'
       AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
@@ -89,6 +89,7 @@ jobs:
       - name: Replicate given artifact
         # if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
+          export PATH="/home/github/.local/bin:$PATH"
           region_replication_wf -rd $RESOURCE_ID
 
       - uses: actions/upload-artifact@v3
