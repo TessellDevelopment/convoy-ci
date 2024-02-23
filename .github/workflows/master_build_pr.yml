@@ -196,6 +196,7 @@ jobs:
             pushd $PACKAGES_DIR
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
+            set +e
           }
           gradlewPythonwheel() {
             ./gradlew pythonWheel docker --console plain \

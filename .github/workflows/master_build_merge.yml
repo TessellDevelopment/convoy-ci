@@ -256,9 +256,9 @@ jobs:
             pushd $PACKAGES_DIR
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
-
             mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
             mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            set +e
           }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
