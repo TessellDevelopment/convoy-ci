@@ -92,10 +92,12 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
+      GOPATH: /home/runner/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
@@ -109,6 +111,11 @@ jobs:
         uses: actions/setup-python@v5.0.0
         with:
           python-version: 3.9
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.20.1'
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
@@ -142,14 +149,123 @@ jobs:
           if [ -f requirements.txt ]; then
               pip install -r requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
           fi
-          
+
       - name: Build
         shell: bash
         run: |
+          dockerBuild() {
+            set -e
+            IMAGE_NAME="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
+              FILE="./Dockerfile"
+            fi
+            echo "$FILE"
+            echo "---------- Building Docker Image ---------------"
+            docker build -f $FILE -t $IMAGE_NAME .
+            imageScan $IMAGE_NAME
+            set +e
+          }
+          elasticBuild() {
+            set -e
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
+            git clone https://github.com/magefile/mage
+            cd mage
+            go run bootstrap.go
+            cd ..
+            echo "----------------------------------------------"
+            echo "----------- Building Service -----------------"
+            export GOPATH=/home/runner/go/bin
+            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-16-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+            cd filebeat
+            mage package
+            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            cd ..
+            echo "---------- Creating Tar Files -----------------"
+            PACKAGES_DIR=./filebeat/build/distributions/
+            mkdir -p $PACKAGES_DIR
+            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+            popd
+            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+            popd
+          }
           gradlewPythonwheel() {
             ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          }
+          imageScan(){
+            set -e
+            IMAGE_NAME="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            python3 - <<EOF
+          import requests
+          import json
+          import os
+          from slack_sdk import WebClient
+          from slack_sdk.errors import SlackApiError
+          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
+          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
+          REPO = os.environ.get('REPO')
+
+          def post_to_slack(message):
+            usergroup_id=os.environ.get('DEVOPS_TEAM')
+            mention = f"<!subteam^{usergroup_id}>"
+            full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
+            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
+            try:
+              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
+              return response["ok"]
+            except SlackApiError as e:
+              print(f"Error posting to Slack: {e.response['error']}")
+              return False
+
+          with open('trivy_image_scan_result.json') as json_file:
+            trivy_json = json.load(json_file)
+          with open('dockle_image_scan_result.json') as json_file:
+            dockle_json = json.load(json_file)
+          payload = {
+            "repository": REPO,
+            "CVE":trivy_json,
+            "DOCKER_BEST_PRACTICE":dockle_json,
+          }
+
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': CONVOY_API_KEY
+          }
+          
+          try:
+            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
+            if response.status_code == 200:
+              print(response.status_code)
+              print(response.text)
+            elif response.status_code == 409:
+              print(json.dumps(response.json(), indent=2))
+              print("Get approval for these vulnerabilities or fix them")
+              exit(1)
+            else:
+              print(response.status_code)
+              print(response.text)
+              post_to_slack(response.text)
+              exit(1)
+          except Exception as e:
+            print(e)
+            post_to_slack(e)
+            exit(1)
+          EOF
+            set +e
           }
           infraProvisionBuild() {
             set -e
