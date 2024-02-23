@@ -41,6 +41,9 @@ jobs:
             cat .npmrc
             cat .yarnrc
             set -e
+            ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
+            echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
+            cat .env
             ./gradlew zipUiBuild --console plain --stacktrace \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
@@ -343,6 +346,7 @@ jobs:
             fi
             echo "$FILE"
             docker build -f $FILE -t $IMAGE_NAME .
+            imageScan "$IMAGE_NAME"
             set +e
           }
           jarBuild() {
@@ -359,7 +363,6 @@ jobs:
             set -e
             mvnwBuild
             dockerBuild "$1" "$2" "$3" "$4"
-            imageScan "$1"
             set +e
           }
           imageScan(){
