@@ -203,18 +203,6 @@ jobs:
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
           }
-          dockerBuild() {
-            set -e
-            IMAGE_NAME="$1"
-            FILE="$4"
-            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
-              FILE="./Dockerfile"
-            fi
-            echo "$FILE"
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
-            set +e
-          }
           dockerPush() {
             set -e
             IMAGE="$1"
