@@ -283,6 +283,75 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+
+  build-amd-go-20:
+    if: ${{ inputs.type == 'amd-go-20' }}
+    runs-on: amd-go-20
+    env:
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+      
+      - name: Build
+        shell: bash
+        run: |
+          
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              echo "filePath: $filePath"
+              echo "baseImage: $baseImage"
+              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-amd:
     if: ${{ inputs.type == 'amd' }}
