@@ -241,7 +241,12 @@ jobs:
             cd filebeat
             mage package
             cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             cd ..
+            echo "----------------------------------------------"
             echo "---------- Creating Tar Files -----------------"
             PACKAGES_DIR=./filebeat/build/distributions/
             mkdir -p $PACKAGES_DIR

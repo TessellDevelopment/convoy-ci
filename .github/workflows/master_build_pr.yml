@@ -166,6 +166,7 @@ jobs:
           }
           elasticBuild() {
             set -e
+            IMAGE="$1"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             go version
             go install golang.org/x/tools/cmd/goimports@latest
@@ -181,7 +182,11 @@ jobs:
             cd filebeat
             mage package
             cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t $IMAGE .
             cd ..
+            echo "----------------------------------------------"
             echo "---------- Creating Tar Files -----------------"
             PACKAGES_DIR=./filebeat/build/distributions/
             mkdir -p $PACKAGES_DIR
