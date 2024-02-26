@@ -414,6 +414,14 @@ jobs:
             dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
+          elasticAgentBuild() {
+            set -e
+            IMAGE="$1"
+            GOOS=linux GOARCH=amd64 go build .
+            docker build -t $IMAGE .
+            imageScan $IMAGE
+            set +e
+          }
           functionBuild() {
             set -e
             ARTIFACT="$1"
