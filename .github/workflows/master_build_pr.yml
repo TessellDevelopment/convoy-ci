@@ -397,15 +397,15 @@ jobs:
           }
           dockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             FILE="$4"
             if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
             echo "$FILE"
             echo "Starting Docker"
-            docker build -f $FILE -t $IMAGE_NAME .
-            imageScan $IMAGE_NAME
+            docker build -f $FILE -t $IMAGE .
+            imageScan $IMAGE
             set +e
           }
           dockerBuildOps() {
@@ -505,9 +505,9 @@ jobs:
           }
           imageScan(){
             set -e
-            IMAGE_NAME="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            IMAGE="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
             python3 - <<EOF
           import requests
           import json
@@ -738,14 +738,14 @@ jobs:
         run: |
           dockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             FILE="$4"
             if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t $IMAGE_NAME .
-            imageScan "$IMAGE_NAME"
+            docker build -f $FILE -t $IMAGE .
+            imageScan "$IMAGE"
             set +e
           }
           jarBuild() {
@@ -766,9 +766,9 @@ jobs:
           }
           imageScan(){
             set -e
-            IMAGE_NAME="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            IMAGE="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
             python3 - <<EOF
           import requests
           import json

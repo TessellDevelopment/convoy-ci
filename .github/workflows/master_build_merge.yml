@@ -576,14 +576,14 @@ jobs:
           }
           dockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             FILE="$4"
             if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           dockerBuildOps() {
@@ -596,8 +596,8 @@ jobs:
             set -e
             IMAGE="$1"
             GOOS=linux GOARCH=amd64 go build .
-            docker build -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           functionBuild() {
@@ -909,14 +909,14 @@ jobs:
         run: |
           dockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             FILE="$4"
             if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
+            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           jarBuild() {
