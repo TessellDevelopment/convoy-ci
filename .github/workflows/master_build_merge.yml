@@ -477,6 +477,7 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKERHUB_ORG_DEV: "tesselldev"
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -538,6 +539,16 @@ jobs:
           awsConfigureTessellArtifacts() {
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+          }
+          checkFlyway() {
+            if [ -d "flyway" ]; then
+              echo "The 'flyway' directory exists in this repository."
+              DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+              docker tag ${{env.DOCKERHUB_ORG_DEV}}/$DOCKER_FLYWAY_IMAGE_NAME:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+              docker push ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+            else
+              echo "The 'flyway' directory does not exists in this repository."
+            fi
           }
           configureJava() {
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
@@ -670,6 +681,19 @@ jobs:
               ./package-and-push --prod -n $CHART_NAME
               set +e
             fi
+          }
+          goDockerBuild() {
+            set -e
+            IMAGE="$1"
+            go install golang.org/x/tools/cmd/goimports@latest
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            ./setup -g -i
+            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            checkFlyway $IMAGE
+            set +e
           }
           javaDockerBuild() {
             set -e
