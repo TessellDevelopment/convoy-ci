@@ -398,8 +398,8 @@ jobs:
             else
               make service os=$OS engine=$ENGINE
             fi
-            mvnDeploy "$ARTIFACT" "$EXT" "$ARTIFACT.$EXT" "tessell.$NAME" "${LATEST_TAG}"
-            aws s3 cp "$ARTIFACT.$EXT" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
             set +e
           }
           mvnDeploy() {
