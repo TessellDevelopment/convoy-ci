@@ -425,7 +425,6 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
