@@ -369,6 +369,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+          aws configure set region ap-south-1
+
       - name: Check go Config
         run: |
           go version
