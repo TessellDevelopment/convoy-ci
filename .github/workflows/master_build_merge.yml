@@ -375,8 +375,6 @@ jobs:
           echo $GOPATH
           echo $GOROOT
           echo $PATH
-          cd /root/ 
-          export GOROOT=/home/github/actions-runner/_work/_tool/go/${{vars.GO_VERSION}}/x64
           go env
       
       - name: Build
