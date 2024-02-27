@@ -544,7 +544,7 @@ jobs:
             echo $OS
             echo $SERVICE
             echo "Building Service"
-            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
+            make 
             make clean
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
             awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
@@ -778,6 +778,21 @@ jobs:
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuild "$1" "$2" "$3" "$4"
+            set +e
+          }
+          pushproxBuild() {
+            set -e
+            installGoDependencies
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            makeBuild
+            makeImage
+            ARTIFACT="$1"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            make os=$OS pushprox-client
+            make clean
+            ls -lrta client-package
+            mvnDeploy "$ARTIFACT" "tar" "client-package/$ARTIFACT.tar" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            awsS3Push "client-package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/pushprox/${{env.LATEST_TAG}}/"
             set +e
           }
           pushToNexus() {
