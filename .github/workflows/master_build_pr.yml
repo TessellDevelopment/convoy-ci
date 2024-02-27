@@ -151,13 +151,29 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          agentBuild() {
+            set -e
+            installGoDependencies
+            ARTIFACT="$1"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            echo $OS
+            echo $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
+            make clean
+            set +e
+          }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
+          }
           elasticBuild() {
             set -e
             IMAGE="$1"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
+            installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
             go run bootstrap.go
@@ -437,7 +453,7 @@ jobs:
           goDockerBuild() {
             set -e
             IMAGE="$1"
-            go install golang.org/x/tools/cmd/goimports@latest
+            installGoDependencies
             echo "Building the service"
             export PATH=${PATH}:$GOPATH/bin
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"

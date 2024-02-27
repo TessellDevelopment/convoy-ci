@@ -215,9 +215,7 @@ jobs:
             set -e
             IMAGE="$1"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
+            installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
             go run bootstrap.go
@@ -532,6 +530,21 @@ jobs:
       - name: Build and Push
         shell: bash
         run: |
+          agentBuild () {
+            set -e
+            installGoDependencies
+            ARTIFACT="$1"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            echo $OS
+            echo $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
+            make clean
+            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
+            awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
+            set +e
+          }
           awsConfigureDevqaInfra() {
             aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
@@ -614,6 +627,19 @@ jobs:
             cd ..
             set +e
           }
+          goDockerBuild() {
+            set -e
+            IMAGE="$1"
+            installGoDependencies
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            ./setup -g -i
+            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            checkFlyway $IMAGE
+            set +e
+          }
           gradlewMaven(){
             set -e
             ./gradlew mavenDeploy --console plain --refresh-dependencies \
@@ -690,18 +716,10 @@ jobs:
               set +e
             fi
           }
-          goDockerBuild() {
-            set -e
-            IMAGE="$1"
+          installGoDependencies() {
+            go version
             go install golang.org/x/tools/cmd/goimports@latest
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            checkFlyway $IMAGE
-            set +e
+            which go
           }
           javaDockerBuild() {
             set -e
