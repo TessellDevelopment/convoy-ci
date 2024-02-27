@@ -32,7 +32,7 @@ jobs:
 
   build:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1661-1
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1672_vulnRepoSlackTest
     with:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
