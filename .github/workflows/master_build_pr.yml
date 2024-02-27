@@ -151,19 +151,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          agentBuild() {
-            set -e
-            installGoDependencies
-            ARTIFACT="$1"
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
-            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
-            echo $OS
-            echo $SERVICE
-            echo "Building Service"
-            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
-            make clean
-            set +e
-          }
           installGoDependencies() {
             go version
             go install golang.org/x/tools/cmd/goimports@latest
@@ -392,6 +379,19 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          agentBuild() {
+            set -e
+            installGoDependencies
+            ARTIFACT="$1"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            echo $OS
+            echo $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
+            make clean
+            set +e
+          }
           configureJava() {
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
@@ -581,6 +581,11 @@ jobs:
             exit(1)
           EOF
             set +e
+          }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           javaDockerBuild() {
             set -e
