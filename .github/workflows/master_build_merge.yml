@@ -740,6 +740,28 @@ jobs:
             gradlewMaven
             set +e
           }
+          makeBuild() {
+            set -e
+            installGoDependencies
+            make service
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            make os=$OS pushprox-client
+            make clean
+            ls -lrta client-package
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
+            set +e
+          }
+          makeImage() {
+            set -e
+            IMAGE="$1"
+            make image
+            docker tag $IMAGE:latest ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
+            docker push ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
+            set +e
+          }
           modifiedDir() {
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
@@ -778,21 +800,6 @@ jobs:
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuild "$1" "$2" "$3" "$4"
-            set +e
-          }
-          pushproxBuild() {
-            set -e
-            installGoDependencies
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            makeBuild
-            makeImage
-            ARTIFACT="$1"
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
-            make os=$OS pushprox-client
-            make clean
-            ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "tar" "client-package/$ARTIFACT.tar" "tessell.pushprox" "${{env.LATEST_TAG}}"
-            awsS3Push "client-package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/pushprox/${{env.LATEST_TAG}}/"
             set +e
           }
           pushToNexus() {
