@@ -47,7 +47,7 @@ jobs:
           }
           imageScan(){
             set -e
-            IMAGE_NAME="$1"
+            export IMAGE_NAME="$1"
             trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
             dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
             python3 - <<EOF
@@ -59,11 +59,12 @@ jobs:
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
+          IMAGE_NAME = os.environ.get('IMAGE_NAME')
 
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
@@ -188,7 +189,7 @@ jobs:
           }
           imageScan(){
             set -e
-            IMAGE_NAME="$1"
+            export IMAGE_NAME="$1"
             trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
             dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
             python3 - <<EOF
@@ -200,11 +201,12 @@ jobs:
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
+          IMAGE_NAME = os.environ.get('IMAGE_NAME')
 
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed, please check \n\`\`\`{message}\`\`\`"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
