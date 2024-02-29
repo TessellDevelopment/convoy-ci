@@ -952,6 +952,10 @@ jobs:
       - name: Build and Push OPS
         shell: bash
         run: |
+          awsConfigureDevqaInfra() {
+            aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+          }
           dockerBuild() {
             set -e
             IMAGE="$1"
@@ -965,9 +969,11 @@ jobs:
             set +e
           }
           dockerMultiBuild() {
+            awsConfigureDevqaInfra
             docker buildx rm multi-platform-builder
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             set -e
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 314782222153.dkr.ecr.us-east-1.amazonaws.com
             IMAGE="$1"
             FILE="$4"
             docker buildx build --push -f $FILE --no-cache -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} --platform=linux/amd64,linux/arm64 .
@@ -975,9 +981,11 @@ jobs:
             set +e
           }
           dockerMilvusBuild() {
+            awsConfigureDevqaInfra
             docker buildx rm multi-platform-builder
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             set -e
+            aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
             IMAGE="$1"
             AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
             TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
