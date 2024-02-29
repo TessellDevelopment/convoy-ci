@@ -777,6 +777,34 @@ jobs:
             imageScan "$IMAGE"
             set +e
           }
+          dockerMultiBuild() {
+            docker buildx rm multi-platform-builder
+            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+            set -e
+            IMAGE="$1"
+            FILE="$4"
+            docker buildx build -f $FILE --no-cache -t $IMAGE --platform=linux/amd64,linux/arm64 .
+            set +e
+          }
+          dockerMilvusBuild() {
+            docker buildx rm multi-platform-builder
+            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+            set -e
+            IMAGE="$1"
+            AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+            TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
+            docker buildx build --no-cache -t $IMAGE \
+                                --platform linux/amd64 \
+                                --build-arg HANDLER_TAG=$TASKHANDLER_VERSION \
+                                --build-arg AGENT_TAG=$AGENT_VERSION \
+                                --build-arg NEXUS_USERNAME=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
+                                --build-arg NEXUS_PASSWORD=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
+                                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
+                                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
+                                --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+                                --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
+            set +e
+          }
           jarBuild() {
             set -e
             ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
