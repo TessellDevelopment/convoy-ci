@@ -983,7 +983,7 @@ jobs:
             TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
             docker buildx build --push --no-cache --platform linux/amd64 \
                                 -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} \
-                                -t ${{ vars.TESSELL_DEV_ECR }}/$IMAGE:${LATEST_TAG}
+                                -t ${{ vars.TESSELL_DEV_ECR }}/$IMAGE:${LATEST_TAG} \
                                 --build-arg HANDLER_TAG=$TASKHANDLER_VERSION \
                                 --build-arg AGENT_TAG=$AGENT_VERSION \
                                 --build-arg NEXUS_USERNAME=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
