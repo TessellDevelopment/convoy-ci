@@ -975,6 +975,8 @@ jobs:
             set +e
           }
           dockerMilvusBuild() {
+            docker buildx rm multi-platform-builder
+            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             set -e
             IMAGE="$1"
             AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
