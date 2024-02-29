@@ -892,11 +892,14 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             while IFS=$'\t' read -r name buildFunction ext file _; do
+              echo -------------------------------------------
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "dockerFile: $file"
               $buildFunction "$name" "$ext" "$version" "$file"
+              echo "$name Complete"
+              echo --------------------------------------------
             done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
           }
           set +e
