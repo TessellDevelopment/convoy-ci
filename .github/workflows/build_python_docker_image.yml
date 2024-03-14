@@ -34,7 +34,6 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_PUBLIC }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
-      GH_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKERHUB_ORG: "tesselldev"
 
