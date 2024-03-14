@@ -82,7 +82,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0
+          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
 
       - name: getting commit id for workflow_dispatch
