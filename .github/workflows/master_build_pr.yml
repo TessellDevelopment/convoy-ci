@@ -367,6 +367,7 @@ jobs:
             GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.94.0
             go install go.opentelemetry.io/collector/cmd/builder@v0.94.0
             cd cmd/builder
+            go build .
             cd ../..
             GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
             set +e
