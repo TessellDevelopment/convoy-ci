@@ -472,7 +472,106 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-      
+   
+  build-amd-go-21:
+    if: ${{ inputs.type == 'amd-go-21' }}
+    runs-on: amd-go-21
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Check go Config
+        run: |
+          go version
+          echo $GOPATH
+          echo $GOROOT
+          echo $PATH
+          go env
+          
+      - name: Build
+        shell: bash
+        run: |
+          otelcolBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            CONFIG="$5"
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.94.0
+            go install go.opentelemetry.io/collector/cmd/builder@v0.94.0
+            cd cmd/builder
+            cd ../..
+            GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
+            BUILD_FILE="otelcol"
+            if [[ "$OS" == 'windows' ]]; then
+              BUILD_FILE="otelcol.exe"
+            fi
+            tar cvf package/$ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml \
+              package/node_exporter.yaml package/db_exporter.yaml package/$BUILD_FILE package/otelcol.service
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otelCollector" "${LATEST_TAG}"
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otelCollector/${LATEST_TAG}/
+            set +e
+          }
+          mvnDeploy() {
+            ARTIFACT_ID="$1"
+            EXTENSION="$2"
+            FILE="$3"
+            GROUP_ID="$4"
+            VERSION="$5"
+            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
+                -DgeneratePom=true -Dpackaging=$EXTENSION \
+                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
+                -Dfile=$FILE -DrepositoryId=nexus
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .configFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file config <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              echo "ConfigFile: $config"
+              $buildFunction $name $ext $version $file $config
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
   build-amd:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
