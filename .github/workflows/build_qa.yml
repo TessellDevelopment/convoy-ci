@@ -104,7 +104,7 @@ jobs:
         run: |
           export PYTHONPATH=lib
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-          cp configs/qarel.json config.json
+          cp configs/qabusiness.json config.json
           source qavenv/bin/activate
           make clients -B
 
