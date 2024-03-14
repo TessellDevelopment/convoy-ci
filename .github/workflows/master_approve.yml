@@ -25,7 +25,6 @@ jobs:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
 
   check-update-branch: 
-    if: ${{ github.event.action == 'synchronize' || github.event.review.state == 'approved' }}
     needs: read-codeowners
     runs-on: non-build
     outputs:
@@ -43,6 +42,10 @@ jobs:
             exit 0
           fi
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
+          if [[ -z "${{github.event.before}}" ]]; then
+            echo "First Push Commit"
+            exit 0
+          fi
           MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
           if [[ "$HEAD_COMMIT" == "$MERGE_COMMIT" ]]; then
             echo "Push Commit to the PR"
