@@ -43,6 +43,7 @@ jobs:
           fi
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
           if [[ -z "${{github.event.before}}" ]]; then
+            echo "First Push Commit"
             exit 0
           fi
           MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
