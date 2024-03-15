@@ -477,12 +477,18 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
