@@ -198,12 +198,78 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
+          imageScan(){
+            set -e
+            export IMAGE_NAME="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            python3 - <<EOF
+          import requests
+          import json
+          import os
+          from slack_sdk import WebClient
+          from slack_sdk.errors import SlackApiError
+          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
+          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
+          REPO = os.environ.get('REPO')
+          IMAGE_NAME = os.environ.get('IMAGE_NAME')
+
+          def post_to_slack(message):
+            usergroup_id=os.environ.get('DEVOPS_TEAM')
+            mention = f"<!subteam^{usergroup_id}>"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
+            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
+            try:
+              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
+              return response["ok"]
+            except SlackApiError as e:
+              print(f"Error posting to Slack: {e.response['error']}")
+              return False
+
+          with open('trivy_image_scan_result.json') as json_file:
+            trivy_json = json.load(json_file)
+          with open('dockle_image_scan_result.json') as json_file:
+            dockle_json = json.load(json_file)
+          payload = {
+            "repository": REPO,
+            "CVE":trivy_json,
+            "DOCKER_BEST_PRACTICE":dockle_json,
+          }
+
+          headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': CONVOY_API_KEY
+          }
+          
+          try:
+            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
+            if response.status_code == 200:
+              print(response.status_code)
+              print(response.text)
+            elif response.status_code == 409:
+              print(json.dumps(response.json(), indent=2))
+              print("Get approval for these vulnerabilities or fix them")
+              exit(1)
+            else:
+              print(response.status_code)
+              print(response.text)
+              post_to_slack(response.text)
+              exit(1)
+          except Exception as e:
+            print(e)
+            post_to_slack(e)
+            exit(1)
+          EOF
+            set +e
+          }
           infraProvisionBuild() {
             set -e
             lintCheck
+            IMAGE_NAME="$1"
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewPythonwheel
+            imageScan $IMAGE_NAME
             set +e
           }
           lintCheck() {
@@ -214,7 +280,9 @@ jobs:
             set -e
             rm pip.conf
             lintCheck
+            IMAGE_NAME="$1"
             gradlewPythonwheel
+            imageScan $IMAGE_NAME
             set +e
           }
           build() {
@@ -487,6 +555,7 @@ jobs:
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             lintCheck
             gradlewPythonwheel
+            set +e
           }
           dockerBuild() {
             set -e
@@ -730,8 +799,11 @@ jobs:
           }
           javaDockerBuild() {
             set -e
+            IMAGE_NAME="$1"
             configureJava
+            IMAGE_NAME="$1"
             gradlewMavenDocker
+            imageScan $IMAGE_NAME
             set +e
           }
           javaLibraryBuild() {
@@ -795,6 +867,7 @@ jobs:
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             lintCheck
             gradlewPythonwheel
+            set +e
           }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
