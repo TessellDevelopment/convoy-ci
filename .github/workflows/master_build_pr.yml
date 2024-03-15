@@ -143,7 +143,7 @@ jobs:
 
           installPythonDependencies() {
             DIR=$1
-            if [[ -z "${DIR}"]]; then
+            if [[ -z "${DIR}" ]]; then
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
@@ -243,9 +243,9 @@ jobs:
           }
           pythonDockerBuild() {
             set -e
+            IMAGE_NAME="$1"
             rm pip.conf
             lintCheck
-            IMAGE_NAME="$1"
             gradlewPythonwheel
             imageScan $IMAGE_NAME
             set +e
@@ -257,7 +257,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -265,13 +265,15 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction ext file filePath baseImage <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file
+              echo "filePath: $filePath"
+              echo "baseImage: $baseImage"
+              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
               echo "Artifact $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -344,7 +346,7 @@ jobs:
           
           installPythonDependencies() {
             DIR=$1
-            if [[ -z "${DIR}"]]; then
+            if [[ -z "${DIR}" ]]; then
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
@@ -460,8 +462,6 @@ jobs:
           gradlewMaven() {
             set -e
             ./gradlew mavenPackage --refresh-dependencies --console plain \
-              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
@@ -527,11 +527,7 @@ jobs:
           javaLibraryBuild() {
             set -e
             configureJava
-            ./gradlew mavenPackage --console plain --stacktrace \
-              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            gradlewMaven
             set +e
           }
           lintCheck() {
@@ -622,27 +618,9 @@ jobs:
             if [[ -z "$check" ]]; then
               return
             fi
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version' convoy.yaml)
-            language=$(yq '.language' convoy.yaml)
-            if [[ "$language" == "terraform" ]]; then
-              terraformBuild
-              return
-            fi
-            while IFS=$'\t' read -r name buildFunction ext file _; do
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
-          }
-          build() {
-            type="$1"
-            check=$(grep "$type" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              return
-            fi
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)

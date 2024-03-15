@@ -176,7 +176,7 @@ jobs:
         run: |
           installPythonDependencies() {
             DIR=$1
-            if [[ -z "${DIR}"]]; then
+            if [[ -z "${DIR}" ]]; then
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
@@ -383,7 +383,7 @@ jobs:
           }
           installPythonDependencies() {
             DIR=$1
-            if [[ -z "${DIR}"]]; then
+            if [[ -z "${DIR}" ]]; then
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
@@ -399,11 +399,9 @@ jobs:
             createPipConf
             installPythonDependencies $ARTIFACT
             gradlewUploadPlugin
-            cd $ARTIFACT/build
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
-            cd ../..
+            aws s3 cp "${ARTIFACT}/build/${ARTIFACT}.${EXTENSION}" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
           }
           dockerBuild() {
             set -e
@@ -739,7 +737,7 @@ jobs:
           mvnwBuild() {
             set -e
             NAME="$1"
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            mvnwInstall
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
               ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
@@ -747,10 +745,15 @@ jobs:
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
             set +e
           }
+          mvnwInstall() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
           opsImageBuild() {
             set -e
             NAME="$1"
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            mvnwInstall
             dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
