@@ -39,6 +39,7 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
+      NAMESPACE: "convoy"
       NEXUS_USERNAME: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
@@ -81,14 +82,15 @@ jobs:
           sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
           sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+          python3 -m pip cache purge
           sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-          python3 -m pip install --user virtualenv
-          python3 -m pip install yq wheel
+          python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           python3 -m venv qavenv
           source qavenv/bin/activate
+          python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-          sudo python3 -m pip list | grep harness
-          python3 -m pip list | grep harness
+          python3 -m pip list  --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} | grep harness
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3.0.0
@@ -102,7 +104,7 @@ jobs:
         run: |
           export PYTHONPATH=lib
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-          cp configs/qarel.json config.json
+          cp configs/qabusiness.json config.json
           source qavenv/bin/activate
           make clients -B
 
