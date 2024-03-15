@@ -161,24 +161,38 @@ jobs:
 
       - name: Create pip conf
         run: |
-          echo "[global]" > pip.conf
-          echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-          sudo cp pip.conf /etc/pip.conf
+
+          createPipConf() {
+            echo "[global]" > pip.conf
+            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+            sudo cp pip.conf /etc/pip.conf
+          }
+          createPipConf
         shell: bash
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest twine wheel
-          if [ -f requirements.txt ]; then
-              pip install -r requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-          fi
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh
+          installPythonDependencies() {
+            DIR=$1
+            if [[ -z "${DIR}"]]; then
+              DIR='.'
+            fi
+            python3 -m pip install --upgrade pip
+            python3 -m pip install flake8 pytest twine wheel
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
+          }
+          installAwsCli() {
+            curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
+            chmod +x install-aws.sh
+            sudo ./install-aws.sh "v2" "amd64"
+            rm install-aws.sh
+          }
+          installPythonDependencies
+          installAwsCli
 
       - name: Configure AWS Credentials
         run: |
@@ -331,10 +345,13 @@ jobs:
 
       - name: Install AWS CLI
         run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh
+          installAwsCli() {
+            curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
+            chmod +x install-aws.sh
+            sudo ./install-aws.sh "v2" "amd64"
+            rm install-aws.sh
+          }
+          installAwsCli
       
       - name: Configure AWS Credentials
         run: |
@@ -364,12 +381,23 @@ jobs:
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
           }
+          installPythonDependencies() {
+            DIR=$1
+            if [[ -z "${DIR}"]]; then
+              DIR='.'
+            fi
+            python3 -m pip install --upgrade pip
+            python3 -m pip install flake8 pytest twine wheel
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
+          }
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
             createPipConf
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
+            installPythonDependencies $ARTIFACT
             gradlewUploadPlugin
             cd $ARTIFACT/build
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
@@ -551,7 +579,7 @@ jobs:
             set -e
             ARTIFACT="$1"
             createPipConf
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
+            installPythonDependencies $ARTIFACT
             lintCheck
             gradlewTwineUpload
           }
