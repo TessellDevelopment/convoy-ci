@@ -517,7 +517,7 @@ jobs:
               BUILD_FILE="otelcol.exe"
             fi
             tar cvf package/$ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml \
-              package/node_exporter.yaml package/db_exporter.yaml package/$BUILD_FILE package/otelcol.service
+              package/node_exporter.yaml package/db_exporter.yaml package/otecol/$BUILD_FILE package/otelcol.service
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otelCollector" "${LATEST_TAG}"
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otelCollector/${LATEST_TAG}/
             set +e
