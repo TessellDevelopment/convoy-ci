@@ -493,6 +493,7 @@ jobs:
           }
           javaDockerBuild() {
             set -e
+            IMAGE_NAME="$1"
             configureJava
             IMAGE_NAME="$1"
             gradlewMavenDocker
