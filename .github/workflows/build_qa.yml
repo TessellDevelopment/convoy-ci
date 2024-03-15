@@ -39,6 +39,7 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
+      NAMESPACE: "convoy"
       NEXUS_USERNAME: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
       NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
@@ -103,7 +104,7 @@ jobs:
         run: |
           export PYTHONPATH=lib
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-          cp configs/qarel.json config.json
+          cp configs/qabusiness.json config.json
           source qavenv/bin/activate
           make clients -B
 
