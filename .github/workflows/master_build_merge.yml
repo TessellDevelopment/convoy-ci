@@ -522,10 +522,10 @@ jobs:
             if [[ "$OS" == 'windows' ]]; then
               BUILD_FILE="otelcol.exe"
             fi
-            tar cvf $ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml package/node_exporter.yaml \
+            tar -zcvf $ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml package/node_exporter.yaml \
              package/db_exporter.yaml package/otelcol/$BUILD_FILE package/otelcol.service
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otelCollector" "${LATEST_TAG}"
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otelCollector/${LATEST_TAG}/
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otel-collector" "${LATEST_TAG}"
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otel-collector/${LATEST_TAG}/
             set +e
           }
           mvnDeploy() {
