@@ -6,11 +6,11 @@
   jobs:
   
     dev-checks:
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-1382
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@main
       secrets: inherit
   
     version-check:
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@main
       secrets: inherit
   
     build-file:
@@ -32,7 +32,7 @@
   
     build:
       needs: build-file
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@main
       with:
         type: ${{needs.build-file.outputs.type}}
       secrets: inherit
