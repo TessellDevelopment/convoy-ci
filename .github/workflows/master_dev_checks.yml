@@ -81,19 +81,22 @@
                     ticket_pr = match_pr.group(0)
                     if ticket_branch == ticket_pr:
                         print(f"Same Jira present in both Branch and PR:{ticket_branch}")
-                        sys.stdout.write(f"::set-output name=jira_ticket::{ticket_branch}\n")
+                        with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                            fh.write(f"jira_ticket={ticket_branch}\n")
                         exit(0)
                     else:
                         raise Exception("Error: Different Jira present in both Branch and PR")
                 elif match_branch and jira_source == 'BRANCH_NAME_PREFIX':
                     ticket = match_branch.group(0)
                     print(f"Jira ticket extracted from Branch name:{ticket}")
-                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                    with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                        fh.write(f"jira_ticket={ticket}\n")
                     exit(0)
                 elif match_pr and jira_source == 'PR_TITLE_PREFIX':
                     ticket = match_pr.group(0)
                     print(f"Jira ticket extracted from PR Title:{ticket}")
-                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                    with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                        fh.write(f"jira_ticket={ticket}\n")
                     exit(0)
                 else:
                     raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")   
@@ -102,14 +105,16 @@
                         if match_branch:
                             ticket = match_branch.group(0)
                             print(f"Jira ticket extracted from Branch name:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                fh.write(f"jira_ticket={ticket}\n")
                             exit(0)
                         else: 
                             print(f"No Jira ticket found in Branch name, checking in PR title")     
                             if match_pr :
                                 ticket = match_pr.group(0)
                                 print(f"Jira ticket extracted from PR Title:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                    fh.write(f"jira_ticket={ticket}\n")
                                 exit(0)
                             else:
                                 raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
@@ -117,7 +122,8 @@
                         if match_pr:
                             ticket = match_pr.group(0)
                             print(f"Jira ticket extracted from PR Title:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                fh.write(f"jira_ticket={ticket}\n")
                             exit(0)
 
                         else:
@@ -125,7 +131,8 @@
                             if match_branch:
                                 ticket = match_branch.group(0)
                                 print(f"Jira ticket extracted from Branch name:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                    fh.write(f"jira_ticket={ticket}\n")
                                 exit(0)
                             else:
                                 raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
@@ -133,14 +140,16 @@
                         if match_branch:
                             ticket = match_branch.group(0)
                             print(f"Jira ticket extracted from Branch name:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                            with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                fh.write(f"jira_ticket={ticket}\n")
                             exit(0)
                         else: 
                             print(f"No Jira ticket found in Branch name, checking in PR title")     
                             if match_pr:
                                 ticket = match_pr.group(0)
                                 print(f"Jira ticket extracted from PR Title:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+                                with open(os.getenv("GITHUB_OUTPUT"), "a") as fh:
+                                    fh.write(f"jira_ticket={ticket}\n")
                                 exit(0)
                             else:
                                 raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")            

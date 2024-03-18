@@ -59,7 +59,7 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
           echo "Number of commits in PR: $PR_COMMITS"
-          echo "::set-output name=pr_commits::$PR_COMMITS"
+          echo "pr_commits::$PR_COMMITS" >> $GITHUB_OUTPUT
 
       - name: Check Number of Commits
         run: |
