@@ -31,7 +31,17 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          gradlewUI() {
+          configureNpmrc(){
+            set +e 
+            REPO="$1"
+            rm ~/.npmrc
+            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
+            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
+            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
+            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
+            cat ~/.npmrc
+          }
+          gradlewUIBuild() {
             rm ~/.npmrc
             rm ~/.yarnrc
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
@@ -53,13 +63,7 @@ jobs:
             set -e
             npm install
             npm run build
-            set +e 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
-            cat ~/.npmrc
+            configureNpmrc "${{env.NEXUS_REPO_NPM}}"
             set -e
             version="$3"
             yq ".version = \"$version\"" package.json > tmp_package.json
@@ -74,14 +78,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              $buildFunction $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -114,14 +130,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              $buildFunction $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -161,6 +189,30 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          cloneHelmTemplate() {
+            GITHUB_WORKSPACE=$(pwd)
+            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+            echo "$CHART_GITHUB_LOCATION"
+            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "Cloning convoy-helm-template"
+            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+            template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+            if [ $? -eq 0 ]; then
+                echo "convoy-helm-template version: $template_version"
+            else
+                echo "convoy-helm-template version not found.Exiting."
+                exit 1
+            fi
+            git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+            echo "Copying the service values file"
+            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+            set -e
+            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+            ls -lrta ../helm-chart/values/apps/
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -237,52 +289,26 @@ jobs:
           EOF
             set +e
           }
-          helmChart(){
+          helmChartBuild(){
             set -e
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --no-push -n $CHART_NAME
             set +e
           }
-          helmTemplate() {
+          helmTemplateBuild() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
-              GITHUB_WORKSPACE=$(pwd)
-              CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
-              TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
-              echo "$CHART_GITHUB_LOCATION"
-              echo "$TEMPLATE_REPO_GITHUB_LOCATION"
-              echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
-              echo "Cloning convoy-helm-template"
-              rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-              template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
-              if [ $? -eq 0 ]; then
-                  echo "convoy-helm-template version: $template_version"
-              else
-                  echo "convoy-helm-template version not found.Exiting."
-                  exit 1
-              fi
-              git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
-              echo "Copying the service values file"
-              cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
-              cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
-              set -e
-              cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
-              ls -lrta ../helm-chart/values/apps/
+              cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --no-push -n $CHART_NAME
               set +e
             fi
           }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
           opsImageBuild() {
             set -e
-            mvnwBuild
-            dockerBuild "$1" "$2" "$3" "$4"
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            dockerBuild "$@"
             set +e
           }
           build() {
@@ -292,13 +318,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
+              echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              $buildFunction $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -352,7 +391,7 @@ jobs:
           }
           jarBuild() {
             set -e
-            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            ./mvnw package
             set +e
           }
           mvnwBuild() {
@@ -363,7 +402,7 @@ jobs:
           opsImageBuild() {
             set -e
             mvnwBuild
-            dockerBuild "$1" "$2" "$3" "$4"
+            dockerBuild "$@"
             set +e
           }
           imageScan(){
@@ -437,17 +476,31 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
+              echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              $buildFunction $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
           build "dockerImages"
+          build "helmCharts"
 
       - name: Cleanup
         if: always()

@@ -43,8 +43,17 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          gradlewUI() {
-            set +e
+          configureNpmrc(){
+            set +e 
+            REPO="$1"
+            rm ~/.npmrc
+            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
+            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
+            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
+            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
+            cat ~/.npmrc
+          }
+          gradlewUIBuild() {
             rm ~/.npmrc
             rm ~/.yarnrc
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
@@ -57,7 +66,15 @@ jobs:
             ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
             echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
             cat .env
-            ./gradlew zipUiBuild  publish --console plain \
+            ./gradlew zipUiBuild --console plain --stacktrace \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
+          }
+          gradlewUIBuildAndPush() {
+            gradlewUIBuild
+            set -e
+            ./gradlew publish --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -66,17 +83,11 @@ jobs:
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
             set +e
           }
-          npmBuild() {
+          npmBuildAndPush() {
             set -e
             npm install
             npm run build
-            set +e 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_REPO_NPM }}" >> ~/.npmrc
-            cat ~/.npmrc
+            configureNpmrc "${{vars.NEXUS_REPO_NPM}}"
             set -e
             version="$3"
             yq ".version = \"$version\"" package.json > tmp_package.json
@@ -91,14 +102,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -144,14 +167,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -205,6 +240,30 @@ jobs:
       - name: Build and Push
         shell: bash
         run: |
+          cloneHelmTemplate() {
+            GITHUB_WORKSPACE=$(pwd)
+            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+            echo "$CHART_GITHUB_LOCATION"
+            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "Cloning convoy-helm-template"
+            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+            template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+            if [ $? -eq 0 ]; then
+                echo "convoy-helm-template version: $template_version"
+            else
+                echo "convoy-helm-template version not found.Exiting."
+                exit 1
+            fi
+            git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+            echo "Copying the service values file"
+            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+            set -e
+            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+            ls -lrta ../helm-chart/values/apps/
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -213,51 +272,37 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          dockerBuildAndPush() {
+            set -e
+            IMAGE_NAME="$1"
+            dockerBuild "$@"
+            docker tag $IMAGE_NAME ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
-          helmChart() {
+          helmChartBuildAndPush() {
             set -e
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --prod -n $CHART_NAME
             set +e
           }
-          helmTemplate() {
+          helmTemplateBuildAndPush() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
-              GITHUB_WORKSPACE=$(pwd)
-              CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
-              TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
-              echo "$CHART_GITHUB_LOCATION"
-              echo "$TEMPLATE_REPO_GITHUB_LOCATION"
-              echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
-              echo "Cloning convoy-helm-template"
-              rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-              template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
-              if [ $? -eq 0 ]; then
-                  echo "convoy-helm-template version: $template_version"
-              else
-                  echo "convoy-helm-template version not found.Exiting."
-                  exit 1
-              fi
-              git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
-              echo "Copying the service values file"
-              cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
-              cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
-              set -e
-              cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
-              ls -lrta ../helm-chart/values/apps/
+              cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --prod -n $CHART_NAME
               set +e
             fi
           }
-          opsImageBuild() {
+          opsImageBuildAndPush() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$1" "$2" "$3" "$4"
+            dockerBuild "$@"
             set +e
           }
           build() {
@@ -267,14 +312,26 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
@@ -322,16 +379,15 @@ jobs:
         run : |
           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
 
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
-          aws configure set region ap-south-1
-          
       - name: Build and Push OPS
         shell: bash
         run: |
-          dockerBuild() {
+          awsConfigureTessellopsArtifacts() {
+            aws configure set aws_access_key_id ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
+          dockerBuildAndPush() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
@@ -343,16 +399,23 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
-          jarBuild() {
+          jarBuildAndPush() {
             set -e
             NAME="$1"
             EXT="$2"
-            # Add Build Function
+            VERSION="$3"
+            awsConfigureTessellopsArtifacts
+            ./mvnw package -Dversion=$VERSION
+            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+              --upload-file ./target/$NAME-$VERSION.$EXT \
+              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-$VERSION.$EXT
+            aws s3 cp ./target/$NAME-$VERSION.$EXT s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-$VERSION.$EXT 
             set +e
           }
-          mvnwBuild() {
+          mvnwBuildAndPush() {
             set -e
             NAME="$1"
+            awsConfigureTessellopsArtifacts
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
@@ -361,7 +424,7 @@ jobs:
             aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
             set +e
           }
-          opsImageBuild() {
+          opsImageBuildAndPush() {
             set -e
             NAME="$1"
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
@@ -375,18 +438,31 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            while IFS=$'\t' read -r name buildFunction ext file _; do
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction "$name" "$ext" "$version" "$file"
-            done < <(yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @tsv" convoy.yaml)
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           set +e
           build "artifacts"
           build "dockerImages"
+          build "helmCharts"
 
       - name: Cleanup
         if: always()
