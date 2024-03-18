@@ -68,5 +68,6 @@ jobs:
             required_teams=required_teams+team+" "
           required_teams.strip()
           print(required_teams)
-          sys.stdout.write(f"::set-output name=teams::{required_teams}\n")
+          with open(os.getenv("GITHUB_OUTPUT"),  "a") as fh:
+            fh.write(f"teams={required_teams}\n")
           EOF
