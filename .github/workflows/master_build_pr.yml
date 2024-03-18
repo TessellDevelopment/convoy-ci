@@ -389,22 +389,6 @@ jobs:
             imageScan "$IMAGE_NAME"
             set +e
           }
-          jarBuild() {
-            set -e
-            ./mvnw package
-            set +e
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          opsImageBuild() {
-            set -e
-            mvnwBuild
-            dockerBuild "$@"
-            set +e
-          }
           imageScan(){
             set -e
             export IMAGE_NAME="$1"
@@ -467,6 +451,23 @@ jobs:
             post_to_slack(e)
             exit(1)
           EOF
+            set +e
+          }
+          jarBuild() {
+            set -e
+            VERSION="$3"
+            ./mvnw package -Dversion=$VERSION
+            set +e
+          }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
+          opsImageBuild() {
+            set -e
+            mvnwBuild
+            dockerBuild "$@"
             set +e
           }
           build() {
