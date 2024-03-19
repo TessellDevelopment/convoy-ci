@@ -117,7 +117,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               "${buildFunction}AndPush" $name $ext $version $file 
-              echo "Artifact $name done"
+              echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
             done
@@ -182,7 +182,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               "${buildFunction}AndPush" $name $ext $version $file 
-              echo "Artifact $name done"
+              echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
             done
@@ -288,6 +288,7 @@ jobs:
             CHART_NAME="$1"
             cd scripts
             ./package-and-push --prod -n $CHART_NAME
+            cd ..
             set +e
           }
           helmTemplateBuildAndPush() {
@@ -296,6 +297,7 @@ jobs:
               cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --prod -n $CHART_NAME
+              cd $GITHUB_WORKSPACE
               set +e
             fi
           }
@@ -327,7 +329,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               "${buildFunction}AndPush" $name $ext $version $file 
-              echo "Artifact $name done"
+              echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
             done
@@ -453,7 +455,7 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               "${buildFunction}AndPush" $name $ext $version $file 
-              echo "Artifact $name done"
+              echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
             done
