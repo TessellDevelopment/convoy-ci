@@ -108,7 +108,6 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      GOPATH: /home/runner/go
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
@@ -182,28 +181,26 @@ jobs:
             curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
             dpkg -i dockle.deb && rm dockle.deb
           }
-          
+          setupTrivyDockle
+
       - name: Build
         shell: bash
         run: |
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
-          }
-          elasticBuild() {
-            set -e
-            IMAGE="$1"
+          elasticConf() {
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
             go run bootstrap.go
             cd ..
+          }
+          elasticBuild() {
+            set -e
+            IMAGE="$1"
+            elasticConf
             echo "----------------------------------------------"
             echo "----------- Building Service -----------------"
             export GOPATH=/home/runner/go/bin
-            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-16-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
             cd filebeat
             mage package
             cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
@@ -211,6 +208,10 @@ jobs:
             echo "------------ Building Image ------------------"
             docker build -t $IMAGE .
             cd ..
+            elasticTarBuild
+            set +e
+          }
+          elasticTarBuild() {
             echo "----------------------------------------------"
             echo "---------- Creating Tar Files -----------------"
             PACKAGES_DIR=./filebeat/build/distributions/
@@ -226,7 +227,6 @@ jobs:
             pushd $PACKAGES_DIR
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
-            set +e
           }
           gradlewPythonwheel() {
             ./gradlew pythonWheel docker --console plain \
@@ -296,6 +296,11 @@ jobs:
             exit(1)
           EOF
             set +e
+          }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           infraProvisionBuild() {
             set -e
@@ -609,17 +614,6 @@ jobs:
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
           }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
@@ -640,6 +634,13 @@ jobs:
             echo "Starting Docker"
             docker build -f $FILE -t $IMAGE .
             imageScan $IMAGE
+            set +e
+          }
+          elasticAgentBuild() {
+            set -e
+            IMAGE="$1"
+            GOOS=linux GOARCH=amd64 go build .
+            dockerBuild $@
             set +e
           }
           functionBuild() {
@@ -767,6 +768,17 @@ jobs:
             go version
             go install golang.org/x/tools/cmd/goimports@latest
             which go
+          }
+          installPythonDependencies() {
+            DIR=$1
+            if [[ -z "${DIR}" ]]; then
+              DIR='.'
+            fi
+            python3 -m pip install --upgrade pip
+            python3 -m pip install flake8 pytest twine wheel
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
           }
           javaDockerBuild() {
             set -e
