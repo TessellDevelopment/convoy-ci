@@ -246,9 +246,7 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
-          elasticBuild() {
-            set -e
-            IMAGE="$1"
+          elasticConf() {
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             go version
             go install golang.org/x/tools/cmd/goimports@latest
@@ -257,10 +255,14 @@ jobs:
             cd mage
             go run bootstrap.go
             cd ..
+          }
+          elasticBuildAndPush() {
+            set -e
+            IMAGE="$1"
+            elasticConf
             echo "----------------------------------------------"
             echo "----------- Building Service -----------------"
             export GOPATH=/home/runner/go/bin
-            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-16-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
             cd filebeat
             mage package
             cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
@@ -269,6 +271,12 @@ jobs:
             docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             cd ..
+            elasticTarBuild
+            mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            set +e
+          }
+          elasticTarBuild() {
             echo "----------------------------------------------"
             echo "---------- Creating Tar Files -----------------"
             PACKAGES_DIR=./filebeat/build/distributions/
@@ -284,9 +292,6 @@ jobs:
             pushd $PACKAGES_DIR
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
-            mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
-            set +e
           }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
@@ -362,7 +367,7 @@ jobs:
               echo "dockerFile: $file"
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
-              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
+              "${buildFunction}AndPush" $name $ext $version $file 
               echo "Artifact $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -666,8 +671,7 @@ jobs:
             set -e
             IMAGE="$1"
             GOOS=linux GOARCH=amd64 go build .
-            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            dockerBuildAndPush $@
             set +e
           }
           functionBuildAndPush() {
