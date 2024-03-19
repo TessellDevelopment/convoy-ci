@@ -34,6 +34,8 @@ jobs:
           configureNpmrc(){
             set +e 
             REPO="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             rm ~/.npmrc
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
             echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
@@ -66,10 +68,22 @@ jobs:
             configureNpmrc "${{env.NEXUS_REPO_NPM}}"
             set -e
             version="$3"
+            requiredInputs="3"
+            validateInputs "$requiredInputs" "$@" 
             yq ".version = \"$version\"" package.json > tmp_package.json
             mv tmp_package.json package.json
             npm publish   
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -273,6 +287,16 @@ jobs:
             imageScan $IMAGE_NAME
             set +e
           }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -405,6 +429,8 @@ jobs:
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
@@ -419,7 +445,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            echo "Starting Docker"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan $IMAGE_NAME
             set +e
@@ -427,6 +454,8 @@ jobs:
           functionBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             cd tessell;
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
@@ -455,6 +484,8 @@ jobs:
           helmChartBuild() {
             set -e
             CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             cd scripts
             ./package-and-push --no-push -n $CHART_NAME
             cd ..
@@ -463,6 +494,8 @@ jobs:
           helmTemplateBuild() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
+              requiredInputs="1"
+              validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --no-push -n $CHART_NAME
@@ -588,6 +621,8 @@ jobs:
           pythonLibraryBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
@@ -626,10 +661,22 @@ jobs:
           tsmZipBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
             unzip -l $ARTIFACT.zip
             cd ..
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -715,6 +762,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan "$IMAGE_NAME"
             set +e
@@ -786,6 +835,8 @@ jobs:
           jarBuild() {
             set -e
             VERSION="$3"
+            requiredInputs="3"
+            validateInputs "$requiredInputs" "$@" 
             ./mvnw package -Dversion=$VERSION
             set +e
           }
@@ -799,6 +850,16 @@ jobs:
             mvnwBuild
             dockerBuild "$@"
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
