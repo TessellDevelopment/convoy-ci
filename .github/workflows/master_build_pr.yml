@@ -268,6 +268,8 @@ jobs:
             set -e
             lintCheck
             IMAGE_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewPythonwheel
@@ -571,7 +573,6 @@ jobs:
             set -e
             IMAGE_NAME="$1"
             configureJava
-            IMAGE_NAME="$1"
             gradlewMavenDocker
             imageScan $IMAGE_NAME
             set +e

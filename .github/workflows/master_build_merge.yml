@@ -238,6 +238,8 @@ jobs:
             ARTIFACT="$1"
             EXT="$2"
             FILE_PATH="$5"
+            requiredInputs="1 2 5"
+            validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellArtifacts
             pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT-${LATEST_TAG}.$EXT
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
@@ -251,6 +253,8 @@ jobs:
             set -e
             IMAGE="$1"
             BASE_IMAGE="$6"
+            requiredInputs="1 6"
+            validateInputs "$requiredInputs" "$@" 
             docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
@@ -277,6 +281,8 @@ jobs:
             FILE_PATH="$1"
             GROUP="$2"
             FILE_NAME="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
                   --upload-file $FILE_PATH \
                   ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
@@ -284,6 +290,8 @@ jobs:
           pythonDockerBuildAndPush() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             rm pip.conf
             lintCheck
             gradlewDockerTag
@@ -574,6 +582,8 @@ jobs:
           javaDockerBuildAndPush() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             configureJava
             gradlewMavenDocker
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
@@ -614,6 +624,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             EXTENSION="2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
             setupOpa
             ~/opa build policies --output bundles/opa-policies.tar.gz
             awsConfigureTessellArtifacts
@@ -631,6 +643,8 @@ jobs:
             FILE_PATH="$1"
             GROUP="$2"
             FILE_NAME="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
                   --upload-file $FILE_PATH \
                   ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
