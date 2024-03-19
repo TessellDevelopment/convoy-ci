@@ -247,19 +247,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}   
 
-      - name: Install AWS CLI
-        run: |
-          curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
-          chmod +x install-aws.sh
-          sudo ./install-aws.sh "v2" "amd64"
-          rm install-aws.sh
-      
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-          aws configure set region ap-south-1
-
       - name: Build and Push
         shell: bash
         run: |
@@ -268,34 +255,10 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          awsS3Push(){
-            set -e
-            SOURCE="$1"
-            DESTINATION="$2"
-            aws s3 cp $SOURCE $DESTINATION
-            set +e
-          }
-          createPipConf(){
-            set -e
-            echo "[global]" > pip.conf
-            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-            sudo cp pip.conf /etc/pip.conf
-            set +e
-          }
-          dbPluginBuild() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            createPipConf
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
-            gradlewUploadPlugin
-            cd $ARTIFACT/build
-            PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
-            mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            awsS3Push "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
-            cd ../..
+          awsConfigureTessellTools() {
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
           }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
@@ -320,6 +283,29 @@ jobs:
             set -e
             cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
             ls -lrta ../helm-chart/values/apps/
+          }
+          createPipConf(){
+            set -e
+            echo "[global]" > pip.conf
+            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+            sudo cp pip.conf /etc/pip.conf
+            set +e
+          }
+          dbPluginBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            createPipConf
+            awsConfigureTessellTools
+            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
+            gradlewUploadPlugin
+            cd $ARTIFACT/build
+            PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
+            mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            cd ../..
           }
           dockerBuild() {
             set -e
@@ -349,6 +335,7 @@ jobs:
           functionBuildAndPush() {
             set -e
             ARTIFACT="$1"
+            awsConfigureTessellTools
             cd tessell;
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
@@ -356,7 +343,7 @@ jobs:
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            awsS3Push "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             cd ..
             set +e
           }
@@ -469,19 +456,23 @@ jobs:
                 terraform_build $PWD $ARTIFACT_FILE
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
-                awsS3Push "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
+                aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
               fi
             done
             ls -lrta $BUILD_DIR
             set +e
           }
-          tsmZipBuildAndPush() {
+          tsmZipBuild() {
             set -e
             ARTIFACT="$1"
-            VERSION="$3"
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
             unzip -l $ARTIFACT.zip
             cd ..
+            set +e
+          }
+          tsmZipBuildAndPush() {
+            tsmZipBuild
+            set -e
             mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm.infra" "$VERSION"
             set +e
           }

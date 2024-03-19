@@ -197,23 +197,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          createPipConf(){
-            set -e
-            echo "[global]" > pip.conf
-            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-            sudo cp pip.conf /etc/pip.conf
-            set +e
-          }
-          dbPluginBuild() {
-            set -e
-            ARTIFACT="$1"
-            createPipConf
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
-            lintCheck
-            gradlewPythonwheel
-          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -238,6 +221,23 @@ jobs:
             cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
             ls -lrta ../helm-chart/values/apps/
           }
+          createPipConf(){
+            set -e
+            echo "[global]" > pip.conf
+            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+            sudo cp pip.conf /etc/pip.conf
+            set +e
+          }
+          dbPluginBuild() {
+            set -e
+            ARTIFACT="$1"
+            createPipConf
+            if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
+            lintCheck
+            gradlewPythonwheel
+          }
           dockerBuild() {
             set -e
             IMAGE_NAME="$1"
@@ -249,12 +249,6 @@ jobs:
             echo "Starting Docker"
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan $IMAGE_NAME
-            set +e
-          }
-          dockerBuildOps() {
-            set -e
-            mvnwBuild
-            dockerBuild "$1" "$2" "$3" "$4"
             set +e
           }
           functionBuild() {
@@ -407,14 +401,6 @@ jobs:
             lintCheck
             gradlewPythonwheel
           }
-          tsmZipBuild() {
-            set -e
-            ARTIFACT="$1"
-            mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
-            unzip -l $ARTIFACT.zip
-            cd ..
-            set +e
-          }
           terraformBuild(){
             set -e
             modifiedDir
@@ -435,6 +421,14 @@ jobs:
               fi
             done
             ls -lrta $BUILD_DIR
+            set +e
+          }
+          tsmZipBuild() {
+            set -e
+            ARTIFACT="$1"
+            mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
+            unzip -l $ARTIFACT.zip
+            cd ..
             set +e
           }
           build() {
@@ -643,4 +637,3 @@ jobs:
           sudo rm -rf target
           docker container prune --force
           docker volume prune --force
-          
