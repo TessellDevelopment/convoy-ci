@@ -257,6 +257,8 @@ jobs:
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             createPipConf
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             lintCheck
@@ -279,6 +281,8 @@ jobs:
           functionBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             cd tessell;
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
@@ -307,6 +311,8 @@ jobs:
           helmChartBuild(){
             set -e
             CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             cd scripts
             ./package-and-push --no-push -n $CHART_NAME
             cd ..
@@ -315,6 +321,8 @@ jobs:
           helmTemplateBuild() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
+              requiredInputs="1"
+              validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --no-push -n $CHART_NAME
@@ -421,6 +429,8 @@ jobs:
           pythonLibraryBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             createPipConf
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             lintCheck
@@ -451,6 +461,8 @@ jobs:
           tsmZipBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
             unzip -l $ARTIFACT.zip
             cd ..
