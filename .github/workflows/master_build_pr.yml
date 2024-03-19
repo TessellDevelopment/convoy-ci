@@ -182,6 +182,8 @@ jobs:
             curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
             dpkg -i dockle.deb && rm dockle.deb
           }
+          setupTrivyDockle() {
+
           
       - name: Build
         shell: bash
