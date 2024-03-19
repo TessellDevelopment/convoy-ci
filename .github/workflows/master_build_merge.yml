@@ -48,6 +48,8 @@ jobs:
           configureNpmrc(){
             set +e 
             REPO="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             rm ~/.npmrc
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
             echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
@@ -92,10 +94,22 @@ jobs:
             configureNpmrc "${{vars.NEXUS_REPO_NPM}}"
             set -e
             version="$3"
+            requiredInputs="3"
+            validateInputs "$requiredInputs" "$@" 
             yq ".version = \"$version\"" package.json > tmp_package.json
             mv tmp_package.json package.json
             npm publish   
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -162,6 +176,16 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -315,6 +339,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             set +e
           }
@@ -382,6 +408,8 @@ jobs:
           helmChartBuildAndPush() {
             set -e
             CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             cd scripts
             ./package-and-push --prod -n $CHART_NAME
             cd ..
@@ -390,6 +418,8 @@ jobs:
           helmTemplateBuildAndPush() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               CHART_NAME="$1"
+              requiredInputs="1"
+              validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
               ./package-and-push --prod -n $CHART_NAME
@@ -475,6 +505,16 @@ jobs:
             set -e
             mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm.infra" "$VERSION"
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -568,7 +608,7 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          dockerBuildAndPush() {
+          dockerBuild() {
             set -e
             IMAGE_NAME="$1"
             FILE="$4"
@@ -576,41 +616,64 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG} .
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            docker build -f $FILE -t $IMAGE_NAME .
+            set +e
+          }
+          dockerBuildAndPush() {
+            set -e
+            IMAGE_NAME="$1"
+            dockerBuild "$@"
+            docker tag $IMAGE_NAME ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:${LATEST_TAG}
             set +e
           }
           jarBuildAndPush() {
             set -e
-            NAME="$1"
-            EXT="$2"
+            ARTIFACT="$1"
+            EXTENSION="$2"
             VERSION="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellopsArtifacts
             ./mvnw package -Dversion=$VERSION
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-              --upload-file ./target/$NAME-$VERSION.$EXT \
-              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-$VERSION.$EXT
-            aws s3 cp ./target/$NAME-$VERSION.$EXT s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-$VERSION.$EXT 
+              --upload-file ./target/$ARTIFACT-$VERSION.$EXTENSION \
+              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-$VERSION.$EXTENSION
+            aws s3 cp ./target/$ARTIFACT-$VERSION.$EXTENSION s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-$VERSION.$EXTENSION 
             set +e
           }
           mvnwBuildAndPush() {
             set -e
-            NAME="$1"
+            ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellopsArtifacts
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
               --upload-file ./target/function.zip \
-              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip
-            mv ./target/function.zip  $NAME-${LATEST_TAG}.zip
-            aws s3 cp $NAME-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$NAME-${LATEST_TAG}.zip   
+              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip
+            mv ./target/function.zip  $ARTIFACT-${LATEST_TAG}.zip
+            aws s3 cp $ARTIFACT-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip   
             set +e
           }
           opsImageBuildAndPush() {
             set -e
-            NAME="$1"
+            IMAGE_NAME="$1"
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$1" "$2" "$3" "$4"
+            dockerBuildAndPush "$@"
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"

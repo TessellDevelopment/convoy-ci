@@ -34,6 +34,8 @@ jobs:
           configureNpmrc(){
             set +e 
             REPO="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             rm ~/.npmrc
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
             echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
@@ -66,10 +68,22 @@ jobs:
             configureNpmrc "${{env.NEXUS_REPO_NPM}}"
             set -e
             version="$3"
+            requiredInputs="3"
+            validateInputs "$requiredInputs" "$@" 
             yq ".version = \"$version\"" package.json > tmp_package.json
             mv tmp_package.json package.json
             npm publish   
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -123,6 +137,16 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -246,7 +270,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            echo "Starting Docker"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan $IMAGE_NAME
             set +e
@@ -431,6 +456,16 @@ jobs:
             cd ..
             set +e
           }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
+          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -512,6 +547,8 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan "$IMAGE_NAME"
             set +e
@@ -583,6 +620,8 @@ jobs:
           jarBuild() {
             set -e
             VERSION="$3"
+            requiredInputs="3"
+            validateInputs "$requiredInputs" "$@" 
             ./mvnw package -Dversion=$VERSION
             set +e
           }
@@ -596,6 +635,16 @@ jobs:
             mvnwBuild
             dockerBuild "$@"
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
