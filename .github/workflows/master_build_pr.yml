@@ -156,7 +156,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-
           installPythonDependencies() {
             DIR=$1
             if [[ -z "${DIR}" ]]; then
@@ -170,6 +169,14 @@ jobs:
           }
           installPythonDependencies
 
+      - name: Setup Trivy and Dockle
+        run: |
+          setupTrivyDockle() {
+            wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
+            dpkg -i trivy_0.48.3_Linux-64bit.deb
+            curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
+            dpkg -i dockle.deb && rm dockle.deb
+          }
           
       - name: Build
         shell: bash
@@ -290,7 +297,6 @@ jobs:
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
               $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
-              $buildFunction $name $ext $version $file 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -348,11 +354,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: |
-          configureJava() {
-            echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-            echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
-          }
+        run: |  
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -376,6 +378,10 @@ jobs:
             set -e
             cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
             ls -lrta ../helm-chart/values/apps/
+          }
+          configureJava() {
+            echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+            echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
           createPipConf(){
             set -e
@@ -446,7 +452,7 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
-          helmChartBuild(){
+          helmChartBuild() {
             set -e
             CHART_NAME="$1"
             cd scripts
@@ -713,7 +719,7 @@ jobs:
             imageScan "$IMAGE_NAME"
             set +e
           }
-          imageScan(){
+          imageScan() {
             set -e
             export IMAGE_NAME="$1"
             trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest

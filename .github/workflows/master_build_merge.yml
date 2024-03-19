@@ -184,7 +184,6 @@ jobs:
 
       - name: Create pip conf
         run: |
-
           createPipConf() {
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
@@ -216,12 +215,6 @@ jobs:
           }
           installPythonDependencies
           installAwsCli
-
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-          aws configure set region ap-south-1
       
       - name: Build
         shell: bash
@@ -231,9 +224,14 @@ jobs:
             ARTIFACT="$1"
             EXT="$2"
             FILE_PATH="$5"
+            awsConfigureTessellArtifacts
             pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT-${LATEST_TAG}.$EXT
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
+          }
+          awsConfigureTessellArtifacts() {
+            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
           dockerPush() {
             set -e
@@ -249,7 +247,7 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
           }
-          infraProvisionBuild() {
+          infraProvisionBuildAndPush() {
             set -e
             lintCheck
             mkdir -p build/tools
@@ -269,7 +267,7 @@ jobs:
                   --upload-file $FILE_PATH \
                   ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
           }
-          pythonDockerBuild() {
+          pythonDockerBuildAndPush() {
             set -e
             IMAGE="$1"
             rm pip.conf
@@ -301,7 +299,7 @@ jobs:
               echo "dockerFile: $file"
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
-              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
+              "${buildFunction}AndPush" $name $ext $version $file $filePath $baseImage
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -385,6 +383,7 @@ jobs:
           configureJava() {
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
+          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -409,7 +408,7 @@ jobs:
             cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
             ls -lrta ../helm-chart/values/apps/
           }
-          createPipConf(){
+          createPipConf() {
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
@@ -427,7 +426,7 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
-          dbPluginBuild() {
+          dbPluginBuildAndPush() {
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
@@ -481,7 +480,7 @@ jobs:
             cd ..
             set +e
           }
-          gradlewMaven(){
+          gradlewMaven() {
             set -e
             ./gradlew mavenDeploy --console plain --refresh-dependencies \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -499,7 +498,7 @@ jobs:
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
           }
-          gradlewTwineUpload(){
+          gradlewTwineUpload() {
             set -e
             ./gradlew twineUpload --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -538,7 +537,7 @@ jobs:
               set +e
             fi
           }
-          javaDockerBuild() {
+          javaDockerBuildAndPush() {
             set -e
             IMAGE="$1"
             configureJava
@@ -546,7 +545,7 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
-          javaLibraryBuild() {
+          javaLibraryBuildAndPush() {
             set -e
             configureJava
             gradlewMaven
@@ -575,7 +574,7 @@ jobs:
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
           }
-          opaBuild() {
+          opaBuildAndPush() {
             set -e
             ARTIFACT="$1"
             EXTENSION="2"
