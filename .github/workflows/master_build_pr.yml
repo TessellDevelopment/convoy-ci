@@ -168,6 +168,7 @@ jobs:
             echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
+            cat /etc/pip.conf
           }
           createPipConf
         shell: bash
@@ -202,9 +203,7 @@ jobs:
         run: |
           elasticConf() {
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
+            installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
             go run bootstrap.go
@@ -314,6 +313,11 @@ jobs:
             exit(1)
           EOF
             set +e
+          }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           infraProvisionBuild() {
             set -e
@@ -467,12 +471,92 @@ jobs:
           build "dockerImages"
           build "helmCharts"
 
+  build-amd-go-21:
+    if: ${{ inputs.type == 'amd-go-21' }}
+    runs-on: amd-go-21
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Check go Config
+        run: |
+          go version
+          echo $GOPATH
+          echo $GOROOT
+          echo $PATH
+          go env
+          
+      - name: Build
+        shell: bash
+        run: |
+          otelcolBuild() {
+            set -e
+            ARTIFACT="$1"
+            CONFIG="$5"
+            requiredInputs="1 5"
+            validateInputs "$requiredInputs" "$@" 
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
+            go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
+            cd cmd/builder
+            go build .
+            cd ../..
+            GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
+            set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            export PATH=${PATH}:$GOPATH/bin
+            echo $PATH
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .configFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file config <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              echo "ConfigFile: $config"
+              $buildFunction $name $ext $version $file $config
+              echo "Artifact $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
   build-amd:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
       GOPATH: /home/github/go
       NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -513,7 +597,21 @@ jobs:
 
       - name: Build
         shell: bash
-        run: |  
+        run: |
+          agentBuild() {
+            set -e
+            installGoDependencies
+            ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+            SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+            echo $OS
+            echo $SERVICE
+            echo "Building Service"
+            make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
+            set +e
+          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -543,12 +641,12 @@ jobs:
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
           createPipConf(){
-            set -e
             echo "[global]" > pip.conf
             echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
+            cat /etc/pip.conf
           }
           dbPluginBuild() {
             set -e
@@ -592,6 +690,19 @@ jobs:
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             cd ..
+            set +e
+          }
+          goDockerBuild() {
+            set -e
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            installGoDependencies
+            echo "Building the service"
+            export PATH=${PATH}:$GOPATH/bin
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            ./setup -g -i
+            imageScan $IMAGE
             set +e
           }
           gradlewMaven() {
@@ -696,6 +807,11 @@ jobs:
           EOF
             set +e
           }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
+          }
           installPythonDependencies() {
             DIR=$1
             if [[ -z "${DIR}" ]]; then
@@ -710,6 +826,8 @@ jobs:
           javaDockerBuild() {
             set -e
             IMAGE_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             configureJava
             gradlewMavenDocker
             imageScan $IMAGE_NAME
@@ -727,12 +845,24 @@ jobs:
           }
           makeBuild() {
             set -e
+            installGoDependencies
             make service
+            ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            make os=$OS pushprox-client
+            make clean
+            ls -lrta client-package
             set +e
           }
           makeImage() {
             set -e
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             make image
+            imageScan $IMAGE
             set +e
           }
           modifiedDir() {
@@ -768,12 +898,47 @@ jobs:
             gradlewPythonwheel
             set +e
           }
+          qaBuild(){
+            set -e
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            createPipConf
+            setupQAEnv
+            export PYTHONPATH=lib
+            cp configs/qabusiness.json config.json
+            source qavenv/bin/activate
+            make clients -B
+            source qavenv/bin/activate
+            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              IMAGE_NAME="$1"
+              dockerBuild $IMAGE_NAME
+            fi
+            set +e
+          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa
             curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
+          }
+          setupQAEnv() {
+            INSTALL_DIR=/usr/local/bin
+            sudo mkdir -p $INSTALL_DIR/openapitools
+            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m venv qavenv
+            source qavenv/bin/activate
+            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}         
+            python3 -m pip list | grep harness
           }
           terraformBuild(){
             set -e
@@ -905,6 +1070,54 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE_NAME .
             imageScan "$IMAGE_NAME"
+            set +e
+          }
+          dockerMultiBuild() {
+            docker buildx rm multi-platform-builder
+            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+            set -e
+            IMAGE="$1"
+            FILE="$4"
+            requiredInputs="1 4"
+            validateInputs "$requiredInputs" "$@" 
+            docker buildx build -f $FILE --no-cache -t $IMAGE --platform=linux/amd64,linux/arm64 .
+            set +e
+          }
+          dockerMilvusBuild() {
+            docker buildx rm multi-platform-builder
+            docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+            set -e
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+            TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
+            docker buildx build --no-cache -t $IMAGE \
+                                --platform linux/amd64 \
+                                --build-arg HANDLER_TAG=$TASKHANDLER_VERSION \
+                                --build-arg AGENT_TAG=$AGENT_VERSION \
+                                --build-arg NEXUS_USERNAME=${{ secrets.CIPIPELINE_NEXUS_USERNAME }} \
+                                --build-arg NEXUS_PASSWORD=${{ secrets.CIPIPELINE_NEXUS_PASSWORD }} \
+                                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
+                                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
+                                --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+                                --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
+            set +e
+          }
+          jarBuild() {
+            set -e
+            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
+          opsImageBuild() {
+            set -e
+            mvnwBuild
+            dockerBuild "$@"
             set +e
           }
           imageScan() {
