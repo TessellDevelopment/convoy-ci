@@ -914,6 +914,7 @@ jobs:
             cp configs/qabusiness.json config.json
             source qavenv/bin/activate
             make clients -B
+            source qavenv/bin/activate
             python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
             deactivate
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
