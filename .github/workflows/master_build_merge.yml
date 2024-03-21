@@ -682,6 +682,7 @@ jobs:
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKERHUB_ORG_DEV: "tesselldev"
+      NAMESPACE: "convoy"
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -1078,6 +1079,7 @@ jobs:
             createPipConf
             setupQAEnv
             export PYTHONPATH=lib
+            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
             cp configs/qabusiness.json config.json
             source qavenv/bin/activate
             make clients -B
@@ -1105,13 +1107,14 @@ jobs:
             sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
             sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+            python3 -m pip cache purge
             sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
             python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
             python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
             python3 -m venv qavenv
             source qavenv/bin/activate
             python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}         
+            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
             python3 -m pip list | grep harness
             deactivate
           }
