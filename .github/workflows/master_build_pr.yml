@@ -213,6 +213,8 @@ jobs:
           elasticBuild() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             elasticConf
             echo "----------------------------------------------"
             echo "----------- Building Service -----------------"
