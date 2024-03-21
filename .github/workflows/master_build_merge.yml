@@ -1069,7 +1069,7 @@ jobs:
             createPipConf
             setupQAEnv
             export PYTHONPATH=lib
-            cp configs/qarel.json config.json
+            cp configs/qabusiness.json config.json
             source qavenv/bin/activate
             make clients -B
             source qavenv/bin/activate
