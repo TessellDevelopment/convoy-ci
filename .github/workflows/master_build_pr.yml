@@ -501,6 +501,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             CONFIG="$5"
+            requiredInputs="1 5"
+            validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
             go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
@@ -689,6 +691,8 @@ jobs:
           goDockerBuild() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             installGoDependencies
             echo "Building the service"
             export PATH=${PATH}:$GOPATH/bin
@@ -818,6 +822,8 @@ jobs:
           javaDockerBuild() {
             set -e
             IMAGE_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             configureJava
             gradlewMavenDocker
             imageScan $IMAGE_NAME
@@ -838,6 +844,8 @@ jobs:
             installGoDependencies
             make service
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             make os=$OS pushprox-client
             make clean
@@ -847,6 +855,8 @@ jobs:
           makeImage() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             make image
             imageScan $IMAGE
             set +e
@@ -1029,6 +1039,8 @@ jobs:
             set -e
             IMAGE="$1"
             FILE="$4"
+            requiredInputs="1 4"
+            validateInputs "$requiredInputs" "$@" 
             docker buildx build -f $FILE --no-cache -t $IMAGE --platform=linux/amd64,linux/arm64 .
             set +e
           }
@@ -1037,6 +1049,8 @@ jobs:
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
             TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
             docker buildx build --no-cache -t $IMAGE \
@@ -1064,7 +1078,7 @@ jobs:
           opsImageBuild() {
             set -e
             mvnwBuild
-            dockerBuild "$1" "$2" "$3" "$4"
+            dockerBuild "$@"
             set +e
           }
           imageScan() {

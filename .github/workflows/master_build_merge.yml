@@ -592,7 +592,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          otelcolBuild() {
+          otelcolBuildAndPush() {
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
@@ -653,8 +653,8 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
               echo "ConfigFile: $config"
-              $buildFunction $name $ext $version $file $config
-              echo "Artifact $name done"
+              "${buildFunction}AndPush" $name $ext $version $file $config
+              echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
             done
@@ -722,7 +722,7 @@ jobs:
       - name: Build and Push
         shell: bash
         run: |
-          agentBuild () {
+          agentBuild() {
             set -e
             installGoDependencies
             ARTIFACT="$1"
