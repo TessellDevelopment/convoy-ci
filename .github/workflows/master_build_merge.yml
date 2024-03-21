@@ -277,6 +277,8 @@ jobs:
           elasticBuildAndPush() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             elasticConf
             echo "----------------------------------------------"
             echo "----------- Building Service -----------------"
@@ -335,6 +337,8 @@ jobs:
             FILE="$3"
             GROUP_ID="$4"
             VERSION="$5"
+            requiredInputs="1 2 3 4 5"
+            validateInputs "$requiredInputs" "$@" 
             mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
                 -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
@@ -462,6 +466,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
             NAME=$(echo "$ARTIFACT" | awk -F '-linux' '{print $1}')
             if [ "$NAME" == "$ARTIFACT" ]; then
                 NAME=$(echo "$ARTIFACT" | awk -F '-windows' '{print $1}')
@@ -486,6 +492,8 @@ jobs:
             FILE="$3"
             GROUP_ID="$4"
             VERSION="$5"
+            requiredInputs="1 2 3 4 5"
+            validateInputs "$requiredInputs" "$@" 
             mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
                 -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
@@ -791,6 +799,8 @@ jobs:
           goDockerBuild() {
             set -e
             IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             go install golang.org/x/tools/cmd/goimports@latest
             echo "Building the service"
             export PATH=${PATH}:$GOPATH/bin
