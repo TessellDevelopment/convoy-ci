@@ -909,7 +909,6 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             createPipConf
             setupQAEnv
-            export PYTHONPATH=lib
             export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
             cp configs/qabusiness.json config.json
             source qavenv/bin/activate
