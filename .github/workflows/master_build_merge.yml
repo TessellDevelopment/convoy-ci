@@ -1070,14 +1070,13 @@ jobs:
             setupQAEnv
             export PYTHONPATH=lib
             cp configs/qabusiness.json config.json
-            source qavenv/bin/activate
             make clients -B
-            source qavenv/bin/activate
             python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               IMAGE_NAME="$1"
               dockerBuildAndPush $IMAGE_NAME
             fi
+            deactivate
             set +e
           }
           setupOpa() {
