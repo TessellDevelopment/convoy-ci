@@ -600,6 +600,8 @@ jobs:
             set -e
             installGoDependencies
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
             echo $OS
@@ -894,12 +896,47 @@ jobs:
             gradlewPythonwheel
             set +e
           }
+          qaBuild(){
+            set -e
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            createPipConf
+            setupQAEnv
+            export PYTHONPATH=lib
+            cp configs/qarel.json config.json
+            source qavenv/bin/activate
+            make clients -B
+            source qavenv/bin/activate
+            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              IMAGE_NAME="$1"
+              dockerBuild $IMAGE_NAME
+            fi
+            set +e
+          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa
             curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
+          }
+          setupQAEnv() {
+            INSTALL_DIR=/usr/local/bin
+            sudo mkdir -p $INSTALL_DIR/openapitools
+            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m venv qavenv
+            source qavenv/bin/activate
+            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}         
+            python3 -m pip list | grep harness
           }
           terraformBuild(){
             set -e
