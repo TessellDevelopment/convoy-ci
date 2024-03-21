@@ -667,7 +667,11 @@ jobs:
               FILE="./Dockerfile"
             fi
             echo "$FILE"
-            docker build -f $FILE -t $IMAGE .
+            docker build -f $FILE -t $IMAGE \
+                --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
+                --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
             imageScan $IMAGE
             set +e
           }
@@ -675,7 +679,7 @@ jobs:
             set -e
             IMAGE="$1"
             GOOS=linux GOARCH=amd64 go build .
-            dockerBuild $@
+            dockerBuild "$@"
             set +e
           }
           functionBuild() {
@@ -900,19 +904,20 @@ jobs:
           }
           qaBuild(){
             set -e
-            requiredInputs="1"
+            requiredInputs="1 3"
             validateInputs "$requiredInputs" "$@" 
             createPipConf
-            setupQAEnv
             export PYTHONPATH=lib
             cp configs/qabusiness.json config.json
+            setupQAEnv
             make clients -B
             python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              IMAGE_NAME="$1"
-              dockerBuild $IMAGE_NAME
-            fi
             deactivate
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              cd scripts
+              dockerBuild "$@"
+              cd ..
+            fi
             set +e
           }
           setupOpa() {
@@ -1067,8 +1072,11 @@ jobs:
             echo "$FILE"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            docker build -f $FILE -t $IMAGE_NAME .
-            imageScan "$IMAGE_NAME"
+            docker build -f $FILE -t $IMAGE_NAME \
+                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
+                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
             set +e
           }
           dockerMultiBuild() {
