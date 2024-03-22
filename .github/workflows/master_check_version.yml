@@ -26,6 +26,9 @@ jobs:
               if grep -q 'terraform' convoy.yaml; then
                 echo "Tf-module repository running version check"
                 echo "check=true" >> $GITHUB_OUTPUT
+              elif grep -q 'helm' convoy.yaml
+                echo "Helm repository running version check"
+                echo "check=true" >> $GITHUB_OUTPUT
               else
                 echo "Version not found in convoy.yaml"
                 echo "check=false" >> $GITHUB_OUTPUT
