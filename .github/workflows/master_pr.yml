@@ -13,10 +13,10 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382
     secrets: inherit
 
-  build-file:
+  runner-check:
     runs-on: non-build
     outputs:
-      type: ${{steps.build-type.outputs.type}}
+      type: ${{steps.runner-type.outputs.type}}
     needs: [dev-checks,version-check]
     steps:
 
@@ -25,16 +25,16 @@ jobs:
           fetch-depth: 0
 
       - name: Determine build type from Convoy
-        id: build-type
+        id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
 
   build:
-    needs: build-file
+    needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382
     with:
-      type: ${{needs.build-file.outputs.type}}
+      type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
 
   check-commits:
