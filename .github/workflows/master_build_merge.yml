@@ -1153,9 +1153,14 @@ jobs:
             set +e
           }
           tsmZipBuildAndPush() {
-            tsmZipBuild
+            tsmZipBuild $@
             set -e
-            mvnDeploy "$ARTIFACT" "zip" "build/$ARTIFACT.zip" "tessell.tsm.infra" "$VERSION"
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            VERSION="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "build/$ARTIFACT.$EXTENSION" "tessell.tsm.infra" "$VERSION"
             set +e
           }
           validateInputs() {
