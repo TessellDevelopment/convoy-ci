@@ -740,7 +740,7 @@ jobs:
           }
           
           gradlewMavenDocker() {
-            ./gradlew mavenPackage dockerTag --console plain \
+            ./gradlew mavenPackage docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
