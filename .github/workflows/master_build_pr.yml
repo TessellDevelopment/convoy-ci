@@ -738,6 +738,15 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
+          
+          gradlewMavenDocker() {
+            ./gradlew mavenPackage dockerTag --console plain \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
+              -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
+          }
+          
           gradlewPythonwheel() {
             set -e
             ./gradlew pythonWheel --console plain \
