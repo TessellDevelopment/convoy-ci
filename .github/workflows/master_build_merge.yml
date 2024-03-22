@@ -827,9 +827,9 @@ jobs:
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
-            mv "$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
+            mv "$PLUGIN_NAME/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
-            cd ../..
+            set +e
           }
           dockerBuild() {
             set -e
@@ -905,7 +905,6 @@ jobs:
             set +e
           }
           gradlewMaven() {
-            set -e
             ./gradlew mavenDeploy --console plain --refresh-dependencies \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
@@ -913,7 +912,6 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
-            set +e
           }
           gradlewMavenDocker() {
             ./gradlew mavenPackage dockerTag --console plain \
@@ -923,7 +921,6 @@ jobs:
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
           }
           gradlewTwineUpload() {
-            set -e
             ./gradlew twineUpload --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
@@ -931,17 +928,14 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_py="${{ vars.NEXUS_PUSH_REPOS_PY }}" \
               -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" 
-            set +e
           }
           gradlewUploadPlugin() {
-            set -e
             ./gradlew createMvnSettings uploadPlugin --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" 
-            set +e
           }
           helmChartBuildAndPush() {
             set -e
@@ -1071,6 +1065,7 @@ jobs:
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewTwineUpload
+            set +e
           }
           qaBuildAndPush(){
             set -e
