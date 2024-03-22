@@ -1185,7 +1185,7 @@ jobs:
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             if [[ "$language" == "terraform" ]]; then
-              terraformBuild
+              terraformBuildAndPush
               return
             fi
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
