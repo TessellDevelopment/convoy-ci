@@ -91,7 +91,7 @@ jobs:
             set -e
             npm install
             npm run build
-            configureNpmrc "${{vars.NEXUS_REPO_NPM}}"
+            configureNpmrc "${{vars.NEXUS_PUSH_REPOS_NPM}}"
             set -e
             version="$3"
             requiredInputs="3"
