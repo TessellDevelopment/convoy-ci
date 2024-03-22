@@ -1034,14 +1034,14 @@ jobs:
           opaBuildAndPush() {
             set -e
             ARTIFACT="$1"
-            EXTENSION="2"
+            EXTENSION="$2"
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
             setupOpa
             ~/opa build policies --output bundles/opa-policies.tar.gz
             awsConfigureTessellArtifacts
             pushToNexus "./bundles/opa-policies.tar.gz" $ARTIFACT "$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACTS/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           opsImageBuildAndPush() {
