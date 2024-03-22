@@ -6,11 +6,11 @@ on:
 jobs:
 
   dev-checks:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-1382-1
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-1382
     secrets: inherit
 
   version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382-1
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-1382
     secrets: inherit
 
   runner-check:
@@ -32,7 +32,7 @@ jobs:
 
   build:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382-1
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-1382
     with:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
