@@ -41,7 +41,7 @@ jobs:
       - name: Check if tag exists
         run: |
           current_tag="$(git tag --contains ${{ github.event.pull_request.merge_commit_sha }})"
-          if [[ -z "$current_tag" ]]; then
+          if [[ ! -z "$current_tag" ]]; then
             echo "Tag already exists for commit ${{ github.event.pull_request.merge_commit_sha }}: $current_tag"
             echo "CURRENT_TAG=$current_tag" >> $GITHUB_ENV
             echo "TAG_EXISTS=true" >> $GITHUB_ENV
