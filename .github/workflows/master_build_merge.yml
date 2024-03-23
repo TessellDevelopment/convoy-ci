@@ -239,7 +239,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          artifactPush() {
+          artifactCopyAndPush() {
             set -e
             ARTIFACT="$1"
             EXT="$2"
@@ -255,7 +255,7 @@ jobs:
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
           }
-          dockerPush() {
+          dockerCopyAndPush() {
             set -e
             IMAGE="$1"
             BASE_IMAGE="$6"
