@@ -323,7 +323,9 @@ jobs:
             lintCheck
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
+            IMAGE="$1"
             gradlewDockerTag
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
           installGoDependencies() {
@@ -841,7 +843,7 @@ jobs:
             echo "$FILE"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            docker build -f $FILE -t $IMAGE_NAME \
+            docker build -f $FILE -t $IMAGE \
                         --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
                         --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
@@ -850,15 +852,15 @@ jobs:
           }
           dockerBuildAndPush() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             VERSION="$3"
             TAG=${LATEST_TAG}
             if [[ "$VERSION" != "null" ]]; then
               TAG=$VERSION
             fi
             dockerBuild "$@"
-            docker tag $IMAGE_NAME ${DOCKERHUB_ORG}/$IMAGE_NAME:$TAG
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:$TAG
+            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$TAG
+            docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
           dockerBuildOps() {
@@ -1278,7 +1280,7 @@ jobs:
             echo "$FILE"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            docker build -f $FILE -t $IMAGE_NAME \
+            docker build -f $FILE -t $IMAGE \
                         --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
                         --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
@@ -1287,15 +1289,15 @@ jobs:
           }
           dockerBuildAndPush() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             VERSION="$3"
             TAG=${LATEST_TAG}
             if [[ "$VERSION" != "null" ]]; then
               TAG=$VERSION
             fi
             dockerBuild "$@"
-            docker tag $IMAGE_NAME ${DOCKERHUB_ORG}/$IMAGE_NAME:$TAG
-            docker push ${DOCKERHUB_ORG}/$IMAGE_NAME:$TAG
+            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$TAG
+            docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
           dockerMultiBuild() {
@@ -1377,7 +1379,7 @@ jobs:
           }
           opsImageBuildAndPush() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuildAndPush "$@"
             set +e
