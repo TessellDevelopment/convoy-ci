@@ -468,7 +468,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          goLibraryBuild() {
+          goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
