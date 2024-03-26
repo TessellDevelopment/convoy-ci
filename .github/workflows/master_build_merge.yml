@@ -548,6 +548,15 @@ jobs:
           build "dockerImages"
           build "helmCharts"
 
+      - name: Cleanup
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          helm repo remove nexus-prod
+          docker container prune --force
+          docker volume prune --force
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -667,6 +676,15 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          helm repo remove nexus-prod
+          docker container prune --force
+          docker volume prune --force
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -1222,6 +1240,7 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          helm repo remove nexus-prod
           docker container prune --force
           docker volume prune --force
                   
@@ -1432,9 +1451,10 @@ jobs:
         run: |
           set +e
           sudo rm -rf target
+          helm repo remove nexus-prod
           docker container prune --force
           docker volume prune --force
-                  
+                    
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
