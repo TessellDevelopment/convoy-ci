@@ -931,7 +931,7 @@ jobs:
             cd ..
             set +e
           }
-          goDockerBuild() {
+          goDockerBuildAndPush() {
             set -e
             IMAGE="$1"
             installGoDependencies
