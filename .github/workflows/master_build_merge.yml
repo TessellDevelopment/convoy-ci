@@ -251,9 +251,15 @@ jobs:
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
           }
+          awsConfigureDevqaInfra() {
+            aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           awsConfigureTessellArtifacts() {
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set region ap-south-1
           }
           dockerBuild() {
             set -e
@@ -300,7 +306,10 @@ jobs:
             cd ..
             elasticTarBuild
             mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-windows.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            awsConfigureDevqaInfra
+            aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             set +e
           }
           elasticTarBuild() {
