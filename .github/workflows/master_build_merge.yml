@@ -804,7 +804,7 @@ jobs:
             set -e
             mvnDeploy "$ARTIFACT" "tar" "package/$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
+            aws s3 cp "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
             set +e
           }
           awsConfigureDevqaInfra() {
