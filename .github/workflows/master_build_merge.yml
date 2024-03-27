@@ -636,6 +636,8 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             CONFIG="$5"
+            requiredInputs="1 2 5"
+            validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
             go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
@@ -659,6 +661,8 @@ jobs:
             FILE="$3"
             GROUP_ID="$4"
             VERSION="$5"
+            requiredInputs="1 2 3 4 5"
+            validateInputs "$requiredInputs" "$@" 
             mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
                 -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \

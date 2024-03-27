@@ -433,6 +433,8 @@ jobs:
           goLibraryBuild() {
             set -e
             ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
             NAME=$(echo "$ARTIFACT" | awk -F '-linux' '{print $1}')
             if [ "$NAME" == "$ARTIFACT" ]; then
                 NAME=$(echo "$ARTIFACT" | awk -F '-windows' '{print $1}')
@@ -448,6 +450,16 @@ jobs:
               make service os=$OS engine=$ENGINE
             fi
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -532,6 +544,16 @@ jobs:
             cd ../..
             GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
             set +e
+          }
+          validateInputs() {
+            local required=($1)
+            shift
+            for index in "${required[@]}"; do
+              if [ -z "${!index}" ]; then
+                echo "Error: Required Argument at index $index is null or empty."
+                exit 1
+              fi
+            done
           }
           build() {
             type="$1"
@@ -739,7 +761,6 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
-          
           gradlewMavenDocker() {
             ./gradlew mavenPackage docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -747,7 +768,6 @@ jobs:
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
           }
-          
           gradlewPythonwheel() {
             set -e
             ./gradlew pythonWheel --console plain \
