@@ -76,7 +76,7 @@ jobs:
             set +e
           }
           gradlewUIBuildAndPush() {
-            gradlewUIBuild
+            gradlewUIBuild "$@"
             set -e
             ./gradlew publish --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -468,12 +468,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-          aws configure set region ap-south-1
-
       - name: Check go Config
         run: |
           go version
@@ -485,6 +479,11 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          awsConfigureTessellTools() {
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -506,6 +505,7 @@ jobs:
               make service os=$OS engine=$ENGINE
             fi
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
+            awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
             set +e
           }
@@ -621,16 +621,15 @@ jobs:
           echo $GOROOT
           echo $PATH
           go env
-
-      - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-          aws configure set region ap-south-1
           
       - name: Build
         shell: bash
         run: |
+          awsConfigureTessellTools() {
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           otelcolBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -652,6 +651,7 @@ jobs:
             tar -zcvf $ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml package/node_exporter.yaml \
              package/db_exporter.yaml package/otelcol/$BUILD_FILE package/otelcol.service
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otel-collector" "${LATEST_TAG}"
+            awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otel-collector/${LATEST_TAG}/
             set +e
           }
@@ -800,19 +800,22 @@ jobs:
             set +e
           }
           agentBuildAndPush() {
-            agentBuild
+            agentBuild "$@"
             set -e
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
+            awsConfigureTessellTools
             awsS3Push "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
             set +e
           }
           awsConfigureDevqaInfra() {
             aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+            aws configure set region ap-south-1
           }
           awsConfigureTessellArtifacts() {
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set region ap-south-1
           }
           awsConfigureTessellTools() {
             aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
@@ -864,17 +867,6 @@ jobs:
             echo "extra-index-url = https://pypi.org/simple" >> pip.conf
             sudo cp pip.conf /etc/pip.conf
             cat /etc/pip.conf
-          }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
           }
           dbPluginBuildAndPush() {
             set -e
@@ -932,7 +924,7 @@ jobs:
             set -e
             IMAGE="$1"
             GOOS=linux GOARCH=amd64 go build .
-            dockerBuildAndPush $@
+            dockerBuildAndPush "$@"
             set +e
           }
           functionBuildAndPush() {
@@ -1024,6 +1016,17 @@ jobs:
             go version
             go install golang.org/x/tools/cmd/goimports@latest
             which go
+          }
+          installPythonDependencies() {
+            DIR=$1
+            if [[ -z "${DIR}" ]]; then
+              DIR='.'
+            fi
+            python3 -m pip install --upgrade pip
+            python3 -m pip install flake8 pytest twine wheel
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
           }
           javaDockerBuildAndPush() {
             set -e
@@ -1213,7 +1216,7 @@ jobs:
             set +e
           }
           tsmZipBuildAndPush() {
-            tsmZipBuild $@
+            tsmZipBuild "$@"
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
