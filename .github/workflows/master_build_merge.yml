@@ -1041,7 +1041,7 @@ jobs:
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
-          makeBuild() {
+          makeBuildAndPush() {
             set -e
             installGoDependencies
             make service
@@ -1055,7 +1055,7 @@ jobs:
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
             set +e
           }
-          makeImage() {
+          makeImageAndPush() {
             set -e
             IMAGE="$1"
             make image
