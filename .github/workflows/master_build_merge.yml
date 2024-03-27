@@ -1402,6 +1402,8 @@ jobs:
           dockerPullAndPush() {
             set -e
             IMAGE="$1"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
             VERSION=$(yq e ".consumes.dockerImages[] | select(.name == \"$IMAGE\") | .version" convoy.yaml)
             docker pull ${DOCKERHUB_ORG}/$IMAGE:$VERSION
             docker tag ${DOCKERHUB_ORG}/$IMAGE:$VERSION ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG}
