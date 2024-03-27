@@ -804,7 +804,7 @@ jobs:
             set -e
             mvnDeploy "$ARTIFACT" "tar" "package/$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}"
+            aws s3 cp "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
             set +e
           }
           awsConfigureDevqaInfra() {
@@ -1363,7 +1363,7 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
-          dockerMultiBuild() {
+          dockerMultiBuildAndPush() {
             awsConfigureDevqaInfra
             docker buildx rm multi-platform-builder
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
@@ -1371,11 +1371,13 @@ jobs:
             aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{vars.TESSELL_DEV_ECR}}
             IMAGE="$1"
             FILE="$4"
+            requiredInputs="1 4"
+            validateInputs "$requiredInputs" "$@" 
             docker buildx build --push -f $FILE --no-cache -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} --platform=linux/amd64,linux/arm64 .
             docker build --push -f $FILE --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG} .
             set +e
           }
-          dockerMilvusBuild() {
+          dockerMilvusBuildAndPush() {
             awsConfigureDevqaInfra
             docker buildx rm multi-platform-builder
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
@@ -1397,7 +1399,7 @@ jobs:
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
             set +e
           }
-          dockerPush() {
+          dockerPullAndPush() {
             set -e
             IMAGE="$1"
             VERSION=$(yq e ".consumes.dockerImages[] | select(.name == \"$IMAGE\") | .version" convoy.yaml)
