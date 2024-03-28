@@ -13,14 +13,6 @@ jobs:
   check-approval:
     runs-on: non-build
     steps:
-        - name: Checkout code
-          uses: actions/checkout@v4.1.1
-
-        - name: Dump GitHub context
-          env:
-            GITHUB_CONTEXT: ${{ toJson(github) }}
-          run: |
-            echo "$GITHUB_CONTEXT"
 
         - name: Check commits
           id: get-pr-commits
