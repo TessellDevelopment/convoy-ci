@@ -15,6 +15,10 @@ jobs:
           fetch-depth: 0
           token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
+      - name: Added Wait
+        run: |
+          Sleep 10
+
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.4
         with:
