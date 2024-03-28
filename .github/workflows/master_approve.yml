@@ -58,7 +58,7 @@ jobs:
   check-approval:
     needs: [check-update-branch,read-codeowners]
     if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@TDEVOPS-1382
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
@@ -66,6 +66,6 @@ jobs:
   auto-merge:
     needs: check-approval
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-1382
     secrets: inherit 
       
