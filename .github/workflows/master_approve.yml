@@ -62,4 +62,10 @@ jobs:
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
+
+  auto-merge:
+    needs: check-approval
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main 
+    secrets: inherit 
       
