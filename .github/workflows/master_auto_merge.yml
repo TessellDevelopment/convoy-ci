@@ -15,10 +15,6 @@ jobs:
           fetch-depth: 0
           token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
-      - name: Added Wait
-        run: |
-          sleep 30
-
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.4
         with:
@@ -32,7 +28,8 @@ jobs:
           pull-request-number: "${{ github.event.pull_request.number }}"
           merge-method: squash
 
-      - name: Rerun failed jobs in the current workflow
+      - name: Rerun failed jobs in Auto merge
+        if: failure()
         env:
           GH_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
         run: gh run rerun ${{ github.run_id }} --failed
