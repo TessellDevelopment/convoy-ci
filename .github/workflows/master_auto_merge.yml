@@ -17,7 +17,7 @@ jobs:
 
       - name: Added Wait
         run: |
-          Sleep 10
+          sleep 10
 
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.4
