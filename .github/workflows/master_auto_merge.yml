@@ -19,29 +19,19 @@ jobs:
         uses: juliangruber/approve-pull-request-action@v2.0.4
         with:
           github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
-          number: "${{ github.event.pull_request.number }}"
+          number: "${{ github.event.number }}"
 
-      # - name: Enable Auto Merge
-      #   uses: peter-evans/enable-pull-request-automerge@v3.0.0
-      #   with:
-      #     token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
-      #     pull-request-number: "${{ github.event.pull_request.number }}"
-      #     merge-method: squash
+      - name: Enable Auto Merge
+        uses: peter-evans/enable-pull-request-automerge@v3.0.0
+        with:
+          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
+          pull-request-number: "${{ github.event.number }}"
+          merge-method: squash
 
-      - name: Enable Auto merge
-        run: |
-          gh pr merge -R "${{github.repository}}" --squash --auto "${{ github.event.pull_request.number }}"
-
-      - name: Rerun failed jobs in Auto merge
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
         if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-        run: gh run rerun ${{ github.run_id }} --failed
-
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   with:
-      #      status: ${{ job.status }}
-      #      steps: ${{ toJson(steps) }}
-      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-      #   if: failure()
