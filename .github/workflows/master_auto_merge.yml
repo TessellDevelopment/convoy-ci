@@ -17,7 +17,7 @@ jobs:
 
       - name: Added Wait
         run: |
-          sleep 10
+          sleep 30
 
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.4
@@ -32,10 +32,10 @@ jobs:
           pull-request-number: "${{ github.event.pull_request.number }}"
           merge-method: squash
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-        if: failure()
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   with:
+      #      status: ${{ job.status }}
+      #      steps: ${{ toJson(steps) }}
+      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+      #   if: failure()
