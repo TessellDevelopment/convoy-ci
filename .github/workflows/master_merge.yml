@@ -6,7 +6,7 @@ on:
 jobs:
 
   file-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-1382
     secrets: inherit
 
   runner-check:
