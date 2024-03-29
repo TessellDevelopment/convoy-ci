@@ -27,7 +27,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           COMMIT_HASH: "${{github.sha}}"
           COMMITTED_AT: "${{github.event.pull_request.merged_at}}"
