@@ -198,12 +198,12 @@
             else
               echo "No double commit conflicts found in Branch or PR title."
             fi
-            
+
         - name: Check for Jsonlint
           run: |
             set -e
             git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
-
+  
         - name: Output PR diff 
           id: pr_diff
           uses: actions/github-script@v7.0.1
