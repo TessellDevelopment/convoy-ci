@@ -261,6 +261,11 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
             aws configure set region ap-south-1
           }
+          awsConfigureTessellTools() {
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           dockerBuild() {
             set -e
             IMAGE="$1"
@@ -307,7 +312,7 @@ jobs:
             elasticTarBuild
             mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
             mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-windows.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
-            awsConfigureDevqaInfra
+            awsConfigureTessellTools
             aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             set +e
@@ -1059,6 +1064,7 @@ jobs:
             make clean
             ls -lrta client-package
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            awsConfigureTessellTools
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
             set +e
           }
