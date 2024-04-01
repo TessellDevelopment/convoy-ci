@@ -260,9 +260,9 @@ jobs:
           }
           imageScan(){
             set -e
-            export IMAGE_NAME="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            export IMAGE="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
             python3 - <<EOF
           import requests
           import json
@@ -272,12 +272,12 @@ jobs:
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
-          IMAGE_NAME = os.environ.get('IMAGE_NAME')
+          IMAGE = os.environ.get('IMAGE')
 
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
@@ -330,13 +330,13 @@ jobs:
           infraProvisionBuild() {
             set -e
             lintCheck
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewPythonwheel
-            imageScan $IMAGE_NAME
+            imageScan $IMAGE
             set +e
           }
           lintCheck() {
@@ -345,11 +345,11 @@ jobs:
           }
           pythonDockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             rm pip.conf
             lintCheck
             gradlewPythonwheel
-            imageScan $IMAGE_NAME
+            imageScan $IMAGE
             set +e
           }
           validateInputs() {
@@ -820,9 +820,9 @@ jobs:
           }
           imageScan(){
             set -e
-            export IMAGE_NAME="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            export IMAGE="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
             python3 - <<EOF
           import requests
           import json
@@ -832,12 +832,12 @@ jobs:
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
-          IMAGE_NAME = os.environ.get('IMAGE_NAME')
+          IMAGE = os.environ.get('IMAGE')
 
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
@@ -900,12 +900,12 @@ jobs:
           }
           javaDockerBuild() {
             set -e
-            IMAGE_NAME="$1"
+            IMAGE="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             configureJava
             gradlewMavenDocker
-            imageScan $IMAGE_NAME
+            imageScan $IMAGE
             set +e
           }
           javaLibraryBuild() {
@@ -1147,7 +1147,7 @@ jobs:
             echo "$FILE"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            docker build -f $FILE -t $IMAGE_NAME \
+            docker build -f $FILE -t $IMAGE \
                         --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
                         --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
@@ -1204,9 +1204,9 @@ jobs:
           }
           imageScan() {
             set -e
-            export IMAGE_NAME="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE_NAME:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE_NAME:latest
+            export IMAGE="$1"
+            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
             python3 - <<EOF
           import requests
           import json
@@ -1216,12 +1216,12 @@ jobs:
           IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
           CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
           REPO = os.environ.get('REPO')
-          IMAGE_NAME = os.environ.get('IMAGE_NAME')
+          IMAGE = os.environ.get('IMAGE')
 
           def post_to_slack(message):
             usergroup_id=os.environ.get('DEVOPS_TEAM')
             mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE_NAME}\`, please check \n\`\`\`{message}\`\`\`"
+            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
             client = WebClient(token=os.environ.get('SLACK_TOKEN'))
             try:
               response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
