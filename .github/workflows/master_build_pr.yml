@@ -530,6 +530,27 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          goLibraryBuild() {
+            set -e
+            ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            NAME=$(echo "$ARTIFACT" | awk -F '-linux' '{print $1}')
+            if [ "$NAME" == "$ARTIFACT" ]; then
+                NAME=$(echo "$ARTIFACT" | awk -F '-windows' '{print $1}')
+                OS="windows"
+            else
+                OS="linux"
+            fi
+            ENGINE=$(echo "$ARTIFACT" | awk -F "$NAME-$OS" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
+            echo "Name: $NAME, OS: $OS, Engine: $ENGINE"
+            if [[ "$ENGINE" == "null" || -z "$ENGINE" ]]; then
+              make service os=$OS
+            else
+              make service os=$OS engine=$ENGINE
+            fi
+            set +e
+          }
           otelcolBuild() {
             set -e
             ARTIFACT="$1"
