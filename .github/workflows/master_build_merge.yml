@@ -1449,7 +1449,7 @@ jobs:
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
             ./mvnw package -Dversion=$VERSION
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops.$ARTIFACT" "$VERSION"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops" "$VERSION"
             set +e
           }
           mvnDeploy() {
