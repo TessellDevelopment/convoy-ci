@@ -856,7 +856,7 @@ jobs:
             if [ -d "flyway" ]; then
               echo "The 'flyway' directory exists in this repository."
               DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
-              docker tag ${{env.DOCKERHUB_ORG_DEV}}/$DOCKER_FLYWAY_IMAGE_NAME:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+              docker tag ${{env.DOCKERHUB_ORG}}/$DOCKER_FLYWAY_IMAGE_NAME:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
               docker push ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
             else
               echo "The 'flyway' directory does not exists in this repository."
