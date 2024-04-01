@@ -1448,13 +1448,24 @@ jobs:
             VERSION="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            awsConfigureTessellopsArtifacts
             ./mvnw package -Dversion=$VERSION
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-              --upload-file ./target/$ARTIFACT-$VERSION.$EXTENSION \
-              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-$VERSION.$EXTENSION
-            aws s3 cp ./target/$ARTIFACT-$VERSION.$EXTENSION s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-$VERSION.$EXTENSION 
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops.$ARTIFACT" "$VERSION"
             set +e
+          }
+          mvnDeploy() {
+            ARTIFACT_ID="$1"
+            EXTENSION="$2"
+            FILE="$3"
+            GROUP_ID="$4"
+            VERSION="$5"
+            requiredInputs="1 2 3 4 5"
+            validateInputs "$requiredInputs" "$@" 
+            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
+                -DgeneratePom=true -Dpackaging=$EXTENSION \
+                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
+                -Dfile=$FILE -DrepositoryId=nexus
           }
           mvnwBuildAndPush() {
             set -e
