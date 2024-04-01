@@ -1448,7 +1448,6 @@ jobs:
             VERSION="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            awsConfigureTessellopsArtifacts
             ./mvnw package -Dversion=$VERSION
             mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops.$ARTIFACT" "$VERSION"
             set +e
