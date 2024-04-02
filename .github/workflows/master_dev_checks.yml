@@ -230,13 +230,19 @@
           uses: actions/github-script@v7.0.1
           with:
             script: |
-              const chunkSize = 100;
+              const chunkSize = 10;
               const response = ${{steps.pr_diff.outputs.response}};
+              console.log("Check");
               const files = response.data.files;
+              console.log("Check");
               const totalFiles = files.length;
+              console.log("Check");
               for (let i = 0; i < totalFiles; i += chunkSize) {
+                  console.log("Check");
                   const chunk = files.slice(i, i + chunkSize);
+                  console.log("Check");
                   chunk.forEach(function(file_entry) {
+                      console.log("Check");
                       console.log(file_entry.filename);
                       const dir_name = file_entry.filename.split("/")[0];
                       console.log(file_entry.patch);
