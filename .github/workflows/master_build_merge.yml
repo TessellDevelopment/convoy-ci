@@ -390,9 +390,17 @@ jobs:
             FILE_NAME="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                  --upload-file $FILE_PATH \
-                  ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           pythonDockerBuildAndPush() {
             set -e
@@ -1160,9 +1168,17 @@ jobs:
             FILE_NAME="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                  --upload-file $FILE_PATH \
-                  ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           pythonLibraryBuildAndPush() {
             set -e
@@ -1483,9 +1499,17 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellopsArtifacts
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-              --upload-file ./target/function.zip \
-              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file ./target/function.zip -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
             mv ./target/function.zip  $ARTIFACT-${LATEST_TAG}.zip
             aws s3 cp $ARTIFACT-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip   
             set +e
