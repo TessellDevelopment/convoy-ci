@@ -262,12 +262,13 @@
             script: |
               const fs = require('fs');
               let path = "";
+              let response;
               fs.readFile('response.txt', 'utf8', (err, resData) => {
                 if (err) {
                     console.error('Error reading file:', err);
                     process.exit(1);
                 }
-                let response = JSON.parse(resData);
+                response = JSON.parse(resData);
                 response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                       (file_entry.status == 'modified' || file_entry.status == 'removed')) {
