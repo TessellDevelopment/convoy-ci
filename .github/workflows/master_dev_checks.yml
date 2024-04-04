@@ -233,20 +233,24 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (data) => {
-                let response = JSON.parse(data);
+              fs.readFile('response.txt', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
+                let response = JSON.parse(resData);
                 response.data.files.forEach(function(file_entry) {
-                console.log(file_entry.filename);
-                dir_name = file_entry.filename.split("/")[0];
-                console.log(file_entry.patch);
-                if(typeof file_entry.patch !== 'undefined'){
-                  if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
-                    core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
+                  console.log(file_entry.filename);
+                  dir_name = file_entry.filename.split("/")[0];
+                  console.log(file_entry.patch);
+                  if(typeof file_entry.patch !== 'undefined'){
+                    if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
+                      core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
+                    }
                   }
-                }
-                else{
-                  console.log("Skipping:" + file_entry.filename);
-                }
+                  else{
+                    console.log("Skipping:" + file_entry.filename);
+                  }
               });
               console.log("No merge conflicts found"); 
               });
@@ -257,8 +261,12 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (data) => {
-                let response = JSON.parse(data);
+              fs.readFile('response.json', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
+                let response = JSON.parse(resData);
                 let path = "";
                 response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
@@ -318,8 +326,12 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (data) => {
-                let response = JSON.parse(data);
+              fs.readFile('response.json', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
+                let response = JSON.parse(resData);
                 var terraform_file = [] 
                 response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
