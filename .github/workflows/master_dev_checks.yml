@@ -233,7 +233,11 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (resData) => {
+              fs.readFile('response.txt', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
                 let response = JSON.parse(resData);
                 response.data.files.forEach(function(file_entry) {
                   console.log(file_entry.filename);
@@ -258,7 +262,11 @@
             script: |
               const fs = require('fs');
               let path = "";
-              fs.readFile('response.json', 'utf8', (resData) => {
+              fs.readFile('response.json', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
                 let response = JSON.parse(resData);
                 response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
@@ -318,7 +326,11 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (resData) => {
+              fs.readFile('response.json', 'utf8', (err, resData) => {
+                if (err) {
+                    console.error('Error reading file:', err);
+                    process.exit(1);
+                }
                 let response = JSON.parse(resData);
                 var terraform_file = [] 
                 response.data.files.forEach(function(file_entry) {
