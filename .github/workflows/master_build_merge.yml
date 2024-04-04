@@ -1277,6 +1277,7 @@ jobs:
             cd $DIR
             tar -cf ../$ARTIFACT.$EXTENSION .
             cd ..
+            ls
             set +e
           }
           vssTarBuildAndPush() {
