@@ -262,7 +262,7 @@
             script: |
               const fs = require('fs');
               let path = "";
-              fs.readFile('response.json', 'utf8', (err, resData) => {
+              fs.readFile('response.txt', 'utf8', (err, resData) => {
                 if (err) {
                     console.error('Error reading file:', err);
                     process.exit(1);
@@ -326,7 +326,7 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (err, resData) => {
+              fs.readFile('response.txt', 'utf8', (err, resData) => {
                 if (err) {
                     console.error('Error reading file:', err);
                     process.exit(1);
