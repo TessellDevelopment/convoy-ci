@@ -233,11 +233,7 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
+              fs.readFile('response.txt', 'utf8', (resData) => {
                 let response = JSON.parse(resData);
                 response.data.files.forEach(function(file_entry) {
                   console.log(file_entry.filename);
@@ -261,13 +257,9 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
+              let path = "";
+              fs.readFile('response.json', 'utf8', (resData) => {
                 let response = JSON.parse(resData);
-                let path = "";
                 response.data.files.forEach(function(file_entry) {
                   if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
                       (file_entry.status == 'modified' || file_entry.status == 'removed')) {
@@ -281,28 +273,28 @@
                   }
                 });
                 console.log(path);
-                const { Octokit } = require("@octokit/rest");
-                const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
-                const { data: existingFiles } = await octokit.repos.getContent({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  ref: "${{github.base_ref}}",
-                  path: path,
-                });
-                console.log(existingFiles)
-                const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
-                response.data.files.forEach(function(file_entry){
+              });
+              const { Octokit } = require("@octokit/rest");
+              const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
+              const { data: existingFiles } = await octokit.repos.getContent({
+                owner: "${{ github.repository_owner }}",
+                repo: "${{  github.repository }}".split('/')[1],
+                ref: "${{github.base_ref}}",
+                path: path,
+              });
+              console.log(existingFiles)
+              const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
+              response.data.files.forEach(function(file_entry){
                 if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                    console.log(existing_versions)
-                    const version = file_entry.filename.split("__")[0].split("/").pop();
-                    console.log(version)
-                    console.log(existing_versions)
-                    if (existing_versions.includes(version)) {
-                      console.log(file_entry.filename);
-                      core.setFailed(`Flyway file with version ${version} already exists`);
-                    }
+                  console.log(existing_versions)
+                  const version = file_entry.filename.split("__")[0].split("/").pop();
+                  console.log(version)
+                  console.log(existing_versions)
+                  if (existing_versions.includes(version)) {
+                    console.log(file_entry.filename);
+                    core.setFailed(`Flyway file with version ${version} already exists`);
                   }
-                });
+                }
               });
             
         - name: Check Version sequence of DB Scripts
@@ -326,11 +318,7 @@
           with:
             script: |
               const fs = require('fs');
-              fs.readFile('response.json', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
+              fs.readFile('response.json', 'utf8', (resData) => {
                 let response = JSON.parse(resData);
                 var terraform_file = [] 
                 response.data.files.forEach(function(file_entry) {
