@@ -100,10 +100,10 @@ jobs:
                     element={}
                     element["type"] = artifact_type
                     try:
-                      element["releaseManifestKey"] = object["releaseManifestKey"] 
+                      element["releaseManifestKey"] = object["releaseManifestKey"]
                     except:
-                        print("Artifact excluded from Release Manifest") 
-                        return
+                        print("Artifact excluded from Release Manifest")
+                        continue
                     element["name"] = object["name"]
                     element["version"] = version
                     if artifact_type == 'helmCharts':
@@ -116,6 +116,8 @@ jobs:
                     except:
                       print("Extension Details not present")
                     artifacts.append(element)
+              if len(artifacts) == 0: 
+                return
               return artifacts
           
           def get_artifact_metadata(yaml_data, type):

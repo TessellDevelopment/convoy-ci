@@ -283,6 +283,16 @@ jobs:
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
             set +e
           }
+          dockerCopyAndPush() {
+            set -e
+            IMAGE="$1"
+            BASE_IMAGE="$6"
+            requiredInputs="1 6"
+            validateInputs "$requiredInputs" "$@" 
+            docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            set +e
+          }
           elasticConf() {
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             installGoDependencies
