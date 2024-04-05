@@ -84,7 +84,9 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
-              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
+              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
+              -Plabel="${{env.LABEL}}" \
+              -Pnexus_push_repo_raw_ops=="${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}"
             set +e
           }
           npmBuildAndPush() {
