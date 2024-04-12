@@ -1051,6 +1051,20 @@ jobs:
             cd ..
             set +e
           }
+          vssTarBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            DIR="build_$CLOUD"
+            mkdir $DIR
+            cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/$CLOUD/install-provider $DIR
+            cd $DIR
+            tar -cf ../$ARTIFACT.$EXTENSION .
+            cd ..
+            ls
+            set +e
+          }
           validateInputs() {
             local required=($1)
             shift
