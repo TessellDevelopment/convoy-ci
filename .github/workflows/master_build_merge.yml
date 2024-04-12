@@ -963,7 +963,7 @@ jobs:
           dockerBuildOps() {
             set -e
             mvnwBuild
-            dockerBuild "$@"
+            dockerBuildAndPush "$@"
             set +e
           }
           elasticAgentBuildAndPush() {
@@ -1158,7 +1158,7 @@ jobs:
           opsImageBuildAndPush() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$@"
+            dockerBuildAndPush "$@"
             set +e
           }
           pushToNexus() {
