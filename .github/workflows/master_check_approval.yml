@@ -56,7 +56,7 @@ jobs:
               if [ -z "$REVIEWERS" ]; then
                 break
               fi
-              ALL_REVIEWERS+="$REVIEWERS "
+              ALL_REVIEWERS+="$REVIEWERS"
               ((PAGE_NUMBER++))
             done
             IFS=, read -r -a REVIEWER_ARRAY <<< "$(echo -e "$ALL_REVIEWERS" | tr '\n' ',')"
