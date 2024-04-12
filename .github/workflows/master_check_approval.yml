@@ -21,7 +21,7 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits"| jq -r '. | length')
+              ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
             echo "Number of commits in PR: $PR_COMMITS"
             echo "::set-output name=pr_commits::$PR_COMMITS"
 
