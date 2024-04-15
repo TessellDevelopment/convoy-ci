@@ -615,7 +615,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
-    runs-on: self-hosted
+    runs-on: self-hosted-test
     env:
       GOPATH: /home/github/go
       NAMESPACE: "convoy"
