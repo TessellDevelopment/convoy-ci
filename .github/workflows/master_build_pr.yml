@@ -1166,6 +1166,7 @@ jobs:
                         --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
+            imageScan $IMAGE
             set +e
           }
           dockerMultiBuild() {
