@@ -1186,22 +1186,6 @@ jobs:
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
             set +e
           }
-          jarBuild() {
-            set -e
-            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          opsImageBuild() {
-            set -e
-            mvnwBuild
-            dockerBuild "$@"
-            set +e
-          }
           imageScan() {
             set -e
             export IMAGE="$1"
