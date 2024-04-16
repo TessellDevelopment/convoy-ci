@@ -249,7 +249,7 @@ jobs:
             requiredInputs="1 2 5"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellArtifacts
-            pushToNexus $FILE_PATH $ARTIFACT $ARTIFACT-${LATEST_TAG}.$EXT
+            pushToNexus "$FILE_PATH" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
           }
@@ -388,13 +388,20 @@ jobs:
           }
           pushToNexus() {
             FILE_PATH="$1"
-            GROUP="$2"
-            FILE_NAME="$3"
-            requiredInputs="1 2 3"
+            URL_PATH="$2"
+            requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                  --upload-file $FILE_PATH \
-                  ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           pythonDockerBuildAndPush() {
             set -e
@@ -958,7 +965,7 @@ jobs:
           dockerBuildOps() {
             set -e
             mvnwBuild
-            dockerBuild "$@"
+            dockerBuildAndPush "$@"
             set +e
           }
           elasticAgentBuildAndPush() {
@@ -1146,25 +1153,32 @@ jobs:
             setupOpa
             ~/opa build policies --output bundles/opa-policies.tar.gz
             awsConfigureTessellArtifacts
-            pushToNexus "./bundles/opa-policies.tar.gz" $ARTIFACT "$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "./bundles/opa-policies.tar.gz" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           opsImageBuildAndPush() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$@"
+            dockerBuildAndPush "$@"
             set +e
           }
           pushToNexus() {
             FILE_PATH="$1"
-            GROUP="$2"
-            FILE_NAME="$3"
-            requiredInputs="1 2 3"
+            URL_PATH="$2"
+            requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                  --upload-file $FILE_PATH \
-                  ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$GROUP/$FILE_NAME
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           pythonLibraryBuildAndPush() {
             set -e
@@ -1266,6 +1280,28 @@ jobs:
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
             mvnDeploy "$ARTIFACT" "$EXTENSION" "build/$ARTIFACT.$EXTENSION" "tessell.tsm.infra" "$VERSION"
+            set +e
+          }
+          vssTarBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            DIR="build_$CLOUD"
+            mkdir $DIR
+            cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/$CLOUD/install-provider $DIR
+            cd $DIR
+            tar -cf ../$ARTIFACT.$EXTENSION .
+            cd ..
+            ls
+            set +e
+          }
+          vssTarBuildAndPush() {
+            vssTarBuild "$@"
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./$ARTIFACT.$EXTENSION" "tessell.vss" "${{env.LATEST_TAG}}"
             set +e
           }
           validateInputs() {
@@ -1485,16 +1521,10 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellopsArtifacts
-            curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-              --upload-file ./target/function.zip \
-              ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            pushToNexus "./target/function.zip" "${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip"
             mv ./target/function.zip  $ARTIFACT-${LATEST_TAG}.zip
             aws s3 cp $ARTIFACT-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip   
-            set +e
-          }
-          mvnwInstall() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             set +e
           }
           opsImageBuildAndPush() {
@@ -1503,6 +1533,23 @@ jobs:
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuildAndPush "$@"
             set +e
+          }
+          pushToNexus() {
+            FILE_PATH="$1"
+            URL_PATH="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           validateInputs() {
             local required=($1)

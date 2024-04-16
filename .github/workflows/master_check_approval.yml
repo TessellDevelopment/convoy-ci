@@ -44,13 +44,23 @@ jobs:
             REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
             TEAMS="${{inputs.required-teams}}"
-            REVIEWERS=$(curl -L \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer $TOKEN" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              ${{vars.GH_API_URL}}/repos/$REPO/pulls/$PR_NUMBER/reviews | jq -r '.[] | select(.state == "APPROVED") | .user.login')
+            PAGE_NUMBER=1
+            ALL_REVIEWERS=""
+            while true; do
+              echo $PAGE_NUMBER
+              REVIEWERS=$(curl -L \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer $TOKEN" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "${{vars.GH_API_URL}}/repos/$REPO/pulls/$PR_NUMBER/reviews?per_page=100&page=$PAGE_NUMBER" | jq -r '.[] | select(.state == "APPROVED") | .user.login')
+              if [ -z "$REVIEWERS" ]; then
+                break
+              fi
+              ALL_REVIEWERS+="$REVIEWERS"
+              ((PAGE_NUMBER++))
+            done
+            IFS=, read -r -a REVIEWER_ARRAY <<< "$(echo -e "$ALL_REVIEWERS" | tr '\n' ',')"
             IFS=' ' read -ra TEAMS_ARRAY <<< "$TEAMS"
-            IFS=, read -r -a REVIEWER_ARRAY <<< "$(echo -e "$REVIEWERS" | tr '\n' ',')"
             for TEAM in "${TEAMS_ARRAY[@]}"; do
               FLAG=0
               MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "${{vars.GH_API_URL}}/orgs/$ORG_NAME/teams/$TEAM/members" | jq -r '.[].login')
