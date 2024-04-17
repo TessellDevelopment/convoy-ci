@@ -39,7 +39,7 @@ jobs:
           files: |
             .github/**
 
-      - name: Check .github changes
+      - name: Check convoy.yaml changes
         id: changed-files-convoy
         uses: tj-actions/changed-files@v42.0.2
         with:
