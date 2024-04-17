@@ -37,8 +37,17 @@ jobs:
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
               if [[ "${{inputs.convoy-changes}}" == 'true' ]]; then
-                echo "PR only has convoy.yaml file changes. Skipping Codeowners Approval Check."
-                exit 0
+                CHECK_VERSION_CHANGE=$(git diff ${{github.base_ref}}...${{github.head_ref}}  --unified=0 -- convoy.yaml | grep 'version')
+                if [[ -z "$CHECK_VERSION_CHANGE" ]]; then
+                  echo "Changes other than version made in convoy.yaml. Need Approval."
+                else
+                  CHECK_OTHER_CHANGES=$(git diff ${{github.base_ref}}...${{github.head_ref}} --unified=0 -- convoy.yaml | grep -v 'version' | grep '^[+-]' | grep -v 'convoy.yaml')
+                  if [[ ! -z "$CHECK_OTHER_CHANGES" ]]; then
+                    echo "Changes other than version made in convoy.yaml. Need Approval."
+                  else
+                    exit 0
+                  fi
+                fi
               fi
               PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
               if [ "$PR_COMMITS" -eq 1 ]; then
