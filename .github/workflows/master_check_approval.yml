@@ -7,6 +7,10 @@ on:
         description: 'Teams required for approval in the PR'
         required: true
         type: string
+      convoy-changes:
+        description: 'Check if PR has only convoy.yaml changes'
+        required: true
+        type: string
  
 jobs:
 
@@ -32,9 +36,13 @@ jobs:
             title="${{github.event.pull_request.head.ref}}"
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
+              if [[ "${{inputs.convoy-changes}}" == 'true' ]]; then
+                echo "PR only has convoy.yaml file changes. Skipping Codeowners Approval Check."
+                exit 0
+              fi
               PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
               if [ "$PR_COMMITS" -eq 1 ]; then
-                echo "One Commit present in DC."
+                echo "One Commit present in DC. Skipping Codeowners Approval Check"
                 exit 0
               else
                 echo "More than one commit present in DC, need approval."

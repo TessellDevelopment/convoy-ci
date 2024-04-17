@@ -6,7 +6,7 @@ on:
 jobs:
   
   file-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-1881
     secrets: inherit
   
   read-codeowners:
@@ -58,10 +58,11 @@ jobs:
   check-approval:
     needs: [check-update-branch,read-codeowners]
     if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@TDEVOPS-1881
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
+      convoy-changes: ${{needs.file-check.outputs.convoy-changes}}
 
   auto-merge:
     needs: check-approval
