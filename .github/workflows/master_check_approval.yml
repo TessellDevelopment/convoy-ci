@@ -77,4 +77,5 @@ jobs:
                 echo "Approval not present for $TEAM team."
                 exit 1
               fi
+              
             done
