@@ -199,7 +199,7 @@
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
           uses: actions/upload-artifact@v4.3.1
           with:
-              name: image-scan-report
+              name: image-scan-report-frpc
               path: ${{ steps.docker-image-scan-frpc.outputs.scan-report-path }}
 
         - name: Docker image scan
@@ -217,7 +217,7 @@
           if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
           uses: actions/upload-artifact@v4.3.1
           with:
-              name: image-scan-report
+              name: image-scan-report-frps
               path: ${{ steps.docker-image-scan-frps.outputs.scan-report-path }}
 
         - name: Push tar files to nexus
