@@ -235,7 +235,7 @@
                 -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
                 -DgroupId=${GROUP_NAME} -DartifactId=tessell-$service-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
                 -DgeneratePom=true -Dpackaging=tar \
-                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
                 -Dfile=./tessell-$service-$os.tar -DrepositoryId=nexus
               done
             done
