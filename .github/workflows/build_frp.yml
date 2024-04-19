@@ -13,7 +13,7 @@
     # This workflow contains a single job called "build"
     build:
       # The type of runner that the job will run on
-      runs-on: amd-go-20
+      runs-on: amd-go-21
       outputs:
         mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
         mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
