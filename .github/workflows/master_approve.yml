@@ -79,7 +79,7 @@ jobs:
           echo $WORKFLOW_ID
           if [[ ! -z "$WORKFLOW_ID" ]]; then
             echo "Rerunning Failed Approval Workflow"
-            gh run rerun $WORKFLOW_ID --failed
+            gh run rerun $WORKFLOW_ID --failed -f exclude_pull_requests=false
           fi
 
   auto-merge:
