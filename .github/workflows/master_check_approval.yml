@@ -52,6 +52,7 @@ jobs:
                   if [[ ! -z "$CHECK_OTHER_CHANGES" ]]; then
                     echo "Changes other than version made in convoy.yaml. Need Approval."
                   else
+                    echo "Only Version change present in convoy.yaml. Skipping Codeowners Approval Check."
                     exit 0
                   fi
                 fi
