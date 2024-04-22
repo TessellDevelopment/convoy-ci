@@ -41,6 +41,7 @@ jobs:
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
               if [[ "${{inputs.convoy-changes}}" == "true" ]]; then
+                set +e
                 git checkout ${{github.base_ref}}
                 git checkout ${{github.head_ref}}
                 CHECK_VERSION_CHANGE=$(git diff "${{github.base_ref}}...${{github.head_ref}}"  --unified=0 -- convoy.yaml | grep 'version')
@@ -63,6 +64,7 @@ jobs:
                 echo "More than one commit present in DC, need approval."
               fi
             fi
+            set -e
             ORG_NAME="${{github.repository_owner}}"
             REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
