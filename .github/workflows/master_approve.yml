@@ -75,11 +75,11 @@ jobs:
       
       - name: Fetch and Rerun Failed workflow
         run: |
-          WORKFLOW_ID=$(gh run list --branch "${{github.event.pull_request.head.ref}}" --status 'failure' --event 'pull_request' --workflow 'Master CI Approve Workflow' --limit 1 --json 'workflowDatabaseId' | jq '.[0].workflowDatabaseId')
+          WORKFLOW_ID=$(gh run list --branch "${{github.event.pull_request.head.ref}}" --status 'failure' --event 'pull_request' --workflow 'Master CI Approve Workflow' --limit 1 --json 'databaseId' | jq '.[0].databaseId')
           echo $WORKFLOW_ID
           if [[ ! -z "$WORKFLOW_ID" ]]; then
             echo "Rerunning Failed Approval Workflow"
-            gh run rerun $WORKFLOW_ID --failed -f exclude_pull_requests=false
+            gh run rerun $WORKFLOW_ID --failed
           fi
 
   auto-merge:
