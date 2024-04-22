@@ -40,6 +40,13 @@ jobs:
             title="${{github.event.pull_request.head.ref}}"
             user="${{github.event.pull_request.user.login}}"
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
+              PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+              if [ "$PR_COMMITS" -eq 1 ]; then
+                echo "One Commit present in DC. Skipping Codeowners Approval Check"
+                exit 0
+              else
+                echo "More than one commit present in DC, need approval."
+              fi
               if [[ "${{inputs.convoy-changes}}" == "true" ]]; then
                 set +e
                 git checkout ${{github.base_ref}}
@@ -52,17 +59,14 @@ jobs:
                   if [[ ! -z "$CHECK_OTHER_CHANGES" ]]; then
                     echo "Changes other than version made in convoy.yaml. Need Approval."
                   else
-                    echo "Only Version change present in convoy.yaml. Skipping Codeowners Approval Check."
+                    echo "Only Version change present in convoy.yaml. Approving PR."
+                    RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
+                                -X POST -d '{"event":"APPROVE"}' \
+                                "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
+                    echo $RESPONSE
                     exit 0
                   fi
                 fi
-              fi
-              PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-              if [ "$PR_COMMITS" -eq 1 ]; then
-                echo "One Commit present in DC. Skipping Codeowners Approval Check"
-                exit 0
-              else
-                echo "More than one commit present in DC, need approval."
               fi
             fi
             set -e
