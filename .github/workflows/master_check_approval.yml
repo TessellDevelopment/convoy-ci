@@ -17,6 +17,10 @@ jobs:
   check-approval:
     runs-on: non-build
     steps:
+      
+        - uses: actions/checkout@v4.1.1
+          with:
+            fetch-depth: 0 
 
         - name: Check commits
           id: get-pr-commits
