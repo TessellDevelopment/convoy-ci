@@ -56,7 +56,7 @@ jobs:
           fi
 
   check-approval:
-    needs: [check-update-branch,read-codeowners]
+    needs: [check-update-branch,read-codeowners,file-check]
     if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@TDEVOPS-1881
     secrets: inherit
