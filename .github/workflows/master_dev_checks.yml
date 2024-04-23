@@ -75,36 +75,16 @@
             git diff --name-only --diff-filter=AM ${{ env.BASE_SHA }}...${{ env.HEAD_SHA }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
         - name: Output PR diff 
-          id: pr_diff
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
-              let jsonResponse = JSON.stringify(response);
-              fs.writeFileSync('response.txt', jsonResponse, 'utf8');
+          run: |
+            node ./scripts/javascript/index.js outputPRDiff
 
         - name: Check for merge conflicts
           run: |
-              node ./scripts/javascript/index.js checkMergeConflicts
+            node ./scripts/javascript/index.js checkMergeConflicts
               
         - name: Check DB Migration Scripts
           run: |
-              node ./scripts/javascript/index.js checkDBMigrationScripts
+            node ./scripts/javascript/index.js checkDBMigrationScripts
             
         - name: Run API-spec Validation
           run: |
@@ -118,7 +98,7 @@
         - name: check for terraform (code)
           id: terraform_check
           run: |
-              node ./scripts/javascript/index.js checkTerraformVersion
+            node ./scripts/javascript/index.js checkTerraformVersion
        
         - name: check for terraform version
           if: steps.terraform_check.outputs.terraform_files 

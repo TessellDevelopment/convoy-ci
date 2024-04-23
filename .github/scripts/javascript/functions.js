@@ -10,11 +10,11 @@ async function outputPRDiff() {
     console.log("Using the base branch's commit for comparing.")
     base_commit = BASE_SHA
   }
-  response = await github.rest.repos.compareCommits({
-      owner: OWNER,
-      repo: REPO.split('/')[1],
-      head: head_commit,
-      base: base_commit
+  response = await github.getOctokit(process.env.GITHUB_TOKEN).rest.repos.compareCommits({
+    owner: OWNER,
+    repo: REPO.split('/')[1],
+    head: head_commit,
+    base: base_commit
   });
   let jsonResponse = JSON.stringify(response);
   fs.writeFileSync('response.txt', jsonResponse, 'utf8');
