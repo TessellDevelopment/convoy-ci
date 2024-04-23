@@ -6,7 +6,7 @@
   jobs:
 
     dev-checks:
-      runs-on: non-build
+      runs-on: non-build-test
       env:
         CI-BRANCH: TDEVOPS-1832
       steps:
