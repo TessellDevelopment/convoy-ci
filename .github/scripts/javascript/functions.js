@@ -47,6 +47,7 @@ function checkMergeConflicts() {
 
 async function checkDBMigrationScripts() {
   const fs = require('fs');
+  const fetch = require('node-fetch');
   let path = "";
   let response;
   fs.readFile('response.txt', 'utf8', (err, resData) => {
