@@ -103,16 +103,17 @@ def extractJira():
 with open("convoy.yaml", "r") as file:
     data = yaml.safe_load(file)
 
-user = os.environ.get("JIRA_USERNAME")
-supported_jira_projects = os.environ.get("SUPPORTED_JIRA_PROJECTS")
-branch_name = os.environ.get("SOURCE_BRANCH")
-pr_title = os.environ.get("PR_TITLE")
 apikey = os.environ.get("JIRA_API_TOKEN")
+branch_name = os.environ.get("HEAD_BRANCH")
 jira_source = (
     data.get("ci").get("bestPractices").get("jiraValidation").get("jiraIdSource")
 )
 jira_match = (
     data.get("ci").get("bestPractices").get("jiraValidation").get("matchingRule")
 )
+pr_title = os.environ.get("PR_TITLE")
+supported_jira_projects = os.environ.get("SUPPORTED_JIRA_PROJECTS")
+user = os.environ.get("JIRA_USERNAME")
+
 jira_ticket = extractJira()
 validateJira()
