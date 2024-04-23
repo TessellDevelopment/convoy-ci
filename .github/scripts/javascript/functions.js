@@ -8,7 +8,7 @@ async function outputPRDiff() {
   }
   if ( GITHUB_EVENT_NAME == 'pull_request') {
     console.log("Using the base branch's commit for comparing.")
-    base_commit = PR_SHA
+    base_commit = BASE_SHA
   }
   response = await github.rest.repos.compareCommits({
       owner: OWNER,
