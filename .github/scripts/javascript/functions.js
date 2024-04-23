@@ -96,6 +96,7 @@ async function checkDBMigrationScripts() {
 
 function checkTerraformVersion(){
   const fs = require('fs');
+  const core = require('@actions/core');
   fs.readFile('response.txt', 'utf8', (err, resData) => {
     if (err) {
         console.error('Error reading file:', err);
