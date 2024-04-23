@@ -1,8 +1,8 @@
-if echo "${SOURCE_BRANCH}" | grep -Eq '^revert-'; then
+if echo "${HEAD_BRANCH}" | grep -Eq '^revert-'; then
     echo "Revert branch, skipping Format check"
     exit 0
 fi
-if echo "${SOURCE_BRANCH}" | grep -Eq "^(${SUPPORTED_JIRA_PROJECTS})"; then
+if echo "${HEAD_BRANCH}" | grep -Eq "^(${SUPPORTED_JIRA_PROJECTS})"; then
   echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
 else
   echo "Branch name does not start with ${SUPPORTED_JIRA_PROJECTS}. Checking PR title format."

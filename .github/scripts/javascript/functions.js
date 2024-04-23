@@ -1,5 +1,6 @@
 async function outputPRDiff() {
   const fs = require('fs');
+  const github = require('@actions/github');
   head_commit = GITHUB_SHA
   base_commit = GITHUB_SHA
   if ( GITHUB_EVENT_BEFORE != '0000000000000000000000000000000000000000') { 

@@ -10,17 +10,20 @@
       env:
         CI-BRANCH: TDEVOPS-1832
         BASE_REF: "${{github.base_ref}}"
-        BRANCH: ${{ github.event.pull_request.head.ref}}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
         GITHUB_EVENT_BEFORE: "${{ github.event.before }}"
         GITHUB_EVENT_NAME: "${{ github.event_name }}"
         GITHUB_SHA: "${{ github.sha }}"
+        GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+        HEAD_BRANCH: ${{ github.event.pull_request.head.ref}}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
         JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         OWNER: "${{ github.repository_owner }}"
-        PR_SHA: "${{ github.event.pull_request.base.sha }}"
-        PR_TITLE: ${{github.event.pull_request.title}}
+        PR_TITLE: "${{github.event.pull_request.title}}"
         REPO: "${{  github.repository }}"
-        SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}} 
+        SUPPORTED_JIRA_PROJECTS: "${{vars.SUPPORTED_JIRA_PROJECTS}}" 
+        USER: "${{github.event.pull_request.user.login}}"
       steps:
       
         - uses: actions/checkout@v4.1.1
@@ -40,23 +43,14 @@
             git pull
             cd ~-
             cp -r ~/convoy-ci/.github/scripts ./scripts
-
-        - name: Get branch name
-          shell: bash
-          run: |
-            echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
-            echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
-            echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
         
         - name: Check Format
-          env:
-            SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
           run: |
             bash ./scripts/bash/check_jira_format.sh
               
         - name: Validate Jira Ticket
           run: |
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+            if echo "${{ env.HEAD_BRANCH }}" | grep -Eq '^revert-'; then
                 echo "Revert branch, skipping Jira Extraction"
                 exit 0
             fi
@@ -64,7 +58,7 @@
 
         - name: Check double commit
           run: |
-            if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+            if ([[ "${{ env.USER }}" != "cipipelinetessell" ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
               if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
                 echo "Revert Double commit Branch. Allowed"
               else   
@@ -78,7 +72,7 @@
         - name: Check for Jsonlint
           run: |
             set -e
-            git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
+            git diff --name-only --diff-filter=AM ${{ env.BASE_SHA }}...${{ env.HEAD_SHA }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
         - name: Output PR diff 
           run: |
@@ -135,9 +129,9 @@
         
   
         - name: Check to verify if same branch exists
-          if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
+          if: ${{ startsWith(env.BASE_REF,'rel-') && !contains(env.HEAD_BRANCH,'double_commit') }}
           run: |
-            branch_to_check=${{ env.SOURCE_BRANCH }}-main-double_commit
+            branch_to_check=${{ env.HEAD_BRANCH }}-main-double_commit
             list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
             for branch in "${list_of_branches[@]}";do
             if [[ "$branch" == "$branch_to_check" ]];then
