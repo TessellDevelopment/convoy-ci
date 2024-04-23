@@ -9,6 +9,18 @@
       runs-on: non-build-test
       env:
         CI-BRANCH: TDEVOPS-1832
+        BASE_REF: "${{github.base_ref}}"
+        BRANCH: ${{ github.event.pull_request.head.ref}}
+        GITHUB_EVENT_BEFORE: "${{ github.event.before }}"
+        GITHUB_EVENT_NAME: "${{ github.event_name }}"
+        GITHUB_SHA: "${{ github.sha }}"
+        JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        OWNER: "${{ github.repository_owner }}"
+        PR_SHA: "${{ github.event.pull_request.base.sha }}"
+        PR_TITLE: ${{github.event.pull_request.title}}
+        REPO: "${{  github.repository }}"
+        SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}} 
       steps:
       
         - uses: actions/checkout@v4.1.1
@@ -38,19 +50,11 @@
         
         - name: Check Format
           env:
-            PR_TITLE: ${{ github.event.pull_request.title }}
             SOURCE_BRANCH: ${{env.SOURCE_BRANCH}}
-            JIRA_TICKETS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
           run: |
             bash ./scripts/bash/check_jira_format.sh
               
-        - name: Extract Jira Ticket
-          id: extract
-          env:
-            PR_TITLE: ${{github.event.pull_request.title}}
-            SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
-            JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
-            JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        - name: Validate Jira Ticket
           run: |
             if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
                 echo "Revert branch, skipping Jira Extraction"
@@ -59,9 +63,6 @@
             python3 ./scripts/python/validate_jira_ticket.py
 
         - name: Check double commit
-          env: 
-            PR_TITLE: ${{github.event.pull_request.title}}
-            BRANCH: ${{ github.event.pull_request.head.ref}}
           run: |
             if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
               if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
@@ -80,112 +81,16 @@
             git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
 
         - name: Output PR diff 
-          id: pr_diff
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
-              let jsonResponse = JSON.stringify(response);
-              fs.writeFileSync('response.txt', jsonResponse, 'utf8');
+          run: |
+            node ./scripts/javascript/index.js outputPRDiff
 
         - name: Check for merge conflicts
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
-                let response = JSON.parse(resData);
-                response.data.files.forEach(function(file_entry) {
-                  console.log(file_entry.filename);
-                  dir_name = file_entry.filename.split("/")[0];
-                  console.log(file_entry.patch);
-                  if(typeof file_entry.patch !== 'undefined'){
-                    if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
-                      core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
-                    }
-                  }
-                  else{
-                    console.log("Skipping:" + file_entry.filename);
-                  }
-              });
-              console.log("No merge conflicts found"); 
-              });
+          run: |
+              node ./scripts/javascript/index.js checkMergeConflicts
               
         - name: Check DB Migration Scripts
-          id: check_db_migration
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              let path = "";
-              let response;
-              fs.readFile('response.txt', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
-                response = JSON.parse(resData);
-                response.data.files.forEach(function(file_entry) {
-                  if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
-                      (file_entry.status == 'modified' || file_entry.status == 'removed')) {
-                    console.log(file_entry.filename);
-                    console.log(file_entry.status);
-                    core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
-                  }
-                  if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                    const lastSlashIndex = file_entry.filename.lastIndexOf("/");
-                    path = file_entry.filename.substring(0, lastSlashIndex);
-                  }
-                });
-                console.log(path);
-              });
-              const { Octokit } = require("@octokit/rest");
-              const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
-              const { data: existingFiles } = await octokit.repos.getContent({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                ref: "${{github.base_ref}}",
-                path: path,
-              });
-              console.log(existingFiles)
-              const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
-              response.data.files.forEach(function(file_entry){
-                if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
-                  console.log(existing_versions)
-                  const version = file_entry.filename.split("__")[0].split("/").pop();
-                  console.log(version)
-                  console.log(existing_versions)
-                  if (existing_versions.includes(version)) {
-                    console.log(file_entry.filename);
-                    core.setFailed(`Flyway file with version ${version} already exists`);
-                  }
-                }
-              });
-            
-        - name: Check Version sequence of DB Scripts
-          id: check_db_version_seq
-          if: steps.check_db_migration.outputs.db_migration_dir
-          run:
-            python3 .github/scripts/check_db_migration_version_sequence.py "${{ steps.check_db_migration.outputs.db_migration_dir }}"   
+          run: |
+              node ./scripts/javascript/index.js checkDBMigrationScripts
             
         - name: Run API-spec Validation
           run: |
@@ -198,27 +103,8 @@
             
         - name: check for terraform (code)
           id: terraform_check
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
-                let response = JSON.parse(resData);
-                var terraform_file = [] 
-                response.data.files.forEach(function(file_entry) {
-                  if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
-                    console.log(file_entry.filename);
-                    console.log(file_entry.status);
-                    terraform_file.push(file_entry.filename)
-                    console.log(terraform_file) ;
-                  }
-                });
-                core.setOutput('terraform_files' , terraform_file.join(','));
-              });
+          run: |
+              node ./scripts/javascript/index.js checkTerraformVersion
        
         - name: check for terraform version
           if: steps.terraform_check.outputs.terraform_files 
@@ -248,14 +134,14 @@
             EOF
         
   
-        - name: check to verify same branch is exist
+        - name: Check to verify if same branch exists
           if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
           run: |
             branch_to_check=${{ env.SOURCE_BRANCH }}-main-double_commit
             list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
             for branch in "${list_of_branches[@]}";do
             if [[ "$branch" == "$branch_to_check" ]];then
-              echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
+              echo "Double commit branch with name $branch already exists, please merge and/or delete the branch ";exit 1;
             fi
             done
               
