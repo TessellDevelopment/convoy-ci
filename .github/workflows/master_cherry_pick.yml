@@ -19,45 +19,28 @@ on:
 
 jobs:
   cherry_pick:
-    runs-on: self-hosted
+    runs-on: non-build-test
     env: 
-      URL: ${{inputs.base_repo}}
+      CI-BRANCH: TDEVOPS-1832
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      JIRA_ID: "${{inputs.jira_id}}"
+      PR_TITLE: "${{inputs.pr_title}}"
       REPO: ${{github.repository}}
-      JIRA_ID: ${{inputs.jira_id}}
-      PR_TITLE: ${{inputs.pr_title}}
+      URL: ${{inputs.base_repo}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
       
       - name: Cherry Pick changes from FRP repo
         run: |
-          #!/bin/bash
-          set +e
-          git remote add upstream $URL
-          git fetch upstream master
-          git checkout -b $JIRA_ID
-          logs=$(git cherry-pick -m 1 upstream/master)
-          echo "$logs"
-          while IFS= read -r line; do
-            echo "$line"
-            if [[ $line == CONFLICT* ]]; then
-              file_path=$(echo "$line" | awk '{print $3}')
-              if [[ $file_path == 'Merge' ]]; then
-                file_path=$(echo "$line" | awk '{print $6}')
-                echo "$file_path"
-                git add $file_path
-              else
-                echo "$file_path"
-                git rm $file_path
-              fi
-            fi
-          done <<< "$logs"
-          git add .
-          git commit -m "$PR_TITLE"
-          git push origin $JIRA_ID
-
-          curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
-            -d '{"title": "${{ env.PR_TITLE }}", "head": "${{ env.JIRA_ID }}", "base": "main"}' \
-            "https://api.github.com/repos/$REPO/pulls"
+          bash ./scripts/bash/cherry_pick.sh
