@@ -3,10 +3,10 @@ async function outputPRDiff() {
   const github = require('@actions/github');
   head_commit = GITHUB_SHA
   base_commit = GITHUB_SHA
-  if ( GITHUB_EVENT_BEFORE != '0000000000000000000000000000000000000000') { 
+  if (GITHUB_EVENT_BEFORE != '0000000000000000000000000000000000000000') {
     base_commit = GITHUB_EVENT_BEFORE
   }
-  if ( GITHUB_EVENT_NAME == 'pull_request') {
+  if (GITHUB_EVENT_NAME == 'pull_request') {
     console.log("Using the base branch's commit for comparing.")
     base_commit = BASE_SHA
   }
@@ -24,24 +24,24 @@ function checkMergeConflicts() {
   const fs = require('fs');
   fs.readFile('response.txt', 'utf8', (err, resData) => {
     if (err) {
-        console.error('Error reading file:', err);
-        process.exit(1);
+      console.error('Error reading file:', err);
+      process.exit(1);
     }
     let response = JSON.parse(resData);
-    response.data.files.forEach(function(file_entry) {
+    response.data.files.forEach(function (file_entry) {
       console.log(file_entry.filename);
       dir_name = file_entry.filename.split("/")[0];
       console.log(file_entry.patch);
-      if(typeof file_entry.patch !== 'undefined'){
-        if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
-          core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
+      if (typeof file_entry.patch !== 'undefined') {
+        if (file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
+          core.setFailed("Please resolve Merge Conflict in: " + dir_name);
         }
       }
-      else{
+      else {
         console.log("Skipping:" + file_entry.filename);
       }
-  });
-  console.log("No merge conflicts found"); 
+    });
+    console.log("No merge conflicts found");
   });
 }
 
@@ -52,13 +52,13 @@ async function checkDBMigrationScripts() {
   let response;
   fs.readFile('response.txt', 'utf8', (err, resData) => {
     if (err) {
-        console.error('Error reading file:', err);
-        process.exit(1);
+      console.error('Error reading file:', err);
+      process.exit(1);
     }
     response = JSON.parse(resData);
-    response.data.files.forEach(function(file_entry) {
-      if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") && 
-          (file_entry.status == 'modified' || file_entry.status == 'removed')) {
+    response.data.files.forEach(function (file_entry) {
+      if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/") &&
+        (file_entry.status == 'modified' || file_entry.status == 'removed')) {
         console.log(file_entry.filename);
         console.log(file_entry.status);
         core.setFailed("Modifying or removing a flyway history file " + file_entry.filename);
@@ -80,7 +80,7 @@ async function checkDBMigrationScripts() {
   });
   console.log(existingFiles)
   const existing_versions = existingFiles.map(f => f.name.split("__")[0]);
-  response.data.files.forEach(function(file_entry){
+  response.data.files.forEach(function (file_entry) {
     if (file_entry.filename.endsWith(".sql") && file_entry.filename.includes("db/migration/")) {
       console.log(existing_versions)
       const version = file_entry.filename.split("__")[0].split("/").pop();
@@ -94,25 +94,25 @@ async function checkDBMigrationScripts() {
   });
 }
 
-function checkTerraformVersion(){
+function checkTerraformVersion() {
   const fs = require('fs');
   const core = require('@actions/core');
   fs.readFile('response.txt', 'utf8', (err, resData) => {
     if (err) {
-        console.error('Error reading file:', err);
-        process.exit(1);
+      console.error('Error reading file:', err);
+      process.exit(1);
     }
     let response = JSON.parse(resData);
-    var terraform_file = [] 
-    response.data.files.forEach(function(file_entry) {
+    var terraform_file = []
+    response.data.files.forEach(function (file_entry) {
       if (file_entry.filename.endsWith(".tf") && file_entry.status != 'removed') {
         console.log(file_entry.filename);
         console.log(file_entry.status);
         terraform_file.push(file_entry.filename)
-        console.log(terraform_file) ;
+        console.log(terraform_file);
       }
     });
-    core.setOutput('terraform_files' , terraform_file.join(','));
+    core.setOutput('terraform_files', terraform_file.join(','));
   });
 }
 

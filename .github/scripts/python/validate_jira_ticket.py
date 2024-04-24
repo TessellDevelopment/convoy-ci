@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import yaml
 from jira import JIRA
 

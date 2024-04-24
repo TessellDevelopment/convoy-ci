@@ -11,8 +11,8 @@ OWNER = process.env.OWNER;
 REPO = process.env.REPO;
 
 if (!(functionName in functions)) {
-    console.error(`Function '${functionName}' not found.`);
-    process.exit(1);
+  console.error(`Function '${functionName}' not found.`);
+  process.exit(1);
 }
 
 functions[functionName]();

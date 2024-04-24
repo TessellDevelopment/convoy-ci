@@ -44,9 +44,9 @@
             cd ~-
             cp -r ~/convoy-ci/.github/scripts ./scripts
         
-        - name: Check Format
+        - name: Check Branch PR Format
           run: |
-            bash ./scripts/bash/check_jira_format.sh
+            bash ./scripts/bash/branch_checks.sh check_branch_pr_format
               
         - name: Validate Jira Ticket
           run: |
@@ -58,16 +58,7 @@
 
         - name: Check double commit
           run: |
-            if ([[ "${{ env.USER }}" != "cipipelinetessell" ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
-              if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
-                echo "Revert Double commit Branch. Allowed"
-              else   
-                echo "Exclude Double commit naming in Branch, PR title and try again."
-                exit 1
-              fi
-            else
-              echo "No double commit conflicts found in Branch or PR title."
-            fi
+            bash ./scripts/bash/branch_checks.sh check_double_commit
 
         - name: Check for Jsonlint
           run: |
@@ -95,47 +86,20 @@
               echo "Validation file not present. Skipping check."
             fi
             
-        - name: check for terraform (code)
+        - name: Check for terraform (code)
           id: terraform_check
           run: |
             node ./scripts/javascript/index.js checkTerraformVersion
        
-        - name: check for terraform version
+        - name: Check for terraform version
           if: steps.terraform_check.outputs.terraform_files 
           env:
             terraform_files: ${{ steps.terraform_check.outputs.terraform_files }}
           run: |
-            python3 - <<EOF
-            import os
-            import hcl2
-            terraform_files = os.environ.get('terraform_files')
-            version_missing = False
-            for terraform_file in terraform_files.split(','):
-                with open(terraform_file, 'r') as file:
-                    tf_file = hcl2.load(file)
-                if 'terraform' in tf_file and 'required_providers' in tf_file['terraform'][0]:
-                    providers = tf_file['terraform'][0]['required_providers']
-                    for provider in providers:
-                        for _provider, provider_info in provider.items():
-                            for key  in provider_info:
-                                if key == 'version':
-                                    break
-                            else:
-                                print(f"{terraform_file}: version is not present for {_provider} ")
-                                version_missing = True
-                if version_missing:
-                    sys.exit(1)
-            EOF
-        
+            python3 ./scripts/python/check_terraform_version.py
   
         - name: Check to verify if same branch exists
           if: ${{ startsWith(env.BASE_REF,'rel-') && !contains(env.HEAD_BRANCH,'double_commit') }}
           run: |
-            branch_to_check=${{ env.HEAD_BRANCH }}-main-double_commit
-            list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
-            for branch in "${list_of_branches[@]}";do
-            if [[ "$branch" == "$branch_to_check" ]];then
-              echo "Double commit branch with name $branch already exists, please merge and/or delete the branch ";exit 1;
-            fi
-            done
+            bash ./scripts/bash/branch_checks.sh check_existing_branches
               
