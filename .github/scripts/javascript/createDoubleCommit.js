@@ -1,4 +1,4 @@
-export async function createDoubleCommit() {
+async function createDoubleCommit() {
   const prTitle = process.env.PR_TITLE
   // Get base branch minor version of the PR
   const prBaseBranch = process.env.BASE_REF
@@ -140,3 +140,5 @@ export async function createDoubleCommit() {
     console.log(pullCreateResponse)
   }
 }
+
+createDoubleCommit();

@@ -48,7 +48,7 @@ jobs:
           BRANCHES: "${{ env.BRANCHES }}"
           MAIL_ID: "${{env.MAIL_ID}}"
         run: |
-          node ./scripts/javascript/index.js createDoubleCommit
+          node ./scripts/javascript/createDoubleCommit.js
 
       - name: Slack Notification
         if: failure()

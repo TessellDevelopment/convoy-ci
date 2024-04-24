@@ -81,4 +81,4 @@ jobs:
           ANY_MODIFIED: "${{steps.changed-files.outputs.any_modified}}"
           CHANGED_MODIFIED_FILES: "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
         run: |
-          node ./scripts/javascript/index.js checkVersion
+          node ./scripts/javascript/checkVersion.js

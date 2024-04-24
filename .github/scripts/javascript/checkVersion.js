@@ -39,8 +39,7 @@ function checkNexusVersion(nexusRepo, exporter, version) {
   else
     console.log("Passed: No matching version present in Nexus")
 }
-
-export function checkVersion() {
+function checkVersion() {
   const exp = require('constants');
   const fs = require('fs');
   const yaml = require('js-yaml');
@@ -124,3 +123,5 @@ export function checkVersion() {
     process.exit(1);
   }
 }
+
+checkVersion();
