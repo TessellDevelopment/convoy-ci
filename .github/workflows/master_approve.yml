@@ -57,11 +57,30 @@ jobs:
 
   check-approval:
     needs: [check-update-branch,read-codeowners]
-    if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
+    if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested' || needs.check-update-branch.outputs.update-branch == 'true' }}
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
+
+  rerun-approval:
+    needs: [check-approval]
+    if: ${{ github.event.review.state == 'approved' }}
+    runs-on: non-build
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+          token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+      
+      - name: Fetch and Rerun Failed workflow
+        run: |
+          WORKFLOW_ID=$(gh run list --branch "${{github.event.pull_request.head.ref}}" --status 'failure' --event 'pull_request' --workflow 'Master CI Approve Workflow' --limit 1 --json 'databaseId' | jq '.[0].databaseId')
+          echo $WORKFLOW_ID
+          if [[ ! -z "$WORKFLOW_ID" ]]; then
+            echo "Rerunning Failed Approval Workflow"
+            gh run rerun $WORKFLOW_ID --failed
+          fi
 
   auto-merge:
     needs: check-approval
