@@ -1496,7 +1496,7 @@ jobs:
             VERSION="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            ./mvnw package -Dversion=$VERSION
+            ./mvnw package -Drevision=$VERSION
             mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops" "$VERSION"
             set +e
           }
