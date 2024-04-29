@@ -7,12 +7,20 @@ on:
         description: 'Teams required for approval in the PR'
         required: true
         type: string
+      convoy-changes:
+        description: 'Check if PR has only convoy.yaml changes'
+        required: true
+        type: string
  
 jobs:
 
   check-approval:
     runs-on: non-build
     steps:
+
+        - uses: actions/checkout@v4.1.1
+          with:
+            fetch-depth: 0 
 
         - name: Check commits
           id: get-pr-commits
@@ -34,12 +42,34 @@ jobs:
             if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
               PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
               if [ "$PR_COMMITS" -eq 1 ]; then
-                echo "One Commit present in DC."
+                echo "One Commit present in DC. Skipping Codeowners Approval Check"
                 exit 0
               else
                 echo "More than one commit present in DC, need approval."
               fi
+              if [[ "${{inputs.convoy-changes}}" == "true" ]]; then
+                set +e
+                git checkout ${{github.base_ref}}
+                git checkout ${{github.head_ref}}
+                CHECK_VERSION_CHANGE=$(git diff "${{github.base_ref}}...${{github.head_ref}}"  --unified=0 -- convoy.yaml | grep 'version')
+                if [[ -z "$CHECK_VERSION_CHANGE" ]]; then
+                  echo "Changes other than version made in convoy.yaml. Need Approval."
+                else
+                  CHECK_OTHER_CHANGES=$(git diff "${{github.base_ref}}...${{github.head_ref}}" --unified=0 -- convoy.yaml | grep -v 'version' | grep '^[+-]' | grep -v 'convoy.yaml')
+                  if [[ ! -z "$CHECK_OTHER_CHANGES" ]]; then
+                    echo "Changes other than version made in convoy.yaml. Need Approval."
+                  else
+                    echo "Only Version change present in convoy.yaml. Approving PR."
+                    RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
+                                -X POST -d '{"event":"APPROVE"}' \
+                                "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
+                    echo $RESPONSE
+                    exit 0
+                  fi
+                fi
+              fi
             fi
+            set -e
             ORG_NAME="${{github.repository_owner}}"
             REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
