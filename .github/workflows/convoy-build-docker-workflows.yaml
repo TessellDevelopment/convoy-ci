@@ -83,6 +83,7 @@ jobs:
 
       - name: Docker image scan
         id: docker-image-scan
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         uses: azure/container-scan@v0.1
         with:
             severity-threshold: CRITICAL
@@ -92,6 +93,7 @@ jobs:
             trivy-version: ${{ vars.TRIVY_VERSION }}
 
       - uses: actions/upload-artifact@v4.3.1
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
             name: image-scan-report
             path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
