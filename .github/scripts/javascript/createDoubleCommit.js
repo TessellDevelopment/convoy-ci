@@ -6,6 +6,8 @@ async function createDoubleCommit() {
   // get pr source branch
   const prSrcBranch = process.env.HEAD_REF
   const mailID = process.env.MAIL_ID
+  var owner = process.env.OWNER
+  var repo = process.env.REPO
   // check if this itself is a double commit.
   // then we don't need to create another one from this.
   if (prSrcBranch.includes("double_commit")) {
@@ -131,9 +133,9 @@ async function createDoubleCommit() {
     // create pull request
     dcTitle = `Double Commit: ${prTitle}`
     pullCreateResponse = await github.rest.pulls.create({
-      owner: "${{ github.repository_owner }}",
+      owner: owner,
       title: dcTitle,
-      repo: "${{  github.repository }}".split('/')[1],
+      repo: repo.split('/')[1],
       head: prBranchName,
       base: dstBranch
     });

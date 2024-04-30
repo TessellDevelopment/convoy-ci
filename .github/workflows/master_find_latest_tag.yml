@@ -12,6 +12,8 @@ jobs:
   find-latest-tag:
     runs-on: non-build
     env:
+      CI-BRANCH: TDEVOPS-1832
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
@@ -25,6 +27,14 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           echo "$GITHUB_CONTEXT"
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
           
       - name: Get branch name
         shell: bash
@@ -53,64 +63,12 @@ jobs:
         
         
       - name: Find latest tag
-        uses: actions/github-script@v7.0.1
         id: latest_tag
-        with:
-          github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
-          script: |
-            console.log("Tags are " + "${{ env.TAGS }}")
-            latest_tag = '0.0.0'
-            // process multiple tags if any
-            tags = "${{ env.TAGS }}".split(' ')
-            if (tags.length == 1) {
-              console.log("There is only one tag. Using it." + tags[0])
-              latest_tag = tags[0]
-            } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "main") {
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("Checking tag " + tag)
-                  if (latest_tag == null) {
-                    latest_tag = tag
-                    continue
-                  }
-                  latest_parts = latest_tag.split(".")
-                  tag_parts = tag.split(".")
-                  for (i = 0; i < tag_parts.length; i++) {
-                    if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                      console.log("Skipping " + tag)
-                      break
-                    }
-                    if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                      latest_tag = tag
-                      console.log("Setting " + latest_tag)
-                      break
-                    }
-                  }
-                }
-              } else {
-                tag_base = "${{ env.SOURCE_BRANCH }}".substring(4).split(".").slice(0,2)
-                latest_tag = tag_base.join(".") + ".0"
-                for (i in tags) {
-                  tag = tags[i]
-                  console.log("branch - Checking tag " + tag)
-                  tag_parts = tag.split(".")
-                  if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                    latest_parts = latest_tag.split(".")
-                    if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
-                      latest_tag = tag
-                    }
-                  }
-                }
-              }
-            }
-            console.log("Latest tag: " + latest_tag)
-            // check if we have
-            if ( latest_tag == '' || latest_tag === undefined) {
-              console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-              process.exit(1);
-            }
-            core.setOutput('tag_ref', latest_tag)
+        env:
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          TAGS: "${{env.TAGS}}"
+        run: |
+          node ./scripts/javascript/findLatestTag.js
 
       - name: Tag Output
         id: tag_output
