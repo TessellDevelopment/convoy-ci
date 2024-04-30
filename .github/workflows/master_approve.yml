@@ -80,6 +80,8 @@ jobs:
           if [[ ! -z "$WORKFLOW_ID" && "$WORKFLOW_ID" != "null" ]]; then
             echo "Rerunning Failed Approval Workflow"
             gh run rerun $WORKFLOW_ID --failed
+          else
+            echo "No failed workflow found. Skipping re-run of 'Master CI Approve Workflow'"
           fi
 
   auto-merge:
