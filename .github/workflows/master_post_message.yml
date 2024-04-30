@@ -13,12 +13,21 @@ jobs:
   post-message:
     runs-on: non-build
     env:
-      TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      CI-BRANCH: TDEVOPS-1832
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
     steps: 
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
+        
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -36,7 +45,7 @@ jobs:
           TEAMS="${{inputs.required-teams}}"
           COMMENT_ID=$(curl -L \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $TOKEN" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "${{vars.GH_API_URL}}/repos/$REPO/issues/$PR_NUMBER/comments?per_page=100" | jq -r  '.[] | select(.body|test("^Commit hash.")) | .id')
           echo "$COMMENT_ID"

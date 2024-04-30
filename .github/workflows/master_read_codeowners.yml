@@ -17,6 +17,9 @@ jobs:
   
   read-codeowners:
     runs-on: non-build
+    env:
+      CI-BRANCH: TDEVOPS-1832
+      OWNER: "${{github.repository_owner}}"
     outputs:
       required-teams: ${{steps.extract-teams.outputs.teams}}
     steps: 
@@ -24,49 +27,18 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{github.base_ref}}
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
  
       - name: Extract team names from CODEOWNERS
         id: extract-teams
         env:
           changed-files: "${{ inputs.changed-files }}"
         run: |
-          python3 - <<EOF
-          import os
-          import sys
-          def extract_team_names(team_names):
-            return [team.replace('@${{github.repository_owner}}/', '') for team in team_names]
-
-          team_patterns = {}
-          with open('.github/CODEOWNERS', 'r') as pattern_file:
-            lines = pattern_file.readlines()
-
-          for line in lines:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-
-            parts = line.split()
-            file_pattern = parts[0]
-            team_names = parts[1:]
-
-            team_names_cleaned = extract_team_names(team_names)
-            team_patterns[file_pattern] = team_names_cleaned
-          
-          changed_files = os.environ.get('changed-files')
-          changed_files_list = changed_files.split()
-          changed_teams = set()
-          for file_path in changed_files_list:
-            for pattern, team_name in team_patterns.items():
-              if (file_path.startswith(pattern) or file_path.startswith(pattern[:-2])) and pattern != '*':
-                  changed_teams.update(team_name)
-                  break
-            else:
-                changed_teams.update(team_patterns['*'])
-        
-          required_teams = ""
-          for team in changed_teams:
-            required_teams=required_teams+team+" "
-          required_teams.strip()
-          print(required_teams)
-          sys.stdout.write(f"::set-output name=teams::{required_teams}\n")
-          EOF
+          python3 ./scripts/python/read_codeowners.py
