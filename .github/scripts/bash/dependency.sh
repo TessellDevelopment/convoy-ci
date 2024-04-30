@@ -9,6 +9,13 @@ createPipConf() {
   cat /etc/pip.conf
 }
 
+installAwsCli() {
+  curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
+  chmod +x install-aws.sh
+  sudo ./install-aws.sh "v2" "amd64"
+  rm install-aws.sh
+}
+
 installPythonDependencies() {
   DIR=$1
   if [[ -z "$DIR" ]]; then
@@ -31,6 +38,6 @@ setupTrivyDockle() {
 
 main() {
   build_function=$1
-  $build_function ${@:2}
+  $build_function "${@:2}"
 }
 main $@

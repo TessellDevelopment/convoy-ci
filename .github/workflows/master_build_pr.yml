@@ -41,7 +41,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
   
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
@@ -117,7 +117,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -161,7 +161,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
 
       - name: Cleanup
         if: always()
@@ -212,7 +212,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
 
       - name: Cleanup
         if: always()
@@ -279,11 +279,11 @@ jobs:
 
       - name: Build
         env:
-          CHANGED_FILES_ANY_MODIFIES: ${{steps.changed-files.outputs.any_modified}}
+          CHANGED_FILES_ANY_MODIFIED: ${{steps.changed-files.outputs.any_modified}}
           CHANGED_AND_MODIFIED_FILES: ${{steps.changed-files-all.outputs.all_changed_and_modified_files}}
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
 
       - name: Cleanup
         if: always()
@@ -327,7 +327,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh build
+          bash ./scripts/bash/build.sh Build
 
       - name: Cleanup
         if: always()
