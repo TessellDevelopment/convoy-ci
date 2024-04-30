@@ -1270,7 +1270,7 @@ jobs:
             VERSION="$3"
             requiredInputs="3"
             validateInputs "$requiredInputs" "$@" 
-            ./mvnw package -Dversion=$VERSION
+            ./mvnw package -Drevision=$VERSION
             set +e
           }
           mvnwBuild() {
