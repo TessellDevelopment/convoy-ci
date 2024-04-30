@@ -23,7 +23,6 @@ jobs:
       TEAMS: ${{inputs.required-teams}}
       USER: ${{github.event.pull_request.user.login}}
     steps:
-
         - uses: actions/checkout@v4.1.1
           with:
             fetch-depth: 0
