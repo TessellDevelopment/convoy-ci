@@ -37,7 +37,7 @@ setupTrivyDockle() {
 }
 
 main() {
-  build_function=$1
-  $build_function "${@:2}"
+  function=$1
+  $function "${@:2}"
 }
 main $@

@@ -13,20 +13,11 @@ jobs:
   post-message:
     runs-on: non-build
     env:
-      CI-BRANCH: TDEVOPS-1832
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
     steps: 
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git checkout ${{env.CI-BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
         
       - name: Dump GitHub context
         env:

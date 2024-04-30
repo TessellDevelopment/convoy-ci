@@ -58,7 +58,7 @@ check_approval() {
 
 main() {
   function=$1
-  $function
+  $function "${@:2}"
 }
 
 main "$@"

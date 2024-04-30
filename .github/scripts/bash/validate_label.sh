@@ -44,3 +44,5 @@ validate_label() {
       exit 1
   fi   
 }
+
+set_label $@
