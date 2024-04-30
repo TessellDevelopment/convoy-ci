@@ -14,77 +14,33 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      NEXUS_REPO_NPM: tessell-repos-npm-development
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      CI-BRANCH: TDEVOPS-1832
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}  
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      TESSELL_UI_ENV_SECRET: '${{secrets.TESSELL_UI_ENV_SECRET}}'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
+
       - name: Build
         shell: bash
         run: |
-          configureNpmrc(){
-            set +e 
-            REPO="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
-            cat ~/.npmrc
-          }
-          gradlewUIBuild() {
-            rm ~/.npmrc
-            rm ~/.yarnrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
-            echo "always-auth=true" >> .npmrc
-            echo "_auth=$TOKEN" >> .npmrc
-            cat .npmrc
-            cat .yarnrc
-            set -e
-            ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
-            echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
-            cat .env
-            ./gradlew zipUiBuild --console plain --stacktrace \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-            set +e
-          }
-          npmBuild() {
-            set -e
-            npm install
-            npm run build
-            configureNpmrc "${{env.NEXUS_REPO_NPM}}"
-            set -e
-            version="$3"
-            requiredInputs="3"
-            validateInputs "$requiredInputs" "$@" 
-            yq ".version = \"$version\"" package.json > tmp_package.json
-            mv tmp_package.json package.json
-            npm publish   
-            set +e
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -106,7 +62,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
+              bash ./scripts/bash/build.sh $buildFunction $name $ext $version $file
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -122,18 +78,19 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      CI-BRANCH: TDEVOPS-1832
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -141,6 +98,15 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          git clone https://${{env.GITHUB_USER}}:${{env.GITHUB_TOKEN}}@github.com/TessellDevelopment/convoy-ci.git
+          cd convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ..
+          cp -r ./convoy-ci/.github/scripts ./scripts
 
       - name: Set up Python
         uses: actions/setup-python@v5.0.0
@@ -401,16 +367,17 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      CI-BRANCH: TDEVOPS-1832
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -418,6 +385,14 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
 
       - name: Check go Config
         run: |
@@ -501,16 +476,17 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI-BRANCH: TDEVOPS-1832
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -518,6 +494,14 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
 
       - name: Check go Config
         run: |
@@ -617,20 +601,21 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      GOPATH: /home/github/go
-      NAMESPACE: "convoy"
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI-BRANCH: TDEVOPS-1832
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GOPATH: /home/github/go
+      NAMESPACE: "convoy"
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -638,6 +623,14 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
 
       - name: Check specific file changes
         id: changed-files
@@ -1130,16 +1123,17 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI-BRANCH: TDEVOPS-1832
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
     steps:
@@ -1147,6 +1141,14 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/scripts ./scripts
 
       - name: Build
         shell: bash
