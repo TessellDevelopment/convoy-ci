@@ -18,7 +18,7 @@ jobs:
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       BRANCH_NAME: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
-      TAGS: '{"build-source": "workflow-dispatch", "workflow-user": ${{ github.triggering_actor }}, "workflow-id": ${{ github.run_id }} }'
+      TAGS: '{"build-source": "workflow-dispatch", "workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
