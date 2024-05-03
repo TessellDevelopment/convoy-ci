@@ -898,6 +898,11 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
+          javaApiClientBuild() {
+            set -e
+            ./mvnw package -Drevision=0.0.0
+            set +e
+          }
           javaDockerBuild() {
             set -e
             IMAGE="$1"

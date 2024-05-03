@@ -1078,6 +1078,13 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
+
+          javaApiClientBuildAndPush() {
+            set -e
+            ./mvnw deploy -Drevision=${LATEST_TAG} -D${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+            set +e
+          }
+
           javaDockerBuildAndPush() {
             set -e
             IMAGE="$1"
