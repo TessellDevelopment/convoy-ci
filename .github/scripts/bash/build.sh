@@ -125,6 +125,24 @@ configureNpmrc(){
   cat ~/.npmrc
 }
 
+convoyPythonBuild() {
+  set -e
+  rm -rf dist
+  python3 setup.py bdist_wheel
+  set +e
+}
+
+convoyPythonBuildAndPush() {
+  set -e
+  convoyPythonBuild $@
+  version=$(yq .version convoy.yaml |tr -d '\n\t\r ')
+  echo $version
+  twine upload dist/convoy_base-$version-py3-none-any.whl \
+      --repository-url https://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_PY}/ \
+      --username ${GITHUB_USER} --password ${GITHUB_TOKEN}
+  set +e
+}
+
 dbPluginBuild() {
   set -e
   ARTIFACT="$1"
@@ -153,6 +171,31 @@ dbPluginBuildAndPush() {
   set +e
 }
 
+devopsBuild() {
+  set -e
+  createPipConf
+  installPythonDependencies ${REPO}
+  lintCheck
+  export PATH=/opt/tessell/python/install/bin:$PATH
+  pytest
+  IMAGE="$1"
+  gradlewPythonwheelDocker
+  imageScan $IMAGE
+  set +e
+}
+
+devopsBuildAndPush() {
+  set -e
+  createPipConf
+  installPythonDependencies ${REPO}
+  lintCheck
+  export PATH=/opt/tessell/python/install/bin:$PATH
+  pytest
+  IMAGE="$1"
+  gradlewTwineUploadDocker
+  set +e
+}
+
 dockerBuild() {
   set -e
   IMAGE="$1"
@@ -164,6 +207,8 @@ dockerBuild() {
   requiredInputs="1"
   validateInputs "$requiredInputs" "$@" 
   docker build -f $FILE -t $IMAGE \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
               --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
               --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
               --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
@@ -186,9 +231,20 @@ dockerBuildAndPush() {
   set +e
 }
 
-dockerBuildOps() {
+dockerConvoyBuild() {
   set -e
-  mvnwBuild
+  createPipConf
+  lintCheck
+  IMAGE="$1"
+  dockerBuild "$@"
+  imageScan $IMAGE
+  set +e
+}
+
+dockerConvoyBuildAndPush() {
+  set -e
+  createPipConf
+  lintCheck
   dockerBuildAndPush "$@"
   set +e
 }
@@ -201,6 +257,30 @@ dockerCopyAndPush() {
   validateInputs "$requiredInputs" "$@" 
   docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
+dockerDeploymentBuild() {
+  set -e
+  createPipConf
+  lintCheck
+  IMAGE="$1"
+  dockerBuild "$@"
+  imageScan $IMAGE
+  set +e
+}
+
+dockerDeploymentBuildAndPush() {
+  set -e
+  createPipConf
+  lintCheck
+  IMAGE="$1"
+  dockerBuild "$@"
+  docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$TAG
+  docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
+  RELEASE=$(echo "${LABEL}" | cut -d '-' -f 2)
+  docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$RELEASE
+  docker push ${DOCKERHUB_ORG}/$IMAGE:$RELEASE
   set +e
 }
 
@@ -455,6 +535,29 @@ goLibraryBuildAndPush() {
   set +e
 }
 
+gradlewBuild() {
+  set -e
+  ./gradlew build --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
+gradlewBuildAndPush() {
+  set -e
+  ./gradlew publish --console plain \
+      -Pnexus_push_username="${NEXUS_USERNAME}" \
+      -Pnexus_push_password="${NEXUS_PASSWORD}" \
+      -Pnexus_username="${NEXUS_USERNAME}" \
+      -Pnexus_password="${NEXUS_PASSWORD}" \
+      -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+      -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
+      -Pdockerhub_org="${DOCKERHUB_ORG}"
+  set +e
+}
+
 gradlewDockerTag() {
   ./gradlew dockerTag --console plain \
     -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -495,6 +598,12 @@ gradlewMavenDockerTag() {
 }
 
 gradlewPythonwheel() {
+  ./gradlew pythonWheel --console plain \
+      -Pnexus_username="${NEXUS_USERNAME}" \
+      -Pnexus_password="${NEXUS_PASSWORD}"
+}
+
+gradlewPythonwheelDocker() {
   ./gradlew pythonWheel docker --console plain \
       -Pnexus_username="${NEXUS_USERNAME}" \
       -Pnexus_password="${NEXUS_PASSWORD}"
@@ -508,6 +617,17 @@ gradlewTwineUpload() {
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_py="${NEXUS_PUSH_REPOS_PY}" \
     -Pnexus_pull_repo_py="${NEXUS_PULL_REPOS_PY}" 
+}
+
+gradlewTwineUploadDocker() {
+  ./gradlew twineUpload dockerTag --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_py="${NEXUS_PUSH_REPOS_PY}" \
+    -Pnexus_pull_repo_py="${NEXUS_PULL_REPOS_PY}" \
+    -Pdockerhub_org="${DOCKERHUB_ORG}"
 }
 
 gradlewUIBuild() {
@@ -614,7 +734,7 @@ infraProvisionBuild() {
   validateInputs "$requiredInputs" "$@" 
   mkdir -p build/tools
   wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
-  gradlewPythonwheel
+  gradlewPythonwheelDocker
   imageScan $IMAGE
   set +e
 }
@@ -838,8 +958,8 @@ opaBuildAndPush() {
   set -e
   opaBuild $@
   awsConfigureTessellArtifacts
-  pushToNexus "./bundles/opa-policies.tar.gz" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-  aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+  pushToNexus "./bundles/opa-policies.tar.gz" "${NEXUS_ARTIFACT_REPO}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+  aws s3 cp "bundles/opa-policies.tar.gz" "s3://${ARTIFACTS_DEV_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
   set +e
 }
 
@@ -918,7 +1038,7 @@ pythonDockerBuild() {
   IMAGE="$1"
   rm pip.conf
   lintCheck
-  gradlewPythonwheel
+  gradlewPythonwheelDocker
   imageScan $IMAGE
   set +e
 }
