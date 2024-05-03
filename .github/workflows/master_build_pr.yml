@@ -1089,6 +1089,9 @@ jobs:
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
+            sed -i 's#${nexus_url}#'${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2}'#' $HOME/.m2/settings.xml
+            sed -i 's#${nexus_username}#'${NEXUS_USERNAME}'#' $HOME/.m2/settings.xml
+            sed -i 's#${nexus_password}#'${NEXUS_PASSWORD}'#' $HOME/.m2/settings.xml
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
