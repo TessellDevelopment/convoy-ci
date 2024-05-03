@@ -900,7 +900,7 @@ jobs:
           }
           javaApiClientBuild() {
             set -e
-            ./mvnw package -Drevision=0.0.0
+            mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
             set +e
           }
           javaDockerBuild() {
