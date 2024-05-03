@@ -42,7 +42,7 @@ jobs:
   version-check:
     if: needs.convoy-check.outputs.check == 'true'
     needs: convoy-check
-    runs-on: non-build-test
+    runs-on: non-build
     env: 
       CI-BRANCH: TDEVOPS-1832
       NEXUS_URL: ${{vars.NEXUS_PROTOCOL_LOCAL}}://${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/service/rest/v1/search?repository

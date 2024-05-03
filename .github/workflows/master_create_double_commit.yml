@@ -7,7 +7,7 @@ jobs:
 
   create-pr-for-double-merge:
     if: github.event.pull_request.merged == true
-    runs-on: non-build-test
+    runs-on: non-build
     env:
       BASE_REF: "${{ github.event.pull_request.base.ref }}"
       CI-BRANCH: TDEVOPS-1832

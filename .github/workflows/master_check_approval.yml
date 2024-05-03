@@ -11,7 +11,7 @@ on:
 jobs:
 
   check-approval:
-    runs-on: non-build-test
+    runs-on: non-build
     env:
       CI-BRANCH: TDEVOPS-1832
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}

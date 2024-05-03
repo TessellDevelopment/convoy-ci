@@ -6,7 +6,7 @@
   jobs:
 
     dev-checks:
-      runs-on: non-build-test
+      runs-on: non-build
       env:
         CI-BRANCH: TDEVOPS-1832
         BASE_REF: "${{github.base_ref}}"
