@@ -1159,6 +1159,19 @@ jobs:
             aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
+          opaWasmBuildAndPush() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            setupOpa
+            ~/opa build -t wasm policies --output bundles/opa-policies-wasm.tar.gz
+            awsConfigureTessellArtifacts
+            pushToNexus "./bundles/opa-policies-wasm.tar.gz" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/opa-policies-wasm.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            set +e
+          }
           opsImageBuildAndPush() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true

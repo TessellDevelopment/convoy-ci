@@ -956,6 +956,12 @@ jobs:
             ~/opa build policies --output bundles/opa-policies.tar.gz
             set +e
           }
+          opaWasmBuild() {
+            set -e
+            setupOpa
+            ~/opa build -t wasm policies --output bundles/opa-policies-wasm.tar.gz
+            set +e
+          }
           opsImageBuild() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
