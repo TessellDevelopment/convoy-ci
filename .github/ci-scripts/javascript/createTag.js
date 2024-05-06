@@ -1,6 +1,7 @@
 async function createTag() {
   const fs = require('fs');
   const yaml = require('js-yaml');
+  const core = require('@actions/core');
   const { Octokit } = require("@octokit/rest");
   const content = fs.readFileSync('./convoy.yaml', 'utf8');
   const data = yaml.load(content);
