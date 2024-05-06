@@ -17,225 +17,37 @@ jobs:
   push-commit-details-to-convoy: 
     runs-on: non-build
     env:
-      TAG: "${{inputs.tag}}"
-      USES_CUSTOM_VERSION: "${{inputs.uses_custom_version}}"
+      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
+      API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      CI-BRANCH: TDEVOPS-1832
+      COMMIT_HASH: "${{github.sha}}"
+      COMMITTED_AT: "${{github.event.pull_request.merged_at}}"
+      GH_API_URL: ${{vars.GH_API_URL}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      PR_ID: "${{github.event.number}}"
+      OWNER: ${{github.repository_owner}}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+      TAG: "${{inputs.tag}}"
+      USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
+      USES_CUSTOM_VERSION: "${{inputs.uses_custom_version}}"
     steps:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
-      - name: POST API to Convoy
-        env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
-          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-          COMMIT_HASH: "${{github.sha}}"
-          COMMITTED_AT: "${{github.event.pull_request.merged_at}}"
-          USES_CUSTOM_VERSION: "${{env.USES_CUSTOM_VERSION}}"
-          REPO: "${{github.event.pull_request.base.repo.name}}"
-          TAG: "${{env.TAG}}"
-          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          PR_ID: "${{github.event.number}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-          OWNER: ${{github.repository_owner}}
-          USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
+      - name: Setup CI Scripts
         run: |
-          python3 - <<EOF
-          
-          import yaml
-          import requests
-          import os
-          import time
-          import base64
-          import subprocess
-          from datetime import datetime
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
-          def get_tf_modules_folders():
-            headers = {
-                'Authorization': f'Bearer {GITHUB_TOKEN}',
-                'Accept': 'application/vnd.github.v3+json',
-            }
-            url = f'${{vars.GH_API_URL}}/repos/{OWNER}/{REPO}/contents'
-            params = {'ref': BASE_BRANCH}
-            response = requests.get(url, headers=headers, params=params)
-            contents = response.json()
-            directories = [item['name'] for item in contents if item['type'] == 'dir' and item['name'] != '.github']
-            return directories
-
-          def delete_keys(data, keys_to_exclude):
-            for key in keys_to_exclude:
-                try:
-                    del data[key]
-                except:
-                    print(f'{key} not present in convoy.yaml')
-            return data
-
-          def get_artifacts_tf():
-            artifacts = []
-            tf_modules_folders = get_tf_modules_folders()
-            print("Terraform Folders")
-            for folder in tf_modules_folders:
-              if '.github' in folder or len(folder) == 0:
-                  continue
-              print(folder)  
-              path = f'./{folder}/convoy.yaml'
-              with open(path, 'r') as module_content:
-                  module_data = yaml.safe_load(module_content)
-              tf_module = module_data.get('generates')
-              for artifact_type, artifact in tf_module.items():
-                for object in artifact:
-                  element={}
-                  element["type"] = artifact_type
-                  element["releaseManifestKey"] = object["releaseManifestKey"] 
-                  element["name"] = object["name"]
-                  element["extension"] = object["extension"]
-                  element["version"] = module_data.get('version')
-                  artifacts.append(element)
-            return artifacts
-          
-          def get_artifacts(generates, version):
-              artifacts=[]
-              for artifact_type, artifact in generates.items():
-                  for object in artifact:
-                    element={}
-                    element["type"] = artifact_type
-                    try:
-                      element["releaseManifestKey"] = object["releaseManifestKey"]
-                    except:
-                        print("Artifact excluded from Release Manifest")
-                        continue
-                    element["name"] = object["name"]
-                    element["version"] = version
-                    if artifact_type == 'helmCharts':
-                      chart_path = object["chartPath"]
-                      with open(chart_path, 'r') as chart_yaml_content:
-                        data = yaml.safe_load(chart_yaml_content)
-                      element["version"] = data.get('version')
-                    try:
-                      element["extension"] = object["extension"]
-                    except:
-                      print("Extension Details not present")
-                    artifacts.append(element)
-              if len(artifacts) == 0: 
-                return
-              return artifacts
-          
-          def get_artifact_metadata(yaml_data, type):
-            artifactMetadata = {"type": type}
-            
-            if type == 'dockerImage':
-                artifactMetadata["version"] = TAG
-
-            elif type == 'helmChart':
-                chart_path = yaml_data.get('chartPath')
-                with open(chart_path, 'r') as chart_yaml_content:
-                    data = yaml.safe_load(chart_yaml_content)
-                artifactMetadata["version"] = data.get('version')
-
-            elif type == 'zip':
-                version = yaml_data.get('version')
-                artifactMetadata["version"] = version if version else TAG
-                keys_to_exclude = ['artifactType', 'version']
-                artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
-
-            elif type == 'nested':
-                tf_modules_folders = get_tf_modules_folders()
-                print("Terraform folders:")
-                for folder in tf_modules_folders:
-                    print(folder)  
-                    path = f'./{folder}/convoy.yaml'
-                    with open(path, 'r') as module_content:
-                        module_data = yaml.safe_load(module_content)
-                    data = {
-                        "name": folder,
-                        "convoyConfig": module_data
-                    } 
-                    artifacts.append(data) 
-                artifactMetadata["artifacts"] = artifacts
-            else:
-                print(f"Artifact Type is {type}. Skipping this step.")
-                exit(0)
-            return artifactMetadata
-            
-          def post_request(payload):
-            API_URL = os.environ.get('API_URL')
-            API_KEY = os.environ.get('API_KEY')
-            headers = {
-              'x-api-key': API_KEY,
-              'Content-Type': 'application/json'
-            }
-            max_retries = 3
-            retry_delay = 5 
-
-            for _ in range(max_retries):
-                response = requests.post(API_URL, json=payload, headers=headers)
-                if response.status_code == 200 or response.status_code == 409:
-                    print(response.status_code)
-                    print(response.text)
-                    break
-                else:
-                    print(response.status_code)
-                    print(response.text)
-                    print(f"Retrying... ({max_retries - _} attempts left)")
-                    time.sleep(retry_delay)
-            else:
-                print("API request failed after retries.")
-                exit(1)
-            print("POST request Complete")
-            return
-            
-          REPO = os.environ.get('REPO')
-          OWNER = os.environ.get('OWNER')
-          GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-          COMMIT_HASH = os.environ.get('COMMIT_HASH')
-          USES_CUSTOM_VERSION = os.environ.get('USES_CUSTOM_VERSION')
-          BASE_BRANCH = os.environ.get('BASE_BRANCH')
-          PR_ID = os.environ.get('PR_ID')
-          TAG = os.environ.get('TAG')
-          COMMIT_MESSAGE = subprocess.check_output(['git','log','--pretty=format:%s','-n','1'])
-          COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
-          COMMITTED_AT = os.environ.get('COMMITTED_AT')
-          COMMITTED_AT = datetime.strptime(COMMITTED_AT, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d %H:%M:%S")
-
-          try:
-            with open('convoy.yaml', 'r') as yaml_file:
-                yaml_data = yaml.safe_load(yaml_file)
-          except FileNotFoundError:
-              print(f"YAML file not found. Skipping this step.")
-              exit(0)
-          APP_GROUP = yaml_data.get('appGroup')
-          payload = { 
-            "repoName": REPO,
-            "appGroup": APP_GROUP,
-            "commitHash": COMMIT_HASH[:7],
-            "commitMessage": COMMIT_MESSAGE,
-            "committedAt": COMMITTED_AT,
-            "baseBranch": BASE_BRANCH,
-            "usesCustomVersion": USES_CUSTOM_VERSION == "true",
-            "tag": TAG,
-            "pullRequestId": PR_ID,
-          }
-          generates = yaml_data.get('generates')
-          type = yaml_data.get('artifactType') 
-          language = yaml_data.get('language')
-          if generates != None:
-              version = yaml_data.get('version')
-              if version == None:
-                version = TAG
-              payload["artifacts"] = get_artifacts(generates, version)
-              if payload["artifacts"] == None:
-                del payload["artifacts"]
-              print(payload)
-          elif language == 'terraform':
-              payload["artifacts"] = get_artifacts_tf()
-              print(payload)
-          elif type == None:
-              print(payload)
-          else: 
-              payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
-              print(f"Payload: {payload}")
-          post_request(payload)
-          EOF
+      - name: POST API to Convoy
+        run: |
+          python3 ./ci-scripts/python/post_tag_convoy.py
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
