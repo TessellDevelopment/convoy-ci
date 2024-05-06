@@ -28,7 +28,7 @@ def extractJira():
             ticket_pr = match_pr.group(0)
             if ticket_branch == ticket_pr:
                 print(f"Same Jira present in both Branch and PR:{ticket_branch}")
-                return ticket
+                return ticket_branch
             else:
                 raise Exception("Error: Different Jira present in both Branch and PR")
         elif match_branch and jira_source == "BRANCH_NAME_PREFIX":

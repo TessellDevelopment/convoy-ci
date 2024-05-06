@@ -6,7 +6,7 @@ check_branch_pr_format() {
     exit 0
   fi
   if echo "${HEAD_BRANCH}" | grep -Eq "^(${SUPPORTED_JIRA_PROJECTS})"; then
-    echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
+    echo "Branch name starts with ${SUPPORTED_JIRA_PROJECTS}"
   else
     echo "Branch name does not start with ${SUPPORTED_JIRA_PROJECTS}. Checking PR title format."
     PULL_REQUEST_TITLE="${PR_TITLE}"
