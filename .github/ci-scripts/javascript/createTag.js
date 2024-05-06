@@ -1,6 +1,7 @@
 async function createTag() {
   const fs = require('fs');
   const yaml = require('js-yaml');
+  const github = require('@actions/github');
   const content = fs.readFileSync('./convoy.yaml', 'utf8');
   const data = yaml.load(content);
   var language = data.language

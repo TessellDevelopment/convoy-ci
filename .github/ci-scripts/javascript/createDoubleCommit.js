@@ -1,4 +1,5 @@
 async function createDoubleCommit() {
+  const github = require('@actions/github');
   const prTitle = process.env.PR_TITLE
   // Get base branch minor version of the PR
   const prBaseBranch = process.env.BASE_REF
