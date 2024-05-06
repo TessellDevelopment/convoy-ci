@@ -11,7 +11,7 @@ set_label() {
     else
       if [[ "${BASE_REF}" == "main" ]]; then
         APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-        URL="http://${CONVOY_API_ENDPOINT}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+        URL="http://${CONVOY_DEV_API_ENDPOINT}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
         RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${CONVOY_AUTH_TOKEN}")
         echo "$RESPONSE"
         LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
@@ -36,7 +36,7 @@ set_label() {
 
 validate_label() {
   tag=$(echo ${TAG} | cut -d '.' -f 2)
-  label="$1"
+  label=$(echo "$1" | cut -d '.' -f 2)
   if [ "$tag" == "$label" ]; then
       echo "TAG and LABEL are on same release label: $label"
   else
