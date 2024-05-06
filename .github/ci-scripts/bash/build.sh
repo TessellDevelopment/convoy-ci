@@ -723,7 +723,7 @@ imageScan(){
   export IMAGE="$1"
   trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
   dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-  python3 ./scripts/python/image_scan.py 
+  python3 ./ci-scripts/python/image_scan.py 
 }
 
 infraProvisionBuild() {
@@ -1257,8 +1257,6 @@ vssTarBuildAndPush() {
   mvnDeploy "$ARTIFACT" "$EXTENSION" "./$ARTIFACT.$EXTENSION" "tessell.vss" "${LATEST_TAG}"
   set +e
 }
-
-------------------------------------------------------------------
 
 configureEnv() {
   mkdir -p $HOME/.m2  

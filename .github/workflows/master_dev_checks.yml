@@ -81,7 +81,7 @@
           run: |
             if [ -f ".github/scripts/duplicate_check_for_component_paths.py" ]; then
               set -e
-              python3 .github/ci-scripts/duplicate_check_for_component_paths.py
+              python3 .github/scripts/duplicate_check_for_component_paths.py
             else
               echo "Validation file not present. Skipping check."
             fi
