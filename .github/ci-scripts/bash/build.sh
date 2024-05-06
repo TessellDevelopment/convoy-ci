@@ -658,7 +658,11 @@ gradlewUIBuildAndPush() {
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
-    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
+    -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
+    -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
+    -Pnexus_protocol="${NEXUS_PROTOCOL}" \
+    -Plabel="${LABEL}" 
   set +e
 }
 
@@ -773,7 +777,7 @@ jarBuild() {
   VERSION="$3"
   requiredInputs="3"
   validateInputs "$requiredInputs" "$@" 
-  ./mvnw package -Dversion=$VERSION
+  ./mvnw package -Drevision=$VERSION
   set +e
 }
 
@@ -784,8 +788,20 @@ jarBuildAndPush() {
   VERSION="$3"
   requiredInputs="1 2 3"
   validateInputs "$requiredInputs" "$@" 
-  ./mvnw package -Dversion=$VERSION
+  ./mvnw package -Drevision=$VERSION
   mvnDeploy "$ARTIFACT" "$EXTENSION" "./target/$ARTIFACT-$VERSION.$EXTENSION" "tessellops" "$VERSION"
+  set +e
+}
+
+javaApiClientBuild() {
+  set -e
+  mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  set +e
+}
+
+javaApiClientBuildAndPush() {
+  set -e
+  mvn deploy -Drevision=${LATEST_TAG} -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
   set +e
 }
 
@@ -950,16 +966,24 @@ opaBuild() {
   requiredInputs="1 2"
   validateInputs "$requiredInputs" "$@" 
   setupOpa
-  ~/opa build policies --output bundles/opa-policies.tar.gz
+  file_name="$ARTIFACT.$EXTENSION"
+  if [[ $ARTIFACT == *"wasm"* ]]; then
+    ~/opa build -t wasm policies --output bundles/${file_name}
+  else
+    ~/opa build policies --output bundles/${file_name}
+  fi
   set +e
 }
 
 opaBuildAndPush() {
   set -e
+  ARTIFACT="$1"
+  EXTENSION="$2"
+  file_name="$ARTIFACT.$EXTENSION"
   opaBuild $@
   awsConfigureTessellArtifacts
-  pushToNexus "./bundles/opa-policies.tar.gz" "${NEXUS_ARTIFACT_REPO}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-  aws s3 cp "bundles/opa-policies.tar.gz" "s3://${ARTIFACTS_DEV_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+  pushToNexus "./bundles/$file_name" "${NEXUS_ARTIFACT_REPO}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+  aws s3 cp "bundles/$file_name" "s3://${ARTIFACTS_DEV_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
   set +e
 }
 
