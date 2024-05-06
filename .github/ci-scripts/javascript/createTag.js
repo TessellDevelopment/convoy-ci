@@ -1,12 +1,13 @@
 async function createTag() {
   const fs = require('fs');
   const yaml = require('js-yaml');
-  const github = require('@actions/github');
+  const { Octokit } = require("@octokit/rest");
   const content = fs.readFileSync('./convoy.yaml', 'utf8');
   const data = yaml.load(content);
   var language = data.language
   var version = data.version
   var uses_custom_version = "false"
+  var git_token = process.env.GITHUB_TOKEN
   var tag_exists = process.env.TAG_EXISTS
   var current_tag = process.env.CURRENT_TAG
   var base_ref = process.env.BASE_REF
@@ -14,6 +15,10 @@ async function createTag() {
   var merge_commit_sha = process.env.MERGE_COMMIT_SHA
   var owner = process.env.OWNER
   var repo = process.env.REPO
+  const octokit = new Octokit({
+    auth: git_token,
+    userAgent: "cipipeline"
+  })
   if (tag_exists === 'true') {
     new_tag = current_tag
     if (language === 'helm' || version !== undefined) {
@@ -93,8 +98,7 @@ async function createTag() {
     sha_to_tag = merge_commit_sha
 
     console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
-
-    result = await github.rest.git.createTag({
+    result = await octokit.rest.git.createTag({
       owner: owner,
       repo: repo.split('/')[1],
       tag: new_tag,
@@ -109,7 +113,7 @@ async function createTag() {
 
     console.log("Updating tag with REF: " + fullTagName)
 
-    newRef = await github.rest.git.createRef({
+    newRef = await octokit.rest.git.createRef({
       owner: owner,
       repo: repo.split('/')[1],
       ref: fullTagName,

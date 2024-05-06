@@ -1,5 +1,10 @@
 async function createDoubleCommit() {
-  const github = require('@actions/github');
+  const { Octokit } = require("@octokit/rest");
+  var git_token = process.env.GITHUB_TOKEN
+  const octokit = new Octokit({
+    auth: git_token,
+    userAgent: "cipipeline"
+  })
   const prTitle = process.env.PR_TITLE
   // Get base branch minor version of the PR
   const prBaseBranch = process.env.BASE_REF
@@ -133,7 +138,7 @@ async function createDoubleCommit() {
     console.log("stderr: " + result.stderr);
     // create pull request
     dcTitle = `Double Commit: ${prTitle}`
-    pullCreateResponse = await github.rest.pulls.create({
+    pullCreateResponse = await octokit.rest.pulls.create({
       owner: owner,
       title: dcTitle,
       repo: repo.split('/')[1],
