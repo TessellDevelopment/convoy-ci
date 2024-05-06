@@ -12,7 +12,7 @@ check_commits() {
 
 check_approval() {
   if [[ "${PR_TITLE}" == *"double_commit"* && "${USER}" == "cipipelinetessell" ]]; then
-    PR_COMMITS= check_commits()
+    PR_COMMITS= check_commits
     if [ "$PR_COMMITS" -eq 1 ]; then
       echo "One Commit present in DC."
       exit 0
