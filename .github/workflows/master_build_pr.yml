@@ -958,8 +958,16 @@ jobs:
           }
           opaBuild() {
             set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            requiredInputs="1 2"
+            file_name="${ARTIFACT}.${EXTENSION}"
             setupOpa
-            ~/opa build policies --output bundles/opa-policies.tar.gz
+            if [[ $ARTIFACT == *"wasm"* ]]; then
+              ~/opa build -t wasm policies --output bundles/${file_name}
+            else
+              ~/opa build policies --output bundles/${file_name}
+            fi
             set +e
           }
           opsImageBuild() {
