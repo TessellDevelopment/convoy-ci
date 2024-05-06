@@ -23,7 +23,7 @@ jobs:
     env:
       BASE_REF: "${{ github.event.pull_request.base.ref }}"
       CI-BRANCH: TDEVOPS-1832
-      CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
+      CONVOY_API_ENDPOINT: ${{vars.CONVOY_DEV_API_ENDPOINT}}
       CONVOY_AUTH_TOKEN: ${{secrets.CONVOY_AUTH_TOKEN}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
       LABEL: ${{inputs.label}}
