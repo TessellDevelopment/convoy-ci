@@ -1151,7 +1151,7 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            file_name="${ARTIFACT}.${EXTN}"
+            file_name="${ARTIFACT}.${EXTENSION}"
             validateInputs "$requiredInputs" "$@" 
             setupOpa
             if [[ $ARTIFACT == *"wasm"* ]]; then
