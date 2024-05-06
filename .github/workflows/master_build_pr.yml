@@ -953,9 +953,9 @@ jobs:
           opaBuild() {
             set -e
             ARTIFACT="$1"
-            EXTN="$2"
+            EXTENSION="$2"
             requiredInputs="1 2"
-            file_name="${ARTIFACT}.${EXTN}"
+            file_name="${ARTIFACT}.${EXTENSION}"
             setupOpa
             if [[ $ARTIFACT == *"wasm"* ]]; then
               ~/opa build -t wasm policies --output bundles/${file_name}
