@@ -1,4 +1,6 @@
 function checkNexusVersion(nexusRepo, exporter, version) {
+  NEXUS_USERNAME = process.env.NEXUS_USERNAME;
+  NEXUS_PASSWORD = process.env.NEXUS_PASSWORD;
   console.log(nexusRepo);
   console.log(exporter);
   console.log(version);
