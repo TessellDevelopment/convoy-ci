@@ -17,7 +17,7 @@ jobs:
   push-commit-details-to-convoy: 
     runs-on: non-build
     env:
-      API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/commits
+      API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
       API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI-BRANCH: TDEVOPS-1832

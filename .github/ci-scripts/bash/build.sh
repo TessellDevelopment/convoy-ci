@@ -237,6 +237,7 @@ dockerConvoyBuild() {
   lintCheck
   IMAGE="$1"
   dockerBuild "$@"
+  set -e
   imageScan $IMAGE
   set +e
 }
@@ -266,6 +267,7 @@ dockerDeploymentBuild() {
   lintCheck
   IMAGE="$1"
   dockerBuild "$@"
+  set -e
   imageScan $IMAGE
   set +e
 }
@@ -276,6 +278,7 @@ dockerDeploymentBuildAndPush() {
   lintCheck
   IMAGE="$1"
   dockerBuild "$@"
+  set -e
   docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$TAG
   docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
   RELEASE=$(echo "${LABEL}" | cut -d '-' -f 2)
@@ -383,6 +386,7 @@ elasticAgentBuild() {
   IMAGE="$1"
   GOOS=linux GOARCH=amd64 go build .
   dockerBuild "$@"
+  set -e
   imageScan $IMAGE
   set +e
 }
@@ -992,6 +996,7 @@ opsImageBuild() {
   IMAGE="$1"
   mvnwBuild $@
   dockerBuild "$@"
+  set -e
   imageScan $IMAGE
   set +e
 }
@@ -1120,6 +1125,7 @@ qaBuild(){
   if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
     cd scripts
     dockerBuild "$@"
+    set -e
     imageScan $IMAGE
     cd ..
   fi
