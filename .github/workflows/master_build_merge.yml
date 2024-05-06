@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           bash ./ci-scripts/bash/build.sh BuildAndPush
-        
+       
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()

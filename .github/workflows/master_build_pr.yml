@@ -240,6 +240,8 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       OWNER: ${{github.repository_owner}}
       REPO: "${{github.repository}}"
