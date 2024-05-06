@@ -7,6 +7,9 @@ def extract_team_names(team_names):
 
 
 team_patterns = {}
+changed_files = os.environ.get("changed-files")
+owner = os.environ.get("OWNER")
+
 with open(".github/CODEOWNERS", "r") as pattern_file:
     lines = pattern_file.readlines()
 
@@ -22,8 +25,6 @@ for line in lines:
     team_names_cleaned = extract_team_names(team_names)
     team_patterns[file_pattern] = team_names_cleaned
 
-changed_files = os.environ.get("changed-files")
-owner = os.environ.get("OWNER")
 changed_files_list = changed_files.split()
 changed_teams = set()
 for file_path in changed_files_list:

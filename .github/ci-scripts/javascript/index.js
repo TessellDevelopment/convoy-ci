@@ -7,6 +7,8 @@ BASE_SHA = process.env.BASE_SHA;
 GITHUB_SHA = process.env.GITHUB_SHA;
 GITHUB_EVENT_BEFORE = process.env.GITHUB_EVENT_BEFORE;
 GITHUB_EVENT_NAME = process.env.GITHUB_EVENT_NAME;
+NEXUS_USERNAME = process.env.NEXUS_USERNAME;
+NEXUS_PASSWORD = process.env.NEXUS_PASSWORD;
 OWNER = process.env.OWNER;
 REPO = process.env.REPO;
 

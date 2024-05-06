@@ -51,12 +51,12 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
         
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -106,7 +106,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ..
-          cp -r ./convoy-ci/.github/scripts ./scripts
+          cp -r ./convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Set up Python
         uses: actions/setup-python@v5.0.0
@@ -134,18 +134,18 @@ jobs:
 
       - name: Create pip conf
         run: |
-          bash ./scripts/bash/dependency.sh createPipConf
+          bash ./ci-scripts/bash/dependency.sh createPipConf
         shell: bash
 
       - name: Install dependencies
         run: |
-          bash ./scripts/bash/dependency.sh installPythonDependencies
-          bash ./scripts/bash/dependency.sh installAwsCli
+          bash ./ci-scripts/bash/dependency.sh installPythonDependencies
+          bash ./ci-scripts/bash/dependency.sh installAwsCli
       
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -186,7 +186,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check go Config
         run: |
@@ -199,7 +199,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
 
       - name: Cleanup
         if: always()
@@ -250,7 +250,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check go Config
         run: |
@@ -263,7 +263,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
 
       - name: Cleanup
         if: always()
@@ -321,7 +321,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check specific file changes
         id: changed-files
@@ -349,7 +349,7 @@ jobs:
           CHANGED_FILES_ANY_MODIFIED: ${{steps.changed-files.outputs.any_modified}}
           CHANGED_AND_MODIFIED_FILES: ${{steps.changed-files-all.outputs.all_changed_and_modified_files}}
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
 
       - name: Cleanup
         if: always()
@@ -403,7 +403,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login to Docker
         run : |
@@ -412,7 +412,7 @@ jobs:
       - name: Build and Push OPS
         shell: bash
         run: |
-          bash ./scripts/bash/build.sh BuildAndPush
+          bash ./ci-scripts/bash/build.sh BuildAndPush
 
       - name: Cleanup
         if: always()

@@ -42,11 +42,11 @@
             git checkout ${{env.CI-BRANCH}}
             git pull
             cd ~-
-            cp -r ~/convoy-ci/.github/scripts ./scripts
+            cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
         
         - name: Check Branch PR Format
           run: |
-            bash ./scripts/bash/branch_checks.sh check_branch_pr_format
+            bash ./ci-scripts/bash/branch_checks.sh check_branch_pr_format
               
         - name: Validate Jira Ticket
           run: |
@@ -54,11 +54,11 @@
                 echo "Revert branch, skipping Jira Extraction"
                 exit 0
             fi
-            python3 ./scripts/python/validate_jira_ticket.py
+            python3 ./ci-scripts/python/validate_jira_ticket.py
 
         - name: Check double commit
           run: |
-            bash ./scripts/bash/branch_checks.sh check_double_commit
+            bash ./ci-scripts/bash/branch_checks.sh check_double_commit
 
         - name: Check for Jsonlint
           run: |
@@ -67,21 +67,21 @@
 
         - name: Output PR diff 
           run: |
-            node ./scripts/javascript/index.js outputPRDiff
+            node ./ci-scripts/javascript/index.js outputPRDiff
 
         - name: Check for merge conflicts
           run: |
-            node ./scripts/javascript/index.js checkMergeConflicts
+            node ./ci-scripts/javascript/index.js checkMergeConflicts
               
         - name: Check DB Migration Scripts
           run: |
-            node ./scripts/javascript/index.js checkDBMigrationScripts
+            node ./ci-scripts/javascript/index.js checkDBMigrationScripts
             
         - name: Run API-spec Validation
           run: |
             if [ -f ".github/scripts/duplicate_check_for_component_paths.py" ]; then
               set -e
-              python3 .github/scripts/duplicate_check_for_component_paths.py
+              python3 .github/ci-scripts/duplicate_check_for_component_paths.py
             else
               echo "Validation file not present. Skipping check."
             fi
@@ -89,17 +89,17 @@
         - name: Check for terraform (code)
           id: terraform_check
           run: |
-            node ./scripts/javascript/index.js checkTerraformVersion
+            node ./ci-scripts/javascript/index.js checkTerraformVersion
        
         - name: Check for terraform version
           if: steps.terraform_check.outputs.terraform_files 
           env:
             terraform_files: ${{ steps.terraform_check.outputs.terraform_files }}
           run: |
-            python3 ./scripts/python/check_terraform_version.py
+            python3 ./ci-scripts/python/check_terraform_version.py
   
         - name: Check to verify if same branch exists
           if: ${{ startsWith(env.BASE_REF,'rel-') && !contains(env.HEAD_BRANCH,'double_commit') }}
           run: |
-            bash ./scripts/bash/branch_checks.sh check_existing_branches
+            bash ./ci-scripts/bash/branch_checks.sh check_existing_branches
               

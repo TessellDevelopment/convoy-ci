@@ -27,7 +27,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Get branch name
         shell: bash
@@ -44,7 +44,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python3 ./scripts/python/post_build_convoy.py
+          python3 ./ci-scripts/python/post_build_convoy.py
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0

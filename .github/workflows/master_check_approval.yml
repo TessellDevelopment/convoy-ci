@@ -33,8 +33,8 @@ jobs:
             git checkout ${{env.CI-BRANCH}}
             git pull
             cd ~-
-            cp -r ~/convoy-ci/.github/scripts ./scripts
+            cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
         - name: Check Approval
           run: |
-            bash ./scripts/bash/check_approval.sh check_approval
+            bash ./ci-scripts/bash/check_approval.sh check_approval

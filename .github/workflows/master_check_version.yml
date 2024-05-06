@@ -73,11 +73,11 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check Version in Nexus 
         env:
           ANY_MODIFIED: "${{steps.changed-files.outputs.any_modified}}"
           CHANGED_MODIFIED_FILES: "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
         run: |
-          node ./scripts/javascript/checkVersion.js
+          node ./ci-scripts/javascript/checkVersion.js

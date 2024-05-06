@@ -43,11 +43,11 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: POST API to Convoy
         run: |
-          python3 ./scripts/python/post_tag_convoy.py
+          python3 ./ci-scripts/python/post_tag_convoy.py
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0

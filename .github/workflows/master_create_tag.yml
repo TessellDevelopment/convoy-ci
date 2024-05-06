@@ -45,7 +45,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Find latest tag
         id: latest_tag
@@ -72,7 +72,7 @@ jobs:
           TAGS: "${{env.TAGS}}"
         id: create_tag
         run: |
-          node ./scripts/javascript/createTag.js
+          node ./ci-scripts/javascript/createTag.js
             
       - name: Tag Output
         id: tag_output
@@ -84,7 +84,7 @@ jobs:
         env:
           TAG: ${{steps.create_tag.outputs.tag_ref}}
         run: |
-          bash ./scripts/bash/validate_label.sh
+          bash ./ci-scripts/bash/validate_label.sh
 
       - name: Slack Notification
         if: failure()

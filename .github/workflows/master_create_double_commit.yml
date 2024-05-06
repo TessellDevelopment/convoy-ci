@@ -30,7 +30,7 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Get all the release branches
         id: all_branches
@@ -47,7 +47,7 @@ jobs:
           BRANCHES: "${{ env.BRANCHES }}"
           MAIL_ID: "${{env.MAIL_ID}}"
         run: |
-          node ./scripts/javascript/createDoubleCommit.js
+          node ./ci-scripts/javascript/createDoubleCommit.js
 
       - name: Slack Notification
         if: failure()

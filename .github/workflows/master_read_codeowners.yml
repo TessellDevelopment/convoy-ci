@@ -34,11 +34,11 @@ jobs:
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/scripts ./scripts
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
  
       - name: Extract team names from CODEOWNERS
         id: extract-teams
         env:
           changed-files: "${{ inputs.changed-files }}"
         run: |
-          python3 ./scripts/python/read_codeowners.py
+          python3 ./ci-scripts/python/read_codeowners.py
