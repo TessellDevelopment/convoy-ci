@@ -805,6 +805,7 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
       GOPATH: /home/github/go
     steps:
       - name: Checkout code
@@ -1078,6 +1079,13 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
+
+          javaApiClientBuildAndPush() {
+            set -e
+            mvn deploy -Drevision=${LATEST_TAG} -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+            set +e
+          }
+
           javaDockerBuildAndPush() {
             set -e
             IMAGE="$1"
@@ -1151,12 +1159,17 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
+            file_name="${ARTIFACT}.${EXTENSION}"
             validateInputs "$requiredInputs" "$@" 
             setupOpa
-            ~/opa build policies --output bundles/opa-policies.tar.gz
+            if [[ $ARTIFACT == *"wasm"* ]]; then
+              ~/opa build -t wasm policies --output bundles/${file_name}
+            else
+              ~/opa build policies --output bundles/${file_name}
+            fi
             awsConfigureTessellArtifacts
-            pushToNexus "./bundles/opa-policies.tar.gz" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            aws s3 cp "bundles/opa-policies.tar.gz" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           opsImageBuildAndPush() {

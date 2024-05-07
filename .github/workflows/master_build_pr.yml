@@ -621,6 +621,7 @@ jobs:
       NAMESPACE: "convoy"
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -898,6 +899,11 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
+          javaApiClientBuild() {
+            set -e
+            mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+            set +e
+          }
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -952,8 +958,16 @@ jobs:
           }
           opaBuild() {
             set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            requiredInputs="1 2"
+            file_name="${ARTIFACT}.${EXTENSION}"
             setupOpa
-            ~/opa build policies --output bundles/opa-policies.tar.gz
+            if [[ $ARTIFACT == *"wasm"* ]]; then
+              ~/opa build -t wasm policies --output bundles/${file_name}
+            else
+              ~/opa build policies --output bundles/${file_name}
+            fi
             set +e
           }
           opsImageBuild() {
