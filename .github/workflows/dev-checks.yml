@@ -567,7 +567,9 @@ jobs:
             yamlFile = fs.readFileSync("convoy.yaml", "utf8");
             convoyYaml = yaml.load(yamlFile);
             chartPath = convoyYaml['generates']['helmCharts'][0].chartPath
+            console.log(chartPath)
             chartPath = chartPath.substring(2)
+            console.log(chartPath)
             version_updated = true;
             const excludeDirs = ['.github', '.gitignore', 'README.md'];
             response.data.files.forEach(function(file_entry) {
@@ -576,6 +578,7 @@ jobs:
               }
             });
             response.data.files.forEach(function(file_entry) {
+                console.log(file_entry.filename)
                 if (file_entry.filename === chartPath && file_entry.patch.includes("-version:") && file_entry.patch.includes("+version:")) {
                   version_updated = true;
               }
