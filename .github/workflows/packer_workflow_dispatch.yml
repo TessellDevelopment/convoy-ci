@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: non-build
+    runs-on: self-hosted
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
@@ -18,7 +18,7 @@ jobs:
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       BRANCH_NAME: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
-      TAGS: '{"build-source": "workflow-dispatch"}'
+      TAGS: '{"build-source": "workflow-dispatch", "workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
@@ -95,8 +95,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
+          rm -rf /usr/lib/python3/dist-packages/OpenSSL
+          pip3 install pyopenssl
+          pip3 install pyopenssl --upgrade
 
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
