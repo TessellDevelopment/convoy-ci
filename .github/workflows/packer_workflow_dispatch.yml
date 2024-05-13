@@ -95,11 +95,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
-          sudo rm -rf /usr/lib/python3/dist-packages/OpenSSL
-          sudo pip3 install pyopenssl
-          sudo pip3 install pyopenssl --upgrade
+          rm -rf /usr/lib/python3/dist-packages/OpenSSL
+          pip3 install pyopenssl
+          pip3 install pyopenssl --upgrade
 
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
