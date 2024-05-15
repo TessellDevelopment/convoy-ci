@@ -356,8 +356,6 @@ jobs:
             deactivate
             echo "Activate virtual environment"
             source test-venv/bin/activate
-            echo "Checking if __init__still exist."
-            ls -lrta test-venv/lib/python*/site-packages/tessell/worker/__init__.py
             export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
             export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
             export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
