@@ -346,7 +346,11 @@ jobs:
           runPythonUnitTest() {
             python3 -m venv test-venv
             source test-venv/bin/activate
-            pip3 install -r requirements.txt
+            python3 -m pip install -r requirements.txt
+            ls -lrta test-venv/lib/python*/site-packages/tessell/worker/__init__.py
+            rm -rf test-venv/lib/python*/site-packages/tessell/worker/__init__.py
+            deactivate
+            source test-venv/bin/activate
             export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
             export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
             export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
