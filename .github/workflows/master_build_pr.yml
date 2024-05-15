@@ -187,7 +187,7 @@ jobs:
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
+            python3 -m pip install flake8 pytest twine wheel coverage
             if [ -f "${DIR}/requirements.txt" ]; then
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
@@ -343,12 +343,22 @@ jobs:
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
+          runPythonUnitTest() {
+            python3 -m venv test-venv
+            source test-venv/bin/activate
+            pip3 install -r requirements.txt
+            export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
+            export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
+            export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
+            pytest -s
+          }
           pythonDockerBuild() {
             set -e
             IMAGE="$1"
             rm pip.conf
             lintCheck
             gradlewPythonwheel
+            runPythonUnitTest
             imageScan $IMAGE
             set +e
           }
