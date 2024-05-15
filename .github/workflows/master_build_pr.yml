@@ -350,7 +350,9 @@ jobs:
             export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
             export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
             export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
-            pytest -s
+            coverage run -m pytest -s
+            coverage report
+            coverage json
           }
           pythonDockerBuild() {
             set -e
