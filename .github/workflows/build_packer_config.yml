@@ -34,7 +34,7 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
-      NEXUS_ARTIFACT_REPO: citest-artifacts
+      NEXUS_ARTIFACT_REPO: tessell-artifacts
       TAGS: '{"workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
 
     steps:
