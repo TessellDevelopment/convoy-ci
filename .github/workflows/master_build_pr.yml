@@ -621,6 +621,7 @@ jobs:
       NAMESPACE: "convoy"
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -732,6 +733,8 @@ jobs:
             fi
             echo "$FILE"
             docker build -f $FILE -t $IMAGE \
+                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
+                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                 --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
                 --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                 --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
@@ -898,6 +901,11 @@ jobs:
               python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
+          javaApiClientBuild() {
+            set -e
+            mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+            set +e
+          }
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -952,8 +960,16 @@ jobs:
           }
           opaBuild() {
             set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            requiredInputs="1 2"
+            file_name="${ARTIFACT}.${EXTENSION}"
             setupOpa
-            ~/opa build policies --output bundles/opa-policies.tar.gz
+            if [[ $ARTIFACT == *"wasm"* ]]; then
+              ~/opa build -t wasm policies --output bundles/${file_name}
+            else
+              ~/opa build policies --output bundles/${file_name}
+            fi
             set +e
           }
           opsImageBuild() {
@@ -1049,6 +1065,20 @@ jobs:
             mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
             unzip -l $ARTIFACT.zip
             cd ..
+            set +e
+          }
+          vssTarBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            DIR="build_$CLOUD"
+            mkdir $DIR
+            cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/$CLOUD/install-provider $DIR
+            cd $DIR
+            tar -cf ../$ARTIFACT.$EXTENSION .
+            cd ..
+            ls
             set +e
           }
           validateInputs() {
@@ -1148,10 +1178,13 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE \
+                        --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
+                        --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                         --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
                         --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
+            imageScan $IMAGE
             set +e
           }
           dockerMultiBuild() {
@@ -1184,22 +1217,6 @@ jobs:
                                 --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                                 --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
-            set +e
-          }
-          jarBuild() {
-            set -e
-            ./mvnw package -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          opsImageBuild() {
-            set -e
-            mvnwBuild
-            dockerBuild "$@"
             set +e
           }
           imageScan() {
@@ -1271,7 +1288,7 @@ jobs:
             VERSION="$3"
             requiredInputs="3"
             validateInputs "$requiredInputs" "$@" 
-            ./mvnw package -Dversion=$VERSION
+            ./mvnw package -Drevision=$VERSION
             set +e
           }
           mvnwBuild() {
