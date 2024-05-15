@@ -344,18 +344,20 @@ jobs:
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
           runPythonUnitTest() {
-            echo "Creating virtua environment"
-            python3 -m venv test-venv
-            source test-venv/bin/activate
+            #echo "Creating virtua environment"
+            #python3 -m venv test-venv
+            #source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
             python3 -m pip install --quite -r requirements.txt
             echo "Checking __init__py"
-            ls -lrta test-venv/lib/python*/site-packages/tessell/worker/__init__.py
-            rm -rf test-venv/lib/python*/site-packages/tessell/worker/__init__.py
-            echo "Deactivating virtual environment"
-            deactivate
-            echo "Activate virtual environment"
-            source test-venv/bin/activate
+            ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
+            rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
+            # ls -lrta test-venv/lib/python*/site-packages/
+            # rm -rf test-venv/lib/python*/site-packages/tessell/worker/__init__.py
+            #echo "Deactivating virtual environment"
+            #deactivate
+            #echo "Activate virtual environment"
+            #source test-venv/bin/activate
             export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
             export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
             export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
@@ -920,7 +922,7 @@ jobs:
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel
             if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+              python3 -m pip install --quite -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
           javaApiClientBuild() {
