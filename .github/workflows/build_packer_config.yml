@@ -199,7 +199,7 @@ jobs:
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
-          build_all_artifacts -r $PWD -d --skip_azure_check
+          build_all_artifacts -r $PWD --base_commit  --pipeline_run
 
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
