@@ -348,7 +348,7 @@ jobs:
             #python3 -m venv test-venv
             #source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
-            python3 -m pip install --quite -r requirements.txt
+            python3 -m pip install --quiet -r requirements.txt
             echo "Checking __init__py"
             ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
             rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
@@ -922,7 +922,7 @@ jobs:
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel
             if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install --quite -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+              python3 -m pip install --quiet -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
           javaApiClientBuild() {
