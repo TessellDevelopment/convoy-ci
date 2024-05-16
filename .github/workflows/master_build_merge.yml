@@ -691,18 +691,7 @@ jobs:
             requiredInputs="1 2 5"
             validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
-            GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-            go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-            cd cmd/builder
-            go build .
-            cd ../..
-            GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
-            BUILD_FILE="otelcol"
-            if [[ "$OS" == 'windows' ]]; then
-              BUILD_FILE="otelcol.exe"
-            fi
-            tar -zcvf $ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml package/node_exporter.yaml \
-             package/db_exporter.yaml package/$BUILD_FILE package/otelcol.service
+            make service os=$OS
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otel-collector" "${LATEST_TAG}"
             awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otel-collector/${LATEST_TAG}/

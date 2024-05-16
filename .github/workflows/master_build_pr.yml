@@ -558,12 +558,7 @@ jobs:
             requiredInputs="1 5"
             validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
-            GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-            go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-            cd cmd/builder
-            go build .
-            cd ../..
-            GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
+            make service os=$OS
             set +e
           }
           validateInputs() {
