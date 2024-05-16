@@ -687,8 +687,7 @@ jobs:
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
-            CONFIG="$5"
-            requiredInputs="1 2 5"
+            requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             make service os=$OS

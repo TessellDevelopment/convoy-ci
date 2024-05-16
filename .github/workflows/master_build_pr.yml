@@ -554,8 +554,7 @@ jobs:
           otelcolBuild() {
             set -e
             ARTIFACT="$1"
-            CONFIG="$5"
-            requiredInputs="1 5"
+            requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             make service os=$OS
