@@ -1009,41 +1009,6 @@ opsImageBuildAndPush() {
   set +e
 }
 
-otelcolBuild() {
-  set -e
-  ARTIFACT="$1"
-  EXTENSION="$2"
-  CONFIG="$7"
-  requiredInputs="1 2 7"
-  validateInputs "$requiredInputs" "$@" 
-  OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
-  GO111MODULE=on go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-  go install go.opentelemetry.io/collector/cmd/builder@v0.96.0
-  cd cmd/builder
-  go build .
-  cd ../..
-  GOOS=$OS GOARCH=amd64 ./cmd/builder/builder --config=$CONFIG
-  set +e
-}
-
-otelcolBuildAndPush() {
-  set -e
-  ARTIFACT="$1"
-  EXTENSION="$2"
-  otelcolBuild $@
-  set -e
-  BUILD_FILE="otelcol"
-  if [[ "$OS" == 'windows' ]]; then
-    BUILD_FILE="otelcol.exe"
-  fi
-  tar -zcvf $ARTIFACT.$EXTENSION -C ./package lifecycle-hooks config.yaml node_exporter.yaml \
-    db_exporter.yaml $BUILD_FILE otelcol.service
-  mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otel-collector" "${LATEST_TAG}"
-  awsConfigureTessellTools
-  aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otel-collector/${LATEST_TAG}/
-  set +e
-}
-
 pushToNexus() {
   FILE_PATH="$1"
   URL_PATH="$2"
@@ -1311,7 +1276,7 @@ build() {
     "terraform${buildType}"
     return
   fi
-  yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage, .configFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+  yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
   lineNumber=1
   while :; do
     echo ------------------------------
@@ -1319,7 +1284,7 @@ build() {
     if [[ -z "$artifactData" ]]; then
       break
     fi
-    read -r name buildFunction ext file filePath baseImage config <<< "$artifactData"
+    read -r name buildFunction ext file filePath baseImage <<< "$artifactData"
     echo "Name: $name"
     echo "buildFunction: $buildFunction"
     echo "Ext: $ext"
@@ -1327,11 +1292,10 @@ build() {
     echo "dockerFile: $file"
     echo "filePath: $filePath"
     echo "baseImage: $baseImage"
-    echo "ConfigFile: $config"
     if [[ "$buildType" == "BuildAndPush" ]]; then
-      "${buildFunction}AndPush" $name $ext $version $file $filePath $baseImage $config
+      "${buildFunction}AndPush" $name $ext $version $file $filePath $baseImage
     else
-      $buildFunction $name $ext $version $file $filePath $baseImage $config
+      $buildFunction $name $ext $version $file $filePath $baseImage
     fi
     echo "$type $name done"
     echo ------------------------------
