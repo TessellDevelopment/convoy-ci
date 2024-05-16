@@ -231,7 +231,7 @@ jobs:
         run: |
             curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                   --upload-file ./common_manifest.json \
-                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/software-image-manifest/software-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
+                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
 
   post-build-status-to-convoy:
     runs-on: non-build
