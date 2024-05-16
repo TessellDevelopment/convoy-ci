@@ -1036,8 +1036,8 @@ otelcolBuildAndPush() {
   if [[ "$OS" == 'windows' ]]; then
     BUILD_FILE="otelcol.exe"
   fi
-  tar -zcvf $ARTIFACT.$EXTENSION package/lifecycle-hooks package/config.yaml package/node_exporter.yaml \
-    package/db_exporter.yaml package/$BUILD_FILE package/otelcol.service
+  tar -zcvf $ARTIFACT.$EXTENSION -C ./package lifecycle-hooks config.yaml node_exporter.yaml \
+    db_exporter.yaml $BUILD_FILE otelcol.service
   mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.otel-collector" "${LATEST_TAG}"
   awsConfigureTessellTools
   aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/otel-collector/${LATEST_TAG}/
