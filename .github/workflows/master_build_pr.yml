@@ -344,28 +344,11 @@ jobs:
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
           runPythonUnitTest() {
-            echo "Creating virtua environment"
             venv_name=test-venv
             python3 -m venv $venv_name
             source test-venv/bin/activate
-            echo "Installing packages in requirements.txt"
-            ls -lrta . 
-            ls -lrta dist/
             python3 -m pip install dist/*.whl 
-            # coverage requests_mock pytest pytest-env
-            # python3 -m pip install  -r requirements.txt
-            # python3 -m pip install coverage requests_mock pytest-env pytest
-            # python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
-            # python3 -m pip show tessell-cloud-library tessell-db-plugin-sdk tessell-infra-provision-library tessell-python-base  tessell-python-hosts-library  tessell-python-mgmt-entities tessell-service-worker-library  tessell-worker-provision-service tessell-worker-common-library  
 
-         
-            echo "Checking __init__py"
-            echo ${{ env.Python3_ROOT_DIR }}
-            echo --------------------------- ONE -------------------------
-            # echo $venv_name/lib/python3.9/site-packages/tessell
-            # ls -lrta $venv_name/lib/python3.9/site-packages/tessell
-            # echo $venv_name/lib/python3.9/site-packages/tessell/worker/
-            # ls -lrta $venv_name/lib/python3.9/site-packages/tessell/worker/
             if [ -f $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment"
@@ -376,45 +359,9 @@ jobs:
               echo "No need to reactivate the environment"
             fi
 
-            
-            echo --------------------------- TWO -------------------------
-            # echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/
-            # ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell
-            # echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
-            # ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
-            if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
-              rm -rf ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py
-              echo "Deactivating virtual environment 2"
-              deactivate
-              echo "Activate virtual environment 2"
-              source $venv_name/bin/activate
-            else
-              echo "No need to reactivate the environment 2"
-            fi
-
-            
-            echo --------------------------- THREE -------------------------
-            # echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/
-            # ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/ 
-            # echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell//worker
-            # ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker
-            if [ -f /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
-              rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
-              echo "Deactivating virtual environment 3"
-              deactivate
-              echo "Activate virtual environment 2"
-              source $venv_name/bin/activate
-            else
-              echo "No need to reactivate the environment 3"
-            fi
-
-            echo "Running unit test" 
-            coverage run -m pytest -s
-            coverage report
-            coverage json
-            # python3 -m coverage run -m pytest -s
-            # python3 -m coverage report
-            # python3 -m coverage json
+            python3 -m coverage run -m pytest -s
+            python3 -m coverage report
+            python3 -m coverage json
             deactivate
           }
           pythonDockerBuild() {
