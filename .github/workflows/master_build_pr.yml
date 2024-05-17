@@ -377,10 +377,13 @@ jobs:
             export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
             export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
             
-            echo "Running unit test"
-            python3 -m coverage run -m pytest -s
-            python3 -m coverage report
-            python3 -m coverage json
+            echo "Running unit test" 
+            coverage run -m pytest -s
+            coverage report
+            coverage json
+            # python3 -m coverage run -m pytest -s
+            # python3 -m coverage report
+            # python3 -m coverage json
             deactivate
           }
           pythonDockerBuild() {
