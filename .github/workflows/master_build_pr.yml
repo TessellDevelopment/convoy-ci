@@ -912,7 +912,7 @@ jobs:
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel
             if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install --quiet -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
           javaApiClientBuild() {
