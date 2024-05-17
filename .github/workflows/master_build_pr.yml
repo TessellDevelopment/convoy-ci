@@ -348,7 +348,8 @@ jobs:
             python3 -m venv test-venv
             source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
-            ls -lrta dist/*.whl
+            ls -lrta . 
+            ls -lrta dist/
             python3 -m pip install dist/*.whl
             # python3 -m pip install  -r requirements.txt
             # python3 -m pip install coverage requests_mock pytest-env pytest
@@ -403,8 +404,8 @@ jobs:
             IMAGE="$1"
             rm pip.conf
             lintCheck
-            runPythonUnitTest
             gradlewPythonwheel
+            runPythonUnitTest
             imageScan $IMAGE
             set +e
           }
