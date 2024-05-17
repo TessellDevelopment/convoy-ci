@@ -356,6 +356,11 @@ jobs:
             python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
+            echo --------------------------- ONE -------------------------
+            echo test-env/lib/python3.9/site-packages/tessell
+            ls -lrta test-env/lib/python3.9/site-packages/tessell
+            echo test-env/lib/python3.9/site-packages/tessell/worker/
+            ls -lrta test-env/lib/python3.9/site-packages/tessell/worker/
             if [ -f test-env/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf test-env/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment"
@@ -365,15 +370,29 @@ jobs:
             else
               echo "No need to reactivate the environment"
             fi
+
+            
+            echo --------------------------- TWO -------------------------
+            echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/
+            ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell
+            echo /${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
+            ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
             if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment 2"
               deactivate
-              echo "Activate virtual environment"
+              echo "Activate virtual environment 2"
               source test-venv/bin/activate
             else
               echo "No need to reactivate the environment 2"
             fi
+
+            
+            echo --------------------------- THREE -------------------------
+            echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/
+            ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/ 
+            echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell//worker
+            ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker
             if [ -f /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment 3"
@@ -383,15 +402,9 @@ jobs:
             else
               echo "No need to reactivate the environment 3"
             fi
-            
-            
 
-            export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
-            export PUSHPROX_EXTERNAL_ADDRESS=srv1.metrics.tsl-terls.cloud
-            export TGS_SERVICE_EXTERNAL_ADDRESS=nats1.tgs.tsl-terls.cloud
-            
             echo "Running unit test" 
-            coverage run -m pytest -s
+            python3 -m coverage run -m pytest -s
             coverage report
             coverage json
             # python3 -m coverage run -m pytest -s
