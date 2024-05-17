@@ -188,9 +188,9 @@ jobs:
             fi
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel coverage requests_mock pytest-env pytest
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
+            # if [ -f "${DIR}/requirements.txt" ]; then
+            #   python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            # fi
           }
           installPythonDependencies
 
@@ -348,8 +348,9 @@ jobs:
             python3 -m venv test-venv
             source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
-            python3 -m pip install --quiet -r requirements.txt
-            python3 -m pip install coverage requests_mock pytest-env pytest
+            python3 -m pip install dist/*.whl
+            # python3 -m pip install  -r requirements.txt
+            # python3 -m pip install coverage requests_mock pytest-env pytest
             python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
