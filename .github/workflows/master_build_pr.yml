@@ -362,6 +362,15 @@ jobs:
             else
               echo "No need to reactivate the environment"
             fi
+            if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
+              rm -rf ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py
+              echo "Deactivating virtual environment 2"
+              deactivate
+              echo "Activate virtual environment"
+              source test-venv/bin/activate
+            else
+              echo "No need to reactivate the environment 2"
+            fi
             
 
             export TESSELL_HOSTED_DOMAIN_NAME=tsl-terls.cloud
