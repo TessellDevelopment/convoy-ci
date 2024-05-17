@@ -188,9 +188,9 @@ jobs:
             fi
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel coverage requests_mock pytest-env pytest
-            # if [ -f "${DIR}/requirements.txt" ]; then
-            #   python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            # fi
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
           }
           installPythonDependencies
 
