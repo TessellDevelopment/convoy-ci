@@ -188,9 +188,9 @@ jobs:
             fi
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel coverage requests_mock pytest-env
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
+            # if [ -f "${DIR}/requirements.txt" ]; then
+            #   python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            # fi
           }
           installPythonDependencies
 
@@ -350,6 +350,7 @@ jobs:
             echo "Installing packages in requirements.txt"
             python3 -m pip install --quiet -r requirements.txt
             echo "Checking __init__py"
+            echo {{ env.Python3_ROOT_DIR }}
             ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
             rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
             #ls -lrta test-venv/lib/python*/site-packages/
@@ -365,6 +366,7 @@ jobs:
             coverage run -m pytest -s
             coverage report
             coverage json
+            deactivate
           }
           pythonDockerBuild() {
             set -e
