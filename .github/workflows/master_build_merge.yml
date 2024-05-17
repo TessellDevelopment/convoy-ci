@@ -160,6 +160,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       GOPATH: /home/runner/go
@@ -331,6 +332,9 @@ jobs:
             awsConfigureTessellTools
             aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            awsConfigureTessellArtifacts
+            aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             set +e
           }
           elasticTarBuild() {
@@ -478,6 +482,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -512,6 +517,11 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
+          awsConfigureTessellArtifacts() {
+            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -535,6 +545,8 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            awsConfigureTessellArtifacts
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           mvnDeploy() {
@@ -624,6 +636,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -658,6 +671,11 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
+          awsConfigureTessellArtifacts() {
+            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -681,6 +699,8 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            awsConfigureTessellArtifacts
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           mvnDeploy() {
@@ -766,6 +786,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -829,9 +850,12 @@ jobs:
           agentBuildAndPush() {
             agentBuild "$@"
             set -e
-            mvnDeploy "$ARTIFACT" "tar" "package/$ARTIFACT.tar" "tessell.agent" "${{env.LATEST_TAG}}"
+            EXTENSION="$2"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp "package/$ARTIFACT.tar" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
+            awsConfigureTessellArtifacts
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           awsConfigureDevqaInfra() {
@@ -909,6 +933,8 @@ jobs:
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            awsConfigureTessellArtifacts
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           dockerBuild() {
@@ -959,6 +985,7 @@ jobs:
           functionBuildAndPush() {
             set -e
             ARTIFACT="$1"
+            EXTESNION="$2"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellTools
@@ -968,8 +995,10 @@ jobs:
             echo $OS
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
+            aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            awsConfigureTessellArtifacts
+            aws s3 cp "$ARTIFACT.$EXTESNION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             cd ..
             set +e
           }
@@ -1097,6 +1126,8 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
+            awsConfigureTessellArtifacts
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           makeImageAndPush() {
@@ -1147,7 +1178,7 @@ jobs:
             fi
             awsConfigureTessellArtifacts
             pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/${file_name}" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
           opsImageBuildAndPush() {
@@ -1249,6 +1280,8 @@ jobs:
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
+                awsConfigureTessellArtifacts
+                aws s3 cp "$ARTIFACT_FILE" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/terraform-modules/$DIR/$DIR-$VERSION.zip"
               fi
             done
             ls -lrta $BUILD_DIR
