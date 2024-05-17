@@ -409,9 +409,9 @@ jobs:
             fi
 
             echo "Running unit test" 
-            python3 -m coverage run -m pytest -s
-            python3 -m coverage report
-            python3 -m coverage json
+            coverage run -m pytest -s
+            coverage report
+            coverage json
             # python3 -m coverage run -m pytest -s
             # python3 -m coverage report
             # python3 -m coverage json
