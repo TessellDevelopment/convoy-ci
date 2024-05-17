@@ -350,7 +350,7 @@ jobs:
             echo "Installing packages in requirements.txt"
             python3 -m pip install --quiet -r requirements.txt
             echo "Checking __init__py"
-            echo {{ env.Python3_ROOT_DIR }}
+            echo ${{ env.Python3_ROOT_DIR }}
             ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
             rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
             #ls -lrta test-venv/lib/python*/site-packages/
