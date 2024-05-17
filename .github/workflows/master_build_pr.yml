@@ -351,11 +351,12 @@ jobs:
             echo "Installing packages in requirements.txt"
             ls -lrta . 
             ls -lrta dist/
-            python3 -m pip install dist/*.whl coverage requests_mock pytest pytest-env
+            python3 -m pip install dist/*.whl 
+            # coverage requests_mock pytest pytest-env
             # python3 -m pip install  -r requirements.txt
             # python3 -m pip install coverage requests_mock pytest-env pytest
-            python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
-            python3 -m pip show tessell-cloud-library tessell-db-plugin-sdk tessell-infra-provision-library tessell-python-base  tessell-python-hosts-library  tessell-python-mgmt-entities tessell-service-worker-library  tessell-worker-provision-service tessell-worker-common-library  
+            # python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
+            # python3 -m pip show tessell-cloud-library tessell-db-plugin-sdk tessell-infra-provision-library tessell-python-base  tessell-python-hosts-library  tessell-python-mgmt-entities tessell-service-worker-library  tessell-worker-provision-service tessell-worker-common-library  
 
          
             echo "Checking __init__py"
@@ -409,8 +410,8 @@ jobs:
 
             echo "Running unit test" 
             python3 -m coverage run -m pytest -s
-            coverage report
-            coverage json
+            python3 -m coverage report
+            python3 -m coverage json
             # python3 -m coverage run -m pytest -s
             # python3 -m coverage report
             # python3 -m coverage json
