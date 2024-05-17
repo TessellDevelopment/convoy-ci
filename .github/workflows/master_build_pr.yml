@@ -357,10 +357,10 @@ jobs:
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
             echo --------------------------- ONE -------------------------
-            echo test-env/lib/python3.9/site-packages/tessell
-            ls -lrta test-env/lib/python3.9/site-packages/tessell
-            echo test-env/lib/python3.9/site-packages/tessell/worker/
-            ls -lrta test-env/lib/python3.9/site-packages/tessell/worker/
+            # echo test-env/lib/python3.9/site-packages/tessell
+            # ls -lrta test-env/lib/python3.9/site-packages/tessell
+            # echo test-env/lib/python3.9/site-packages/tessell/worker/
+            # ls -lrta test-env/lib/python3.9/site-packages/tessell/worker/
             if [ -f test-env/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf test-env/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment"
