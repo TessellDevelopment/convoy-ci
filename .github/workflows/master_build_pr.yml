@@ -348,17 +348,6 @@ jobs:
             python3 -m venv $venv_name
             source test-venv/bin/activate
             python3 -m pip install dist/*.whl coverage requests_mock pytest-env pytest
-
-            # if [ -f $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
-            #   rm -rf $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py
-            #   echo "Deactivating virtual environment"
-            #   deactivate
-            #   echo "Activate virtual environment"
-            #   source $venv_name/bin/activate
-            # else
-            #   echo "No need to reactivate the environment"
-            # fi
-
             python3 -m coverage run -m pytest -s
             python3 -m coverage report
             python3 -m coverage json
@@ -370,7 +359,10 @@ jobs:
             rm pip.conf
             lintCheck
             gradlewPythonwheel
-            runPythonUnitTest
+            if [ -f "pytest.ini" ]; then
+              echo "Running unit tests"
+              runPythonUnitTest
+            fi
             imageScan $IMAGE
             set +e
           }
