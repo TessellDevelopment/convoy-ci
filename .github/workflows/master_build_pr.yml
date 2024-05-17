@@ -349,6 +349,7 @@ jobs:
             source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
             python3 -m pip install --quiet -r requirements.txt
+            python3 -m pip list | grep tessell
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
             if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
