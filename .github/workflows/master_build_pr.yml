@@ -377,10 +377,10 @@ jobs:
 
             
             echo --------------------------- TWO -------------------------
-            echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/
-            ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell
-            echo /${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
-            ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
+            # echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/
+            # ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell
+            # echo ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
+            # ls -lrta ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/
             if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment 2"
@@ -393,10 +393,10 @@ jobs:
 
             
             echo --------------------------- THREE -------------------------
-            echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/
-            ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/ 
-            echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell//worker
-            ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker
+            # echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/
+            # ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/ 
+            # echo /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell//worker
+            # ls -lrta /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker
             if [ -f /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
               rm -rf /opt/hostedtoolcache/Python/3.9.19/x64/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment 3"
