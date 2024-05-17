@@ -345,7 +345,8 @@ jobs:
           }
           runPythonUnitTest() {
             echo "Creating virtua environment"
-            python3 -m venv test-venv
+            venv_name=test-venv
+            python3 -m venv $venv_name
             source test-venv/bin/activate
             echo "Installing packages in requirements.txt"
             ls -lrta . 
@@ -360,16 +361,16 @@ jobs:
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
             echo --------------------------- ONE -------------------------
-            # echo test-env/lib/python3.9/site-packages/tessell
-            # ls -lrta test-env/lib/python3.9/site-packages/tessell
-            # echo test-env/lib/python3.9/site-packages/tessell/worker/
-            # ls -lrta test-env/lib/python3.9/site-packages/tessell/worker/
-            if [ -f test-env/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
-              rm -rf test-env/lib/python3.9/site-packages/tessell/worker/__init__.py
+            # echo $venv_name/lib/python3.9/site-packages/tessell
+            # ls -lrta $venv_name/lib/python3.9/site-packages/tessell
+            # echo $venv_name/lib/python3.9/site-packages/tessell/worker/
+            # ls -lrta $venv_name/lib/python3.9/site-packages/tessell/worker/
+            if [ -f $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
+              rm -rf $venv_name/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment"
               deactivate
               echo "Activate virtual environment"
-              source test-venv/bin/activate
+              source $venv_name/bin/activate
             else
               echo "No need to reactivate the environment"
             fi
@@ -385,7 +386,7 @@ jobs:
               echo "Deactivating virtual environment 2"
               deactivate
               echo "Activate virtual environment 2"
-              source test-venv/bin/activate
+              source $venv_name/bin/activate
             else
               echo "No need to reactivate the environment 2"
             fi
@@ -401,7 +402,7 @@ jobs:
               echo "Deactivating virtual environment 3"
               deactivate
               echo "Activate virtual environment 2"
-              source test-venv/bin/activate
+              source $venv_name/bin/activate
             else
               echo "No need to reactivate the environment 3"
             fi
