@@ -187,10 +187,10 @@ jobs:
               DIR='.'
             fi
             python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel coverage requests_mock pytest-env
-            # if [ -f "${DIR}/requirements.txt" ]; then
-            #   python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            # fi
+            python3 -m pip install flake8 pytest twine wheel
+            if [ -f "${DIR}/requirements.txt" ]; then
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            fi
           }
           installPythonDependencies
 
@@ -353,8 +353,8 @@ jobs:
             python3 -m pip list | grep -e tessell -e coverage -e pytest -e requests
             echo "Checking __init__py"
             echo ${{ env.Python3_ROOT_DIR }}
-            if [ -f ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
-              rm -rf ${{ env.Python3_ROOT_DIR }}/lib/python3.9/site-packages/tessell/worker/__init__.py
+            if [ -f test-env/lib/python3.9/site-packages/tessell/worker/__init__.py ]; then
+              rm -rf test-env/lib/python3.9/site-packages/tessell/worker/__init__.py
               echo "Deactivating virtual environment"
               deactivate
               echo "Activate virtual environment"
