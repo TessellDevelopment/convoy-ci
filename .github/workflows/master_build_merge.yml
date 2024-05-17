@@ -327,14 +327,18 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             cd ..
             elasticTarBuild
-            mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-windows.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
+            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
+            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             awsConfigureTessellArtifacts
-            aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-            aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            aws s3 cp $FILE_PATH_LINUX "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            aws s3 cp $FILE_PATH_WINDOWS "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             set +e
           }
           elasticTarBuild() {
@@ -546,6 +550,7 @@ jobs:
             awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
             awsConfigureTessellArtifacts
+            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
@@ -700,6 +705,7 @@ jobs:
             awsConfigureTessellTools
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
             awsConfigureTessellArtifacts
+            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
@@ -855,6 +861,7 @@ jobs:
             awsConfigureTessellTools
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
             awsConfigureTessellArtifacts
+            pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
@@ -934,6 +941,7 @@ jobs:
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
             awsConfigureTessellArtifacts
+            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
@@ -998,6 +1006,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
             aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             awsConfigureTessellArtifacts
+            pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             aws s3 cp "$ARTIFACT.$EXTESNION" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             cd ..
             set +e
@@ -1127,6 +1136,7 @@ jobs:
             awsConfigureTessellTools
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
             awsConfigureTessellArtifacts
+            pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             aws s3 cp client-package/$ARTIFACT.$EXTENSION "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             set +e
           }
@@ -1281,6 +1291,7 @@ jobs:
                 awsConfigureDevqaInfra
                 aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
                 awsConfigureTessellArtifacts
+                pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/terraform-modules/$DIR/$DIR-$VERSION.zip"
                 aws s3 cp "$ARTIFACT_FILE" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/terraform-modules/$DIR/$DIR-$VERSION.zip"
               fi
             done
