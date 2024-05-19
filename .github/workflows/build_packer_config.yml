@@ -233,76 +233,82 @@ jobs:
                   --upload-file ./common_manifest.json \
                   ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
 
-  # post-build-status-to-convoy:
-  #   runs-on: non-build
-  #   needs: build
-  #   if: always()
-  #   env:
-  #     SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
-  #   steps:
-  #     - uses: actions/checkout@v4.1.1
-  #       name: Checkout repos
-  #       with:
-  #         fetch-depth: 0
+  post-build-status-to-convoy:
+    runs-on: non-build
+    needs: build
+    if: always()
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
 
-  #     - name: Get branch name
-  #       shell: bash
-  #       run: |
-  #         echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-  #     - uses: technote-space/workflow-conclusion-action@v3.0.3
-  #       if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-  #       with:
-  #         GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        with:
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
-  #     - name: POST API to Convoy
-  #       if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-  #       env:
-  #         API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
-  #         COMMIT_HASH: "${{github.sha}}"
-  #         REPO: "${{github.repository}}"
-  #         BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-  #         API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-  #         STATUS: "${{env.WORKFLOW_CONCLUSION}}"
-  #         SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
-  #       run: |
-  #         python3 - <<EOF
-  #         import requests
-  #         import json
-  #         import os
-  #         import time
-  #         import base64
-  #         import yaml
+      - name: POST API to Convoy
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        env:
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          COMMIT_HASH: "${{github.sha}}"
+          REPO: "${{github.repository}}"
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+          STATUS: "${{env.WORKFLOW_CONCLUSION}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+        run: |
+          echo ${{ env.API_URL }}
+          echo ${{ env.COMMIT_HASH }}
+          echo ${{ env.REPO }}
+          echo ${{ env.BASE_BRANCH }}
+          echo ${{ env.API_KEY }}
+          echo ${{ env.SOURCE_BRANCH }}
+          python3 - <<EOF
+          import requests
+          import json
+          import os
+          import time
+          import base64
+          import yaml
 
-  #         API_URL = os.environ.get('API_URL')
-  #         API_KEY = os.environ.get('API_KEY')
-  #         REPO = os.environ.get('REPO')
-  #         COMMIT_HASH = os.environ.get('COMMIT_HASH')
-  #         BASE_BRANCH = os.environ.get('BASE_BRANCH')
-  #         STATUS = (os.environ.get('STATUS')).upper()
+          API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
+          REPO = os.environ.get('REPO')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          STATUS = (os.environ.get('STATUS')).upper()
 
-  #         if not(bool(BASE_BRANCH)):
-  #           BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
 
-  #         OWNER = REPO.split("/")
-  #         REPO = OWNER[1]
+          OWNER = REPO.split("/")
+          REPO = OWNER[1]
 
-  #         if STATUS == 'SUCCESS':
-  #           STATUS = 'SUCCESSFUL'
-  #         if STATUS == 'FAILURE':
-  #           STATUS = 'FAILED'
+          if STATUS == 'SUCCESS':
+            STATUS = 'SUCCESSFUL'
+          if STATUS == 'FAILURE':
+            STATUS = 'FAILED'
 
-  #         with open('convoy.yaml', 'r') as yaml_file:
-  #           yaml_data = yaml.safe_load(yaml_file)
-  #         APP_GROUP = yaml_data.get('appGroup')
-  #         payload = {
-  #           "repoName": REPO,
-  #           "appGroup": APP_GROUP,
-  #           "commitHash": COMMIT_HASH[:7],
-  #           "baseBranch": BASE_BRANCH,
-  #           "buildStatus": STATUS
-  #         }
-  #         print(payload)
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
+          payload = {
+            "repoName": REPO,
+            "appGroup": APP_GROUP,
+            "commitHash": COMMIT_HASH[:7],
+            "baseBranch": BASE_BRANCH,
+            "buildStatus": STATUS
+          }
+          print(payload)
   #         headers = {
   #           'Content-Type': 'application/json',
   #           'x-api-key': API_KEY
