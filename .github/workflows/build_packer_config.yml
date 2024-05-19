@@ -309,6 +309,8 @@ jobs:
             "buildStatus": STATUS
           }
           print(payload)
+          EOF
+
   #         headers = {
   #           'Content-Type': 'application/json',
   #           'x-api-key': API_KEY
