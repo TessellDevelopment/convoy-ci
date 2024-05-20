@@ -280,7 +280,7 @@ jobs:
           import time
           import base64
           import yaml
-          
+
           API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
@@ -312,8 +312,8 @@ jobs:
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
           }
-          if API_URL == os.environ.get('API_URL_BUILD_STATUS')
-            payload["buildStatus"]: STATUS
+          if API_URL == os.environ.get('API_URL_BUILD_STATUS'):
+            payload["buildStatus"] = STATUS
           print(payload)
 
           headers = {
