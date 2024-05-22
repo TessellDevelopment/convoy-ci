@@ -217,14 +217,14 @@ jobs:
           source ./secrets
           export CURRENT_VERSION_TAG="2.0.1"
           mkdir -p ~/.packer.d/plugins
-          validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run --skip_azure_check
+          validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run 
 
       - name: Dry Run Input-config1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           source ./secrets
           export CURRENT_VERSION_TAG="2.0.1"
-          build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run --skip_azure_check
+          build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run 
 
       - name: Build and upload
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
