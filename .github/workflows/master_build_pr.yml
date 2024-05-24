@@ -336,6 +336,10 @@ jobs:
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewPythonwheel
+            if [ -f "pytest.ini" ]; then
+              echo "Running unit tests"
+              runPythonUnitTest
+            fi
             imageScan $IMAGE
             set +e
           }
