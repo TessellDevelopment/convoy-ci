@@ -892,6 +892,24 @@ jobs:
             go install golang.org/x/tools/cmd/goimports@latest
             which go
           }
+
+          infraProvisionBuild() {
+            set -e
+            lintCheck
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            mkdir -p build/tools
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
+            gradlewPythonwheel
+            if [ -f "pytest.ini" ]; then
+              echo "Running unit tests"
+              runPythonUnitTest
+            fi
+            imageScan $IMAGE
+            set +e
+          }
+
           installPythonDependencies() {
             DIR=$1
             if [[ -z "${DIR}" ]]; then
@@ -1010,6 +1028,17 @@ jobs:
               cd ..
             fi
             set +e
+          }
+
+          runPythonUnitTest() {
+            venv_name=test-venv
+            python3 -m venv $venv_name
+            source test-venv/bin/activate
+            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
+            python3 -m coverage run -m pytest -s
+            python3 -m coverage report
+            python3 -m coverage json
+            deactivate
           }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
