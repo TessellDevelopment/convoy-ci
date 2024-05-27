@@ -89,7 +89,7 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-1377-1
     secrets: inherit
     with:
-      ARTIFACT_CHECKSUM: ${{needs.build.outputs.ARTIFACT_CHECKSUM}}
+      ARTIFACT_CHECKSUM: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')

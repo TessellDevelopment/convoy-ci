@@ -16,9 +16,9 @@ on:
         required: true
         type: string
     outputs:
-      ARTIFACT_CHECKSUM:
-        description: "New tag created post merge"
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUM) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUM) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUM) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUM) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUM) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUM) }} 
+      ARTIFACT_CHECKSUMS:
+        description: 'Consolidated Checksum of generated artifacts'
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
 
 jobs:
 
@@ -26,7 +26,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
@@ -151,11 +151,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -169,7 +169,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
@@ -386,7 +386,7 @@ jobs:
               return 1
             fi
             checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUM+="${ARTIFACT}:${checksum}%"            
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
@@ -501,11 +501,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -519,7 +519,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
@@ -575,7 +575,7 @@ jobs:
               return 1
             fi
             checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUM+="${ARTIFACT}:${checksum}%"            
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goLibraryBuildAndPush() {
             set -e
@@ -670,11 +670,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -697,7 +697,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
@@ -753,7 +753,7 @@ jobs:
               return 1
             fi
             checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUM+="${ARTIFACT}:${checksum}%"            
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goLibraryBuildAndPush() {
             set -e
@@ -844,11 +844,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -871,7 +871,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
@@ -1115,7 +1115,7 @@ jobs:
               return 1
             fi
             checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUM+="${ARTIFACT}:${checksum}%"            
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goDockerBuildAndPush() {
             set -e
@@ -1507,12 +1507,12 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -1535,7 +1535,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     outputs:
-      ARTIFACT_CHECKSUM: ${{ steps.build.outputs.ARTIFACT_CHECKSUM }}
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
@@ -1752,11 +1752,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUM=""
+          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          echo "ARTIFACT_CHECKSUM=$ARTIFACT_CHECKSUM" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
