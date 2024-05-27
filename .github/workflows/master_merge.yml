@@ -76,7 +76,7 @@ jobs:
 
   build:
     needs: [runner-check,find-latest-tag]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-1377-1
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
@@ -86,8 +86,10 @@ jobs:
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     needs: build
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-1377-1
     secrets: inherit
+    with:
+      ARTIFACT_CHECKSUM: ${{needs.build.outputs.ARTIFACT_CHECKSUM}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')

@@ -2,6 +2,11 @@
 name: Build Status POST API to Convoy
 on:
   workflow_call:
+    inputs:
+      ARTIFACT_CHECKSUM:
+        description: 'Consolidated Checksum of generated artifacts'
+        required: true
+        type: string
     
 jobs:
   
@@ -28,6 +33,7 @@ jobs:
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+          ARTIFACT_CHECKSUM: ${{inputs.ARTIFACT_CHECKSUM}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -45,6 +51,7 @@ jobs:
 
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
+            ARTIFACT_CHECKSUM = os.environ.get('ARTIFACT_CHECKSUM')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
@@ -61,6 +68,15 @@ jobs:
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
 
+            print(ARTIFACT_CHECKSUM)
+            pairs = ARTIFACT_CHECKSUM.strip('%').split('%')
+            result = []
+            for pair in pairs:
+                if pair:
+                    key, value = pair.split(':')
+                    result.append({key: value})
+            CHECKSUMS = json.dumps(result)
+
             with open('convoy.yaml', 'r') as yaml_file:
               yaml_data = yaml.safe_load(yaml_file)
             APP_GROUP = yaml_data.get('appGroup')
@@ -69,7 +85,8 @@ jobs:
               "appGroup": APP_GROUP,
               "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
-              "buildStatus": STATUS
+              "buildStatus": STATUS,
+              "checksums": ARTIFACT_CHECKSUM
             }
             print(payload)
             headers = {
