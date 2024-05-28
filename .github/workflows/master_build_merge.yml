@@ -1386,6 +1386,7 @@ jobs:
                 VERSION=$(yq .version convoy.yaml)
                 echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
+                cd ..
                 generate_checksum "$ARTIFACT_FILE"
               fi
             done
