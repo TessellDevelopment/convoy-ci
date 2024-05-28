@@ -351,7 +351,7 @@ jobs:
             for env in "${environments[@]}"
             do
               mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-              mc cp "$FILE_PATH_WINDOWS" minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+              mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             done
             generate_checksum "filebeat-linux.tar.gz" 
             generate_checksum "filebeat-windows.tar.gz" 
