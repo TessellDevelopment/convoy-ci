@@ -95,7 +95,7 @@ jobs:
             }
 
             max_retries = 3
-            retry_delay = 20 
+            retry_delay = 5
         
             for _ in range(max_retries):
                 response = requests.post(API_URL, json=payload, headers=headers)

@@ -1377,7 +1377,7 @@ jobs:
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
-            DIRECTORIES=($(ls -d */))
+            DIRECTORIES=($(ls -d *))
             for DIR in "${DIRECTORIES[@]}"; do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
                 echo "building  ${DIR}"
