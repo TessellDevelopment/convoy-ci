@@ -558,11 +558,6 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          awsConfigureTessellArtifacts() {
-            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           generate_checksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
@@ -623,6 +618,23 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
+          }
+          pushToNexus() {
+            FILE_PATH="$1"
+            URL_PATH="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           validateInputs() {
             local required=($1)
@@ -737,11 +749,6 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          awsConfigureTessellArtifacts() {
-            aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           generate_checksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
@@ -802,6 +809,23 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
+          }
+          pushToNexus() {
+            FILE_PATH="$1"
+            URL_PATH="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
           }
           validateInputs() {
             local required=($1)
