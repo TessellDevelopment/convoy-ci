@@ -487,10 +487,10 @@ jobs:
         run: |
          elasticConf() {
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            export GOPATH="/usr/local/go"
             installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
-            export GOPATH="/usr/local/go"
             go run bootstrap.go
             export PATH=${PATH}:$GOPATH/bin
             cd ..
