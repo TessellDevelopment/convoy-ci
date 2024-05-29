@@ -214,6 +214,7 @@ jobs:
         # this build runs when PR is created and on every push to PR
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
+          echo $TAGS
           source ./secrets
           export CURRENT_VERSION_TAG="2.0.1"
           mkdir -p ~/.packer.d/plugins
@@ -229,6 +230,7 @@ jobs:
       - name: Build and upload
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
+          echo $TAGS
           source ./secrets
           CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
           build_all_artifacts -r $PWD --base_commit  --pipeline_run
