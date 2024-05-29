@@ -68,7 +68,6 @@ jobs:
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
 
-            print(ARTIFACT_CHECKSUMS)
             pairs = ARTIFACT_CHECKSUMS.strip('%').split('%')
             result = []
             for pair in pairs:

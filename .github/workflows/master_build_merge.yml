@@ -312,83 +312,6 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
-          elasticConf() {
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            installGoDependencies
-            git clone https://github.com/magefile/mage
-            cd mage
-            go run bootstrap.go
-            cd ..
-          }
-          elasticBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            elasticConf
-            echo "----------------------------------------------"
-            echo "----------- Building Service -----------------"
-            export GOPATH=/home/runner/go/bin
-            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
-            cd filebeat
-            mage package
-            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
-            echo "----------------------------------------------"
-            echo "------------ Building Image ------------------"
-            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            cd ..
-            elasticTarBuild
-            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
-            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
-            awsConfigureTessellTools
-            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
-            for env in "${environments[@]}"
-            do
-              mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-              mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
-            done
-            generate_checksum "filebeat-linux.tar.gz" 
-            generate_checksum "filebeat-windows.tar.gz" 
-            set +e
-          }
-          elasticTarBuild() {
-            echo "----------------------------------------------"
-            echo "---------- Creating Tar Files -----------------"
-            PACKAGES_DIR=./filebeat/build/distributions/
-            mkdir -p $PACKAGES_DIR
-            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
-            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
-            popd
-            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
-            popd
-          }
-          generate_checksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
-          }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -894,6 +817,198 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
+  build-amd-2:
+    if: ${{ inputs.type == 'amd-2' }}
+    runs-on: self-hosted
+    outputs:
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+    env:
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      NAMESPACE: "convoy"
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+      GOPATH: /home/github/go
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}  
+
+      - name: Build
+        id: build
+        run: |
+          awsConfigureTessellTools() {
+            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
+          elasticConf() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            installGoDependencies
+            git clone https://github.com/magefile/mage
+            cd mage
+            go run bootstrap.go
+            cd ..
+          }
+          elasticBuildAndPush() {
+            set -e
+            IMAGE="$1"
+            elasticConf
+            echo "----------------------------------------------"
+            echo "----------- Building Service -----------------"
+            export GOPATH=/home/runner/go/bin
+            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+            cd filebeat
+            mage package
+            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            cd ..
+            elasticTarBuild
+            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
+            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
+            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
+            awsConfigureTessellTools
+            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            for env in "${environments[@]}"
+            do
+              mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+              mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            done
+            generate_checksum "filebeat-linux.tar.gz" 
+            generate_checksum "filebeat-windows.tar.gz" 
+            set +e
+          }
+          elasticTarBuild() {
+            echo "----------------------------------------------"
+            echo "---------- Creating Tar Files -----------------"
+            PACKAGES_DIR=./filebeat/build/distributions/
+            mkdir -p $PACKAGES_DIR
+            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+            popd
+            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+            popd
+          }
+          generate_checksum() {
+            ARTIFACT=$1
+            BUILD_FILE=$2
+            if [[ -z "$BUILD_FILE" ]]; then
+              echo "Build File name same as Artifact name"
+              BUILD_FILE=$ARTIFACT
+            fi
+            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
+            if [[ -z "$file_path" ]]; then
+              echo "File not found!"
+              return 1
+            fi
+            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+          }
+          mvnDeploy() {
+            ARTIFACT_ID="$1"
+            EXTENSION="$2"
+            FILE="$3"
+            GROUP_ID="$4"
+            VERSION="$5"
+            requiredInputs="1 2 3 4 5"
+            validateInputs "$requiredInputs" "$@" 
+            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
+                -DgeneratePom=true -Dpackaging=$EXTENSION \
+                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
+                -Dfile=$FILE -DrepositoryId=nexus
+          }
+          pushToNexus() {
+            FILE_PATH="$1"
+            URL_PATH="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
+                --upload-file $FILE_PATH  -w "%{http_code}" \
+                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
+            echo $REPONSE
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
+            echo $HTTP_CODE
+            HTTP_CODE=$((HTTP_CODE))
+            if [ "$HTTP_CODE" -ne 201 ]; then
+              echo "Error: Unexpected HTTP response code $HTTP_CODE"
+              exit 1
+            fi
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            environments=("dev" "qa" "stage" "prod")
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "$type $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          ARTIFACT_CHECKSUMS=""
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+        
+
   build-amd:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
@@ -1396,6 +1511,7 @@ jobs:
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
                 echo "building  ${DIR}"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+                VERSION=$(yq .version convoy.yaml)
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
@@ -1474,11 +1590,11 @@ jobs:
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
+            environments=("dev" "qa" "stage" "prod")
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return
             fi
-            environments=("dev" "qa" "stage" "prod")
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
