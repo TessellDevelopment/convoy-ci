@@ -208,51 +208,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          elasticConf() {
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            installGoDependencies
-            git clone https://github.com/magefile/mage
-            cd mage
-            go run bootstrap.go
-            cd ..
-          }
-          elasticBuild() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            elasticConf
-            echo "----------------------------------------------"
-            echo "----------- Building Service -----------------"
-            export GOPATH=/home/runner/go/bin
-            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
-            cd filebeat
-            mage package
-            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
-            echo "----------------------------------------------"
-            echo "------------ Building Image ------------------"
-            docker build -t $IMAGE .
-            cd ..
-            elasticTarBuild
-            set +e
-          }
-          elasticTarBuild() {
-            echo "----------------------------------------------"
-            echo "---------- Creating Tar Files -----------------"
-            PACKAGES_DIR=./filebeat/build/distributions/
-            mkdir -p $PACKAGES_DIR
-            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
-            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
-            popd
-            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
-            popd
-          }
           gradlewPythonwheel() {
             ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -361,6 +316,122 @@ jobs:
                 exit 1
               fi
             done
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file filePath baseImage <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              echo "filePath: $filePath"
+              echo "baseImage: $baseImage"
+              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
+              echo "$type $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+
+  build-amd-2:
+    if: ${{ inputs.type == 'amd-2' }}
+    runs-on: self-hosted
+    env:
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        
+      - name: Build
+        shell: bash
+        run: |
+          elasticConf() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            installGoDependencies
+            git clone https://github.com/magefile/mage
+            cd mage
+            go run bootstrap.go
+            cd ..
+          }
+          elasticBuild() {
+            set -e
+            IMAGE="$1"
+            elasticConf
+            echo "----------------------------------------------"
+            echo "----------- Building Service -----------------"
+            export GOPATH=/home/runner/go/bin
+            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+            cd filebeat
+            mage package
+            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t $IMAGE .
+            cd ..
+            elasticTarBuild
+            set +e
+          }
+          elasticTarBuild() {
+            echo "----------------------------------------------"
+            echo "---------- Creating Tar Files -----------------"
+            PACKAGES_DIR=./filebeat/build/distributions/
+            mkdir -p $PACKAGES_DIR
+            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+            popd
+            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+            popd
+          }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
           }
           build() {
             type="$1"

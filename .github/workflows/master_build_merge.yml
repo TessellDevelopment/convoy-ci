@@ -936,6 +936,11 @@ jobs:
             checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
+          installGoDependencies() {
+            go version
+            go install golang.org/x/tools/cmd/goimports@latest
+            which go
+          }
           mvnDeploy() {
             ARTIFACT_ID="$1"
             EXTENSION="$2"
