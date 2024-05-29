@@ -1188,6 +1188,7 @@ jobs:
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.tessell" "${VERSION}"
+            set +e
           }
           pythonLibraryBuildAndPush() {
             set -e
