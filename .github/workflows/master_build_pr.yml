@@ -490,7 +490,9 @@ jobs:
             installGoDependencies
             git clone https://github.com/magefile/mage
             cd mage
+            export GOPATH="usr/local/go"
             go run bootstrap.go
+            export PATH=${PATH}:$GOPATH/bin
             cd ..
           }
           elasticBuild() {
@@ -499,8 +501,6 @@ jobs:
             elasticConf
             echo "----------------------------------------------"
             echo "----------- Building Service -----------------"
-            export GOPATH=/home/runner/go/bin
-            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
             cd filebeat
             mage package
             cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
