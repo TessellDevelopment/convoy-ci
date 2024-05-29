@@ -1173,6 +1173,22 @@ jobs:
               exit 1
             fi
           }
+          pythonApiClientBuildAndPush() {
+            set -e
+            bash setup --version ${LATEST_TAG} --upload
+            set +e
+          }
+          pythonApiTemplatesBuildAndPush() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            VERSION="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
+            ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
+            zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.tessell" "${VERSION}"
+          }
           pythonLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -1307,6 +1323,14 @@ jobs:
               fi
             done
           }
+          zipDirectory() {
+            set -e
+            ARTIFACT_FILE="$1"
+            DIR="$2"
+            zip -r ${ARTIFACT_FILE} ${DIR}
+            set +e
+          }
+
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)

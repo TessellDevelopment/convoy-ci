@@ -908,6 +908,12 @@ jobs:
             mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
             set +e
           }
+
+          pythonApiClientBuild() {
+            set -e
+            bash setup --version 0.0.0
+            set +e
+          }
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -980,6 +986,19 @@ jobs:
             dockerBuild "$@"
             set +e
           }
+
+          pythonApiTemplatesBuild() {
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            VERSION="$3"
+            requiredInputs="1 2 3"
+            validateInputs "$requiredInputs" "$@" 
+            ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
+            zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
+            set +e
+          }
+
           pythonLibraryBuild() {
             set -e
             ARTIFACT="$1"
@@ -1083,6 +1102,15 @@ jobs:
             ls
             set +e
           }
+
+          zipDirectory() {
+            set -e
+            ARTIFACT_FILE="$1"
+            DIR="$2"
+            zip -r ${ARTIFACT_FILE} ${DIR}
+            set +e
+          }
+
           validateInputs() {
             local required=($1)
             shift
