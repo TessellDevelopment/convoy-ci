@@ -21,7 +21,7 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
-      TAGS: '{"workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
+      CUSTOM_TAGS: '{"workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${{ github.event.ref }} | tr / -)" >> $GITHUB_ENV
-      
+
       - name: Set Label
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
@@ -76,7 +76,7 @@ jobs:
           else
             echo "LABEL=${{env.SOURCE_BRANCH}}" >> $GITHUB_ENV
           fi
-      
+
       - name: visible
         run: |
           echo ${{ env.SOURCE_BRANCH }}
@@ -215,32 +215,37 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           echo $TAGS
+          echo $CUSTOM_TAGS
           source ./secrets
-          export CURRENT_VERSION_TAG="2.0.1"
+          export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+          echo $CURRENT_VERSION_TAG
           mkdir -p ~/.packer.d/plugins
-          validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run 
+          validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run
 
-      - name: Dry Run Input-config1
+      - name: Dry Run Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           source ./secrets
-          export CURRENT_VERSION_TAG="2.0.1"
-          build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run 
+          export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+          echo $CURRENT_VERSION_TAG
+          build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run
 
       - name: Build and upload
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
         run: |
           echo $TAGS
+          echo $CUSTOM_TAGS
           source ./secrets
-          CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+          export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+          echo $CURRENT_VERSION_TAG
           build_all_artifacts -r $PWD --base_commit  --pipeline_run
 
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                  --upload-file ./common_manifest.json \
-                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                --upload-file ./common_manifest.json \
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
 
   post-build-status-to-convoy:
     runs-on: non-build
