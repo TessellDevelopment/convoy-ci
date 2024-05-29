@@ -1105,8 +1105,8 @@ jobs:
 
           zipDirectory() {
             set -e
-            ARTIFACT_FILE="$1"
-            DIR="$2"
+            DIR="$1"
+            ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
             set +e
           }
