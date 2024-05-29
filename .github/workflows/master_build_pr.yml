@@ -909,11 +909,6 @@ jobs:
             set +e
           }
 
-          pythonApiClientBuild() {
-            set -e
-            bash setup --version 0.0.0
-            set +e
-          }
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -987,6 +982,11 @@ jobs:
             set +e
           }
 
+          pythonApiClientBuild() {
+            set -e
+            bash setup --version 0.0.0
+            set +e
+          }
           pythonApiTemplatesBuild() {
             set -e
             ARTIFACT="$1"
