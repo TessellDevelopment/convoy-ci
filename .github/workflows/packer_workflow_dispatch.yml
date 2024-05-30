@@ -101,7 +101,7 @@ jobs:
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
           pip3 install pyopenssl
           pip3 install pyopenssl --upgrade
-
+          pip3 install --force-reinstall setuptools==45.2.0
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |

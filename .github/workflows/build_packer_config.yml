@@ -115,6 +115,7 @@ jobs:
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
           pip3 install pyopenssl
           pip3 install pyopenssl --upgrade
+          pip3 install --force-reinstall setuptools==45.2.0
 
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
