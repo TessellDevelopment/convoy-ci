@@ -28,6 +28,7 @@ jobs:
       AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
+      CURRENT_VERSION_TAG: 0.118.20502
 
     steps:
       - name: Checkout code
