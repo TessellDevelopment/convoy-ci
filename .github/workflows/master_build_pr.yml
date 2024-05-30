@@ -208,6 +208,51 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          elasticConf() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            installGoDependencies
+            git clone https://github.com/magefile/mage
+            cd mage
+            go run bootstrap.go
+            cd ..
+          }
+          elasticBuild() {
+            set -e
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            elasticConf
+            echo "----------------------------------------------"
+            echo "----------- Building Service -----------------"
+            export GOPATH=/home/runner/go/bin
+            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+            cd filebeat
+            mage package
+            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t $IMAGE .
+            cd ..
+            elasticTarBuild
+            set +e
+          }
+          elasticTarBuild() {
+            echo "----------------------------------------------"
+            echo "---------- Creating Tar Files -----------------"
+            PACKAGES_DIR=./filebeat/build/distributions/
+            mkdir -p $PACKAGES_DIR
+            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+            popd
+            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+            popd
+          }
           gradlewPythonwheel() {
             ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -485,49 +530,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-         elasticConf() {
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            export GOPATH="/usr/local/go"
-            installGoDependencies
-            git clone https://github.com/magefile/mage
-            cd mage
-            go run bootstrap.go
-            export PATH=${PATH}:$GOPATH/bin
-            cd ..
-          }
-          elasticBuild() {
-            set -e
-            IMAGE="$1"
-            elasticConf
-            echo "----------------------------------------------"
-            echo "----------- Building Service -----------------"
-            cd filebeat
-            mage package
-            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
-            echo "----------------------------------------------"
-            echo "------------ Building Image ------------------"
-            docker build -t $IMAGE .
-            cd ..
-            elasticTarBuild
-            set +e
-          }
-          elasticTarBuild() {
-            echo "----------------------------------------------"
-            echo "---------- Creating Tar Files -----------------"
-            PACKAGES_DIR=./filebeat/build/distributions/
-            mkdir -p $PACKAGES_DIR
-            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
-            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
-            popd
-            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
-            popd
-          }
           goLibraryBuild() {
             set -e
             ARTIFACT="$1"
@@ -548,11 +550,6 @@ jobs:
               make service os=$OS engine=$ENGINE
             fi
             set +e
-          }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
           }
           validateInputs() {
             local required=($1)

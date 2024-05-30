@@ -312,6 +312,57 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
           }
+          elasticConf() {
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            installGoDependencies
+            git clone https://github.com/magefile/mage
+            cd mage
+            go run bootstrap.go
+            cd ..
+          }
+          elasticBuildAndPush() {
+            set -e
+            IMAGE="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            elasticConf
+            echo "----------------------------------------------"
+            echo "----------- Building Service -----------------"
+            export GOPATH=/home/runner/go/bin
+            export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+            cd filebeat
+            mage package
+            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+            echo "----------------------------------------------"
+            echo "------------ Building Image ------------------"
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            cd ..
+            elasticTarBuild
+            mvnDeploy "filebeat-linux" "tar.gz" "./filebeat/build/distributions/filebeat-linux.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-windows" "tar.gz" "./filebeat/build/distributions/filebeat-windows.tar.gz" "tessell.filebeat" "${{env.LATEST_TAG}}"
+            awsConfigureTessellTools
+            aws s3 cp "./filebeat/build/distributions/filebeat-linux.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp "./filebeat/build/distributions/filebeat-windows.tar.gz" s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            set +e
+          }
+          elasticTarBuild() {
+            echo "----------------------------------------------"
+            echo "---------- Creating Tar Files -----------------"
+            PACKAGES_DIR=./filebeat/build/distributions/
+            mkdir -p $PACKAGES_DIR
+            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+            popd
+            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
+            pushd $PACKAGES_DIR
+            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+            popd
+          }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -671,81 +722,6 @@ jobs:
             aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
-          }
-          elasticConf() {
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            export GOPATH="/usr/local/go"
-            installGoDependencies
-            git clone https://github.com/magefile/mage
-            cd mage
-            go run bootstrap.go
-            export PATH=${PATH}:$GOPATH/bin
-            cd ..
-          }
-          elasticBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            elasticConf
-            echo "----------------------------------------------"
-            echo "----------- Building Service -----------------"
-            cd filebeat
-            mage package
-            cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
-            echo "----------------------------------------------"
-            echo "------------ Building Image ------------------"
-            docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            cd ..
-            elasticTarBuild
-            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
-            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
-            awsConfigureTessellTools
-            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
-            for env in "${environments[@]}"
-            do
-              mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-              mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
-            done
-            generate_checksum "filebeat-linux.tar.gz" 
-            generate_checksum "filebeat-windows.tar.gz" 
-            set +e
-          }
-          elasticTarBuild() {
-            echo "----------------------------------------------"
-            echo "---------- Creating Tar Files -----------------"
-            PACKAGES_DIR=./filebeat/build/distributions/
-            mkdir -p $PACKAGES_DIR
-            cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
-            cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
-            popd
-            cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
-            cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe 
-            pushd $PACKAGES_DIR
-            tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
-            popd
-          }
-          generate_checksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goLibraryBuildAndPush() {
             set -e
