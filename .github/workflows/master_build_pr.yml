@@ -145,7 +145,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5.0.0
         with:
-          python-version: 3.9
+          python-version: 3.11
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -351,8 +351,7 @@ jobs:
             venv_name=test-venv
             python3 -m venv $venv_name
             source test-venv/bin/activate
-            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 \
-              --extra-index-url=https://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@nexus.tessell.cloud/repository/tessell-py-component/simple/'
+            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
             python3 -m coverage run -m pytest -s
             python3 -m coverage report
             python3 -m coverage json
@@ -1108,29 +1107,6 @@ jobs:
             DIR="$1"
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
-          }
-
-          runPythonUnitTest() {
-            venv_name=test-venv
-            python3 -m venv $venv_name
-            source test-venv/bin/activate
-            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m coverage run -m pytest -s
-            python3 -m coverage report
-            python3 -m coverage json
-            deactivate
-          }
-          pythonDockerBuild() {
-            set -e
-            IMAGE="$1"
-            lintCheck
-            gradlewPythonwheel
-            if [ -f "pytest.ini" ]; then
-              echo "Running unit tests"
-              runPythonUnitTest
-            fi
-            imageScan $IMAGE
-            set +e
           }
 
           validateInputs() {
