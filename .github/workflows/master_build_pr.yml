@@ -351,7 +351,8 @@ jobs:
             venv_name=test-venv
             python3 -m venv $venv_name
             source test-venv/bin/activate
-            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
+            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 \
+              --extra-index-url=https://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@nexus.tessell.cloud/repository/tessell-py-component/simple/'
             python3 -m coverage run -m pytest -s
             python3 -m coverage report
             python3 -m coverage json
