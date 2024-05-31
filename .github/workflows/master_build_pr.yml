@@ -1019,33 +1019,14 @@ jobs:
             python3 -m pip list | grep harness
             deactivate
           }
-          generateChecksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
-          }
           terraformBuild(){
             set -e
             modifiedDir
             BASE_DIR=$PWD
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
-            DIRECTORIES=$(modifiedDir)
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
-            DIRECTORIES=($(ls -d *))
-            echo $DIRECTORIES
-            MODIFIED_DIRECTORIES=$(modifiedDir)
-            echo $MODIFIED_DIRECTORIES
+            DIRECTORIES=$(modifiedDir)
             for DIR in $DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
@@ -1055,12 +1036,9 @@ jobs:
                 VERSION=$(yq .version convoy.yaml)
                 echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
                 terraform_build $PWD $ARTIFACT_FILE
-                ARTIFACT_FILE=${DIR}.zip
-                generateChecksum "$ARTIFACT_FILE"
               fi
             done
             ls -lrta $BUILD_DIR
-            ec
             set +e
           }
           tsmZipBuild() {
@@ -1135,12 +1113,10 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-          echo $ARTIFACT_CHECKSUMS
 
       - name: Cleanup
         if: always()
