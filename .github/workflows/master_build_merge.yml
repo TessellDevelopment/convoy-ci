@@ -376,8 +376,8 @@ jobs:
               mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
               mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             done
-            generate_checksum "filebeat-linux.tar.gz" 
-            generate_checksum "filebeat-windows.tar.gz" 
+            generateChecksum "filebeat-linux.tar.gz" 
+            generateChecksum "filebeat-windows.tar.gz" 
             set +e
           }
           elasticTarBuild() {
@@ -397,7 +397,7 @@ jobs:
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
           }
-          generate_checksum() {
+          generateChecksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
             if [[ -z "$BUILD_FILE" ]]; then
@@ -581,7 +581,7 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          generate_checksum() {
+          generateChecksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
             if [[ -z "$BUILD_FILE" ]]; then
@@ -624,7 +624,7 @@ jobs:
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
           mvnDeploy() {
@@ -800,7 +800,7 @@ jobs:
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
           installGoDependencies() {
@@ -987,7 +987,7 @@ jobs:
             do
               mc cp "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
           awsConfigureDevqaInfra() {
@@ -1070,7 +1070,7 @@ jobs:
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
           dockerBuild() {
@@ -1138,11 +1138,11 @@ jobs:
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             cd ..
             set +e
           }
-          generate_checksum() {
+          generateChecksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
             if [[ -z "$BUILD_FILE" ]]; then
@@ -1284,7 +1284,7 @@ jobs:
             do
               mc cp "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "$ARTIFACT.$EXTENSION"
+            generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
           makeImageAndPush() {
@@ -1340,7 +1340,7 @@ jobs:
             do
               mc cp "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/opa-policies/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generate_checksum "${file_name}"
+            generateChecksum "${file_name}"
             set +e
           }
           opsImageBuildAndPush() {
@@ -1391,7 +1391,11 @@ jobs:
             mkdir -p $BUILD_DIR
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             DIRECTORIES=($(ls -d *))
-            for DIR in "${DIRECTORIES[@]}"; do
+            echo $DIRECTORIES
+            MODIFIED_DIRECTORIES=$(modifiedDir)
+            echo $MODIFIED_DIRECTORIES
+            for DIR in $MODIFIED_DIRECTORIES
+            do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
                 echo "building  ${DIR}"
                 ARTIFACT_FILE=${DIR}.zip
@@ -1400,14 +1404,7 @@ jobs:
                 echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 cd ..
-                generate_checksum "$ARTIFACT_FILE"
-              fi
-            done
-            MODIFIED_DIRECTORIES=$(modifiedDir)
-            for DIR in $MODIFIED_DIRECTORIES
-            do
-              if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-                echo "building  ${DIR}"
+                generateChecksum "$ARTIFACT_FILE"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
                 VERSION=$(yq .version convoy.yaml)
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
