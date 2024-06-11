@@ -49,6 +49,137 @@ jobs:
             import base64
             import yaml
 
+            def get_tf_modules_folders():
+              headers = {
+                  'Authorization': f'Bearer {GITHUB_TOKEN}',
+                  'Accept': 'application/vnd.github.v3+json',
+              }
+              url = f'${{vars.GH_API_URL}}/repos/{OWNER}/{REPO}/contents'
+              params = {'ref': BASE_BRANCH}
+              response = requests.get(url, headers=headers, params=params)
+              contents = response.json()
+              directories = [item['name'] for item in contents if item['type'] == 'dir' and item['name'] != '.github']
+              return directories
+            
+            def delete_keys(data, keys_to_exclude):
+              for key in keys_to_exclude:
+                  try:
+                      del data[key]
+                  except:
+                      print(f'{key} not present in convoy.yaml')
+              return data
+
+            def get_artifacts_tf():
+              artifacts = []
+              tf_modules_folders = get_tf_modules_folders()
+              print("Terraform Folders")
+              for folder in tf_modules_folders:
+                if '.github' in folder or len(folder) == 0:
+                    continue
+                print(folder)  
+                path = f'./{folder}/convoy.yaml'
+                with open(path, 'r') as module_content:
+                    module_data = yaml.safe_load(module_content)
+                tf_module = module_data.get('generates')
+                for artifact_type, artifact in tf_module.items():
+                  for object in artifact:
+                    element={}
+                    element["type"] = artifact_type
+                    element["releaseManifestKey"] = object["releaseManifestKey"] 
+                    element["name"] = object["name"]
+                    element["extension"] = object["extension"]
+                    element["version"] = module_data.get('version')
+                    artifacts.append(element)
+              return artifacts
+
+            def get_artifacts(generates, version):
+              artifacts=[]
+              for artifact_type, artifact in generates.items():
+                  for object in artifact:
+                    element={}
+                    element["type"] = artifact_type
+                    try:
+                      element["releaseManifestKey"] = object["releaseManifestKey"]
+                    except:
+                        print("Artifact excluded from Release Manifest")
+                        continue
+                    element["name"] = object["name"]
+                    element["version"] = version
+                    if artifact_type == 'helmCharts':
+                      chart_path = object["chartPath"]
+                      with open(chart_path, 'r') as chart_yaml_content:
+                        data = yaml.safe_load(chart_yaml_content)
+                      element["version"] = data.get('version')
+                    try:
+                      element["extension"] = object["extension"]
+                    except:
+                      print("Extension Details not present")
+                    artifacts.append(element)
+              if len(artifacts) == 0: 
+                return
+              return artifacts
+            
+            def get_artifact_metadata(yaml_data, type):
+              artifactMetadata = {"type": type}
+              
+              if type == 'dockerImage':
+                  artifactMetadata["version"] = TAG
+  
+              elif type == 'helmChart':
+                  chart_path = yaml_data.get('chartPath')
+                  with open(chart_path, 'r') as chart_yaml_content:
+                      data = yaml.safe_load(chart_yaml_content)
+                  artifactMetadata["version"] = data.get('version')
+  
+              elif type == 'zip':
+                  version = yaml_data.get('version')
+                  artifactMetadata["version"] = version if version else TAG
+                  keys_to_exclude = ['artifactType', 'version']
+                  artifactMetadata["convoyConfig"] = delete_keys(yaml_data, keys_to_exclude)
+  
+              elif type == 'nested':
+                  tf_modules_folders = get_tf_modules_folders()
+                  print("Terraform folders:")
+                  for folder in tf_modules_folders:
+                      print(folder)  
+                      path = f'./{folder}/convoy.yaml'
+                      with open(path, 'r') as module_content:
+                          module_data = yaml.safe_load(module_content)
+                      data = {
+                          "name": folder,
+                          "convoyConfig": module_data
+                      } 
+                      artifacts.append(data) 
+                  artifactMetadata["artifacts"] = artifacts
+              else:
+                  print(f"Artifact Type is {type}. Skipping this step.")
+                  exit(0)
+              return artifactMetadata
+
+            def post_request(payload):
+              headers = {
+                'Content-Type': 'application/json',
+                'x-api-key': API_KEY
+              }
+              max_retries = 3
+              retry_delay = 5
+          
+              for _ in range(max_retries):
+                  response = requests.post(API_URL, json=payload, headers=headers)
+                  if response.status_code == 200:
+                      print(response.status_code)
+                      print(response.text)
+                      break
+                  else:
+                      print(response.status_code)
+                      print(response.text)
+                      print(f"Retrying... ({max_retries - _} attempts left)")
+                      time.sleep(retry_delay)
+              else:
+                  print("API request failed after retries.")
+                  exit(1)
+              print("POST request Complete")
+
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
@@ -87,30 +218,28 @@ jobs:
               "buildStatus": STATUS,
               "checksums": CHECKSUMS
             }
-            print(payload)
-            headers = {
-              'Content-Type': 'application/json',
-              'x-api-key': API_KEY
-            }
+            
+            generates = yaml_data.get('generates')
+            type = yaml_data.get('artifactType') 
+            language = yaml_data.get('language')
+            if generates != None:
+                version = yaml_data.get('version')
+                if version == None:
+                  version = TAG
+                payload["artifacts"] = get_artifacts(generates, version)
+                if payload["artifacts"] == None:
+                  del payload["artifacts"]
+                print(payload)
+            elif language == 'terraform':
+                payload["artifacts"] = get_artifacts_tf()
+                print(payload)
+            elif type == None:
+                print(payload)
+            else: 
+                payload["artifactMetadata"] = get_artifact_metadata(yaml_data,type)
+                print(f"Payload: {payload}")
 
-            max_retries = 3
-            retry_delay = 5
-        
-            for _ in range(max_retries):
-                response = requests.post(API_URL, json=payload, headers=headers)
-                if response.status_code == 200:
-                    print(response.status_code)
-                    print(response.text)
-                    break
-                else:
-                    print(response.status_code)
-                    print(response.text)
-                    print(f"Retrying... ({max_retries - _} attempts left)")
-                    time.sleep(retry_delay)
-            else:
-                print("API request failed after retries.")
-                exit(1)
-            print("POST request Complete")
+            post_request(payload)
             EOF
 
       - name: Slack Notification
