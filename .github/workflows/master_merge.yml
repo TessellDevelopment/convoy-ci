@@ -76,7 +76,7 @@ jobs:
 
   build:
     needs: [runner-check,find-latest-tag]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2156
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
