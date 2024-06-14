@@ -54,7 +54,7 @@ jobs:
   
   create-tag:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-2156
     secrets: inherit
     with:
       label: ${{needs.runner-check.outputs.label}}
