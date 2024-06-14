@@ -59,7 +59,7 @@ jobs:
           echo ${{ env.TARGET_BRANCH }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
-          echo "Repo name is ${{ github.repository.name }}"
+          echo "Repo name is this ${{ github.event.repository.name }}"
           echo $TARGET_BRANCH_MAIN
           echo $BRANCH_NAME
           echo ${{ github.head_ref }}
