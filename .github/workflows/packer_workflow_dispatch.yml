@@ -96,7 +96,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
+          sudo python3 -m pip uninstall -y packer_framework
+          # sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          # -r ${{ env.REPO_NAME }}/requirements.txt
+          sudo python3 -m pip install -r ${{ env.REPO_NAME }}/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
           pip3 install pyopenssl
