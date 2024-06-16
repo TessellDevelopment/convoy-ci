@@ -59,7 +59,6 @@ jobs:
           echo ${{ env.TARGET_BRANCH }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
-          echo "Repo name is this ${{ github.event.repository.name }}"
           echo $TARGET_BRANCH_MAIN
           echo $BRANCH_NAME
           echo ${{ github.head_ref }}
@@ -97,9 +96,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY} | cut -f2 -d'/')" >> $GITHUB_ENV
           sudo python3 -m pip uninstall -y packer_framework
-          # sudo python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           sudo python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
