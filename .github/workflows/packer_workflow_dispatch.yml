@@ -112,12 +112,14 @@ jobs:
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
+          source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           # source $(share_aws_artifacts -sec)
+          source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
