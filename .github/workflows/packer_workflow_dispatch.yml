@@ -97,7 +97,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo python3 -m pip uninstall -y packer_framework
-          sudo python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m venv pkenv
+          source pkenv/bin/activate
+          python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
           pip3 install pyopenssl
