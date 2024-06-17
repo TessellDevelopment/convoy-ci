@@ -98,7 +98,6 @@ jobs:
         run: |
           sudo python3 -m pip uninstall -y packer_framework
           python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-          python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           python3 -m venv pkenv
           source pkenv/bin/activate
           python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
