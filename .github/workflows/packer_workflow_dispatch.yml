@@ -96,7 +96,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install --upgrade --force-reinstall packer-framework==0.0.0 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          sudo python3 -m pip uninstall -y packer_framework
+          python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m venv pkenv
+          source pkenv/bin/activate
+          python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           find /usr/bin /usr/local/bin -name build_all_artifacts
           rm -rf /usr/lib/python3/dist-packages/OpenSSL
           pip3 install pyopenssl
@@ -106,12 +111,13 @@ jobs:
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
+          source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
-          # source $(share_aws_artifacts -sec)
+          source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
