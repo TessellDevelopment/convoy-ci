@@ -28,18 +28,18 @@
                 LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
                 echo "$LABEL"
                 if [[ $LABEL == rel-* ]]; then
-                    echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
+                  echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
                 else
-                    echo "Response: $LABEL"
-                    echo "Label does not start with 'rel'. Check response."
-                    exit 1 
+                  echo "Response: $LABEL"
+                  echo "Label does not start with 'rel'. Check response."
+                  exit 1 
                 fi
               else
                 echo "LABEL=${{ github.ref_name }}" >> $GITHUB_OUTPUT
               fi
-              else
+            else
               echo "convoy.yaml not found"
-              fi 
+            fi 
           
         - name: Determine build type from Convoy
           id: build-type
