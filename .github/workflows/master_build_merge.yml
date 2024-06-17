@@ -409,7 +409,8 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
+            checksum=$(sha256sum "$file_path" | awk '{ print $1 }') 
+            ARTIFACT="${ARTIFACT%%.*}"       
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           gradlewDockerTag() {
@@ -593,7 +594,8 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
+            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')   
+            ARTIFACT="${ARTIFACT%%.*}"         
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goLibraryBuildAndPush() {
@@ -1154,7 +1156,8 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')            
+            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')   
+            ARTIFACT="${ARTIFACT%%.*}"         
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goDockerBuildAndPush() {

@@ -155,14 +155,6 @@ jobs:
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
 
-            pairs = ARTIFACT_CHECKSUMS.strip('%').split('%')
-            result = []
-            for pair in pairs:
-              if pair:
-                key, value = pair.split(':')
-                result.append({key: value})
-            CHECKSUMS = json.dumps(result)
-
             with open('convoy.yaml', 'r') as yaml_file:
               yaml_data = yaml.safe_load(yaml_file)
             APP_GROUP = yaml_data.get('appGroup')
@@ -172,7 +164,6 @@ jobs:
               "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
               "buildStatus": STATUS,
-              "checksums": CHECKSUMS
             }
 
             generates = yaml_data.get('generates')
@@ -184,14 +175,25 @@ jobs:
               payload["artifacts"] = get_artifacts(generates, version)
               if payload["artifacts"] == None:
                 del payload["artifacts"]
-              print(f"Payload: {payload}")
             elif language == 'terraform':
               payload["artifacts"] = get_artifacts_tf()
-              print(f"Payload: {payload}")
             else
               print(f"Not able to build payload for API call. Please check convoy.yaml content")
               exit(1)
+
+            checksum_map = {}
+            parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
+            for part in parts:
+                if part:
+                    key, value = part.split(':')
+                    checksum_map[key] = value
             
+            for artifact in payload["artifacts"]:
+                key = artifact["name"]
+                if key in checksum_map:
+                    artifact["checksum"] = checksum_map[key]
+            print(json.dumps(payload, indent=4))
+          
             post_request(payload)
             EOF
 
