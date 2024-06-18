@@ -916,6 +916,7 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -1357,7 +1358,11 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             MODIFIED_DIRECTORIES=$(modifiedDir)
-            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${LABEL}")
+            if [[ ${BASE_BRANCH} == 'main' ]]; then
+              manifestLabel="latest-main"
+            else 
+              manifestLabel="${LABEL}"
+            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
 
             for DIR in "${DIRECTORIES[@]}"; do
               DIR=${DIR%/}
