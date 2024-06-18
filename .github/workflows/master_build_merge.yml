@@ -932,6 +932,7 @@ jobs:
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
       GOPATH: /home/github/go
     steps:
       - name: Checkout code
@@ -1408,25 +1409,40 @@ jobs:
             BASE_DIR=$PWD
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
-            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             DIRECTORIES=($(ls -d */))
+            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
+            MODIFIED_DIRECTORIES=$(modifiedDir)
+            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${LABEL}")
+
             for DIR in "${DIRECTORIES[@]}"; do
-              if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-                echo "building  ${DIR}"
-                ARTIFACT_FILE=${DIR}.zip
-                cd $BASE_DIR/$DIR
-                VERSION=$(yq .version convoy.yaml)
-                echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
-                terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
-                generate_checksum "$ARTIFACT_FILE"
+              DIR=${DIR%/}
+              if [[ ! " $MODIFIED_DIRECTORIES " =~ " $DIR " && " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
+                CHECKSUM=$(echo "$releaseManifest" | jq -r ".artifacts[\"${DIR}\"].checksum // empty")
+                if [[ -n ${checksum} ]]; then
+                  ARTIFACT_CHECKSUMS+="${DIR}:${CHECKSUM}%"           
+                else
+                  echo "Checksum not present in release manifest for tf-module:${DIR}. Building the module and generating checksum."
+                  echo "building  ${DIR}"
+                  ARTIFACT_FILE=${DIR}.zip
+                  cd $BASE_DIR/$DIR
+                  VERSION=$(yq .version convoy.yaml)
+                  echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
+                  terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
+                  generateChecksum "$ARTIFACT_FILE"
+                fi
               fi
             done
-            MODIFIED_DIRECTORIES=$(modifiedDir)
+
             for DIR in $MODIFIED_DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
                 echo "building  ${DIR}"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+                cd $BASE_DIR/$DIR
+                VERSION=$(yq .version convoy.yaml)
+                echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
+                terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
+                generateChecksum "$ARTIFACT_FILE"
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
