@@ -1362,6 +1362,7 @@ jobs:
               manifestLabel="latest-main"
             else 
               manifestLabel="${LABEL}"
+            fi
             releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
 
             for DIR in "${DIRECTORIES[@]}"; do
