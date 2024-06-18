@@ -89,13 +89,12 @@ jobs:
               artifacts=[]
               for artifact_type, artifact in generates.items():
                 for object in artifact:
-                  element={}
-                  element["type"] = artifact_type
-                  try:
-                    element["releaseManifestKey"] = object["releaseManifestKey"]
-                  except:
+                  if object.get("excludeFromReleaseManifest"):
                     print("Artifact excluded from Release Manifest")
                     continue
+                  element={}
+                  element["type"] = artifact_type
+                  element["releaseManifestKey"] = object["releaseManifestKey"]
                   element["name"] = object["name"]
                   element["version"] = version
                   if artifact_type == 'helmCharts':
