@@ -1147,7 +1147,6 @@ jobs:
               echo "Build File name same as Artifact name"
               BUILD_FILE=$ARTIFACT
             fi
-            echo $ARTIFACT
             file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
             if [[ -z "$file_path" ]]; then
               echo "File not found!"
@@ -1379,9 +1378,8 @@ jobs:
                   echo $ARTIFACT_FILE
                   cd $BASE_DIR/$DIR
                   VERSION=$(yq .version convoy.yaml)
-                  echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                   terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
-                  ls -lrta $BUILD_DIR
+                  cd $BASE_DIR
                   generateChecksum "$ARTIFACT_FILE"
                 fi
               fi
@@ -1396,6 +1394,7 @@ jobs:
                 VERSION=$(yq .version convoy.yaml)
                 echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
+                cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
