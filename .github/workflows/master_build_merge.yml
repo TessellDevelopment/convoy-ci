@@ -1147,6 +1147,7 @@ jobs:
               echo "Build File name same as Artifact name"
               BUILD_FILE=$ARTIFACT
             fi
+            echo $ARTIFACT
             file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
             if [[ -z "$file_path" ]]; then
               echo "File not found!"
@@ -1373,12 +1374,14 @@ jobs:
                   ARTIFACT_CHECKSUMS+="${DIR}:${CHECKSUM}%"           
                 else
                   echo "Checksum not present in release manifest for tf-module:${DIR}. Building the module and generating checksum."
-                  echo "building  ${DIR}"
-                  ARTIFACT_FILE=${DIR}.zip
+                  echo "Building ${DIR}"
+                  ARTIFACT_FILE="${DIR}.zip"
+                  echo $ARTIFACT_FILE
                   cd $BASE_DIR/$DIR
                   VERSION=$(yq .version convoy.yaml)
                   echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                   terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
+                  ls -lrta $BUILD_DIR
                   generateChecksum "$ARTIFACT_FILE"
                 fi
               fi
@@ -1387,13 +1390,14 @@ jobs:
             for DIR in $MODIFIED_DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-                echo "building  ${DIR}"
-                ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+                echo "Building ${DIR}"
+                ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
                 echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 generateChecksum "$ARTIFACT_FILE"
+                ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
                 mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
