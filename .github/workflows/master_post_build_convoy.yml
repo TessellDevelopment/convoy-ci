@@ -176,31 +176,31 @@ jobs:
                 del payload["artifacts"]
             elif language == 'terraform':
               payload["artifacts"] = get_artifacts_tf()
-            else
+            else:
               print(f"Not able to build payload for API call. Please check convoy.yaml content")
               exit(1)
 
             checksum_map = {}
             parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
             for part in parts:
-                if part:
-                    key, value = part.split(':')
-                    checksum_map[key] = value
-            
+              if part:
+                key, value = part.split(':')
+                checksum_map[key] = value
+          
             for artifact in payload["artifacts"]:
-                key = artifact["name"]
-                if key in checksum_map:
-                    artifact["checksum"] = checksum_map[key]
+              key = artifact["name"]
+              if key in checksum_map:
+                  artifact["checksum"] = checksum_map[key]
             print(json.dumps(payload, indent=4))
           
             post_request(payload)
             EOF
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-        if: failure()
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   with:
+      #       status: ${{ job.status }}
+      #       steps: ${{ toJson(steps) }}
+      #       channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+      #   if: failure()
           
