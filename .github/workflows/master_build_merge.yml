@@ -1108,12 +1108,6 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
-          dockerBuildOps() {
-            set -e
-            mvnwBuild
-            dockerBuildAndPush "$@"
-            set +e
-          }
           elasticAgentBuildAndPush() {
             set -e
             IMAGE="$1"
@@ -1291,23 +1285,10 @@ jobs:
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
-          makeImageAndPush() {
-            set -e
-            IMAGE="$1"
-            make image
-            docker tag $IMAGE:latest ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
-            docker push ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
-            set +e
-          }
           modifiedDir() {
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
             echo "$directories"
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
           }
           mvnDeploy() {
             ARTIFACT_ID="$1"
@@ -1323,35 +1304,6 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
-          }
-          opaBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            requiredInputs="1 2"
-            file_name="${ARTIFACT}.${EXTENSION}"
-            validateInputs "$requiredInputs" "$@" 
-            setupOpa
-            if [[ $ARTIFACT == *"wasm"* ]]; then
-              ~/opa build -t wasm policies --output bundles/${file_name}
-            else
-              ~/opa build policies --output bundles/${file_name}
-            fi
-            awsConfigureTessellArtifacts
-            pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            aws s3 cp "bundles/${file_name}" "s3://${{env.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              mc cp "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "${file_name}"
-            set +e
-          }
-          opsImageBuildAndPush() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuildAndPush "$@"
-            set +e
           }
           pushToNexus() {
             FILE_PATH="$1"
@@ -1396,13 +1348,6 @@ jobs:
             lintCheck
             gradlewTwineUpload
             set +e
-          }
-          setupOpa() {
-            curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
-            chmod 755 ~/opa
-            curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
-            curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
-            ~/opa version
           }
           terraformBuildAndPush() {
             set -e
@@ -1514,7 +1459,6 @@ jobs:
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
           }
-
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
