@@ -258,6 +258,12 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
+
+          gradlePackagePlugin() {
+            ./gradlew packagePlugin docker --console plain \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+          }
           imageScan(){
             set -e
             export IMAGE="$1"
@@ -723,7 +729,7 @@ jobs:
             createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
-            gradlewPythonwheel
+            gradlewPackagePlugin
             set +e
           }
           dockerBuild() {
