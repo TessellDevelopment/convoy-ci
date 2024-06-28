@@ -259,7 +259,7 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
 
-          gradlePackagePlugin() {
+          gradlewPackagePlugin() {
             ./gradlew packagePlugin docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
