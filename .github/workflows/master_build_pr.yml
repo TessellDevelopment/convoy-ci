@@ -258,7 +258,6 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
-
           imageScan(){
             set -e
             export IMAGE="$1"
