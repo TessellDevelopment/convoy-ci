@@ -642,16 +642,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check specific file changes
-        id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
-        with:
-          files: |
-            Chart.yaml
-            services/**
-            scripts/Dockerfile
-            scripts/initializeAutomation.sh
-
       - name: Check All file changes
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
@@ -678,30 +668,6 @@ jobs:
             echo "Building Service"
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
-          }
-          cloneHelmTemplate() {
-            GITHUB_WORKSPACE=$(pwd)
-            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
-            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
-            echo "$CHART_GITHUB_LOCATION"
-            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
-            echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
-            echo "Cloning convoy-helm-template"
-            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
-            template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
-            if [ $? -eq 0 ]; then
-                echo "convoy-helm-template version: $template_version"
-            else
-                echo "convoy-helm-template version not found.Exiting."
-                exit 1
-            fi
-            git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
-            echo "Copying the service values file"
-            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
-            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
-            set -e
-            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
-            ls -lrta ../helm-chart/values/apps/
           }
           configureJava() {
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
@@ -801,28 +767,6 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
-          helmChartBuild() {
-            set -e
-            CHART_NAME="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            cd scripts
-            ./package-and-push --no-push -n $CHART_NAME
-            cd ..
-            set +e
-          }
-          helmTemplateBuild() {
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              CHART_NAME="$1"
-              requiredInputs="1"
-              validateInputs "$requiredInputs" "$@" 
-              cloneHelmTemplate
-              echo "Running package and push"
-              ./package-and-push --no-push -n $CHART_NAME
-              cd $GITHUB_WORKSPACE
-              set +e
-            fi
-          }
           imageScan(){
             set -e
             export IMAGE="$1"
@@ -908,7 +852,6 @@ jobs:
             mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
             set +e
           }
-
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -975,13 +918,6 @@ jobs:
             fi
             set +e
           }
-          opsImageBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$@"
-            set +e
-          }
-
           pythonApiClientBuild() {
             set -e
             bash setup --version 0.0.0
@@ -998,7 +934,6 @@ jobs:
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
           }
-
           pythonLibraryBuild() {
             set -e
             ARTIFACT="$1"
@@ -1010,51 +945,12 @@ jobs:
             gradlewPythonwheel
             set +e
           }
-          qaBuild(){
-            set -e
-            requiredInputs="1 3"
-            validateInputs "$requiredInputs" "$@" 
-            createPipConf
-            setupQAEnv
-            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-            cp configs/qabusiness.json config.json
-            source qavenv/bin/activate
-            make clients -B
-            source qavenv/bin/activate
-            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
-            deactivate
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              cd scripts
-              dockerBuild "$@"
-              cd ..
-            fi
-            set +e
-          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa
             curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
-          }
-          setupQAEnv() {
-            INSTALL_DIR=/usr/local/bin
-            sudo mkdir -p $INSTALL_DIR/openapitools
-            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
-            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
-            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
-            python3 -m pip cache purge
-            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m venv qavenv
-            source qavenv/bin/activate
-            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip list | grep harness
-            deactivate
           }
           terraformBuild(){
             set -e
@@ -1102,13 +998,11 @@ jobs:
             ls
             set +e
           }
-
           zipDirectory() {
             DIR="$1"
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
           }
-
           validateInputs() {
             local required=($1)
             shift
@@ -1161,6 +1055,188 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          docker container prune --force
+          docker volume prune --force
+
+  build-amd-2:
+    if: ${{ inputs.type == 'amd-2' }}
+    runs-on: self-hosted
+    env:
+      GOPATH: /home/github/go
+      NAMESPACE: "convoy"
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      REPO: "${{github.repository}}"
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Check specific file changes
+        id: changed-files
+        uses: tj-actions/changed-files@v42.0.2
+        with:
+          files: |
+            Chart.yaml
+            services/**
+            scripts/Dockerfile
+            scripts/initializeAutomation.sh
+
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build
+        shell: bash
+        run: |
+          cloneHelmTemplate() {
+            GITHUB_WORKSPACE=$(pwd)
+            CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+            TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+            echo "$CHART_GITHUB_LOCATION"
+            echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
+            echo "Cloning convoy-helm-template"
+            rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+            template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+            if [ $? -eq 0 ]; then
+                echo "convoy-helm-template version: $template_version"
+            else
+                echo "convoy-helm-template version not found.Exiting."
+                exit 1
+            fi
+            git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${{github.repository_owner}}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+            echo "Copying the service values file"
+            cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+            cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+            set -e
+            cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+            ls -lrta ../helm-chart/values/apps/
+          }
+          helmChartBuild() {
+            set -e
+            CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            cd scripts
+            ./package-and-push --no-push -n $CHART_NAME
+            cd ..
+            set +e
+          }
+          helmTemplateBuild() {
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              CHART_NAME="$1"
+              requiredInputs="1"
+              validateInputs "$requiredInputs" "$@" 
+              cloneHelmTemplate
+              echo "Running package and push"
+              ./package-and-push --no-push -n $CHART_NAME
+              cd $GITHUB_WORKSPACE
+              set +e
+            fi
+          }
+          opsImageBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            dockerBuild "$@"
+            set +e
+          }
+          qaBuild(){
+            set -e
+            requiredInputs="1 3"
+            validateInputs "$requiredInputs" "$@" 
+            createPipConf
+            setupQAEnv
+            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
+            cp configs/qabusiness.json config.json
+            source qavenv/bin/activate
+            make clients -B
+            source qavenv/bin/activate
+            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            deactivate
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              cd scripts
+              dockerBuild "$@"
+              cd ..
+            fi
+            set +e
+          }
+          setupQAEnv() {
+            INSTALL_DIR=/usr/local/bin
+            sudo mkdir -p $INSTALL_DIR/openapitools
+            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
+            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
+            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+            python3 -m pip cache purge
+            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m venv qavenv
+            source qavenv/bin/activate
+            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip list | grep harness
+            deactivate
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            version=$(yq '.version' convoy.yaml)
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction $name $ext $version $file 
+              echo "$type $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
 
       - name: Cleanup
         if: always()
