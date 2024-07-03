@@ -364,13 +364,15 @@ jobs:
             elasticTarBuild
             FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
             FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
+            # mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
+            # mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            # aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            # aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp "$FILE_PATH_LINUX" "s3://tesselltools/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            aws s3 cp "$FILE_PATH_WINDOWS" "s3://tesselltools/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            # pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            # pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             for env in "${environments[@]}"
             do
               mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
@@ -409,7 +411,7 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }') 
+            checksum=$(md5sum "$file_path" | awk '{ print $1 }') 
             ARTIFACT="${ARTIFACT%%.*}"       
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
@@ -594,7 +596,7 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')   
+            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
             ARTIFACT="${ARTIFACT%%.*}"         
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
@@ -618,10 +620,11 @@ jobs:
             else
               make service os=$OS engine=$ENGINE
             fi
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
+            # mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureTessellTools
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/tessell/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            # pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -796,7 +799,8 @@ jobs:
             fi
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureTessellTools
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            # aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -983,10 +987,11 @@ jobs:
             agentBuild "$@"
             set -e
             EXTENSION="$2"
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${{env.LATEST_TAG}}"
+            # mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
-            pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1068,8 +1073,9 @@ jobs:
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1129,9 +1135,10 @@ jobs:
             echo $OS
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
-            aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
-            pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
+            # mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
+            # aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
+            # pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1152,7 +1159,7 @@ jobs:
               echo "File not found!"
               return 1
             fi
-            checksum=$(sha256sum "$file_path" | awk '{ print $1 }')   
+            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
             ARTIFACT="${ARTIFACT%%.*}"         
             ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
@@ -1275,10 +1282,11 @@ jobs:
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            # mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
-            pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            # aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            # pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1397,13 +1405,17 @@ jobs:
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
-                mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
+                # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
-                aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
-                pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/terraform-modules/$DIR/$DIR-$VERSION.zip"
+                # aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
+                # pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                for s3bucket in "${s3buckets[@]}"
+                do
+                  aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-$s3bucket/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                done
                 for env in "${environments[@]}"
                 do
-                  mc cp "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/terraform-modules/$DIR/$DIR-$VERSION.zip"
+                  mc cp "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 done
               fi
             done
@@ -1481,6 +1493,7 @@ jobs:
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
+            s3buckets=("terls" "barc" "stage" "beta")
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return

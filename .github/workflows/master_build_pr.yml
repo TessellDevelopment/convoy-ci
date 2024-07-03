@@ -1062,8 +1062,8 @@ jobs:
             BASE_DIR=$PWD
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
-            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             DIRECTORIES=$(modifiedDir)
+            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             for DIR in $DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
