@@ -795,7 +795,7 @@ jobs:
               -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
           }
           gradlewPackagePlugin() {
-            ./gradlew packagePlugin docker --console plain \
+            ./gradlew packagePlugin docker --console plain --version=0.0.0 \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
