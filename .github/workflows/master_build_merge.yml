@@ -1078,6 +1078,9 @@ jobs:
             export AWS_SECRET_ACCESS_KEY=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
             export AWS_SESSION_TOKEN=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
             aws s3 cp "$SOURCE" "$DESTINATION"
+            unset AWS_ACCESS_KEY_ID
+            unset AWS_SECRET_ACCESS_KEY
+            unset AWS_SESSION_TOKEN
           }
           checkFlyway() {
             if [ -d "flyway" ]; then
@@ -1487,8 +1490,8 @@ jobs:
                 # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 # aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
-                pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_DEV}} ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                # pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_DEV}} ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_QA}} ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_STAGE}} ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
