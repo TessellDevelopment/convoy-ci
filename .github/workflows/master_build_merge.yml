@@ -1289,7 +1289,7 @@ jobs:
             do
               mc cp "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
-            generateChecksum ${file_name}" 
+            generateChecksum ${file_name}
             set +e
           }
           pushToNexus() {
