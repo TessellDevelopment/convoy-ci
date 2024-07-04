@@ -1439,6 +1439,7 @@ jobs:
             fi
             releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
             for DIR in "${DIRECTORIES[@]}"; do
+              CHECKSUM=""
               DIR=${DIR%/}
               if [[ ! " $MODIFIED_DIRECTORIES " =~ " $DIR " && " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
                 CHECKSUM=$(echo "$releaseManifest" | jq -r ".artifacts[\"${DIR}\"].checksum // empty")
@@ -1476,7 +1477,7 @@ jobs:
                 # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 for env in "${environments[@]}"
                 do
-                  push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                  # push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 done
               fi
             done
