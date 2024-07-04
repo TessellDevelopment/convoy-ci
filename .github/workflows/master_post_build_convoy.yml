@@ -7,6 +7,10 @@ on:
         description: 'Consolidated Checksum of generated artifacts'
         required: true
         type: string
+      TAG:
+        description: 'Tag created during create-tag'
+        required: true
+        type: string
     
 jobs:
   
@@ -14,6 +18,7 @@ jobs:
     runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+      TAG: "${{inputs.tag}}"
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -39,6 +44,7 @@ jobs:
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          TAG: "${{env.tag}}"
         run: |
             python3 - <<EOF
             
@@ -142,6 +148,7 @@ jobs:
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
             STATUS = (os.environ.get('STATUS')).upper()
+            TAG = os.environ.get('TAG')
             
             if not(bool(BASE_BRANCH)):
               BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
