@@ -7,7 +7,7 @@ on:
         description: 'Consolidated Checksum of generated artifacts'
         required: true
         type: string
-      TAG:
+      tag:
         description: 'Tag created during create-tag'
         required: true
         type: string

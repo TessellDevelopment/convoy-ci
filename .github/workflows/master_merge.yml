@@ -90,7 +90,7 @@ jobs:
     secrets: inherit
     with:
       ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
-      TAG: ${{needs.find-latest-tag.outputs.tag}}
+      tag: ${{needs.find-latest-tag.outputs.tag}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')
