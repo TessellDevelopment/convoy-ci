@@ -345,8 +345,8 @@ jobs:
             set +e
           }
           lintCheck() {
-            # flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
           runPythonUnitTest() {
             venv_name=test-venv
@@ -366,7 +366,7 @@ jobs:
             set -e
             IMAGE="$1"
             rm pip.conf
-            lintCheck
+            # lintCheck
             gradlewPythonwheel
             if [ -f "pytest.ini" ]; then
               echo "Running unit tests"
