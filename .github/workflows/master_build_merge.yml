@@ -1475,10 +1475,10 @@ jobs:
                 # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_QA}} ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_STAGE}} ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                for env in "${environments[@]}"
-                do
-                  # push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                done
+                # for env in "${environments[@]}"
+                # do
+                #   push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                # done
               fi
             done
             ls -lrta $BUILD_DIR
