@@ -1415,7 +1415,7 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             MODIFIED_DIRECTORIES=$(modifiedDir)
-            echo "DIR: $DIRECTORIES:
+            echo "DIR: $DIRECTORIES:"
             echo "MODIFIED DIR: $MODIFIED_DIRECTORIES"
             if [[ ${BASE_BRANCH} == 'main' ]]; then
               manifestLabel="latest-main"
