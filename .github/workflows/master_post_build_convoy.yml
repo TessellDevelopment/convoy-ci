@@ -44,7 +44,7 @@ jobs:
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
-          TAG: "${{env.tag}}"
+          TAG: "${{env.TAG}}"
         run: |
             python3 - <<EOF
             
