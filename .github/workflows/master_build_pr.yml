@@ -355,9 +355,10 @@ jobs:
             source ${venv_name}/bin/activate
             python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
             python3 -m pip list | grep tessell
-            echo "SKGUPTA ${source_path}"
             python3 -m coverage run --branch --source "${source_path}" -m pytest -s
-            python3 -m coverage report --include "${source_path}/tessell/*"
+            include=$(yq '.codeCoverage.report.include' convoy.yaml | yq ' .[] |= "'"${source_path}"'" + .  | join(",")')
+            echo $include
+            python3 -m coverage report --include "${include}"
             python3 -m coverage json
             deactivate
           }
