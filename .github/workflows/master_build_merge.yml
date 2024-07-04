@@ -371,8 +371,8 @@ jobs:
             # aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp "$FILE_PATH_LINUX" "s3://tesselltools/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
             aws s3 cp "$FILE_PATH_WINDOWS" "s3://tesselltools/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
-            # pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-            # pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             for env in "${environments[@]}"
             do
               mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
@@ -623,8 +623,8 @@ jobs:
             # mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureTessellTools
             # aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/tessell/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-            # pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -982,7 +982,7 @@ jobs:
             awsConfigureTessellTools
             # aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            # pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1042,7 +1042,7 @@ jobs:
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             # aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            # pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1105,7 +1105,7 @@ jobs:
             # mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
             # aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
-            # pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
+            pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             for env in "${environments[@]}"
             do
               mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1231,7 +1231,7 @@ jobs:
             awsConfigureTessellTools
             # aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-            # pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1281,10 +1281,10 @@ jobs:
               ~/opa build policies --output bundles/${file_name}
             fi
             awsConfigureTessellArtifacts
-            # pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             # aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             awsConfigureTessellTools
             aws s3 cp "bundles/${file_name}" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
               mc cp "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
@@ -1393,7 +1393,7 @@ jobs:
                 # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
                 awsConfigureDevqaInfra
                 # aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
-                # pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 for s3bucket in "${s3buckets[@]}"
                 do
                   aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-$s3bucket/${LABEL}/$DIR/$DIR-$VERSION.zip"
