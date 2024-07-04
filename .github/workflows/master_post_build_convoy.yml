@@ -45,9 +45,10 @@ jobs:
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           COMMIT_HASH: "${{github.sha}}"
-          REPO: "${{github.repository}}"
+          REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+          OWNER: ${{github.repository_owner}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
           TAG: "${{env.TAG}}"
@@ -160,12 +161,11 @@ jobs:
             LABEL = os.environ.get('LABEL')
             STATUS = (os.environ.get('STATUS')).upper()
             TAG = os.environ.get('TAG')
+            REPO = os.environ.get('REPO')
+            OWNER = os.environ.get('OWNER')
             
             if not(bool(BASE_BRANCH)):
               BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-            
-            OWNER = REPO.split("/")
-            REPO = OWNER[1]
             
             if STATUS == 'SUCCESS':
               STATUS = 'SUCCESSFUL'
