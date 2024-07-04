@@ -1443,7 +1443,7 @@ jobs:
               DIR=${DIR%/}
               if [[ ! " $MODIFIED_DIRECTORIES " =~ " $DIR " && " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
                 CHECKSUM=$(echo "$releaseManifest" | jq -r ".artifacts[\"${DIR}\"].checksum // empty")
-                if [[ -n ${checksum} ]]; then
+                if [[ -n ${CHECKSUM} ]]; then
                   echo "Checksum already present in release manifest for tf module: ${DIR}."
                   ARTIFACT_CHECKSUMS+="${DIR}:${CHECKSUM}%"           
                 else
