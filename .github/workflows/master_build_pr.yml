@@ -358,8 +358,9 @@ jobs:
             python3 -m coverage run --branch --source "${source_path}" -m pytest -s
             include=$(yq '.codeCoverage.report.include' convoy.yaml | yq ' .[] |= "'"${source_path}"'" + .  | join(",")')
             echo $include
-            python3 -m coverage report --include "${include}"
-            python3 -m coverage json
+            python3 -m coverage report --include="${include}"
+            python3 -m coverage html --include="${include}"
+            python3 -m coverage json --include="${include}"
             deactivate
           }
           pythonDockerBuild() {
