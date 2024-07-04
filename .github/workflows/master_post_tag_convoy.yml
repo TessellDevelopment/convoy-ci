@@ -108,7 +108,7 @@ jobs:
             "tag": TAG,
             "pullRequestId": PR_ID,
           }
-          print(f"Payload: {payload}")
+          print(json.dumps(payload, indent=4))
           post_request(payload)
           EOF
 

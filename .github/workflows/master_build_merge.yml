@@ -1065,6 +1065,20 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
+          configureAndPushAWS() {
+            BUCKET_ACCOUNT=$1
+            BUCKET_NAME=$2
+            SOURCE=$3
+            DESTINATION=$4
+            export AWS_ACCESS_KEY_ID=${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+            ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+            ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
+            export AWS_ACCESS_KEY_ID=$(echo $ROLE_OUTPUT | jq -r '.Credentials.AccessKeyId')
+            export AWS_SECRET_ACCESS_KEY=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
+            export AWS_SESSION_TOKEN=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
+            aws s3 cp "$SOURCE" "$DESTINATION"
+          }
           checkFlyway() {
             if [ -d "flyway" ]; then
               echo "The 'flyway' directory exists in this repository."
@@ -1474,10 +1488,10 @@ jobs:
                 awsConfigureDevqaInfra
                 # aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
                 pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                for s3bucket in "${s3buckets[@]}"
-                do
-                  aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-$s3bucket/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                done
+                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_DEV}} ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_QA}} ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_STAGE}} ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 for env in "${environments[@]}"
                 do
                   push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
