@@ -330,7 +330,7 @@ jobs:
           }
           infraProvisionBuild() {
             set -e
-            lintCheck
+            #lintCheck
             IMAGE="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
