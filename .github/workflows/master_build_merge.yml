@@ -375,8 +375,8 @@ jobs:
             pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             for env in "${environments[@]}"
             do
-              mc cp "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
-              mc cp "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
+              push_to_minio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-linux-${LATEST_TAG}.tar.gz"
+              push_to_minio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat/filebeat-windows-${LATEST_TAG}.tar.gz"
             done
             generateChecksum "filebeat-linux.tar.gz" 
             generateChecksum "filebeat-windows.tar.gz" 
@@ -454,6 +454,26 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
+          }
+          push_to_minio() {
+            SOURCE="${1}"
+            DESTINATION="${2}"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            local attempt=0
+            while [ $attempt -lt $MAX_RETRIES ]; do
+              mc cp "$SOURCE" "$DESTINATION"
+              if [ $? -eq 0 ]; then
+                echo "Artifact successfully pushed to minio ${DESTINATION}."
+                return
+              else
+                attempt=$((attempt + 1))
+                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
+                sleep $RETRY_DELAY
+              fi
+            done
+            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
+            return 1
           }
           pushToNexus() {
             FILE_PATH="$1"
@@ -627,7 +647,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -646,6 +666,26 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
+          }
+          push_to_minio() {
+            SOURCE="${1}"
+            DESTINATION="${2}"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            local attempt=0
+            while [ $attempt -lt $MAX_RETRIES ]; do
+              mc cp "$SOURCE" "$DESTINATION"
+              if [ $? -eq 0 ]; then
+                echo "Artifact successfully pushed to minio ${DESTINATION}."
+                return
+              else
+                attempt=$((attempt + 1))
+                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
+                sleep $RETRY_DELAY
+              fi
+            done
+            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
+            return 1
           }
           pushToNexus() {
             FILE_PATH="$1"
@@ -804,7 +844,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$NAME/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -828,6 +868,26 @@ jobs:
                 -DgeneratePom=true -Dpackaging=$EXTENSION \
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
+          }
+          push_to_minio() {
+            SOURCE="${1}"
+            DESTINATION="${2}"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            local attempt=0
+            while [ $attempt -lt $MAX_RETRIES ]; do
+              mc cp "$SOURCE" "$DESTINATION"
+              if [ $? -eq 0 ]; then
+                echo "Artifact successfully pushed to minio ${DESTINATION}."
+                return
+              else
+                attempt=$((attempt + 1))
+                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
+                sleep $RETRY_DELAY
+              fi
+            done
+            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
+            return 1
           }
           pushToNexus() {
             FILE_PATH="$1"
@@ -985,7 +1045,7 @@ jobs:
             pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/agent/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1045,7 +1105,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/plugins/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1108,7 +1168,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
             for env in "${environments[@]}"
             do
-              mc cp "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             cd ..
@@ -1234,7 +1294,7 @@ jobs:
             pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/pushprox/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1287,10 +1347,30 @@ jobs:
             pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              mc cp "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              push_to_minio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum ${file_name}
             set +e
+          }
+          push_to_minio() {
+            SOURCE="${1}"
+            DESTINATION="${2}"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            local attempt=0
+            while [ $attempt -lt $MAX_RETRIES ]; do
+              mc cp "$SOURCE" "$DESTINATION"
+              if [ $? -eq 0 ]; then
+                echo "Artifact successfully pushed to minio ${DESTINATION}."
+                return
+              else
+                attempt=$((attempt + 1))
+                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
+                sleep $RETRY_DELAY
+              fi
+            done
+            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
+            return 1
           }
           pushToNexus() {
             FILE_PATH="$1"
@@ -1400,7 +1480,7 @@ jobs:
                 done
                 for env in "${environments[@]}"
                 do
-                  mc cp "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                  push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 done
               fi
             done
