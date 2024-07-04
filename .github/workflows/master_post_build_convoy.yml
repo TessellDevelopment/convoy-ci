@@ -11,6 +11,10 @@ on:
         description: 'Tag created during create-tag'
         required: true
         type: string
+      label:
+        description: 'Release label for upload'
+        required: true
+        type: string
     
 jobs:
   
@@ -19,6 +23,7 @@ jobs:
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
       TAG: "${{inputs.tag}}"
+      LABEL: "${{inputs.label}}"
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -46,6 +51,7 @@ jobs:
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
           TAG: "${{env.TAG}}"
+          LABEL: "${{env.LABEL}}"
         run: |
             python3 - <<EOF
             
@@ -113,6 +119,8 @@ jobs:
                     element["extension"] = object["extension"]
                   except:
                     print("Extension Details not present")
+                  if artifact_type == 'artifacts':
+                    element["path"] = f"tessell-artifacts/{LABEL}/{object["name"]}/{object["name"]}-{version}.{object["extension"]}"
                   artifacts.append(element)
               if len(artifacts) == 0: 
                 return
@@ -148,6 +156,8 @@ jobs:
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
+            GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+            LABEL = os.environ.get('LABEL')
             STATUS = (os.environ.get('STATUS')).upper()
             TAG = os.environ.get('TAG')
             

@@ -1160,29 +1160,6 @@ jobs:
             dockerBuildAndPush "$@"
             set +e
           }
-          functionBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTESNION="$2"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            awsConfigureTessellTools
-            cd tessell;
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
-            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
-            make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            # mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
-            # aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
-            aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
-            pushToNexus "$ARTIFACT.$EXTESNION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTESNION"
-            for env in "${environments[@]}"
-            do
-              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/functions/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
-            cd ..
-            set +e
-          }
           generateChecksum() {
             ARTIFACT=$1
             BUILD_FILE=$2
@@ -1438,14 +1415,19 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
             MODIFIED_DIRECTORIES=$(modifiedDir)
+            echo "DIR: $DIRECTORIES:
+            echo "MODIFIED DIR: $MODIFIED_DIRECTORIES"
             if [[ ${BASE_BRANCH} == 'main' ]]; then
               manifestLabel="latest-main"
             else 
               manifestLabel="${LABEL}"
             fi
             releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
+            echo "------------------"
+            echo $releaseManifest | jq
             for DIR in "${DIRECTORIES[@]}"; do
               DIR=${DIR%/}
+              echo "DIR: $DIR"
               if [[ ! " $MODIFIED_DIRECTORIES " =~ " $DIR " && " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
                 CHECKSUM=$(echo "$releaseManifest" | jq -r ".artifacts[\"${DIR}\"].checksum // empty")
                 if [[ -n ${checksum} ]]; then
@@ -1458,6 +1440,7 @@ jobs:
                   terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                   cd $BASE_DIR
                   generateChecksum "$ARTIFACT_FILE"
+                  echo $ARTIFACT_CHECKSUMS
                 fi
               fi
             done
@@ -1471,8 +1454,9 @@ jobs:
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+                echo "$ARTIFACT_FILE $DIR $ARTIFACT_CHECKSUMS"
                 # mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
-                awsConfigureDevqaInfra
+                # awsConfigureDevqaInfra
                 # aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
                 # pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 # configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_DEV}} ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
