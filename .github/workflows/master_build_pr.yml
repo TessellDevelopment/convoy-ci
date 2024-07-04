@@ -192,8 +192,7 @@ jobs:
               python3 -m pip install --no-build-isolation -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
             fi
           }
-          # Revert before merge
-          # installPythonDependencies
+          installPythonDependencies
 
       - name: Setup Trivy and Dockle
         run: |
@@ -330,7 +329,7 @@ jobs:
           }
           infraProvisionBuild() {
             set -e
-            #lintCheck
+            lintCheck
             IMAGE="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
@@ -366,7 +365,7 @@ jobs:
             set -e
             IMAGE="$1"
             rm pip.conf
-            # lintCheck
+            lintCheck
             gradlewPythonwheel
             if [ -f "pytest.ini" ]; then
               echo "Running unit tests"
