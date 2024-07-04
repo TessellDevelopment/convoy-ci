@@ -1028,9 +1028,6 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
-            echo $OS
-            echo $SERVICE
-            echo "Building Service"
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
           }
@@ -1078,9 +1075,7 @@ jobs:
             export AWS_SECRET_ACCESS_KEY=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
             export AWS_SESSION_TOKEN=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
             aws s3 cp "$SOURCE" "$DESTINATION"
-            unset AWS_ACCESS_KEY_ID
-            unset AWS_SECRET_ACCESS_KEY
-            unset AWS_SESSION_TOKEN
+            unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
           }
           checkFlyway() {
             if [ -d "flyway" ]; then
@@ -1134,7 +1129,6 @@ jobs:
             if [[ "$FILE" == "null" || -z "$FILE" ]]; then
               FILE="./Dockerfile"
             fi
-            echo "$FILE"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             docker build -f $FILE -t $IMAGE \
@@ -1176,8 +1170,6 @@ jobs:
             cd tessell;
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
-            echo $OS
-            echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             # mvnDeploy "$ARTIFACT" "$EXTESNION" "$ARTIFACT.$EXTESNION" "tessell.functions" "${{env.LATEST_TAG}}"
             # aws s3 cp "$ARTIFACT.$EXTESNION" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
@@ -1211,7 +1203,6 @@ jobs:
             set -e
             IMAGE="$1"
             installGoDependencies
-            echo "Building the service"
             export PATH=${PATH}:$GOPATH/bin
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             ./setup -g -i
@@ -1327,7 +1318,6 @@ jobs:
           modifiedDir() {
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
-            echo "$directories"
           }
           mvnDeploy() {
             ARTIFACT_ID="$1"
@@ -1454,7 +1444,6 @@ jobs:
               manifestLabel="${LABEL}"
             fi
             releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
-
             for DIR in "${DIRECTORIES[@]}"; do
               DIR=${DIR%/}
               if [[ ! " $MODIFIED_DIRECTORIES " =~ " $DIR " && " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
@@ -1463,9 +1452,7 @@ jobs:
                   ARTIFACT_CHECKSUMS+="${DIR}:${CHECKSUM}%"           
                 else
                   echo "Checksum not present in release manifest for tf-module:${DIR}. Building the module and generating checksum."
-                  echo "Building ${DIR}"
                   ARTIFACT_FILE="${DIR}.zip"
-                  echo $ARTIFACT_FILE
                   cd $BASE_DIR/$DIR
                   VERSION=$(yq .version convoy.yaml)
                   terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
@@ -1474,15 +1461,12 @@ jobs:
                 fi
               fi
             done
-
             for DIR in $MODIFIED_DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-                echo "Building ${DIR}"
                 ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
-                echo terraform_build $BASE_DIR/$DIR $BUILD_DIR/$ARTIFACT_FILE
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
@@ -1532,7 +1516,6 @@ jobs:
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
-            s3buckets=("terls" "barc" "stage" "beta")
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return
