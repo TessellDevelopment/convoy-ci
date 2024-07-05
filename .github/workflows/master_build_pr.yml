@@ -364,7 +364,7 @@ jobs:
             source_path=${venv_path}/lib/python3.9/site-packages/
             pushd $source_path
             echo "Running unit tests"
-            python3 -m coverage run --branch --source "." -m pytest -s
+            python3 -m coverage run --branch --source "." -m pytest tests
             include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
             echo "Generating code coverage report"
             python3 -m coverage report --skip-empty --include="${include}"
