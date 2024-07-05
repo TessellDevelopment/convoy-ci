@@ -158,13 +158,13 @@ jobs:
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
     
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
@@ -375,8 +375,8 @@ jobs:
             pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
             for env in "${environments[@]}"
             do
-              push_to_minio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-              push_to_minio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
+              pushToMinio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
+              pushToMinio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
             done
             generateChecksum "filebeat-linux.tar.gz" 
             generateChecksum "filebeat-windows.tar.gz" 
@@ -455,7 +455,7 @@ jobs:
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
           }
-          push_to_minio() {
+          pushToMinio() {
             SOURCE="${1}"
             DESTINATION="${2}"
             MAX_RETRIES=5
@@ -554,13 +554,13 @@ jobs:
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -647,7 +647,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -667,7 +667,7 @@ jobs:
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
           }
-          push_to_minio() {
+          pushToMinio() {
             SOURCE="${1}"
             DESTINATION="${2}"
             MAX_RETRIES=5
@@ -767,13 +767,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
    
   build-amd-go-21:
     if: ${{ inputs.type == 'amd-go-21' }}
@@ -844,7 +844,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -869,7 +869,7 @@ jobs:
                 -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
                 -Dfile=$FILE -DrepositoryId=nexus
           }
-          push_to_minio() {
+          pushToMinio() {
             SOURCE="${1}"
             DESTINATION="${2}"
             MAX_RETRIES=5
@@ -965,13 +965,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
@@ -1065,7 +1065,7 @@ jobs:
             pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1138,14 +1138,6 @@ jobs:
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
-          createPipConf(){
-            echo "[global]" > pip.conf
-            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-            sudo cp pip.conf /etc/pip.conf
-            cat /etc/pip.conf
-          }
           dbPluginBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -1164,7 +1156,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1193,7 +1185,7 @@ jobs:
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             cd ..
@@ -1340,7 +1332,7 @@ jobs:
             pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
@@ -1357,9 +1349,6 @@ jobs:
             directories=$(echo ${{steps.changed-files-all.outputs.all_changed_and_modified_files}} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
             directories=$(echo $directories | tr '\n' ' ')
             echo "$directories"
-          }
-          mvnDeploy() {
-            mvn_deploy "$@"
           }
           opsImageBuildAndPush() {
             set -e
@@ -1387,12 +1376,12 @@ jobs:
             pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
-              push_to_minio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToMinio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum ${file_name}
             set +e
           }
-          push_to_minio() {
+          pushToMinio() {
             SOURCE="${1}"
             DESTINATION="${2}"
             MAX_RETRIES=5
@@ -1516,7 +1505,7 @@ jobs:
                 configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 for env in "${environments[@]}"
                 do
-                  push_to_minio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
+                  pushToMinio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
                 done
               fi
             done
@@ -1536,11 +1525,11 @@ jobs:
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
-            source ./ci-scripts/bash/functions-for-build
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return
             fi
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -1579,13 +1568,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
                   
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-arm:
     if: ${{ inputs.type == 'arm' }}
@@ -1824,10 +1813,10 @@ jobs:
           docker container prune --force
           docker volume prune --force
                     
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
