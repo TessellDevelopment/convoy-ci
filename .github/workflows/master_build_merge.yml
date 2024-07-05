@@ -981,6 +981,8 @@ jobs:
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI-BRANCH: TDEVOPS-1377-1
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -1000,6 +1002,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
@@ -1552,6 +1555,7 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          set -x
           ARTIFACT_CHECKSUMS=""
           build "artifacts"
           build "dockerImages"
