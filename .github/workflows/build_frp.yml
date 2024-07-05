@@ -223,9 +223,6 @@
         - name: Push tar files to nexus
           if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
           run: |
-            mkdir -p $HOME/.m2
-            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-            cat $HOME/.m2/settings.xml
             os_type=("linux" "windows")
             services=("frpc")
             for os in "${os_type[@]}"; do
