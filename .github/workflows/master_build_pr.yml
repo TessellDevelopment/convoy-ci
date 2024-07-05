@@ -642,6 +642,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check specific file changes
+        id: changed-files
+        uses: tj-actions/changed-files@v42.0.2
+        with:
+          files: |
+            Chart.yaml
+            services/**
+            scripts/Dockerfile
+            scripts/initializeAutomation.sh
+
       - name: Check All file changes
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
@@ -813,12 +823,6 @@ jobs:
               set +e
             fi
           }
-          opsImageBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuild "$@"
-            set +e
-          }
           imageScan(){
             set -e
             export IMAGE="$1"
@@ -970,24 +974,10 @@ jobs:
             fi
             set +e
           }
-          qaBuild(){
+          opsImageBuild() {
             set -e
-            requiredInputs="1 3"
-            validateInputs "$requiredInputs" "$@" 
-            createPipConf
-            setupQAEnv
-            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-            cp configs/qabusiness.json config.json
-            source qavenv/bin/activate
-            make clients -B
-            source qavenv/bin/activate
-            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
-            deactivate
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              cd scripts
-              dockerBuild "$@"
-              cd ..
-            fi
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            dockerBuild "$@"
             set +e
           }
           pythonApiClientBuild() {
@@ -1017,6 +1007,33 @@ jobs:
             gradlewPythonwheel
             set +e
           }
+          qaBuild(){
+            set -e
+            requiredInputs="1 3"
+            validateInputs "$requiredInputs" "$@" 
+            createPipConf
+            setupQAEnv
+            export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
+            cp configs/qabusiness.json config.json
+            source qavenv/bin/activate
+            make clients -B
+            source qavenv/bin/activate
+            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            deactivate
+            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              cd scripts
+              dockerBuild "$@"
+              cd ..
+            fi
+            set +e
+          }
+          setupOpa() {
+            curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
+            chmod 755 ~/opa
+            curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
+            curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
+            ~/opa version
+          }
           setupQAEnv() {
             INSTALL_DIR=/usr/local/bin
             sudo mkdir -p $INSTALL_DIR/openapitools
@@ -1035,13 +1052,6 @@ jobs:
             python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
             python3 -m pip list | grep harness
             deactivate
-          }
-          setupOpa() {
-            curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
-            chmod 755 ~/opa
-            curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
-            curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
-            ~/opa version
           }
           terraformBuild(){
             set -e
@@ -1146,98 +1156,6 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          sudo rm -rf target
-          docker container prune --force
-          docker volume prune --force
-
-  build-amd-2:
-    if: ${{ inputs.type == 'amd-2' }}
-    runs-on: self-hosted
-    env:
-      GOPATH: /home/github/go
-      NAMESPACE: "convoy"
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
-      REPO: "${{github.repository}}"
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Check specific file changes
-        id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
-        with:
-          files: |
-            Chart.yaml
-            services/**
-            scripts/Dockerfile
-            scripts/initializeAutomation.sh
-
-      - name: Login to docker
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build
-        shell: bash
-        run: |
-          
-          build() {
-            type="$1"
-            check=$(grep "$type" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              return
-            fi
-            mkdir -p $HOME/.m2
-            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-            cat $HOME/.m2/settings.xml
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version' convoy.yaml)
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
-            lineNumber=1
-            while :; do
-              echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
-                break
-              fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
-              echo "$type $name done"
-              echo ------------------------------
-              lineNumber=$((lineNumber+1))
-            done
-            rm artifacts.txt
-          }
-          set +e
-          build "artifacts"
-          build "dockerImages"
-          build "helmCharts"
 
       - name: Cleanup
         if: always()
