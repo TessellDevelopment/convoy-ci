@@ -360,7 +360,7 @@ jobs:
             cp -r tests pytest.ini $source_dir
           }
           runPythonUnitTest() {
-            initialiseCoverage("test-venv")
+            initialiseCoverage 'test-venv'
             source_path=${venv_path}/lib/python3.9/site-packages/
             pushd $source_path
             echo "Running unit tests"
