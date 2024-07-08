@@ -158,13 +158,13 @@ jobs:
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
     
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
@@ -554,13 +554,13 @@ jobs:
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -767,13 +767,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
    
   build-amd-go-21:
     if: ${{ inputs.type == 'amd-go-21' }}
@@ -965,13 +965,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
@@ -1063,7 +1063,7 @@ jobs:
             EXTENSION="$2"
             mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            # aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
@@ -1154,7 +1154,7 @@ jobs:
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            # aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
@@ -1183,7 +1183,7 @@ jobs:
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            # aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
+            aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
@@ -1328,9 +1328,9 @@ jobs:
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
-            # mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
             awsConfigureTessellTools
-            # aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
             pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
@@ -1572,13 +1572,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
                   
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-arm:
     if: ${{ inputs.type == 'arm' }}
@@ -1817,10 +1817,10 @@ jobs:
           docker container prune --force
           docker volume prune --force
                     
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
