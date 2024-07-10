@@ -86,16 +86,9 @@ jobs:
           sudo cp pip.conf /etc/pip.conf
         shell: bash
 
-      - name: Install packer software
+      - name: Check packer software
         run: |
-          sudo apt install -y unzip
-          sudo wget https://releases.hashicorp.com/packer/1.10.3/packer_1.10.3_linux_amd64.zip
-          sudo unzip packer_1.10.3_linux_amd64.zip
-          sudo chmod +x packer
-          sudo mv packer /usr/bin/packer
           packer version
-          mkdir -p ~/.packer.d/plugins
-          packer plugins install github.com/hashicorp/amazon
 
       - name: Install dependencies
         run: |
