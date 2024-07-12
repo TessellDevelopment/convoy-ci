@@ -707,20 +707,20 @@ jobs:
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
-          createPipConf(){
-            echo "[global]" > pip.conf
-            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-            sudo cp pip.conf /etc/pip.conf
-            cat /etc/pip.conf
-          }
+          # createPipConf(){
+          #   echo "[global]" > pip.conf
+          #   echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          #   echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          #   echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+          #   sudo cp pip.conf /etc/pip.conf
+          #   cat /etc/pip.conf
+          # }
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
+            # createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPythonwheel
@@ -1011,7 +1011,7 @@ jobs:
             set -e
             requiredInputs="1 3"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
+            # createPipConf
             setupQAEnv
             export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
             cp configs/qabusiness.json config.json
