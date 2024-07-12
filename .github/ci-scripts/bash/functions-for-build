@@ -2,15 +2,6 @@
 
 source ./ci-scripts/bash/functions-for-build-camel-case
 
-# create_pip_conf(){
-#   echo "[global]" > pip.conf
-#   echo "index =  ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple" >> pip.conf
-#   echo "index-url = ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple" >> pip.conf
-#   echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-#   sudo cp pip.conf /etc/pip.conf
-#   cat /etc/pip.conf
-# }
-
 docker_build() {
   set -e
   IMAGE="${1}"
@@ -64,7 +55,6 @@ qa_build_and_push(){
   set -e
   required_inputs="1 3"
   validate_inputs "${required_inputs}" "$@" 
-  # create_pip_conf
   setup_qa_env
   export GITHUB_TOKEN="${GITHUB_TOKEN}"
   cp configs/qabusiness.json config.json
@@ -96,7 +86,7 @@ setup_qa_env() {
   python3 -m venv qavenv
   source qavenv/bin/activate
   python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   python3 -m pip list | grep harness
   deactivate
 }
