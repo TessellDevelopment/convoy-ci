@@ -7,11 +7,11 @@ on:
         description: 'Consolidated Checksum of generated artifacts'
         required: true
         type: string
-      tag:
+      TAG:
         description: 'Tag created during create-tag'
         required: true
         type: string
-      label:
+      LABEL:
         description: 'Release label for upload'
         required: true
         type: string
@@ -22,8 +22,8 @@ jobs:
     runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
-      TAG: "${{inputs.tag}}"
-      LABEL: "${{inputs.label}}"
+      TAG: "${{inputs.TAG}}"
+      LABEL: "${{inputs.LABEL}}"
     steps:
       - uses: actions/checkout@v4.1.1
         with:

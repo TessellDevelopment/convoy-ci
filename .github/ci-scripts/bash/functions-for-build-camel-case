@@ -1,8 +1,8 @@
 #!/bin/bash
 
-createPipConf(){
-  create_pip_conf "$@"
-}
+# createPipConf(){
+#   create_pip_conf "$@"
+# }
 
 dockerBuild() {
   docker_build "$@"

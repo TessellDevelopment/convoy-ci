@@ -1147,7 +1147,7 @@ jobs:
             EXTENSION="$2"
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
+            # createPipConf
             installPythonDependencies $ARTIFACT
             awsConfigureTessellTools
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
