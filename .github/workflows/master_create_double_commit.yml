@@ -177,6 +177,7 @@ jobs:
               } catch (error) {
                 if (error.status === 422) {
                   console.log("Received 422 Unprocessable Entity. Skipping to next branch.");
+                  git branch -D prBranchName
                   continue;
                 }
                 console.log("Error creating pull request: ", error);
