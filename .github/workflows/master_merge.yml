@@ -92,7 +92,7 @@ jobs:
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-2146
     secrets: inherit
 
   send-mail:
