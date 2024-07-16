@@ -130,31 +130,13 @@ jobs:
                   continue;
                 }
               }
-
-              // Amend the commit
-              try {
-                command = "git commit --amend --no-edit";
-                let result = await execPromise(command);
-                console.log("stdout: " + result.stdout);
-                console.log("stderr: " + result.stderr);
-              } catch (errorAmend) {
-                console.log("Error during commit amend.");
-                console.log(errorAmend);
-                continue;
-              }
-
-              command = 'git push -u -f origin ' + prBranchName;
-              try {
-                let result = await execPromise(command);
-                console.log("stdout: " + result.stdout);
-                console.log("stderr: " + result.stderr);
-              } catch (error) {
-                console.log(error);
-                continue;
-              }
+              command = 'git push -u -f origin ' + prBranchName
+              result = await execPromise(command);
+              console.log("stdout: " + result.stdout);
+              console.log("stderr: " + result.stderr);
 
               // Create pull request
-              const dcTitle = `Double Commit: ${prTitle}`;
+              dcTitle = `Double Commit: ${prTitle}`;
               try {
                 const pullCreateResponse = await github.rest.pulls.create({
                   owner: "${{ github.repository_owner }}",
