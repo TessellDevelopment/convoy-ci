@@ -177,6 +177,8 @@ jobs:
               } catch (error) {
                 if (error.status === 422) {
                   console.log("Received 422 Unprocessable Entity. Skipping to next branch.");
+                  command = 'git checkout ' + dstBranch
+                  result = await execPromise(command);
                   command = 'git branch -D ' + prBranchName
                   result = await execPromise(command);
                   continue;
