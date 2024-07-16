@@ -75,7 +75,7 @@ jobs:
 
                 // No need to create PR for branches not starting with 'rel-'
                 if (!dstBranch.startsWith('rel-')) {
-                  continue
+                   continue
                 }
 
                 // dst branch minor version
@@ -99,6 +99,7 @@ jobs:
                 console.log("stderr: " + result.stderr);
               } catch (error) {
                 console.log(error);
+                continue;
               }
 
               command = 'git cherry-pick ' + "${{ github.sha }}"
@@ -109,98 +110,69 @@ jobs:
                 console.log("stderr: " + result.stderr);
               } catch (error) {
                 console.log(error);
+
+                // Resolve conflicts
                 try {
-                  command = "find . -type f -name index.lock | xargs rm -rf "
-                  const result = await execPromise(command);
+                  console.log("Running git status");
+                  command = "git status";
+                  let result = await execPromise(command);
                   console.log("stdout: " + result.stdout);
                   console.log("stderr: " + result.stderr);
-                } catch (error2) {
-                  console.log("Error during rm and find.")
-                  console.log(error2)
-                }
-                try {
-                  console.log("Running git status")
-                  command = "git status"
+                  
+                  console.log("Trying cherry-pick --continue");
+                  command = "git add . ; git cherry-pick --continue";
                   result = await execPromise(command);
                   console.log("stdout: " + result.stdout);
                   console.log("stderr: " + result.stderr);
-                } catch (error_status) {
-                  console.log("Error during git status.")
-                  console.log(error_status)
-                }
-                try {
-                  command = "git add . ; git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
-                  result = await execPromise(command);
-                  console.log("stdout: " + result.stdout);
-                  console.log("stderr: " + result.stderr);
-                } catch (error3) {
-                  console.log("Error during git add.")
-                  console.log(error3)
-                  try {
-                      console.log("Trying cherry-pick --continue")
-                      command = "git add . ; git -c core.editor=true cherry-pick --continue; git status"
-                      result = await execPromise(command);
-                      console.log("stdout: " + result.stdout);
-                      console.log("stderr: " + result.stderr);
-                  } catch (error4) {
-                      console.log("Error during git add with cherry-pick --continue")
-                      console.log(error4)
-                  }
-                  try {
-                      console.log("Amend the commit")
-                      command = "git -c core.editor=true commit --amend --author=${{ env.MAILID }}"
-                      result = await execPromise(command);
-                      console.log("stdout: " + result.stdout);
-                      console.log("stderr: " + result.stderr);
-                  } catch (error5) {
-                      console.log("Failed during Amending the commit.")
-                      console.log(error5)
-                  }
+                } catch (errorStatus) {
+                  console.log("Error during git status or cherry-pick --continue.");
+                  console.log(errorStatus);
+                  continue;
                 }
               }
 
-              // Check if there are changes to commit
+              // Amend the commit
               try {
-                console.log("Checking for changes");
-                command = 'git diff --name-only';
-                let diffResult = await execPromise(command);
-                if (!diffResult.stdout) {
-                  console.log("No changes detected. Skipping pull request creation.");
-                  continue;
-                }
-              } catch (errorCheck) {
-                console.log("Error during checking for changes.");
-                console.log(errorCheck);
+                command = "git commit --amend --no-edit";
+                let result = await execPromise(command);
+                console.log("stdout: " + result.stdout);
+                console.log("stderr: " + result.stderr);
+              } catch (errorAmend) {
+                console.log("Error during commit amend.");
+                console.log(errorAmend);
                 continue;
               }
 
               command = 'git push -u -f origin ' + prBranchName;
               try {
-                result = await execPromise(command);
+                let result = await execPromise(command);
                 console.log("stdout: " + result.stdout);
                 console.log("stderr: " + result.stderr);
-              } catch (errorPush) {
-                console.log("Error during git push.");
-                console.log(errorPush);
-                continue
+              } catch (error) {
+                console.log(error);
+                continue;
               }
 
-              // create pull request
+              // Create pull request
+              const dcTitle = `Double Commit: ${prTitle}`;
               try {
-                dcTitle = `Double Commit: ${prTitle}`;
-                pullCreateResponse = await github.rest.pulls.create({
+                const pullCreateResponse = await github.rest.pulls.create({
                   owner: "${{ github.repository_owner }}",
                   title: dcTitle,
                   repo: "${{ github.repository }}".split('/')[1],
                   head: prBranchName,
                   base: dstBranch
                 });
-                console.log(pullCreateResponse)
-              } catch (errorPR) {
-                console.log("Error during pull request creation.");
-                console.log(errorPR);
+                console.log(pullCreateResponse);
+              } catch (error) {
+                if (error.status === 422) {
+                  console.log("Received 422 Unprocessable Entity. Skipping to next branch.");
+                  continue;
+                }
+                console.log("Error creating pull request: ", error);
               }
             }
+
 
       - name: Slack Notification
         if: failure()
