@@ -1078,7 +1078,20 @@ jobs:
             python3 -m pip list | grep harness
             deactivate
           }
-          terraformBuild(){
+          terraformApply() {
+          set -e
+          ARTIFACT="$1"
+          EXTENSION="$2"
+          cd terraform
+          terraform init
+          terraform plan
+          ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+          terraform_build $PWD $ARTIFACT_FILE
+          cd ..
+          ls build
+          set +e
+          }
+          terraformBuild() {
             set -e
             modifiedDir
             BASE_DIR=$PWD
@@ -1124,13 +1137,11 @@ jobs:
             ls
             set +e
           }
-
           zipDirectory() {
             DIR="$1"
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
           }
-
           validateInputs() {
             local required=($1)
             shift

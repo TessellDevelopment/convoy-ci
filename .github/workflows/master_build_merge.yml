@@ -1240,6 +1240,20 @@ jobs:
             python3 -m pip list | grep harness
             deactivate
           }
+          terraformApplyAndPush() {
+          set -e
+          ARTIFACT="$1"
+          EXTENSION="$2"
+          cd terraform
+          terraform init
+          terraform plan
+          terraform apply
+          ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+          terraform_build $PWD $ARTIFACT_FILE
+          mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT_FILE" "convoy.$ARTIFACT" "${LATEST_TAG}"
+          cd ..
+          set +e
+          }
           terraformBuildAndPush() {
             set -e
             BASE_DIR=$PWD
