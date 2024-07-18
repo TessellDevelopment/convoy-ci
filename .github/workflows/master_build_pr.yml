@@ -1082,11 +1082,11 @@ jobs:
           set -e
           ARTIFACT="$1"
           EXTENSION="$2"
-          ARTIFACT_FILE=$PWD/build/$ARTIFACT.$EXTENSION
+          ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
           cd terraform
           terraform init
           terraform plan
-          terraform_build $PWD $ARTIFACT_FILE
+          terraform_build $PWD ${ARTIFACT_FILE}
           cd ..
           ls build
           set +e

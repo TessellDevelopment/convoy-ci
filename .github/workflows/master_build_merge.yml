@@ -1244,13 +1244,15 @@ jobs:
           set -e
           ARTIFACT="$1"
           EXTENSION="$2"
-          ARTIFACT_FILE=$PWD/build/$ARTIFACT.$EXTENSION
+          requiredInputs="1 2"
+          validateInputs "$requiredInputs" "$@" 
+          ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
           cd terraform
           terraform init
           terraform plan
           terraform apply
-          terraform_build $PWD $ARTIFACT_FILE
-          mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT_FILE" "convoy.$ARTIFACT" "${LATEST_TAG}"
+          terraform_build $PWD ${ARTIFACT_FILE}
+          mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
           cd ..
           set +e
           }
