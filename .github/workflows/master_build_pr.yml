@@ -1082,10 +1082,10 @@ jobs:
           set -e
           ARTIFACT="$1"
           EXTENSION="$2"
+          ARTIFACT_FILE=$PWD/build/$ARTIFACT.zip
           cd terraform
           terraform init
           terraform plan
-          ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
           terraform_build $PWD $ARTIFACT_FILE
           cd ..
           ls build
