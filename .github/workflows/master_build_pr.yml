@@ -990,6 +990,7 @@ jobs:
             requiredInputs="1 2"
             file_name="${ARTIFACT}.${EXTENSION}"
             setupOpa
+            mkdir -p bundles
             if [[ $ARTIFACT == *"wasm"* ]]; then
               ~/opa build -t wasm policies --output bundles/${file_name}
             else
