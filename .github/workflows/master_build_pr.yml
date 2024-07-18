@@ -1082,7 +1082,7 @@ jobs:
           set -e
           ARTIFACT="$1"
           EXTENSION="$2"
-          ARTIFACT_FILE=$PWD/build/$ARTIFACT.zip
+          ARTIFACT_FILE=$PWD/build/$ARTIFACT.$EXTENSION
           cd terraform
           terraform init
           terraform plan
