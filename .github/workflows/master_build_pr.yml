@@ -48,6 +48,24 @@ jobs:
             echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
             cat ~/.npmrc
           }
+          dockerBuild() {
+            set -e
+            IMAGE="$1"
+            FILE="$4"
+            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
+              FILE="./Dockerfile"
+            fi
+            echo "$FILE"
+            docker build -f $FILE -t $IMAGE \
+                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
+                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
+                --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
+                --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
+                --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
+            imageScan $IMAGE
+            set +e
+          }
           gradlewUIBuild() {
             rm ~/.npmrc
             rm ~/.yarnrc
@@ -143,13 +161,6 @@ jobs:
             mv tmp_package.json package.json
             npm publish   
             set +e
-          }
-          uiDockerBuild() {
-          set -e
-          IMAGE="$1"
-          docker build -t $IMAGE .
-          imageScan $IMAGE
-          set +e
           }
           validateInputs() {
             local required=($1)
