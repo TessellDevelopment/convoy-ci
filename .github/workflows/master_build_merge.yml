@@ -105,6 +105,14 @@ jobs:
             npm publish   
             set +e
           }
+          uiDockerBuildAndPush() {
+            set -e
+            IMAGE="$1"
+            TAG=${LATEST_TAG}
+            docker build -t ${DOCKERHUB_ORG}/$IMAGE:$TAG .
+            docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
+            set +e
+          }
           validateInputs() {
             local required=($1)
             shift
