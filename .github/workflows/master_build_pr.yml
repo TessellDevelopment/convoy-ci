@@ -26,6 +26,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      REPO: "${{github.repository}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
