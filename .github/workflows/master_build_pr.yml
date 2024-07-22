@@ -1083,6 +1083,7 @@ jobs:
           ARTIFACT="$1"
           EXTENSION="$2"
           ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
+          mkdir -p build
           cd terraform
           terraform init
           terraform plan

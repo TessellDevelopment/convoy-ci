@@ -1247,6 +1247,7 @@ jobs:
           requiredInputs="1 2"
           validateInputs "$requiredInputs" "$@" 
           ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
+          mkdir -p build
           cd terraform
           terraform init
           terraform plan
