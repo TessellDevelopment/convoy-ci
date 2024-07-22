@@ -1251,7 +1251,7 @@ jobs:
           cd terraform
           terraform init
           terraform plan
-          terraform apply
+          terraform apply -auto-approve
           terraform_build $PWD ${ARTIFACT_FILE}
           mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
           cd ..
