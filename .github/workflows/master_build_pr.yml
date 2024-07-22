@@ -17,7 +17,7 @@ jobs:
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code-scan/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
