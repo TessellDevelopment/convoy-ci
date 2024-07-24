@@ -1259,23 +1259,23 @@ jobs:
             deactivate
           }
           terraformApplyAndPush() {
-          set -e
-          ARTIFACT="$1"
-          EXTENSION="$2"
-          requiredInputs="1 2"
-          validateInputs "$requiredInputs" "$@" 
-          awsConfigureDevqaInfra
-          ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
-          mkdir -p build
-          cd terraform
-          createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5"
-          terraform init
-          terraform plan
-          terraform apply -auto-approve
-          terraform_build $PWD ${ARTIFACT_FILE}
-          mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
-          cd ..
-          set +e
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@" 
+            awsConfigureDevqaInfra
+            ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
+            mkdir -p build
+            cd terraform
+            createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5"
+            terraform init
+            terraform plan
+            terraform apply -auto-approve
+            terraform_build $PWD ${ARTIFACT_FILE}
+            mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
+            cd ..
+            set +e
           }
           terraformBuildAndPush() {
             set -e
