@@ -694,6 +694,11 @@ jobs:
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
           }
+          awsConfigureDevqaInfra() {
+            aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+            aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+            aws configure set region ap-south-1
+          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -1100,6 +1105,7 @@ jobs:
           set -e
           ARTIFACT="$1"
           EXTENSION="$2"
+          awsConfigureDevqaInfra
           ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
           mkdir -p build
           cd terraform
