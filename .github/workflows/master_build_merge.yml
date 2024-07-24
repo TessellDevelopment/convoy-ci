@@ -1268,7 +1268,7 @@ jobs:
           ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
           mkdir -p build
           cd terraform
-          createTFBackend "tf-state-convoy-dev-deployment" "terraform.tfstate-md5"
+          createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5"
           terraform init
           terraform plan
           terraform apply -auto-approve

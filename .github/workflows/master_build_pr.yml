@@ -1102,20 +1102,20 @@ jobs:
             deactivate
           }
           terraformApply() {
-          set -e
-          ARTIFACT="$1"
-          EXTENSION="$2"
-          awsConfigureDevqaInfra
-          ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
-          mkdir -p build
-          cd terraform
-          createTFBackend "tf-state-convoy-dev-deployment" "terraform.tfstate-md5"
-          terraform init
-          terraform plan
-          terraform_build $PWD ${ARTIFACT_FILE}
-          cd ..
-          ls build
-          set +e
+            set -e
+            ARTIFACT="$1"
+            EXTENSION="$2"
+            awsConfigureDevqaInfra
+            ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
+            mkdir -p build
+            cd terraform
+            createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5"
+            terraform init
+            terraform plan
+            terraform_build $PWD ${ARTIFACT_FILE}
+            cd ..
+            ls build
+            set +e
           }
           terraformBuild() {
             set -e
