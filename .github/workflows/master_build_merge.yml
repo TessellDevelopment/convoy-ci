@@ -889,6 +889,24 @@ jobs:
             sudo cp pip.conf /etc/pip.conf
             cat /etc/pip.conf
           }
+          createTFBackend() {
+            S3_BUCKET="$1"
+            KEY="$2"
+            AWS_REGION="ap-south-1"
+            AWS_ACCESS_KEY="${{ secrets.DEVQA_INFRA_ACCESS_KEY }}"
+            AWS_SECRET_KEY="${{ secrets.DEVQA_INFRA_SECRET_KEY }}"
+            cat <<EOL > "backend.tf"
+            terraform {
+              backend "s3" {
+                bucket               = "${S3_BUCKET}"
+                key                  = "${KEY}"
+                region               = "${AWS_REGION}"
+                access_key           = "${AWS_ACCESS_KEY}"
+                secret_key           = "${AWS_SECRET_KEY}"
+              }
+            }
+          EOL
+          }
           dbPluginBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -1249,6 +1267,7 @@ jobs:
           ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
           mkdir -p build
           cd terraform
+          createTFBackend "tf-state-convoy-dev-deployment" "terraform.tfstate-md5"
           terraform init
           terraform plan
           terraform apply -auto-approve
