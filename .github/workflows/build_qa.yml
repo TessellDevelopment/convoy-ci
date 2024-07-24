@@ -39,10 +39,11 @@ jobs:
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
       mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
+      NAMESPACE: "convoy"
       NEXUS_USERNAME: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-      NEXUS_SERVER: ${{ vars.NEXUS_SERVER_ENDPOINT }}
-      NEXUS_HTTP: https
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       DOCKER_IMAGE_NAME: tessell-qa-runner
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -63,8 +64,8 @@ jobs:
           # The --extra_index_url option of pip install does not work with username/password
           # Also pip does not have separate option to specify creds.
           echo "[global]" > pip.conf
-          echo "index =  https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-          echo "index-url = https://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
+          echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
           echo "extra-index-url = https://pypi.org/simple" >> pip.conf
           sudo cp pip.conf /etc/pip.conf
         shell: bash
@@ -81,14 +82,15 @@ jobs:
           sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
           sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
           wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+          python3 -m pip cache purge
           sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-          python3 -m pip install --user virtualenv
-          python3 -m pip install yq wheel
+          python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
           python3 -m venv qavenv
           source qavenv/bin/activate
-          python3 -m pip install -r scripts/requirements.txt
-          sudo python3 -m pip list | grep harness
-          python3 -m pip list | grep harness
+          python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+          python3 -m pip list  --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} | grep harness
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3.0.0
@@ -102,7 +104,7 @@ jobs:
         run: |
           export PYTHONPATH=lib
           export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
-          cp configs/qarel.json config.json
+          cp configs/qabusiness.json config.json
           source qavenv/bin/activate
           make clients -B
 
@@ -128,8 +130,8 @@ jobs:
         run: |
           cd scripts
           docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
-                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
-                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
@@ -141,8 +143,8 @@ jobs:
         run: |
           cd scripts
           docker build -t $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }} \
-                        --build-arg NEXUS_HTTP=${{env.NEXUS_HTTP}} \
-                        --build-arg NEXUS_SERVER=${{env.NEXUS_SERVER}} \
+                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
+                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
                         --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
                         --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
@@ -169,12 +171,18 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
       
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
+
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
@@ -195,6 +203,7 @@ jobs:
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
           API_KEY = os.environ.get('API_KEY')
@@ -214,13 +223,16 @@ jobs:
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = {
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
-
           print(payload)
           headers = {
             'Content-Type': 'application/json',

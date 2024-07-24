@@ -170,16 +170,29 @@ jobs:
               result = await execPromise(command);
               console.log("stdout: " + result.stdout);
               console.log("stderr: " + result.stderr);
-              // create pull request
-              dcTitle = `Double Commit: ${prTitle}`
-              pullCreateResponse = await github.rest.pulls.create({
+              
+              // Create pull request
+              dcTitle = `Double Commit: ${prTitle}`;
+              try {
+                const pullCreateResponse = await github.rest.pulls.create({
                   owner: "${{ github.repository_owner }}",
                   title: dcTitle,
-                  repo: "${{  github.repository }}".split('/')[1],
+                  repo: "${{ github.repository }}".split('/')[1],
                   head: prBranchName,
                   base: dstBranch
-              });
-              console.log(pullCreateResponse)
+                });
+                console.log(pullCreateResponse);
+              } catch (error) {
+                if (error.status === 422) {
+                  console.log("Skipping pull request creation since no diff exists between base and head branch. Checking next branch.");
+                  command = 'git checkout ' + dstBranch
+                  result = await execPromise(command);
+                  command = 'git branch -D ' + prBranchName
+                  result = await execPromise(command);
+                  continue;
+                }
+                console.log("Error creating pull request: ", error);
+              }
             }
 
       - name: Slack Notification

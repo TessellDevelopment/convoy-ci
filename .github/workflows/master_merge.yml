@@ -9,11 +9,11 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
-  build-file:
+  runner-check:
     runs-on: non-build
     needs: file-check
     outputs:
-      type: ${{steps.build-type.outputs.type}}
+      type: ${{steps.runner-type.outputs.type}}
       label: ${{steps.get-label.outputs.label}}
     steps:
       - uses: actions/checkout@v4.1.1
@@ -46,18 +46,18 @@ jobs:
             echo "convoy.yaml not found"
            fi 
           
-      - name: Determine build type from Convoy
-        id: build-type
+      - name: Determine runner type from Convoy
+        id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
   
   create-tag:
-    needs: build-file
+    needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
     secrets: inherit
     with:
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
@@ -75,13 +75,13 @@ jobs:
     secrets: inherit
 
   build:
-    needs: [build-file,find-latest-tag]
+    needs: [runner-check,find-latest-tag]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
     with:
-      type: ${{needs.build-file.outputs.type}}
+      type: ${{needs.runner-check.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
