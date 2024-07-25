@@ -1577,11 +1577,10 @@ jobs:
             VERSION="$3"
             requiredInputs="1 2 3"
             validateInputs "$requiredInputs" "$@" 
-            ./mvnw clean deploy -Drevision=$VERSION -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
-              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+            ./mvnw clean deploy -Drevision=$VERSION -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
               -DgeneratePom=true -Dpackaging=$EXTENSION -DrepositoryId=nexus \
               -DgroupId=tessellops -DartifactId=$ARTIFACT \
-              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{vars.NEXUS_PUSH_REPOS_M2}}
+              -DaltDeploymentRepository=nexus::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{vars.NEXUS_PUSH_REPOS_M2}}
             set +e
           }
           mvnDeploy() {
