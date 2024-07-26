@@ -897,20 +897,11 @@ jobs:
             echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
-          createPipConf(){
-            echo "[global]" > pip.conf
-            echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-            echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-            sudo cp pip.conf /etc/pip.conf
-            cat /etc/pip.conf
-          }
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPackagePlugin
@@ -1097,7 +1088,7 @@ jobs:
             python3 -m pip install --upgrade pip
             python3 -m pip install flake8 pytest twine wheel
             if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
             fi
           }
           javaApiClientBuild() {
@@ -1105,7 +1096,6 @@ jobs:
             mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
             set +e
           }
-
           javaDockerBuild() {
             set -e
             IMAGE="$1"
@@ -1179,7 +1169,6 @@ jobs:
             dockerBuild "$@"
             set +e
           }
-
           pythonApiClientBuild() {
             set -e
             bash setup --version 0.0.0
@@ -1196,13 +1185,11 @@ jobs:
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
           }
-
           pythonLibraryBuild() {
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPythonwheel
@@ -1212,7 +1199,6 @@ jobs:
             set -e
             requiredInputs="1 3"
             validateInputs "$requiredInputs" "$@" 
-            createPipConf
             setupQAEnv
             export GITHUB_TOKEN="${{ secrets.CIPIPELINE_GITHUB_TOKEN }}"
             cp configs/qabusiness.json config.json
@@ -1250,7 +1236,7 @@ jobs:
             python3 -m venv qavenv
             source qavenv/bin/activate
             python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
             python3 -m pip list | grep harness
             deactivate
           }
@@ -1261,7 +1247,7 @@ jobs:
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
             DIRECTORIES=$(modifiedDir)
-            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md")
+            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
             for DIR in $DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
@@ -1300,13 +1286,11 @@ jobs:
             ls
             set +e
           }
-
           zipDirectory() {
             DIR="$1"
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
           }
-
           validateInputs() {
             local required=($1)
             shift
