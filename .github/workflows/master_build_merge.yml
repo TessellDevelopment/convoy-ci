@@ -868,6 +868,22 @@ jobs:
               echo "The 'flyway' directory does not exists in this repository."
             fi
           }
+          generateChecksum() {
+            ARTIFACT=$1
+            BUILD_FILE=$2
+            if [[ -z "$BUILD_FILE" ]]; then
+              echo "Build File name same as Artifact name"
+              BUILD_FILE=$ARTIFACT
+            fi
+            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
+            if [[ -z "$file_path" ]]; then
+              echo "File not found!"
+              return 1
+            fi
+            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
+            ARTIFACT="${ARTIFACT%%.*}"         
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+          }
           goDockerBuildAndPush() {
             set -e
             IMAGE="$1"
