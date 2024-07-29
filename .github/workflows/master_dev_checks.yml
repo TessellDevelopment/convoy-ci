@@ -18,7 +18,7 @@
           with:
             fetch-depth: 0
 
-        - name: Get branch name
+        - name: Code Scan for Secrets
           shell: bash
           run: |
             trivy fs  --exit-code 1 --scanners secret --format json .
