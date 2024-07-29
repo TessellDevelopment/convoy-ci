@@ -21,6 +21,11 @@
         - name: Get branch name
           shell: bash
           run: |
+            trivy fs .
+
+        - name: Get branch name
+          shell: bash
+          run: |
             echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
             echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
             echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
