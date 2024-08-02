@@ -1,0 +1,156 @@
+#!/bin/bash
+
+source ./ci-scripts/bash/functions-for-build-camel-case
+
+docker_build() {
+  set -e
+  IMAGE="${1}"
+  FILE="${4}"
+  if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
+    FILE="./Dockerfile"
+  fi
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  docker build -f ${FILE} -t ${IMAGE} \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+              --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
+              --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+              --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
+  set +e
+}
+
+docker_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  VERSION="${3}"
+  TAG=${LATEST_TAG}
+  if [[ "${VERSION}" != "null" ]]; then
+    TAG=${VERSION}
+  fi
+  docker_build "$@"
+  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  set +e
+}
+
+mvn_deploy() {
+  ARTIFACT_ID="${1}"
+  EXTENSION="${2}"
+  FILE="${3}"
+  GROUP_ID="${4}"
+  VERSION="${5}"
+  required_inputs="1 2 3 4 5"
+  validate_inputs "${required_inputs}" "$@" 
+  mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
+      -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+      -DgroupId=${GROUP_ID} -DartifactId=${ARTIFACT_ID} -Dversion=${VERSION} \
+      -DgeneratePom=true -Dpackaging=${EXTENSION} \
+      -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+      -Dfile=${FILE} -DrepositoryId=nexus
+}
+
+qa_build_and_push(){
+  set -e
+  required_inputs="1 3"
+  validate_inputs "${required_inputs}" "$@" 
+  setup_qa_env
+  export GITHUB_TOKEN="${GITHUB_TOKEN}"
+  cp configs/qabusiness.json config.json
+  source qavenv/bin/activate
+  make clients -B
+  source qavenv/bin/activate
+  python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+  deactivate
+  if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
+    cd scripts
+    docker_build_and_push $@
+    cd ..
+  fi
+  set +e
+}
+
+setup_qa_env() {
+  INSTALL_DIR=/usr/local/bin
+  sudo mkdir -p ${INSTALL_DIR}/openapitools
+  curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+  sudo cp openapi-generator-cli ${INSTALL_DIR}/openapitools/openapi-generator-cli
+  sudo chmod 755 ${INSTALL_DIR}/openapitools/openapi-generator-cli
+  sudo ln -f -s ${INSTALL_DIR}/openapitools/openapi-generator-cli ${INSTALL_DIR}/openapi-generator
+  wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+  python3 -m pip cache purge
+  sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+  python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install yq wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m venv qavenv
+  source qavenv/bin/activate
+  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python3 -m pip list | grep harness
+  deactivate
+}
+
+tsm_zip_build() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@" 
+  mkdir -p build; cd tsmv101; terraform_build $PWD ../build/${ARTIFACT}.zip; cd ../build; ls -l;
+  unzip -l ${ARTIFACT}.zip
+  cd ..
+  set +e
+}
+
+tsm_zip_build_and_push() {
+  tsm_zip_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "tessell.tsm.infra" "${VERSION}"
+  set +e
+}
+
+vss_tar_build() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  CLOUD=$(echo "${ARTIFACT}" | awk -F'[-]' '{print $3}')
+  DIR="build_${CLOUD}"
+  mkdir ${DIR}
+  cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/${CLOUD}/install-provider ${DIR}
+  cd ${DIR}
+  tar -cf ../${ARTIFACT}.${EXTENSION} .
+  cd ..
+  ls
+  set +e
+}
+
+vss_tar_build_and_push() {
+  vss_tar_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
+  set +e
+}
+
+validate_inputs() {
+  local required=($1)
+  shift
+  for index in "${required[@]}"; do
+    if [ -z "${!index}" ]; then
+      echo "Error: Required Argument at index ${index} is null or empty."
+      exit 1
+    fi
+  done
+}
+
+zip_directory() {
+  DIR="$1"
+  ARTIFACT_FILE="$2"
+  zip -r ${ARTIFACT_FILE} ${DIR}
+}

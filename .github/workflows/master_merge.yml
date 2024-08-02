@@ -85,9 +85,13 @@ jobs:
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
-    needs: build
+    needs: [find-latest-tag,build,runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-1968
     secrets: inherit
+    with:
+      ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
+      LABEL: ${{needs.runner-check.outputs.label}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+dockerBuild() {
+  docker_build "$@"
+}
+
+dockerBuildAndPush() {
+  docker_build_and_push "$@"
+}
+
+mvnDeploy() {
+  mvn_deploy "$@"
+}
+
+qaBuildAndPush(){
+  qa_build_and_push "$@"
+} 
+
+setupQAEnv() {
+  setup_qa_env "$@"
+}
+
+tsmZipBuildAndPush() {
+  tsm_zip_build_and_push "$@"
+}
+
+vssTarBuildAndPush() {
+  vss_tar_build_and_push "$@"
+}
+
+validateInputs() {
+  validate_inputs "$@"
+}
+
+zipDirectory() {
+  zip_directory "$@"
+}
