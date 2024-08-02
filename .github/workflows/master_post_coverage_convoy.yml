@@ -1,0 +1,119 @@
+---
+  name: Build Status POST API to Convoy
+  on:
+    workflow_call:
+      inputs:
+        BRANCH_COVERAGE:
+          required: true
+          type: string
+        STATEMENT_COVERAGE:
+          required: true
+          type: string
+      
+  jobs:
+    
+    post-coverage-to-convoy:
+      runs-on: non-build
+      env: 
+        SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+        BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
+        STATEMENT_COVERAGE: "${{inputs.STATEMENT_COVERAGE}}"
+      steps:
+        - uses: actions/checkout@v4.1.1
+          with:
+            fetch-depth: 0
+  
+        - name: Get branch name
+          shell: bash
+          run: |
+            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+  
+        - name: POST API to Convoy
+          env:
+            API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/coverages
+            API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+            BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+            BRANCH_COVERAGE: "${{env.BRANCH_COVERAGE}}"
+            COMMIT_HASH: "${{github.sha}}"
+            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+            OWNER: ${{github.repository_owner}}
+            REPO: "${{github.event.pull_request.base.repo.name}}"
+            SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+            STATEMENT_COVERAGE: "${{env.STATEMENT_COVERAGE}}"
+          run: |
+              python3 - <<EOF
+              
+              import requests
+              import json
+              import os
+              import time
+              import base64
+              import yaml
+              
+              def post_request(payload):
+                headers = {
+                  'Content-Type': 'application/json',
+                  'x-api-key': API_KEY
+                }
+
+              response = requests.post(API_URL, json=payload, headers=headers)
+              if response.status_code == 200:
+                print(response.status_code)
+                print(response.text)
+                break
+              else:
+                print(response.status_code)
+                print(response.text)
+                print("API request to convoy failed.")
+                exit(1)
+
+              API_URL = os.environ.get('API_URL')
+              API_KEY = os.environ.get('API_KEY')
+              REPO = os.environ.get('REPO')
+              COMMIT_HASH = os.environ.get('COMMIT_HASH')
+              BASE_BRANCH = os.environ.get('BASE_BRANCH')
+              GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+              BRANCH_COVERAGE = os.environ.get('BRANCH_COVERAGE')
+              STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
+              REPO = os.environ.get('REPO')
+              OWNER = os.environ.get('OWNER')
+              
+              if not(bool(BASE_BRANCH)):
+                BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+  
+              with open('convoy.yaml', 'r') as yaml_file:
+                yaml_data = yaml.safe_load(yaml_file)
+              APP_GROUP = yaml_data.get('appGroup')
+              LANGUAGE = yaml_data.get('language')
+              payload = {
+                "repoName": REPO,
+                "appGroup": APP_GROUP,
+                "commitHash": COMMIT_HASH[:7],
+                "gitBranch": BASE_BRANCH,
+                "language": LANGUAGE,
+                "branchCoverage": {
+                  "covered": ,
+                  "skipped": ,
+                  "total": ,
+                  "percentage": 
+                },
+                "statementCoverage": {
+                  "covered": ,
+                  "skipped": ,
+                  "total": ,
+                  "percentage": 
+                },
+              }                      
+              print(json.dumps(payload, indent=4))
+              post_request(payload)
+              EOF
+  
+        - name: Slack Notification
+          uses: act10ns/slack@v2.0.0
+          with:
+              status: ${{ job.status }}
+              steps: ${{ toJson(steps) }}
+              channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          if: failure()
+            
+  

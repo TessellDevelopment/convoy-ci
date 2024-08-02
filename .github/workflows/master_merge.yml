@@ -93,6 +93,15 @@ jobs:
       TAG: ${{needs.find-latest-tag.outputs.tag}}
       LABEL: ${{needs.runner-check.outputs.label}}
 
+  post-coverage-to-convoy:
+    if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
+    needs: [find-latest-tag,build,runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
+    secrets: inherit
+    with:
+      BRANCH_COVERAGE: 
+      STATEMENT_COVERAGE: 
+
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')
     needs: create-tag
