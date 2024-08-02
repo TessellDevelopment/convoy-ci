@@ -1530,25 +1530,6 @@ jobs:
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
           }
-          terraformApplyAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            awsConfigureDevqaInfra
-            ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
-            mkdir -p build
-            cd terraform
-            createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${{ secrets.COMMON_INFRA_ACCESS_KEY }}" "${{ secrets.COMMON_INFRA_SECRET_KEY }}"
-            terraform init
-            terraform plan
-            terraform apply -auto-approve
-            terraform_build $PWD ${ARTIFACT_FILE}
-            mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
-            cd ..
-            set +e
-          }
           terraformBuildAndPush() {
             set -e
             BASE_DIR=$PWD
