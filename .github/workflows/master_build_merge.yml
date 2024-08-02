@@ -892,9 +892,9 @@ jobs:
           createTFBackend() {
             S3_BUCKET="$1"
             KEY="$2"
+            AWS_ACCESS_KEY_ID="$3"
+            AWS_SECRET_ACCESS_KEY="$4"
             AWS_REGION="ap-south-1"
-            AWS_ACCESS_KEY_ID=${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
             cat <<EOL > "backend.tf"
             terraform {
               backend "s3" {
@@ -903,6 +903,7 @@ jobs:
                 region               = "${AWS_REGION}"
                 access_key           = "${AWS_ACCESS_KEY_ID}"
                 secret_key           = "${AWS_SECRET_ACCESS_KEY}"
+                encrypt              = true
               }
             }
           EOL
@@ -1268,7 +1269,7 @@ jobs:
             ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
             mkdir -p build
             cd terraform
-            createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5"
+            createTFBackend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${{ secrets.COMMON_INFRA_ACCESS_KEY }}" "${{ secrets.COMMON_INFRA_SECRET_KEY }}"
             terraform init
             terraform plan
             terraform apply -auto-approve
