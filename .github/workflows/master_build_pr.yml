@@ -912,6 +912,17 @@ jobs:
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
           }
+          buildConvoyTessellClient() {
+            installGoDependencies
+            ./setup --client --version 0.0.0
+          }
+          buildConvoyTessellImage() {
+            required_inputs="1"
+            validate_inputs "$required_inputs" "$@"
+            installGoDependencies
+            python3 -m pip install build
+            bash ./setup -i
+          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE

@@ -2,6 +2,34 @@
 
 source ./ci-scripts/bash/functions-for-build-camel-case
 
+build_convoy_tessell_client() {
+  install_go_dependencies
+  ./setup --client --version 0.0.0
+}
+
+build_convoy_tessell_client_and_push() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  install_go_dependencies
+  ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+}
+
+build_convoy_tessell_image() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  install_go_dependencies
+  python3 -m pip install build
+  bash ./setup -i
+}
+
+build_convoy_tessell_image_and_push() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  IMAGE="${1}"
+  build_convoy_tessell_image  "$@"
+  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+}
+
 docker_build() {
   set -e
   IMAGE="${1}"
@@ -30,9 +58,15 @@ docker_build_and_push() {
     TAG=${VERSION}
   fi
   docker_build "$@"
+  docker_tag_and_push "${IMAGE}" "${TAG}"
+  set +e
+}
+
+docker_tag_and_push() {
+  IMAGE="${1}"
+  TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-  set +e
 }
 
 gradlew_docker_tag() {
@@ -40,6 +74,12 @@ gradlew_docker_tag() {
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pdockerhub_org="${DOCKERHUB_ORG}"
+}
+
+install_go_dependencies() {
+  go version
+  go install golang.org/x/tools/cmd/goimports@latest
+  which go
 }
 
 python_docker_build_and_push() {
