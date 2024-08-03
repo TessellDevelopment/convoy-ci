@@ -45,8 +45,8 @@ gradlew_docker_tag() {
 python_docker_build_and_push() {
   set -e
   IMAGE="$1"
-  requiredInputs="1"
-  validate_inputs "$requiredInputs" "$@" 
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
   set +e
