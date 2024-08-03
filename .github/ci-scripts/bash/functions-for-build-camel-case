@@ -12,6 +12,10 @@ mvnDeploy() {
   mvn_deploy "$@"
 }
 
+pythonDockerBuildAndPush() {
+  python_docker_build_and_push "$@"
+}
+
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 

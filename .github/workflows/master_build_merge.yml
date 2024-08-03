@@ -1374,21 +1374,6 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" 
           }
-          gradlewDockerTag() {
-            ./gradlew dockerTag --console plain \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-          }
-          pythonDockerBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            gradlewDockerTag
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            set +e
-          }
           helmChartBuildAndPush() {
             set -e
             CHART_NAME="$1"
