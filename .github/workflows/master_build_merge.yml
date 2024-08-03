@@ -1385,7 +1385,6 @@ jobs:
             IMAGE="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            rm pip.conf
             gradlewDockerTag
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             set +e
