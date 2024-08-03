@@ -1302,6 +1302,13 @@ jobs:
             ARTIFACT_FILE="$2"
             zip -r ${ARTIFACT_FILE} ${DIR}
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" == 'function' ]; then
+              echo "'$function_name' does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -1339,6 +1346,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              check_build_function_exists $buildFunction
               $buildFunction $name $ext $version $file 
               echo "$type $name done"
               echo ------------------------------
