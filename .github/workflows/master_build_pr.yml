@@ -162,6 +162,13 @@ jobs:
             npm publish   
             set +e
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -193,6 +200,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              check_build_function_exists $buildFunction
               $buildFunction $name $ext $version $file 
               echo "$type $name done"
               echo ------------------------------
@@ -472,6 +480,13 @@ jobs:
             imageScan $IMAGE
             set +e
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -505,6 +520,7 @@ jobs:
               echo "dockerFile: $file"
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
+              check_build_function_exists $buildFunction
               $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
               echo "$type $name done"
               echo ------------------------------
@@ -571,6 +587,13 @@ jobs:
             fi
             set +e
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -605,6 +628,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              check_build_function_exists $buildFunction
               $buildFunction $name $ext $version $file
               echo "Artifact $name done"
               echo ------------------------------
@@ -770,6 +794,13 @@ jobs:
             gitops-pusher --policy-file ./policy.hujson test
             set +e
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -804,6 +835,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              check_build_function_exists $buildFunction
               $buildFunction $name $ext $version $file
               echo "Artifact $name done"
               echo ------------------------------
@@ -1528,6 +1560,13 @@ jobs:
             dockerBuild "$@"
             set +e
           }
+          check_build_function_exists() {
+            function_name=$1
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
+              exit 1
+            fi
+          }
           validateInputs() {
             local required=($1)
             shift
@@ -1559,6 +1598,7 @@ jobs:
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
+              check_build_function_exists $buildFunction
               $buildFunction $name $ext $version $file 
               echo "$type $name done"
               echo ------------------------------
