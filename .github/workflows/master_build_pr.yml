@@ -1304,8 +1304,8 @@ jobs:
           }
           check_build_function_exists() {
             function_name=$1
-            if [ `type -t $function_name`"" == 'function' ]; then
-              echo "'$function_name' does not exist!"
+            if [ `type -t $function_name`"" != 'function' ]; then
+              echo "Function, '$function_name', does not exist!"
               exit 1
             fi
           }
