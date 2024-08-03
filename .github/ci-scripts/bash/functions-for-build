@@ -12,20 +12,20 @@ build_convoy_tessell_client_and_push() {
   ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
 }
 
-build_convoy_tessell_image() {
-  required_inputs="1"
-  validate_inputs "$required_inputs" "$@"
-  python3 -m pip install build
-  bash ./setup -i
-}
+# build_convoy_tessell_image() {
+#   required_inputs="1"
+#   validate_inputs "$required_inputs" "$@"
+#   python3 -m pip install build
+#   bash ./setup -i
+# }
 
-build_convoy_tessell_image_and_push() {
-  required_inputs="1"
-  validate_inputs "$required_inputs" "$@"
-  IMAGE="${1}"
-  build_convoy_tessell_image  "$@"
-  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
-}
+# build_convoy_tessell_image_and_push() {
+#   required_inputs="1"
+#   validate_inputs "$required_inputs" "$@"
+#   IMAGE="${1}"
+#   build_convoy_tessell_image  "$@"
+#   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+# }
 
 docker_build() {
   set -e

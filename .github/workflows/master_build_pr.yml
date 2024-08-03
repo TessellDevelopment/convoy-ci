@@ -912,12 +912,6 @@ jobs:
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
           }
-          buildConvoyTessellImage() {
-            required_inputs="1"
-            validate_inputs "$required_inputs" "$@"
-            python3 -m pip install build
-            bash ./setup -i
-          }
           buildConvoyTessellClient() {
             ./setup --client --version 0.0.0
           }
