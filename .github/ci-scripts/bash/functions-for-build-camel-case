@@ -1,5 +1,13 @@
 #!/bin/bash
 
+awsConfigureDevqaInfra() {
+  aws_configure_devqa_infra "$@"
+}
+
+createTFBackend() {
+  create_tf_backend "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -18,6 +26,14 @@ qaBuildAndPush(){
 
 setupQAEnv() {
   setup_qa_env "$@"
+}
+
+terraformApply() {
+  terraform_apply "$@"
+}
+
+terraformApplyAndPush() {
+  terraform_apply_and_push "$@"
 }
 
 tsmZipBuildAndPush() {
