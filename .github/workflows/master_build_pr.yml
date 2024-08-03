@@ -914,7 +914,7 @@ jobs:
           }
           buildConvoyTessellClient() {
             installGoDependencies
-            ./setup --client --version 0.0.0 --upload-to-nexus
+            ./setup --client --version 0.0.0
           }
           buildConvoyTessellImage() {
             required_inputs="1"
