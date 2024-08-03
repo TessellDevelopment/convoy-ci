@@ -35,6 +35,23 @@ docker_build_and_push() {
   set +e
 }
 
+gradlew_docker_tag() {
+  ./gradlew dockerTag --console plain \
+    -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+    -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
+    -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
+}
+
+python_docker_build_and_push() {
+  set -e
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@" 
+  gradlew_docker_tag
+  docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
 mvn_deploy() {
   ARTIFACT_ID="${1}"
   EXTENSION="${2}"
