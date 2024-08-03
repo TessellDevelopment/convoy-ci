@@ -37,9 +37,9 @@ docker_build_and_push() {
 
 gradlew_docker_tag() {
   ./gradlew dockerTag --console plain \
-    -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-    -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-    -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pdockerhub_org="${DOCKERHUB_ORG}"
 }
 
 python_docker_build_and_push() {
