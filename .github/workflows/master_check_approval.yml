@@ -36,6 +36,8 @@ jobs:
 
         - name: Check Approval for DC
           if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+          env:
+            TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
             REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
