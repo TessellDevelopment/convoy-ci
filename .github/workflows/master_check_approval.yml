@@ -43,6 +43,7 @@ jobs:
               exit 0
             else
               echo "More than one commit present in DC, checking convoy.yaml content."
+              git checkout ${{github.event.pull_request.base.ref}}
               git checkout ${{github.event.pull_request.head.ref}}
               base_branch=$(git merge-base HEAD origin/$(git rev-parse --abbrev-ref ${{github.event.pull_request.base.ref}}))
               changed_files=$(git diff --name-only "$base_branch"...HEAD)
