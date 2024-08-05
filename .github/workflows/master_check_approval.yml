@@ -40,6 +40,7 @@ jobs:
             REPO="${{github.repository}}"
             PR_NUMBER="${{ github.event.pull_request.number }}"
             PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+            PAGE_NUMBER=1
             if [ "$PR_COMMITS" -eq 1 ]; then
               echo "One Commit present in DC. Skipping Codeowners Approval Check"
               echo "SKIP_APPROVAL=true" >> $GITHUB_ENV
