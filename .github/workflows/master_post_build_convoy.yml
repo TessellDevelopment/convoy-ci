@@ -196,6 +196,8 @@ jobs:
                 del payload["artifacts"]
             elif language == 'terraform':
               payload["artifacts"] = get_artifacts_tf()
+            elif generates == None:
+              print("No artifact generated in the repo.")
             else:
               print(f"Not able to build payload for API call. Please check convoy.yaml content")
               exit(1)
