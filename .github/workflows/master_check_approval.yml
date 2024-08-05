@@ -35,9 +35,10 @@ jobs:
             echo "SKIP_APPROVAL=false" >> $GITHUB_ENV
 
         - name: Check Approval for DC
-          # if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           run: |
+            REPO="${{github.repository}}"
+            PR_NUMBER="${{ github.event.pull_request.number }}"
             PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
             if [ "$PR_COMMITS" -eq 1 ]; then
               echo "One Commit present in DC. Skipping Codeowners Approval Check"
