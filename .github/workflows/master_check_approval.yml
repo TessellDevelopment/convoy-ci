@@ -59,9 +59,18 @@ jobs:
                 else
                   echo "Only version line is changed in convoy.yaml. Skipping Approval."
                   echo "SKIP_APPROVAL=true" >> $GITHUB_ENV
-                  RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
+                  echo "Checking if approval is already present."
+                  REVIEWERS=$(curl -L \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "Authorization: Bearer $TOKEN" \
+                    -H "X-GitHub-Api-Version: 2022-11-28" \
+                    "${{vars.GH_API_URL}}/repos/$REPO/pulls/$PR_NUMBER/reviews?per_page=100&page=$PAGE_NUMBER" | jq -r '.[] | select(.state == "APPROVED") | .user.login')
+                  if [ -z "$REVIEWERS" ]; then
+                    echo "Auto approving the DC."
+                    RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
                               -X POST -d '{"event":"APPROVE"}' \
                               "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
+                  fi
                   echo $RESPONSE
                 fi
               fi
