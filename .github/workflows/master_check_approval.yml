@@ -63,7 +63,7 @@ jobs:
             fi
             
         - name: Check Approval
-          if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested'|| github.env.SKIP_APPROVAL == 'false' }}
+          if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested'|| env.SKIP_APPROVAL == 'false' }}
           env:
             TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
