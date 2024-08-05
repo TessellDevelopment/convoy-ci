@@ -59,6 +59,10 @@ jobs:
                 else
                   echo "Only version line is changed in convoy.yaml. Skipping Approval."
                   echo "SKIP_APPROVAL=true" >> $GITHUB_ENV
+                  RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
+                              -X POST -d '{"event":"APPROVE"}' \
+                              "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
+                  echo $RESPONSE
                 fi
               fi
             fi
