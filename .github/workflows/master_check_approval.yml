@@ -36,7 +36,7 @@ jobs:
 
         - name: Check Approval for DC
           # if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-          if: (contains(github.event.pull_request.head.ref, 'TDEVOPS-1881-1')) && (github.event.pull_request.user.login == 'varenyatessell' )
+          if: (contains(github.event.pull_request.head.ref, 'TDEVOPS-1881-1')) && (github.event.pull_request.user.login == 'varenyatessell' ) || (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           run: |
             PR_COMMITS=${{ env.PR_COMMITS }}
             if [ "$PR_COMMITS" -eq 1 ]; then
