@@ -34,7 +34,8 @@ jobs:
             echo "::set-output name=pr_commits::$PR_COMMITS"
 
         - name: Check Approval for DC
-          if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+          # if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+          if: (contains(github.event.pull_request.head.ref, 'test version')) && (github.event.pull_request.user.login == 'varenyatessell' )
           env:
             TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
