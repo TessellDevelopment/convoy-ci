@@ -31,13 +31,14 @@ jobs:
               -H "X-GitHub-Api-Version: 2022-11-28" \
               ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
             echo "Number of commits in PR: $PR_COMMITS"
-            echo "::set-output name=pr_commits::$PR_COMMITS"
+            echo echo "PR_COMMITS=$PR_COMMITS" >> $GITHUB_ENV
+            echo "SKIP_APPROVAL=false" >> $GITHUB_ENV
 
         - name: Check Approval for DC
           # if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           if: (contains(github.event.pull_request.head.ref, 'TDEVOPS-1881-1')) && (github.event.pull_request.user.login == 'varenyatessell' )
           run: |
-            PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+            PR_COMMITS=${{ env.PR_COMMITS }}
             if [ "$PR_COMMITS" -eq 1 ]; then
               echo "One Commit present in DC. Skipping Codeowners Approval Check"
               echo "SKIP_APPROVAL=true" >> $GITHUB_ENV
@@ -63,7 +64,7 @@ jobs:
             fi
             
         - name: Check Approval
-          if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested'|| env.SKIP_APPROVAL == 'false' }}
+          if: ${{ (github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested') && env.SKIP_APPROVAL == 'false' }}
           env:
             TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
