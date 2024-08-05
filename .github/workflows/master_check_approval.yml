@@ -36,7 +36,7 @@ jobs:
 
         - name: Check Approval for DC
           # if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-          if: (contains(github.event.pull_request.head.ref, 'TDEVOPS-1881-1')) && (github.event.pull_request.user.login == 'varenyatessell' ) || (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+          if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           run: |
             PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
             if [ "$PR_COMMITS" -eq 1 ]; then
@@ -68,8 +68,8 @@ jobs:
                   if [ -z "$REVIEWERS" ]; then
                     echo "Auto approving the DC."
                     RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
-                              -X POST -d '{"event":"APPROVE"}' \
-                              "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
+                      -X POST -d '{"event":"APPROVE"}' \
+                      "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
                   fi
                   echo $RESPONSE
                 fi
