@@ -41,7 +41,7 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           COMMIT_HASH: "${{github.sha}}"
@@ -218,11 +218,11 @@ jobs:
             post_request(payload)
             EOF
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-        if: failure()
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   with:
+      #       status: ${{ job.status }}
+      #       steps: ${{ toJson(steps) }}
+      #       channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+      #   if: failure()
           
