@@ -33,42 +33,37 @@ jobs:
             echo "Number of commits in PR: $PR_COMMITS"
             echo "::set-output name=pr_commits::$PR_COMMITS"
 
-        - name: Check Approval
+        - name: Check Approval for DC
+          if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
           env:
             TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           run: |
-            title="${{github.event.pull_request.head.ref}}"
-            user="${{github.event.pull_request.user.login}}"
-            if [[ "$title" == *"double_commit"* && "$user" == "cipipelinetessell" ]]; then
-              PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-              if [ "$PR_COMMITS" -eq 1 ]; then
-                echo "One Commit present in DC. Skipping Codeowners Approval Check"
-                exit 0
+            PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+            if [ "$PR_COMMITS" -eq 1 ]; then
+              echo "One Commit present in DC. Skipping Codeowners Approval Check"
+              exit 0
+            else
+              echo "More than one commit present in DC, checking convoy.yaml content."
+              base_branch=$(git merge-base HEAD origin/$(git rev-parse --abbrev-ref HEAD))
+              changed_files=$(git diff --name-only "$base_branch"...HEAD)
+              if [[ "$changed_files" != "convoy.yaml" ]]; then
+                  echo "Changes detected in files other than convoy.yaml. Need Approval."
               else
-                echo "More than one commit present in DC, need approval."
-              fi
-              if [[ "${{inputs.convoy-changes}}" == "true" ]]; then
-                set +e
-                git checkout ${{github.base_ref}}
-                git checkout ${{github.head_ref}}
-                CHECK_VERSION_CHANGE=$(git diff "${{github.base_ref}}...${{github.head_ref}}"  --unified=0 -- convoy.yaml | grep 'version')
-                if [[ -z "$CHECK_VERSION_CHANGE" ]]; then
-                  echo "Changes other than version made in convoy.yaml. Need Approval."
+                diff_output=$(git diff --unified=0 "$base_branch"...HEAD -- convoy.yaml | tail -n +6)
+                if echo "$diff_output" | grep -qvE '^\+version: [0-9]+\.[0-9]+\.[0-9]+$|^-version: [0-9]+\.[0-9]+\.[0-9]+$|^@@ '; then
+                    echo "Changes other than version line detected in convoy.yaml. Need Approval."
                 else
-                  CHECK_OTHER_CHANGES=$(git diff "${{github.base_ref}}...${{github.head_ref}}" --unified=0 -- convoy.yaml | grep -v 'version' | grep '^[+-]' | grep -v 'convoy.yaml')
-                  if [[ ! -z "$CHECK_OTHER_CHANGES" ]]; then
-                    echo "Changes other than version made in convoy.yaml. Need Approval."
-                  else
-                    echo "Only Version change present in convoy.yaml. Approving PR."
-                    RESPONSE=$(curl -s -H "Authorization: token ${{secrets.CI_APPROVER_TOKEN}}" \
-                                -X POST -d '{"event":"APPROVE"}' \
-                                "${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews")
-                    echo $RESPONSE
-                    exit 0
-                  fi
+                  echo "Only version line is changed in convoy.yaml. Skipping Approval."
+                  exit 0
                 fi
               fi
             fi
+            
+        - name: Check Approval
+          if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested' }}
+          env:
+            TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+          run: |
             set -e
             ORG_NAME="${{github.repository_owner}}"
             REPO="${{github.repository}}"
@@ -107,5 +102,4 @@ jobs:
                 echo "Approval not present for $TEAM team."
                 exit 1
               fi
-              
             done
