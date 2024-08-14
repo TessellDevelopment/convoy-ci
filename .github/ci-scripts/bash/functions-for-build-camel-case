@@ -8,6 +8,22 @@ createTFBackend() {
   create_tf_backend "$@"
 }
 
+buildConvoyTessellImage() {
+  build_convoy_tessell_image "$@"
+}
+
+buildConvoyTessellClient() {
+  build_convoy_tessell_client "$@"
+}
+
+buildConvoyTessellImageAndPush() {
+  build_convoy_tessell_image_and_push "$@"
+}
+
+buildConvoyTessellClientAndPush() {
+  build_convoy_tessell_client_and_push "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -18,6 +34,10 @@ dockerBuildAndPush() {
 
 mvnDeploy() {
   mvn_deploy "$@"
+}
+
+pythonDockerBuildAndPush() {
+  python_docker_build_and_push "$@"
 }
 
 qaBuildAndPush(){
