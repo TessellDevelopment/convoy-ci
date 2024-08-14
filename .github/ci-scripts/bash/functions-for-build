@@ -130,11 +130,8 @@ terraform_apply() {
 
 terraformApplyAndPush() {
   set -e
-  mkdir -p build
+  terraform_apply
   cd terraform
-  create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
-  terraform init
-  terraform plan
   terraform apply -auto-approve
   cd ..
   set +e
