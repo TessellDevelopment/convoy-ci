@@ -30,6 +30,18 @@ build_convoy_tessell_image_and_push() {
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
 }
 
+configure_npmrc_yarnrc() {
+  set +e
+  rm ~/.npmrc
+  rm ~/.yarnrc
+  TOKEN=$(echo -n '${NEXUS_USERNAME}:${NEXUS_PASSWORD}' | base64 -w 0)
+  echo '"@tessell:registry" "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/"' >> .yarnrc
+  echo "always-auth=true" >> .npmrc
+  echo "_auth=${TOKEN}" >> .npmrc
+  cat .npmrc
+  cat .yarnrc
+}
+
 docker_build() {
   set -e
   IMAGE="${1}"
@@ -76,6 +88,18 @@ gradlew_docker_tag() {
     -Pdockerhub_org="${DOCKERHUB_ORG}"
 }
 
+gradlew_ui_build() {
+  configure_npmrc_yarnrc
+  set -e
+  ENV_JSON='${TESSELL_UI_ENV_SECRET}'
+  echo "${ENV_JSON}" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
+  cat .env
+  ./gradlew zipUiBuild --console plain --stacktrace \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
 install_go_dependencies() {
   go version
   go install golang.org/x/tools/cmd/goimports@latest
@@ -108,6 +132,20 @@ mvn_deploy() {
       -Dfile=${FILE} -DrepositoryId=nexus
 }
 
+ops_ui_build() {
+  gradlew_ui_build
+}
+
+ops_ui_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXT="${2}"
+  gradlew_ui_build
+  sed -i '' 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType\.Production;/g' src/constants/env.ts
+  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  set +e
+}
+
 qa_build_and_push(){
   set -e
   required_inputs="1 3"
@@ -126,6 +164,24 @@ qa_build_and_push(){
     cd ..
   fi
   set +e
+}
+
+push_to_nexus() {
+  FILE_PATH="${1}"
+  URL_PATH="${2}"
+  required_inputs="1 2"
+  validate_inputs "${required_inputs}" "$@" 
+  RESPONSE=$(curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+      --upload-file ${FILE_PATH}  -w "%{http_code}" \
+      ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
+  echo ${REPONSE}
+  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
+  echo ${HTTP_CODE}
+  HTTP_CODE=$((HTTP_CODE))
+  if [ "${HTTP_CODE}" -ne 201 ]; then
+    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
+    exit 1
+  fi
 }
 
 setup_qa_env() {

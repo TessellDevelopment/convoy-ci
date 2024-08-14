@@ -28,25 +28,38 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
+      CI-BRANCH: TDEVOPS-1848-1
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      LATEST_TAG: ${{inputs.tag}}
+      LABEL: ${{inputs.label}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_NPM: ${{ vars.NEXUS_PUSH_REPOS_NPM }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
+      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout ${{env.CI-BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+  
       
       - name: Login to docker
         uses: docker/login-action@v3.0.0
@@ -69,17 +82,6 @@ jobs:
             echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
             echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
             cat ~/.npmrc
-          }
-          configureNpmrcYarnrc() {
-            set +e
-            rm ~/.npmrc
-            rm ~/.yarnrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
-            echo "always-auth=true" >> .npmrc
-            echo "_auth=$TOKEN" >> .npmrc
-            cat .npmrc
-            cat .yarnrc
           }
           dockerBuild() {
             set -e
@@ -113,17 +115,6 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
-          gradlewUIBuild() {
-            configureNpmrcYarnrc
-            set -e
-            ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
-            echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
-            cat .env
-            ./gradlew zipUiBuild --console plain --stacktrace \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-            set +e
-          }
           gradlewUIBuildAndPush() {
             gradlewUIBuild "$@"
             set -e
@@ -154,42 +145,6 @@ jobs:
             npm publish   
             set +e
           }
-          opsUIBuildAndPush() {
-            set -e
-            ARTIFACT="${1}"
-            EXT="${2}"
-            gradlewUIBuild
-            sed -i '' 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType\.Production;/g' src/constants/env.ts
-            pushToNexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
-            set +e
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -198,6 +153,7 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
