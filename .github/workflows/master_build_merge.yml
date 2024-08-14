@@ -1060,7 +1060,7 @@ jobs:
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI-BRANCH: TDEVOPS-1968
+      CI-BRANCH: main
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -1657,7 +1657,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
-      CI-BRANCH: TDEVOPS-1968
+      CI-BRANCH: main
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       LATEST_TAG: ${{inputs.tag}}
