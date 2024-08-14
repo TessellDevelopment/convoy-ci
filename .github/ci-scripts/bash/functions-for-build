@@ -119,37 +119,23 @@ setup_qa_env() {
 
 terraform_apply() {
   set -e
-  ARTIFACT="${1}"
-  EXTENSION="${2}"
-  requiredInputs="1 2"
-  validateInputs "$requiredInputs" "$@" 
-  aws_configure_devqa_infra
-  ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
   mkdir -p build
   cd terraform
   create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
   terraform init
   terraform plan
-  terraform_build $PWD ${ARTIFACT_FILE}
   cd ..
-  ls build
   set +e
 }
 
 terraformApplyAndPush() {
   set -e
-  ARTIFACT="$1"
-  EXTENSION="$2"
-  aws_configure_devqa_infra
-  ARTIFACT_FILE=$PWD/build/${ARTIFACT}.${EXTENSION}
   mkdir -p build
   cd terraform
   create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
   terraform init
   terraform plan
   terraform apply -auto-approve
-  terraform_build $PWD ${ARTIFACT_FILE}
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_FILE}" "convoy.${ARTIFACT}" "${LATEST_TAG}"
   cd ..
   set +e
 }
