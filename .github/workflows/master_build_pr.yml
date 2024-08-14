@@ -39,6 +39,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI-BRANCH}}
           git pull
           cd ~-
