@@ -182,13 +182,13 @@ jobs:
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
     
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
