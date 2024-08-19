@@ -14,26 +14,6 @@ aws_configure_prod_assets() {
   aws configure set region ap-south-1
 }
 
-create_tf_backend() {
-  S3_BUCKET="$1"
-  KEY="$2"
-  AWS_ACCESS_KEY_ID="$3"
-  AWS_SECRET_ACCESS_KEY="$4"
-  AWS_REGION="ap-south-1"
-  cat <<EOL > "backend.tf"
-  terraform {
-    backend "s3" {
-      bucket               = "${S3_BUCKET}"
-      key                  = "${KEY}"
-      region               = "${AWS_REGION}"
-      access_key           = "${AWS_ACCESS_KEY_ID}"
-      secret_key           = "${AWS_SECRET_ACCESS_KEY}"
-      encrypt              = true
-    }
-  }
-EOL
-}
-
 build_convoy_tessell_client() {
   install_go_dependencies
   ./setup --client --version 0.0.0
@@ -60,6 +40,42 @@ build_convoy_tessell_image_and_push() {
   IMAGE="${1}"
   build_convoy_tessell_image  "$@"
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+}
+
+configure_and_push_aws() {
+  BUCKET_ACCOUNT=${1}
+  BUCKET_NAME=${2}
+  SOURCE=${3}
+  DESTINATION=${4}
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
+  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+  aws s3 cp "${SOURCE}" "${DESTINATION}"
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+}
+
+create_tf_backend() {
+  S3_BUCKET="$1"
+  KEY="$2"
+  AWS_ACCESS_KEY_ID="$3"
+  AWS_SECRET_ACCESS_KEY="$4"
+  AWS_REGION="ap-south-1"
+  cat <<EOL > "backend.tf"
+  terraform {
+    backend "s3" {
+      bucket               = "${S3_BUCKET}"
+      key                  = "${KEY}"
+      region               = "${AWS_REGION}"
+      access_key           = "${AWS_ACCESS_KEY_ID}"
+      secret_key           = "${AWS_SECRET_ACCESS_KEY}"
+      encrypt              = true
+    }
+  }
+EOL
 }
 
 docker_build() {
@@ -263,6 +279,7 @@ python_docker_build_and_push() {
   if [ -f "pytest.ini" ]; then
     run_python_unit_test
   fi
+  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${IMAGE}/coverage-report-${LATEST_TAG}.json"
   set +e
 }
 

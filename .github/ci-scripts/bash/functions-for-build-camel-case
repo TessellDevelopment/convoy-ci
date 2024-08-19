@@ -24,6 +24,10 @@ buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
 }
 
+configureAndPushAWS() {
+  configure_and_push_aws "$@"
+}
+
 createTFBackend() {
   create_tf_backend "$@"
 }

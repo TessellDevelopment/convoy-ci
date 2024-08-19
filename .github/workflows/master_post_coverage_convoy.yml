@@ -97,6 +97,7 @@
                 "commitHash": COMMIT_HASH[:7],
                 "gitBranch": BASE_BRANCH,
                 "language": LANGUAGE,
+                "reportPath": REPORT_PATH,
                 "branchCoverage": {
                     "covered": BRANCH_COVERAGE_VALUES[0],
                     "skipped": BRANCH_COVERAGE_VALUES[1],
@@ -108,7 +109,7 @@
                     "skipped": STATEMENT_COVERAGE_VALUES[1],
                     "total": STATEMENT_COVERAGE_VALUES[2],
                     "percentage": STATEMENT_COVERAGE_VALUES[3]
-                },
+                }
               }                      
               print(json.dumps(payload, indent=4))
               post_request(payload)
