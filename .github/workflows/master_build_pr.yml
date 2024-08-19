@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH: TDEVOPS-2284
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
@@ -221,7 +221,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH: TDEVOPS-2284
+      CI_BRANCH: main
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
@@ -629,7 +629,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      CI_BRANCH: TDEVOPS-2284
+      CI_BRANCH: main
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -840,7 +840,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      CI_BRANCH: TDEVOPS-2284
+      CI_BRANCH: main
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -1419,7 +1419,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH: TDEVOPS-2284
+      CI_BRANCH: main
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
