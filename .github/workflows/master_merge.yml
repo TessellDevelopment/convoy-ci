@@ -100,7 +100,9 @@ jobs:
     secrets: inherit
     with:
       BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      LABEL: ${{needs.runner-check.outputs.label}}
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')

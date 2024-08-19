@@ -6,7 +6,15 @@
         BRANCH_COVERAGE:
           required: true
           type: string
+        LABEL:
+          description: 'Release label for upload'
+          required: true
+          type: string
         STATEMENT_COVERAGE:
+          required: true
+          type: string
+        TAG:
+          description: 'Tag created during create-tag'
           required: true
           type: string
       
@@ -15,9 +23,11 @@
     post-coverage-to-convoy:
       runs-on: non-build
       env: 
-        SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
         BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
+        LABEL: "${{inputs.LABEL}}"
+        SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
         STATEMENT_COVERAGE: "${{inputs.STATEMENT_COVERAGE}}"
+        TAG: "${{inputs.TAG}}"
       steps:
         - uses: actions/checkout@v4.1.1
           with:
@@ -34,12 +44,15 @@
             API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
             BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
             BRANCH_COVERAGE: "${{env.BRANCH_COVERAGE}}"
+            CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
             COMMIT_HASH: "${{github.sha}}"
             GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+            LABEL: "${{env.LABEL}}"
             OWNER: ${{github.repository_owner}}
             REPO: "${{github.event.pull_request.base.repo.name}}"
             SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
             STATEMENT_COVERAGE: "${{env.STATEMENT_COVERAGE}}"
+            TAG: "${{env.TAG}}"
           run: |
               python3 - <<EOF
               
@@ -67,14 +80,16 @@
 
               API_URL = os.environ.get('API_URL')
               API_KEY = os.environ.get('API_KEY')
-              REPO = os.environ.get('REPO')
-              COMMIT_HASH = os.environ.get('COMMIT_HASH')
               BASE_BRANCH = os.environ.get('BASE_BRANCH')
-              GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
               BRANCH_COVERAGE = os.environ.get('BRANCH_COVERAGE')
-              STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
-              REPO = os.environ.get('REPO')
+              CODE_COVERAGE_S3 = os.environ.get('CODE_COVERAGE_S3')
+              COMMIT_HASH = os.environ.get('COMMIT_HASH')
+              GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+              LABEL = os.environ.get('LABEL')
               OWNER = os.environ.get('OWNER')
+              REPO = os.environ.get('REPO')
+              STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
+              TAG = os.environ.get('TAG')
 
               if BRANCH_COVERAGE and STATEMENT_COVERAGE:
                 print("Coverage report present sending details to convoy.")
@@ -91,6 +106,8 @@
                 yaml_data = yaml.safe_load(yaml_file)
               APP_GROUP = yaml_data.get('appGroup')
               LANGUAGE = yaml_data.get('language')
+              REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+
               payload = {
                 "repoName": REPO,
                 "appGroup": APP_GROUP,
