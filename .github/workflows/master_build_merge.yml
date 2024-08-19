@@ -102,9 +102,26 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
             set +e
           }
+          generateChecksum() {
+            ARTIFACT=$1
+            BUILD_FILE=$2
+            if [[ -z "$BUILD_FILE" ]]; then
+              echo "Build File name same as Artifact name"
+              BUILD_FILE=$ARTIFACT
+            fi
+            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
+            if [[ -z "$file_path" ]]; then
+              echo "File not found!"
+              return 1
+            fi
+            checksum=$(md5sum "$file_path" | awk '{ print $1 }') 
+            ARTIFACT="${ARTIFACT%%.*}"       
+            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+          }
           gradlewUIBuild() {
             rm ~/.npmrc
             rm ~/.yarnrc
+            ARTIFACT=${1}
             TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
             echo '"@tessell:registry" "${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
             echo "always-auth=true" >> .npmrc
@@ -118,6 +135,9 @@ jobs:
             ./gradlew zipUiBuild --console plain --stacktrace \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+            build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+            generateChecksum $ARTIFACT $build_file_name
             set +e
           }
           gradlewUIBuildAndPush() {
