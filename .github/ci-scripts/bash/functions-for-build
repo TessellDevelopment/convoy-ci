@@ -2,6 +2,60 @@
 
 source ./ci-scripts/bash/functions-for-build-camel-case
 
+aws_configure_devqa_infra() {
+  aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
+create_tf_backend() {
+  S3_BUCKET="$1"
+  KEY="$2"
+  AWS_ACCESS_KEY_ID="$3"
+  AWS_SECRET_ACCESS_KEY="$4"
+  AWS_REGION="ap-south-1"
+  cat <<EOL > "backend.tf"
+  terraform {
+    backend "s3" {
+      bucket               = "${S3_BUCKET}"
+      key                  = "${KEY}"
+      region               = "${AWS_REGION}"
+      access_key           = "${AWS_ACCESS_KEY_ID}"
+      secret_key           = "${AWS_SECRET_ACCESS_KEY}"
+      encrypt              = true
+    }
+  }
+EOL
+}
+
+build_convoy_tessell_client() {
+  install_go_dependencies
+  ./setup --client --version 0.0.0
+}
+
+build_convoy_tessell_client_and_push() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  install_go_dependencies
+  ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+}
+
+build_convoy_tessell_image() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  install_go_dependencies
+  python3 -m pip install build
+  bash ./setup -i
+}
+
+build_convoy_tessell_image_and_push() {
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  IMAGE="${1}"
+  build_convoy_tessell_image  "$@"
+  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+}
+
 docker_build() {
   set -e
   IMAGE="${1}"
@@ -30,8 +84,37 @@ docker_build_and_push() {
     TAG=${VERSION}
   fi
   docker_build "$@"
+  docker_tag_and_push "${IMAGE}" "${TAG}"
+  set +e
+}
+
+docker_tag_and_push() {
+  IMAGE="${1}"
+  TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+}
+
+gradlew_docker_tag() {
+  ./gradlew dockerTag --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pdockerhub_org="${DOCKERHUB_ORG}"
+}
+
+install_go_dependencies() {
+  go version
+  go install golang.org/x/tools/cmd/goimports@latest
+  which go
+}
+
+python_docker_build_and_push() {
+  set -e
+  IMAGE="$1"
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  gradlew_docker_tag
+  docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
   set +e
 }
 
@@ -89,6 +172,26 @@ setup_qa_env() {
   python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   python3 -m pip list | grep harness
   deactivate
+}
+
+terraform_apply() {
+  set -e
+  mkdir -p build
+  cd terraform
+  create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
+  terraform init
+  terraform plan
+  cd ..
+  set +e
+}
+
+terraformApplyAndPush() {
+  set -e
+  terraform_apply
+  cd terraform
+  terraform apply -auto-approve
+  cd ..
+  set +e
 }
 
 tsm_zip_build() {
