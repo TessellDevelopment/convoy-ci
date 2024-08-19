@@ -34,6 +34,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
@@ -138,6 +139,8 @@ jobs:
           gradlewUIBuildAndPush() {
             gradlewUIBuild "$@"
             set -e
+            ARTIFACT=${1}
+            EXTENSION=${2}
             ./gradlew publish --console plain \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
@@ -149,6 +152,7 @@ jobs:
               -Pnexus_endpoint="${{env.NEXUS_SERVER_ENDPOINT}}" \
               -Pnexus_protocol="${{env.NEXUS_PROTOCOL}}" \
               -Plabel="${{env.LABEL}}" 
+            push_to_nexus "${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
             set +e
           }
           npmBuildAndPush() {
