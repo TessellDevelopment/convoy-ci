@@ -28,7 +28,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
-      CI_BRANCH: TDEVOPS-2482
+      CI_BRANCH: main
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -234,7 +234,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
-      CI_BRANCH: TDEVOPS-2482
+      CI_BRANCH: main
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
@@ -644,7 +644,7 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      CI_BRANCH: TDEVOPS-2482
+      CI_BRANCH: main
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -866,7 +866,7 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      CI_BRANCH: TDEVOPS-2482
+      CI_BRANCH: main
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
