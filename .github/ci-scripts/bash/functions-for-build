@@ -86,11 +86,23 @@ docker_build_and_push() {
   set -e
   IMAGE="${1}"
   VERSION="${3}"
+  FILE="${4}"
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" ]]; then
     TAG=${VERSION}
   fi
-  docker_build "$@"
+  if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
+    FILE="./Dockerfile"
+  fi
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  docker build -f ${FILE} -t ${IMAGE} \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+              --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
+              --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+              --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
   docker_tag_and_push "${IMAGE}" "${TAG}"
   set +e
 }
