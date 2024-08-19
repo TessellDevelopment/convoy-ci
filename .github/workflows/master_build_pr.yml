@@ -37,6 +37,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
@@ -268,7 +269,8 @@ jobs:
         run: |
           git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/TessellDevelopment/convoy-ci.git
           cd convoy-ci
-          git checkout ${CI_BRANCH}
+          git pull
+          git checkout ${{env.CI_BRANCH}}
           git pull
           cd ..
           cp -r ./convoy-ci/.github/ci-scripts ./ci-scripts
@@ -563,6 +565,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
@@ -673,6 +676,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
@@ -891,6 +895,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
@@ -1499,6 +1504,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
