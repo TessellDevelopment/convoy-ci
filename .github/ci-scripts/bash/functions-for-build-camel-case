@@ -92,6 +92,10 @@ tsmZipBuildAndPush() {
   tsm_zip_build_and_push "$@"
 }
 
+vssTarBuild() {
+  vss_tar_build "$@"
+}
+
 vssTarBuildAndPush() {
   vss_tar_build_and_push "$@"
 }
