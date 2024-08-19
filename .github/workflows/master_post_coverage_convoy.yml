@@ -98,16 +98,16 @@
                 "gitBranch": BASE_BRANCH,
                 "language": LANGUAGE,
                 "branchCoverage": {
-                    "covered": branch_coverage_values[0],
-                    "skipped": branch_coverage_values[1],
-                    "total": branch_coverage_values[2],
-                    "percentage": branch_coverage_values[3]
+                    "covered": BRANCH_COVERAGE_VALUES[0],
+                    "skipped": BRANCH_COVERAGE_VALUES[1],
+                    "total": BRANCH_COVERAGE_VALUES[2],
+                    "percentage": BRANCH_COVERAGE_VALUES[3]
                 },
                 "statementCoverage": {
-                    "covered": statement_coverage_values[0],
-                    "skipped": statement_coverage_values[1],
-                    "total": statement_coverage_values[2],
-                    "percentage": statement_coverage_values[3]
+                    "covered": STATEMENT_COVERAGE_VALUES[0],
+                    "skipped": STATEMENT_COVERAGE_VALUES[1],
+                    "total": STATEMENT_COVERAGE_VALUES[2],
+                    "percentage": STATEMENT_COVERAGE_VALUES[3]
                 },
               }                      
               print(json.dumps(payload, indent=4))
