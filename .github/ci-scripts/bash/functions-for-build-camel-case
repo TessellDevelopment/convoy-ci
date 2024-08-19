@@ -4,8 +4,8 @@ awsConfigureDevqaInfra() {
   aws_configure_devqa_infra "$@"
 }
 
-createTFBackend() {
-  create_tf_backend "$@"
+awsConfigureTessellTools() {
+  aws_configure_tessell_tools "$@"
 }
 
 buildConvoyTessellImage() {
@@ -24,6 +24,10 @@ buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
 }
 
+createTFBackend() {
+  create_tf_backend "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -32,8 +36,20 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+generateChecksum() {
+  generate_checksum "$@"
+}
+
 mvnDeploy() {
   mvn_deploy "$@"
+}
+
+pushToMinio() {
+  push_to_minio "$@"
+}
+
+pushToNexus() {
+  push_to_nexus "$@"
 }
 
 pythonDockerBuildAndPush() {

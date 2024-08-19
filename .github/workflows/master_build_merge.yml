@@ -188,6 +188,7 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -582,6 +583,7 @@ jobs:
             cat $HOME/.m2/settings.xml
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -783,6 +785,7 @@ jobs:
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             environments=("dev" "qa" "stage" "prod")
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -847,6 +850,8 @@ jobs:
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
     steps:
@@ -873,11 +878,6 @@ jobs:
         id: build
         shell: bash
         run: |
-          awsConfigureTessellTools() {
-            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           checkFlyway() {
             if [ -d "flyway" ]; then
               echo "The 'flyway' directory exists in this repository."
@@ -887,22 +887,6 @@ jobs:
             else
               echo "The 'flyway' directory does not exists in this repository."
             fi
-          }
-          generateChecksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
-            ARTIFACT="${ARTIFACT%%.*}"         
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
           }
           goDockerBuildAndPush() {
             set -e
@@ -954,58 +938,6 @@ jobs:
             go install golang.org/x/tools/cmd/goimports@latest
             which go
           }
-          mvnDeploy() {
-            ARTIFACT_ID="$1"
-            EXTENSION="$2"
-            FILE="$3"
-            GROUP_ID="$4"
-            VERSION="$5"
-            requiredInputs="1 2 3 4 5"
-            validateInputs "$requiredInputs" "$@" 
-            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
-                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
-                -DgeneratePom=true -Dpackaging=$EXTENSION \
-                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
-                -Dfile=$FILE -DrepositoryId=nexus
-          }
-          pushToMinio() {
-            SOURCE="${1}"
-            DESTINATION="${2}"
-            MAX_RETRIES=5
-            RETRY_DELAY=3
-            local attempt=0
-            while [ $attempt -lt $MAX_RETRIES ]; do
-              mc cp "$SOURCE" "$DESTINATION"
-              if [ $? -eq 0 ]; then
-                echo "Artifact successfully pushed to minio ${DESTINATION}."
-                return
-              else
-                attempt=$((attempt + 1))
-                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
-                sleep $RETRY_DELAY
-              fi
-            done
-            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
-            return 1
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
-          }
           tailscaleBuildAndPush() {
             set -e
             export GOPROXY=direct
@@ -1035,6 +967,7 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            source ./ci-scripts/bash/functions-for-build
             environments=("dev" "qa" "stage" "prod")
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
