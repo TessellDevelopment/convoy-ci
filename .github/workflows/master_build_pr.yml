@@ -513,6 +513,8 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          echo $branch_coverage
+          echo $statement_coverage
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}

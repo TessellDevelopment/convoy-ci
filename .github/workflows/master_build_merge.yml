@@ -18,13 +18,13 @@ on:
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-2.outputs.ARTIFACT_CHECKSUMS) }} 
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
       BRANCH_COVERAGE:
-        description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) || (jobs.build-amd-2.outputs.BRANCH_COVERAGE) }} 
+        description: 'Branch coverage parameters of the repository'
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       STATEMENT_COVERAGE:
-        description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-2.outputs.STATEMENT_COVERAGE) }} 
+        description: 'Statement coverage parameters of the repository'
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
 
 jobs:
 
@@ -640,6 +640,8 @@ jobs:
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+          echo $BRANCH_COVERAGE
+          echo $STATEMENT_COVERAGE
 
 
       - name: Slack Notification

@@ -194,8 +194,10 @@ parse_coverage_report() {
   missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
   total_statements=$(jq '.totals.num_statements' ${coverage_report})
   statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
-  branch_coverage="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
-  statement_coverage="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+  echo $BRANCH_COVERAGE
+  echo $STATEMENT_COVERAGE
 }
 
 mvn_deploy() {
