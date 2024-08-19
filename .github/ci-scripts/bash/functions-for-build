@@ -8,6 +8,12 @@ aws_configure_devqa_infra() {
   aws configure set region ap-south-1
 }
 
+aws_configure_prod_assets() {
+  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
 create_tf_backend() {
   S3_BUCKET="$1"
   KEY="$2"
@@ -72,6 +78,7 @@ docker_build() {
               --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
               --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
               --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
+  imageScan $IMAGE
   set +e
 }
 
@@ -79,11 +86,23 @@ docker_build_and_push() {
   set -e
   IMAGE="${1}"
   VERSION="${3}"
+  FILE="${4}"
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" ]]; then
     TAG=${VERSION}
   fi
-  docker_build "$@"
+  if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
+    FILE="./Dockerfile"
+  fi
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  docker build -f ${FILE} -t ${IMAGE} \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+              --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
+              --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+              --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
   docker_tag_and_push "${IMAGE}" "${TAG}"
   set +e
 }
@@ -93,6 +112,50 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+}
+
+frp_build() {
+  set -e
+  ./setup -b
+  set +e
+}
+
+frp_build_and_push() {
+  frp_build
+  set -e
+  EXTENSION="${2}"
+  aws_configure_prod_assets
+  os_type=("linux" "windows")
+  for OS in "${os_type[@]}"; do
+    echo "frpc-{$OS}"
+    mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/terls/tessell/frp/${LATEST_TAG}/
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
+    push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+    do
+      push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+  done
+  set +e
+}
+
+generate_checksum() {
+  ARTIFACT=${1}
+  BUILD_FILE=${2}
+  if [[ -z "${BUILD_FILE}" ]]; then
+    echo "Build File name same as Artifact name"
+    BUILD_FILE=${ARTIFACT}
+  fi
+  file_path=$(find . -type f -name "${BUILD_FILE}" 2>/dev/null | head -n 1)
+  if [[ -z "${file_path}" ]]; then
+    echo "File not found!"
+    return 1
+  fi
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
+  ARTIFACT="${ARTIFACT%%.*}"         
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
 }
 
 gradlew_docker_tag() {
@@ -132,6 +195,45 @@ mvn_deploy() {
       -DgeneratePom=true -Dpackaging=${EXTENSION} \
       -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
       -Dfile=${FILE} -DrepositoryId=nexus
+}
+
+push_to_minio() {
+  SOURCE="${1}"
+  DESTINATION="${2}"
+  MAX_RETRIES=5
+  RETRY_DELAY=3
+  local attempt=0
+  while [ ${attempt} -lt ${MAX_RETRIES} ]; do
+    mc cp "${SOURCE}" "${DESTINATION}"
+    if [ $? -eq 0 ]; then
+      echo "Artifact successfully pushed to minio ${DESTINATION}."
+      return
+    else
+      attempt=$((attempt + 1))
+      echo "Pushing artifact to minio failed. Attempt ${attempt} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY} seconds."
+      sleep ${RETRY_DELAY}
+    fi
+  done
+  echo "Pushing artifact to minio failed after ${MAX_RETRIES} attempts."
+  return 1
+}
+
+push_to_nexus() {
+  FILE_PATH="${1}"
+  URL_PATH="${2}"
+  required_inputs="1 2"
+  validate_inputs "$required_inputs" "$@" 
+  RESPONSE=$(curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+      --upload-file ${FILE_PATH}  -w "%{http_code}" \
+      ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
+  echo ${REPONSE}
+  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
+  echo ${HTTP_CODE}
+  HTTP_CODE=$((HTTP_CODE))
+  if [ "${HTTP_CODE}" -ne 201 ]; then
+    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
+    exit 1
+  fi
 }
 
 qa_build_and_push(){
