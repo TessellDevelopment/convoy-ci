@@ -36,6 +36,14 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+frpBuild() {
+  frp_build "$@"
+}
+
+frpBuildAndPush() {
+  frp_build_and_push "$@"
+}
+
 generateChecksum() {
   generate_checksum "$@"
 }
