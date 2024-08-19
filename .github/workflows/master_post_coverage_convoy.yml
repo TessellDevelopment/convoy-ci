@@ -77,7 +77,12 @@
               STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
               REPO = os.environ.get('REPO')
               OWNER = os.environ.get('OWNER')
-              
+
+              if BRANCH_COVERAGE and STATEMENT_COVERAGE:
+                print("Coverage report present sending details to convoy.")
+              else 
+                exit(0)
+
               if not(bool(BASE_BRANCH)):
                 BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
   

@@ -19,6 +19,12 @@ on:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
         value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-2.outputs.ARTIFACT_CHECKSUMS) }} 
+      BRANCH_COVERAGE:
+        description: 'Consolidated Checksum of generated artifacts'
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) || (jobs.build-amd-2.outputs.BRANCH_COVERAGE) }} 
+      STATEMENT_COVERAGE:
+        description: 'Consolidated Checksum of generated artifacts'
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-2.outputs.STATEMENT_COVERAGE) }} 
 
 jobs:
 
@@ -27,6 +33,8 @@ jobs:
     runs-on: ui-build
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
@@ -191,10 +199,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -209,6 +222,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
@@ -587,10 +602,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -605,6 +625,8 @@ jobs:
     runs-on: amd-go-20
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
@@ -788,10 +810,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -815,6 +841,8 @@ jobs:
     runs-on: amd-go-21
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{inputs.tag}}
@@ -1039,10 +1067,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -1066,6 +1098,8 @@ jobs:
     runs-on: self-hosted
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
@@ -1639,11 +1673,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           build "terraform"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -1667,6 +1705,8 @@ jobs:
     runs-on: ARM64
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       CI-BRANCH: main
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -1895,10 +1935,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
