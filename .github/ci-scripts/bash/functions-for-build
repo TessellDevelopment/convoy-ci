@@ -47,18 +47,13 @@ configure_and_push_aws() {
   BUCKET_NAME=${2}
   SOURCE=${3}
   DESTINATION=${4}
-  echo "1---------------------"
   export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
   export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
-  echo "2---------------------"
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
-  echo "3---------------------$ROLE_ARN"
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
-  echo "4---------------------$ROLE_OUTPUT"
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
   export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
-  echo "5---------------------"
   aws s3 cp "${SOURCE}" "${DESTINATION}"
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
@@ -284,10 +279,6 @@ python_docker_build_and_push() {
   if [ -f "pytest.ini" ]; then
     run_python_unit_test
   fi
-  echo $coverage_report
-  echo $AWS_ACCOUNT_CODE_COVERAGE
-  echo $CODE_COVERAGE_S3
-  echo "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
   configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
   set +e
 }
