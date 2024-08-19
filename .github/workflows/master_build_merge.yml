@@ -518,6 +518,10 @@ jobs:
             IMAGE="$1"
             gradlewDockerTag
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            if [ -f "pytest.ini" ]; then
+              echo "Running unit tests"
+              runPythonUnitTest
+            fi
             set +e
           }
           installGoDependencies() {
@@ -580,17 +584,6 @@ jobs:
               echo "Error: Unexpected HTTP response code $HTTP_CODE"
               exit 1
             fi
-          }
-          pythonDockerBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            rm pip.conf
-            lintCheck
-            gradlewDockerTag
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            set +e
           }
           validateInputs() {
             local required=($1)

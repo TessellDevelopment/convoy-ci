@@ -68,6 +68,10 @@ qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
 
+runPythonUnitTest(){
+  run_python_unit_test "$@"
+} 
+
 setupQAEnv() {
   setup_qa_env "$@"
 }
