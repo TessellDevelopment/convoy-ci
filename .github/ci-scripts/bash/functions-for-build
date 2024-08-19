@@ -389,7 +389,7 @@ vss_tar_build() {
   CLOUD=$(echo "${ARTIFACT}" | awk -F'[-]' '{print $3}')
   DIR="build_${CLOUD}"
   mkdir ${DIR}
-  cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/${CLOUD}/install-provider ${DIR}
+  cp -r  ./tessell-vss-requestor/TessellVssRequestor.exe ./tessell-vss-provider/${CLOUD}/install-provider ${DIR}
   cd ${DIR}
   tar -cf ../${ARTIFACT}.${EXTENSION} .
   cd ..
