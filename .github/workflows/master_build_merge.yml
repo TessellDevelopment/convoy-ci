@@ -152,10 +152,10 @@ jobs:
               -Pnexus_endpoint="${{env.NEXUS_SERVER_ENDPOINT}}" \
               -Pnexus_protocol="${{env.NEXUS_PROTOCOL}}" \
               -Plabel="${{env.LABEL}}" 
-            push_to_nexus "${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+            push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
             for env in "${environments[@]}"
             do
-              push_to_minio "${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+              push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
             done
             set +e
           }
