@@ -9,8 +9,8 @@ aws_configure_devqa_infra() {
 }
 
 aws_configure_tessell_tools() {
-  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY }
-  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY }
+  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY}
   aws configure set region ap-south-1
 }
 
