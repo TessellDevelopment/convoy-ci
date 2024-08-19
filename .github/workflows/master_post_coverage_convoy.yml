@@ -49,23 +49,21 @@
               import time
               import base64
               import yaml
-              
+
               def post_request(payload):
                 headers = {
                   'Content-Type': 'application/json',
                   'x-api-key': API_KEY
                 }
-
-              response = requests.post(API_URL, json=payload, headers=headers)
-              if response.status_code == 200:
-                print(response.status_code)
-                print(response.text)
-                break
-              else:
-                print(response.status_code)
-                print(response.text)
-                print("API request to convoy failed.")
-                exit(1)
+                response = requests.post(API_URL, json=payload, headers=headers)
+                if response.status_code == 200:
+                  print(response.status_code)
+                  print(response.text)
+                else:
+                  print(response.status_code)
+                  print(response.text)
+                  print("API request to convoy failed.")
+                  exit(1)
 
               API_URL = os.environ.get('API_URL')
               API_KEY = os.environ.get('API_KEY')
@@ -82,12 +80,13 @@
                 print("Coverage report present sending details to convoy.")
                 BRANCH_COVERAGE_VALUES = list(map(int, BRANCH_COVERAGE.split()))
                 STATEMENT_COVERAGE_VALUES = list(map(int, STATEMENT_COVERAGE.split()))
-              else 
+              else:
+                print("Coverage report not generated. Skipping post call to convoy.")
                 exit(0)
 
               if not(bool(BASE_BRANCH)):
                 BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-  
+
               with open('convoy.yaml', 'r') as yaml_file:
                 yaml_data = yaml.safe_load(yaml_file)
               APP_GROUP = yaml_data.get('appGroup')
