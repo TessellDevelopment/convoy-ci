@@ -122,4 +122,3 @@
               steps: ${{ toJson(steps) }}
               channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
           if: failure()
-          
