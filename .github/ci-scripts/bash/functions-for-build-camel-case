@@ -4,8 +4,8 @@ awsConfigureDevqaInfra() {
   aws_configure_devqa_infra "$@"
 }
 
-awsConfigureTessellTools() {
-  aws_configure_tessell_tools "$@"
+awsConfigureProdAssets() {
+  aws_configure_prod_assets "$@"
 }
 
 buildConvoyTessellImage() {

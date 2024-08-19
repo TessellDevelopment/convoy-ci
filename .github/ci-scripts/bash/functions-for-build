@@ -8,7 +8,7 @@ aws_configure_devqa_infra() {
   aws configure set region ap-south-1
 }
 
-aws_configure_tessell_tools() {
+aws_configure_prod_assets() {
   aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY}
   aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY}
   aws configure set region ap-south-1
@@ -124,7 +124,7 @@ frp_build_and_push() {
   frp_build
   set -e
   EXTENSION="${2}"
-  aws_configure_tessell_tools
+  aws_configure_prod_assets
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
     echo "frpc-{$OS}"
