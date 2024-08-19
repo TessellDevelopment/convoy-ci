@@ -459,6 +459,15 @@ jobs:
             python3 -m coverage json --include="${include}"
             popd
             deactivate
+            printContent coverage.json
+            printContent coverage.yaml
+          }
+          printContent() {
+            filename=$1
+            find . -type f -name "$filename" | while read -r file; do
+                echo "Contents of $file:"
+                cat "$file"
+            done
           }
           pythonDockerBuild() {
             set -e
