@@ -131,7 +131,7 @@ frp_build_and_push() {
     mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
     aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/terls/tessell/frp/${LATEST_TAG}/
     aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
-    push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
     for env in "${environments[@]}"
     do
       push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
