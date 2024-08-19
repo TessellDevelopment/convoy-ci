@@ -185,21 +185,17 @@ install_go_dependencies() {
 }
 
 parse_coverage_report() {
-  set -e
   coverage_report=$(find . -type f -name "coverage.json")
   covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
   missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
   total_branches=$(jq '.totals.num_branches' ${coverage_report})
   branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
-
   covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
   missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
   total_statements=$(jq '.totals.num_statements' ${coverage_report})
   statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
-
   branch_coverage="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
   statement_coverage="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
-  set +e
 }
 
 mvn_deploy() {
