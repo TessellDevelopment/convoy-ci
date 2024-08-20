@@ -18,7 +18,13 @@ on:
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-2.outputs.ARTIFACT_CHECKSUMS) }} 
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
+      BRANCH_COVERAGE:
+        description: 'Branch coverage parameters of the repository'
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
+      STATEMENT_COVERAGE:
+        description: 'Statement coverage parameters of the repository'
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
 
 jobs:
 
@@ -27,6 +33,8 @@ jobs:
     runs-on: ui-build
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       CI_BRANCH: main
       LATEST_TAG: ${{inputs.tag}}
@@ -54,6 +62,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -215,10 +224,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -233,8 +247,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
+      AWS_EC2_METADATA_DISABLED: true
       CI_BRANCH: main
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
@@ -288,7 +309,6 @@ jobs:
         run: |
           git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/TessellDevelopment/convoy-ci.git
           cd convoy-ci
-          git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ..
@@ -503,6 +523,11 @@ jobs:
             IMAGE="$1"
             gradlewDockerTag
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            if [ -f "pytest.ini" ]; then
+              echo "Running unit tests"
+              runPythonUnitTest
+            fi
+            configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
             set +e
           }
           installGoDependencies() {
@@ -566,17 +591,6 @@ jobs:
               exit 1
             fi
           }
-          pythonDockerBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            rm pip.conf
-            lintCheck
-            gradlewDockerTag
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            set +e
-          }
           validateInputs() {
             local required=($1)
             shift
@@ -624,10 +638,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -642,6 +661,8 @@ jobs:
     runs-on: amd-go-20
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       CI_BRANCH: main
@@ -667,6 +688,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -837,10 +859,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -864,6 +890,8 @@ jobs:
     runs-on: amd-go-21
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       CI_BRANCH: main
@@ -891,6 +919,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -1029,10 +1058,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -1056,6 +1089,8 @@ jobs:
     runs-on: self-hosted
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
@@ -1096,6 +1131,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -1630,11 +1666,15 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           build "terraform"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
@@ -1658,6 +1698,8 @@ jobs:
     runs-on: ARM64
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       CI_BRANCH: main
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -1682,6 +1724,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -1887,10 +1930,14 @@ jobs:
           }
           set +e
           ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()

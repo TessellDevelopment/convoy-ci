@@ -24,6 +24,10 @@ buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
 }
 
+configureAndPushAWS() {
+  configure_and_push_aws "$@"
+}
+
 createTFBackend() {
   create_tf_backend "$@"
 }
@@ -68,6 +72,10 @@ qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
 
+runPythonUnitTest(){
+  run_python_unit_test "$@"
+} 
+
 setupQAEnv() {
   setup_qa_env "$@"
 }
@@ -82,6 +90,10 @@ terraformApplyAndPush() {
 
 tsmZipBuildAndPush() {
   tsm_zip_build_and_push "$@"
+}
+
+vssTarBuild() {
+  vss_tar_build "$@"
 }
 
 vssTarBuildAndPush() {
