@@ -1291,7 +1291,10 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureProdAssets
-            cd tessell;
+            # cd tessell;
+            if [ ! -f "Makefile" ]; then
+              cd tessell;
+            fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
@@ -1304,7 +1307,10 @@ jobs:
               pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
-            cd ..
+            # cd ..
+            if [ ! -f "Makefile" ]; then
+              cd ..;
+            fi
             set +e
           }
           generateChecksum() {
