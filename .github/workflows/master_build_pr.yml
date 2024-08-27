@@ -1384,6 +1384,7 @@ jobs:
               return
             fi
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            cat artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
