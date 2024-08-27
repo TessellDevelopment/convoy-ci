@@ -994,7 +994,10 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            cd tessell;
+            # cd tessell;
+            if [ ! -f "Makefile" ]; then
+              cd tessell;
+            fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             echo $OS
