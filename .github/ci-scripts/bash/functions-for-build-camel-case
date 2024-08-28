@@ -8,20 +8,24 @@ awsConfigureProdAssets() {
   aws_configure_prod_assets "$@"
 }
 
-buildConvoyTessellImage() {
-  build_convoy_tessell_image "$@"
-}
-
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
+}
+
+buildConvoyTessellClientAndPush() {
+  build_convoy_tessell_client_and_push "$@"
+}
+
+buildConvoyTessellImage() {
+  build_convoy_tessell_image "$@"
 }
 
 buildConvoyTessellImageAndPush() {
   build_convoy_tessell_image_and_push "$@"
 }
 
-buildConvoyTessellClientAndPush() {
-  build_convoy_tessell_client_and_push "$@"
+checkFlyway() {
+  check_flyway "$@"
 }
 
 configureAndPushAWS() {
@@ -50,6 +54,22 @@ frpBuildAndPush() {
 
 generateChecksum() {
   generate_checksum "$@"
+}
+
+goDockerBuild() {
+  go_docker_build "$@"
+}
+
+goDockerBuildAndPush() {
+  go_docker_build_and_push "$@"
+}
+
+gradlewDockerTag() {
+  gradlew_docker_tag "$@"
+}
+
+installGoDependencies() {
+ install_go_dependencies "$@"
 }
 
 mvnDeploy() {
@@ -86,6 +106,10 @@ terraformApply() {
 
 terraformApplyAndPush() {
   terraform_apply_and_push "$@"
+}
+
+tsmZipBuild() {
+  tsm_zip_build "$@"
 }
 
 tsmZipBuildAndPush() {
