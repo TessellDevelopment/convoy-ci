@@ -389,7 +389,7 @@ terraform_apply() {
   set +e
 }
 
-terraformApplyAndPush() {
+terraform_apply_and_push() {
   set -e
   terraform_apply
   cd terraform

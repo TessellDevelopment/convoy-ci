@@ -400,19 +400,9 @@ jobs:
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
           }
-          awsConfigureDevqaInfra() {
-            aws configure set aws_access_key_id ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           awsConfigureTessellArtifacts() {
             aws configure set aws_access_key_id ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
-          awsConfigureProdAssets() {
-            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
             aws configure set region ap-south-1
           }
           dockerBuild() {
@@ -508,12 +498,6 @@ jobs:
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
           }
-          gradlewDockerTag() {
-            ./gradlew dockerTag --console plain \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-          }
           infraProvisionBuildAndPush() {
             set -e
             lintCheck
@@ -532,68 +516,6 @@ jobs:
           lintCheck() {
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-          }
-          mvnDeploy() {
-            ARTIFACT_ID="$1"
-            EXTENSION="$2"
-            FILE="$3"
-            GROUP_ID="$4"
-            VERSION="$5"
-            requiredInputs="1 2 3 4 5"
-            validateInputs "$requiredInputs" "$@" 
-            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
-                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
-                -DgeneratePom=true -Dpackaging=$EXTENSION \
-                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
-                -Dfile=$FILE -DrepositoryId=nexus
-          }
-          pushToMinio() {
-            SOURCE="${1}"
-            DESTINATION="${2}"
-            MAX_RETRIES=5
-            RETRY_DELAY=3
-            local attempt=0
-            while [ $attempt -lt $MAX_RETRIES ]; do
-              mc cp "$SOURCE" "$DESTINATION"
-              if [ $? -eq 0 ]; then
-                echo "Artifact successfully pushed to minio ${DESTINATION}."
-                return
-              else
-                attempt=$((attempt + 1))
-                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
-                sleep $RETRY_DELAY
-              fi
-            done
-            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
-            return 1
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
           }
           build() {
             type="$1"
@@ -747,58 +669,6 @@ jobs:
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
-          }
-          mvnDeploy() {
-            ARTIFACT_ID="$1"
-            EXTENSION="$2"
-            FILE="$3"
-            GROUP_ID="$4"
-            VERSION="$5"
-            requiredInputs="1 2 3 4 5"
-            validateInputs "$requiredInputs" "$@" 
-            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
-                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
-                -DgeneratePom=true -Dpackaging=$EXTENSION \
-                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
-                -Dfile=$FILE -DrepositoryId=nexus
-          }
-          pushToMinio() {
-            SOURCE="${1}"
-            DESTINATION="${2}"
-            MAX_RETRIES=5
-            RETRY_DELAY=3
-            local attempt=0
-            while [ $attempt -lt $MAX_RETRIES ]; do
-              mc cp "$SOURCE" "$DESTINATION"
-              if [ $? -eq 0 ]; then
-                echo "Artifact successfully pushed to minio ${DESTINATION}."
-                return
-              else
-                attempt=$((attempt + 1))
-                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
-                sleep $RETRY_DELAY
-              fi
-            done
-            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
-            return 1
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
           }
           build() {
             type="$1"
@@ -1153,31 +1023,6 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          configureAndPushAWS() {
-            BUCKET_ACCOUNT=$1
-            BUCKET_NAME=$2
-            SOURCE=$3
-            DESTINATION=$4
-            export AWS_ACCESS_KEY_ID=${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-            export AWS_SECRET_ACCESS_KEY=${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
-            ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
-            ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
-            export AWS_ACCESS_KEY_ID=$(echo $ROLE_OUTPUT | jq -r '.Credentials.AccessKeyId')
-            export AWS_SECRET_ACCESS_KEY=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SecretAccessKey')
-            export AWS_SESSION_TOKEN=$(echo $ROLE_OUTPUT | jq -r '.Credentials.SessionToken')
-            aws s3 cp "$SOURCE" "$DESTINATION"
-            unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-          }
-          checkFlyway() {
-            if [ -d "flyway" ]; then
-              echo "The 'flyway' directory exists in this repository."
-              DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
-              docker tag ${{env.DOCKERHUB_ORG}}/$DOCKER_FLYWAY_IMAGE_NAME:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
-              docker push ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
-            else
-              echo "The 'flyway' directory does not exists in this repository."
-            fi
-          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -1415,43 +1260,6 @@ jobs:
             done
             generateChecksum ${file_name}
             set +e
-          }
-          pushToMinio() {
-            SOURCE="${1}"
-            DESTINATION="${2}"
-            MAX_RETRIES=5
-            RETRY_DELAY=3
-            local attempt=0
-            while [ $attempt -lt $MAX_RETRIES ]; do
-              mc cp "$SOURCE" "$DESTINATION"
-              if [ $? -eq 0 ]; then
-                echo "Artifact successfully pushed to minio ${DESTINATION}."
-                return
-              else
-                attempt=$((attempt + 1))
-                echo "Pushing artifact to minio failed. Attempt $attempt of $MAX_RETRIES. Retrying in $RETRY_DELAY seconds."
-                sleep $RETRY_DELAY
-              fi
-            done
-            echo "Pushing artifact to minio failed after $MAX_RETRIES attempts."
-            return 1
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
           }
           pythonApiClientBuildAndPush() {
             set -e
@@ -1773,21 +1581,6 @@ jobs:
               -DaltDeploymentRepository=nexus::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{vars.NEXUS_PUSH_REPOS_M2}}
             set +e
           }
-          mvnDeploy() {
-            ARTIFACT_ID="$1"
-            EXTENSION="$2"
-            FILE="$3"
-            GROUP_ID="$4"
-            VERSION="$5"
-            requiredInputs="1 2 3 4 5"
-            validateInputs "$requiredInputs" "$@" 
-            mvn deploy:deploy-file -Dnexus_url=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/tessell-m2-component \
-                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-                -DgroupId=$GROUP_ID -DartifactId=$ARTIFACT_ID -Dversion=$VERSION \
-                -DgeneratePom=true -Dpackaging=$EXTENSION \
-                -Durl=${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_M2}} \
-                -Dfile=$FILE -DrepositoryId=nexus
-          }
           mvnwBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -1806,23 +1599,6 @@ jobs:
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
             dockerBuildAndPush "$@"
             set +e
-          }
-          pushToNexus() {
-            FILE_PATH="$1"
-            URL_PATH="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            RESPONSE=$(curl -v -u ${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}} \
-                --upload-file $FILE_PATH  -w "%{http_code}" \
-                ${{env.NEXUS_PROTOCOL}}://${{env.NEXUS_SERVER_ENDPOINT}}/repository/$URL_PATH)
-            echo $REPONSE
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1) 
-            echo $HTTP_CODE
-            HTTP_CODE=$((HTTP_CODE))
-            if [ "$HTTP_CODE" -ne 201 ]; then
-              echo "Error: Unexpected HTTP response code $HTTP_CODE"
-              exit 1
-            fi
           }
           build() {
             type="$1"

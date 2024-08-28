@@ -892,17 +892,6 @@ jobs:
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
           }
-          buildConvoyTessellClient() {
-            installGoDependencies
-            ./setup --client --version 0.0.0
-          }
-          buildConvoyTessellImage() {
-            required_inputs="1"
-            validate_inputs "$required_inputs" "$@"
-            installGoDependencies
-            python3 -m pip install build
-            bash ./setup -i
-          }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
             CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
@@ -978,19 +967,6 @@ jobs:
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             cd ..
-            set +e
-          }
-          goDockerBuild() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installGoDependencies
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            imageScan $IMAGE
             set +e
           }
           gradlewMaven() {
@@ -1271,25 +1247,6 @@ jobs:
             curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
-          }
-          setupQAEnv() {
-            INSTALL_DIR=/usr/local/bin
-            sudo mkdir -p $INSTALL_DIR/openapitools
-            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
-            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
-            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
-            python3 -m pip cache purge
-            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m venv qavenv
-            source qavenv/bin/activate
-            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
-            python3 -m pip list | grep harness
-            deactivate
           }
           terraformBuild() {
             set -e
