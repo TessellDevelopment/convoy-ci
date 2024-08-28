@@ -8,20 +8,20 @@ awsConfigureProdAssets() {
   aws_configure_prod_assets "$@"
 }
 
-buildConvoyTessellImage() {
-  build_convoy_tessell_image "$@"
-}
-
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
 
-buildConvoyTessellImageAndPush() {
-  build_convoy_tessell_image_and_push "$@"
-}
-
 buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
+}
+
+buildConvoyTessellImage() {
+  build_convoy_tessell_image "$@"
+}
+
+buildConvoyTessellImageAndPush() {
+  build_convoy_tessell_image_and_push "$@"
 }
 
 checkFlyway() {
@@ -61,17 +61,11 @@ goDockerBuild() {
 }
 
 goDockerBuildAndPush() {
-  set -e
-  IMAGE="$1"
-  installGoDependencies
-  echo "Building the service"
-  export PATH=${PATH}:$GOPATH/bin
-  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-  ./setup -g -i
-  docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-  docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-  checkFlyway $IMAGE
-  set +e
+  go_docker_build_and_push "$@"
+}
+
+gradlewDockerTag() {
+  gradlew_docker_tag "$@"
 }
 
 installGoDependencies() {
@@ -112,6 +106,10 @@ terraformApply() {
 
 terraformApplyAndPush() {
   terraform_apply_and_push "$@"
+}
+
+tsmZipBuild() {
+  tsm_zip_build "$@"
 }
 
 tsmZipBuildAndPush() {
