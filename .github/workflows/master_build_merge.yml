@@ -36,23 +36,38 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -240,31 +255,41 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_EC2_METADATA_DISABLED: true
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
-      GOPATH: /home/runner/go
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GOPATH: /home/runner/go
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -633,21 +658,36 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -831,23 +871,36 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -995,8 +1048,11 @@ jobs:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -1005,8 +1061,8 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GOPATH: /home/github/go
+      LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}  
       NAMESPACE: "convoy"
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
@@ -1563,20 +1619,38 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      LATEST_TAG: ${{inputs.tag}}
-      LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps: 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
