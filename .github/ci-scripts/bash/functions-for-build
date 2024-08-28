@@ -209,7 +209,7 @@ go_docker_build_and_push() {
   ./setup -g -i
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
-  checkFlyway ${IMAGE}
+  check_flyway ${IMAGE}
   set +e
 }
 
