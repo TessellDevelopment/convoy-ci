@@ -182,16 +182,6 @@ jobs:
             npm publish   
             set +e
           }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -493,22 +483,6 @@ jobs:
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
           }
-          generateChecksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(md5sum "$file_path" | awk '{ print $1 }') 
-            ARTIFACT="${ARTIFACT%%.*}"       
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
-          }
           gradlewDockerTag() {
             ./gradlew dockerTag --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -529,11 +503,6 @@ jobs:
               configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
             fi
             set +e
-          }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
           }
           lintCheck() {
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -707,27 +676,6 @@ jobs:
         id: build
         shell: bash
         run: |
-          awsConfigureProdAssets() {
-            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
-          generateChecksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
-            ARTIFACT="${ARTIFACT%%.*}"         
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
-          }
           goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -811,16 +759,6 @@ jobs:
               echo "Error: Unexpected HTTP response code $HTTP_CODE"
               exit 1
             fi
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
           }
           build() {
             type="$1"
@@ -944,29 +882,6 @@ jobs:
         id: build
         shell: bash
         run: |
-          checkFlyway() {
-            if [ -d "flyway" ]; then
-              echo "The 'flyway' directory exists in this repository."
-              DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
-              docker tag ${{env.DOCKERHUB_ORG}}/$DOCKER_FLYWAY_IMAGE_NAME:latest ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
-              docker push ${{env.DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
-            else
-              echo "The 'flyway' directory does not exists in this repository."
-            fi
-          }
-          goDockerBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            installGoDependencies
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            checkFlyway $IMAGE
-            set +e
-          }
           goLibraryBuildAndPush() {
             set -e
             ARTIFACT="$1"
@@ -999,11 +914,6 @@ jobs:
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
-          }
           tailscaleBuildAndPush() {
             set -e
             export GOPROXY=direct
@@ -1014,16 +924,6 @@ jobs:
             export TS_TAILNET=${{ secrets.TS_TAILNET }}
             gitops-pusher --policy-file ./policy.hujson test
             set +e
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
           }
           build() {
             type="$1"
@@ -1197,11 +1097,6 @@ jobs:
             aws configure set aws_secret_access_key ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
             aws configure set region ap-south-1
           }
-          awsConfigureProdAssets() {
-            aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           configureAndPushAWS() {
             BUCKET_ACCOUNT=$1
             BUCKET_NAME=$2
@@ -1307,34 +1202,6 @@ jobs:
             cd ..
             set +e
           }
-          generateChecksum() {
-            ARTIFACT=$1
-            BUILD_FILE=$2
-            if [[ -z "$BUILD_FILE" ]]; then
-              echo "Build File name same as Artifact name"
-              BUILD_FILE=$ARTIFACT
-            fi
-            file_path=$(find . -type f -name "$BUILD_FILE" 2>/dev/null | head -n 1)
-            if [[ -z "$file_path" ]]; then
-              echo "File not found!"
-              return 1
-            fi
-            checksum=$(md5sum "$file_path" | awk '{ print $1 }')   
-            ARTIFACT="${ARTIFACT%%.*}"         
-            ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
-          }
-          goDockerBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            installGoDependencies
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-            checkFlyway $IMAGE
-            set +e
-          }
           gradlewMaven() {
             ./gradlew mavenDeploy --console plain --refresh-dependencies \
               -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
@@ -1389,11 +1256,6 @@ jobs:
               cd $GITHUB_WORKSPACE
               set +e
             fi
-          }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
           }
           installPythonDependencies() {
             DIR=$1
@@ -1887,16 +1749,6 @@ jobs:
               echo "Error: Unexpected HTTP response code $HTTP_CODE"
               exit 1
             fi
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
           }
           build() {
             type="$1"

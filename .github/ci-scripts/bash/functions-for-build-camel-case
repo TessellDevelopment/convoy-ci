@@ -24,6 +24,10 @@ buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
 }
 
+checkFlyway() {
+  check_flyway "$@"
+}
+
 configureAndPushAWS() {
   configure_and_push_aws "$@"
 }
@@ -50,6 +54,28 @@ frpBuildAndPush() {
 
 generateChecksum() {
   generate_checksum "$@"
+}
+
+goDockerBuild() {
+  go_docker_build "$@"
+}
+
+goDockerBuildAndPush() {
+  set -e
+  IMAGE="$1"
+  installGoDependencies
+  echo "Building the service"
+  export PATH=${PATH}:$GOPATH/bin
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  ./setup -g -i
+  docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  checkFlyway $IMAGE
+  set +e
+}
+
+installGoDependencies() {
+ install_go_dependencies "$@"
 }
 
 mvnDeploy() {

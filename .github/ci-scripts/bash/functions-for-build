@@ -42,6 +42,17 @@ build_convoy_tessell_image_and_push() {
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
 }
 
+check_flyway() {
+  if [ -d "flyway" ]; then
+    echo "The 'flyway' directory exists in this repository."
+    DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+    docker tag ${DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+    docker push ${DOCKERHUB_ORG}}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+  else
+    echo "The 'flyway' directory does not exists in this repository."
+  fi
+}
+
 configure_and_push_aws() {
   BUCKET_ACCOUNT=${1}
   BUCKET_NAME=${2}
@@ -172,6 +183,34 @@ generate_checksum() {
   checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
   ARTIFACT="${ARTIFACT%%.*}"         
   ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+}
+
+go_docker_build() {
+  set -e
+  IMAGE="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  install_go_dependencies
+  echo "Building the service"
+  export PATH=${PATH}:${GOPATH}/bin
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  ./setup -g -i
+  imageScan ${IMAGE}
+  set +e
+}
+
+go_docker_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  install_go_dependencies
+  echo "Building the service"
+  export PATH=${PATH}:${GOPATH}/bin
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  ./setup -g -i
+  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  checkFlyway ${IMAGE}
+  set +e
 }
 
 gradlew_docker_tag() {
@@ -363,7 +402,7 @@ tsm_zip_build() {
   set -e
   ARTIFACT="${1}"
   required_inputs="1"
-  validate_inputs "$required_inputs" "$@" 
+  validate_inputs "${required_inputs}" "$@" 
   mkdir -p build; cd tsmv101; terraform_build $PWD ../build/${ARTIFACT}.zip; cd ../build; ls -l;
   unzip -l ${ARTIFACT}.zip
   cd ..
@@ -424,7 +463,7 @@ validate_inputs() {
 }
 
 zip_directory() {
-  DIR="$1"
-  ARTIFACT_FILE="$2"
+  DIR="${1}"
+  ARTIFACT_FILE="${2}"
   zip -r ${ARTIFACT_FILE} ${DIR}
 }
