@@ -1087,7 +1087,6 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureProdAssets
-            # cd tessell;
             if [ ! -f "Makefile" ]; then
               cd tessell;
             fi
@@ -1103,7 +1102,6 @@ jobs:
               pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
-            # cd ..
             if [ ! -f "Makefile" ]; then
               cd ..;
             fi
