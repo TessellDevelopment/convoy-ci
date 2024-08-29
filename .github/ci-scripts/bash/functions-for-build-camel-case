@@ -44,6 +44,14 @@ mvnDeploy() {
   mvn_deploy "$@"
 }
 
+npmBuild() {
+  npm_build "$@"
+}
+
+npmBuildAndPush() {
+  npm_build_and_push "$@"
+}
+
 opsUIBuild() {
   ops_ui_build "$@"
 }

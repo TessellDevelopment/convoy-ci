@@ -152,6 +152,36 @@ mvn_deploy() {
       -Dfile=${FILE} -DrepositoryId=nexus
 }
 
+npm_build() {
+  set -e
+  npm install
+  npm run build
+  configureNpmrc "${NEXUS_REPO_NPM}"
+  set -e
+  version="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  yq ".version = \"${version}\"" package.json > tmp_package.json
+  mv tmp_package.json package.json
+  npm publish   
+  set +e
+}
+
+npm_build_and_push() {
+  set -e
+  npm install
+  npm run build
+  configureNpmrc "${NEXUS_PUSH_REPOS_NPM}"
+  set -e
+  version="${3}"
+  requiredInputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  yq ".version = \"${version}\"" package.json > tmp_package.json
+  mv tmp_package.json package.json
+  npm publish   
+  set +e
+}
+
 ops_ui_build() {
   gradlew_ui_build
 }

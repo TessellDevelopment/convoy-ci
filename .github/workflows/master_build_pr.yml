@@ -130,20 +130,6 @@ jobs:
           EOF
             set +e
           }
-          npmBuild() {
-            set -e
-            npm install
-            npm run build
-            configureNpmrc "${{env.NEXUS_REPO_NPM}}"
-            set -e
-            version="$3"
-            requiredInputs="3"
-            validateInputs "$requiredInputs" "$@" 
-            yq ".version = \"$version\"" package.json > tmp_package.json
-            mv tmp_package.json package.json
-            npm publish   
-            set +e
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
