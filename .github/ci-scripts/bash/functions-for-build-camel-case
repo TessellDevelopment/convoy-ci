@@ -16,6 +16,10 @@ buildConvoyTessellClientAndPush() {
   build_convoy_tessell_client_and_push "$@"
 }
 
+configureNpmrc() {
+  configure_npmrc "$@"
+}
+
 configureNpmrcYarnrc() {
   configure_npmrc_yarnrc "$@"
 }
@@ -30,6 +34,10 @@ dockerBuildAndPush() {
 
 gradlewUIBuild() {
   gradlew_ui_build "$@"
+}
+
+gradlewUIBuildAndPush() {
+  gradlew_ui_build_and_push "$@"
 }
 
 mvnDeploy() {

@@ -37,6 +37,7 @@ jobs:
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
       NEXUS_PUSH_REPOS_NPM: ${{ vars.NEXUS_PUSH_REPOS_NPM }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
@@ -102,22 +103,6 @@ jobs:
             dockerBuild "$@"
             docker tag $IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:$TAG
             docker push ${DOCKERHUB_ORG}/$IMAGE:$TAG
-            set +e
-          }
-          gradlewUIBuildAndPush() {
-            gradlewUIBuild "$@"
-            set -e
-            ./gradlew publish --console plain \
-              -Pnexus_push_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
-              -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
-              -Pnexus_push_repo_raw_ops=="${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}" \
-              -Pnexus_endpoint="${{env.NEXUS_SERVER_ENDPOINT}}" \
-              -Pnexus_protocol="${{env.NEXUS_PROTOCOL}}" \
-              -Plabel="${{env.LABEL}}" 
             set +e
           }
           npmBuildAndPush() {

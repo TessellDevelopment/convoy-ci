@@ -9,14 +9,14 @@ build_convoy_tessell_client() {
 
 build_convoy_tessell_client_and_push() {
   required_inputs="1"
-  validate_inputs "$required_inputs" "$@"
+  validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
   ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
 }
 
 build_convoy_tessell_image() {
   required_inputs="1"
-  validate_inputs "$required_inputs" "$@"
+  validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
   python3 -m pip install build
   bash ./setup -i
@@ -24,18 +24,31 @@ build_convoy_tessell_image() {
 
 build_convoy_tessell_image_and_push() {
   required_inputs="1"
-  validate_inputs "$required_inputs" "$@"
+  validate_inputs "${required_inputs}" "$@"
   IMAGE="${1}"
   build_convoy_tessell_image  "$@"
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+}
+
+configure_npmrc(){
+  set +e 
+  REPO="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  rm ~/.npmrc
+  TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
+  echo "//${NEXUS_SERVER_ENDPOINT}/repository/:_auth = ${TOKEN}" >> ~/.npmrc
+  echo "//${NEXUS_SERVER_ENDPOINT}/repository/:always-auth = true" >> ~/.npmrc 
+  echo "@tessell:registry=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${REPO}" >> ~/.npmrc
+  cat ~/.npmrc
 }
 
 configure_npmrc_yarnrc() {
   set +e
   rm ~/.npmrc
   rm ~/.yarnrc
-  TOKEN=$(echo -n '${NEXUS_USERNAME}:${NEXUS_PASSWORD}' | base64 -w 0)
-  echo '"@tessell:registry" "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/"' >> .yarnrc
+  TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
+  echo "\"@tessell:registry\" \"${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/\"" >> .yarnrc
   echo "always-auth=true" >> .npmrc
   echo "_auth=${TOKEN}" >> .npmrc
   cat .npmrc
@@ -97,6 +110,23 @@ gradlew_ui_build() {
   ./gradlew zipUiBuild --console plain --stacktrace \
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
+gradlew_ui_build_and_push() {
+  gradlew_ui_build "$@"
+  set -e
+  ./gradlew publish --console plain \
+    -Pnexus_push_username="${CIPIPELINE_NEXUS_USERNAME}" \
+    -Pnexus_push_password="${CIPIPELINE_NEXUS_PASSWORD}" \
+    -Pnexus_username="${CIPIPELINE_NEXUS_USERNAME}" \
+    -Pnexus_password="${CIPIPELINE_NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
+    -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
+    -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
+    -Pnexus_protocol="${NEXUS_PROTOCOL}" \
+    -Plabel="${LABEL}" 
   set +e
 }
 
