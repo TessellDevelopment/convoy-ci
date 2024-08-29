@@ -72,18 +72,6 @@ jobs:
         id: build
         shell: bash
         run: |
-          configureNpmrc(){
-            set +e 
-            REPO="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
-            cat ~/.npmrc
-          }
           dockerBuild() {
             set -e
             IMAGE="$1"
