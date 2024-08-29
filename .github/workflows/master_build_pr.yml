@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI-BRANCH: main
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -677,7 +677,6 @@ jobs:
             gradlewPackagePlugin
             set +e
           }
-
           elasticAgentBuild() {
             set -e
             IMAGE="$1"

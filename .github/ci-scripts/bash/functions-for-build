@@ -274,6 +274,15 @@ gradlew_ui_build_and_push() {
   set +e
 }
 
+image_scan(){
+  set -e
+  export IMAGE="${1}"
+  trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
+  python3 ./ci-scripts/python/image_scan.py
+  set +e
+}
+
 initialise_coverage() {
   echo "Setting up virtual environment for running unit tests."
   venv_name=${1}
@@ -286,36 +295,6 @@ initialise_coverage() {
   echo ${source_path}
   cp -r tests pytest.ini ${source_path}
 }
-
-install_go_dependencies() {
-  go version
-  go install golang.org/x/tools/cmd/goimports@latest
-  which go
-}
-
-parse_coverage_report() {
-  coverage_report=$(find . -type f -name "coverage.json")
-  covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
-  missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
-  total_branches=$(jq '.totals.num_branches' ${coverage_report})
-  branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
-  covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
-  missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
-  total_statements=$(jq '.totals.num_statements' ${coverage_report})
-  statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
-  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
-  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
-}
-
-image_scan(){
-  set -e
-  export IMAGE="${1}"
-  trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
-  python3 ./ci-scripts/python/image_scan.py
-  set +e
-}
-
 
 install_go_dependencies() {
   go version
@@ -381,6 +360,20 @@ ops_ui_build_and_push() {
   gradlew_ui_build
   push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
   set +e
+}
+
+parse_coverage_report() {
+  coverage_report=$(find . -type f -name "coverage.json")
+  covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
+  missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
+  total_branches=$(jq '.totals.num_branches' ${coverage_report})
+  branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
+  covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
+  missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
+  total_statements=$(jq '.totals.num_statements' ${coverage_report})
+  statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
+  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
 }
 
 push_to_minio() {

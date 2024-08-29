@@ -76,16 +76,6 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git pull
-          git checkout ${{env.CI-BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-  
       
       - name: Setup CI Scripts
         run: |

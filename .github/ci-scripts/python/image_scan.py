@@ -54,4 +54,3 @@ except Exception as e:
   print(e)
   post_to_slack(e)
   exit(1)
-  
