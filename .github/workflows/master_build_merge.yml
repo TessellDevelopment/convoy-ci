@@ -46,7 +46,7 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
+      TESSELL_UI_ENV_SECRET: ${{secrets.TESSELL_UI_ENV_SECRET}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
