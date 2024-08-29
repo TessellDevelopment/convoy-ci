@@ -1,19 +1,39 @@
 #!/bin/bash
 
-buildConvoyTessellImage() {
-  build_convoy_tessell_image "$@"
+awsConfigureDevqaInfra() {
+  aws_configure_devqa_infra "$@"
+}
+
+awsConfigureProdAssets() {
+  aws_configure_prod_assets "$@"
 }
 
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
 
+buildConvoyTessellClientAndPush() {
+  build_convoy_tessell_client_and_push "$@"
+}
+
+buildConvoyTessellImage() {
+  build_convoy_tessell_image "$@"
+}
+
 buildConvoyTessellImageAndPush() {
   build_convoy_tessell_image_and_push "$@"
 }
 
-buildConvoyTessellClientAndPush() {
-  build_convoy_tessell_client_and_push "$@"
+checkFlyway() {
+  check_flyway "$@"
+}
+
+configureAndPushAWS() {
+  configure_and_push_aws "$@"
+}
+
+createTFBackend() {
+  create_tf_backend "$@"
 }
 
 configureNpmrc() {
@@ -32,6 +52,14 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+frpBuild() {
+  frp_build "$@"
+}
+
+frpBuildAndPush() {
+  frp_build_and_push "$@"
+}
+
 gradlewUIBuild() {
   gradlew_ui_build "$@"
 }
@@ -40,8 +68,28 @@ gradlewUIBuildAndPush() {
   gradlew_ui_build_and_push "$@"
 }
 
+generateChecksum() {
+  generate_checksum "$@"
+}
+
+goDockerBuild() {
+  go_docker_build "$@"
+}
+
+goDockerBuildAndPush() {
+  go_docker_build_and_push "$@"
+}
+
+gradlewDockerTag() {
+  gradlew_docker_tag "$@"
+}
+
 imageScan(){
   image_scan "$@"
+}
+
+installGoDependencies() {
+ install_go_dependencies "$@"
 }
 
 mvnDeploy() {
@@ -64,6 +112,10 @@ opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
 }
 
+pushToMinio() {
+  push_to_minio "$@"
+}
+
 pushToNexus() {
   push_to_nexus "$@"
 }
@@ -76,12 +128,32 @@ qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
 
+runPythonUnitTest(){
+  run_python_unit_test "$@"
+} 
+
 setupQAEnv() {
   setup_qa_env "$@"
 }
 
+terraformApply() {
+  terraform_apply "$@"
+}
+
+terraformApplyAndPush() {
+  terraform_apply_and_push "$@"
+}
+
+tsmZipBuild() {
+  tsm_zip_build "$@"
+}
+
 tsmZipBuildAndPush() {
   tsm_zip_build_and_push "$@"
+}
+
+vssTarBuild() {
+  vss_tar_build "$@"
 }
 
 vssTarBuildAndPush() {

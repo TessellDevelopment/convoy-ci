@@ -16,19 +16,26 @@ jobs:
     env:
       CI-BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_NPM: ${{ vars.NEXUS_PUSH_REPOS_NPM }}
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
+      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
     steps:
       - name: Checkout code
@@ -39,8 +46,9 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
+          git checkout main
           git pull
-          git checkout ${{env.CI-BRANCH}}
+          git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
@@ -86,20 +94,28 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -129,6 +145,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Setup CI Scripts
+        run: |
+          git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/TessellDevelopment/convoy-ci.git
+          cd convoy-ci
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ..
+          cp -r ./convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Create pip conf
         run: |
@@ -222,11 +247,6 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
-          }
           infraProvisionBuild() {
             set -e
             lintCheck
@@ -247,32 +267,6 @@ jobs:
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
-          initialiseCoverage() {
-            echo "Setting up virtual environment for running unit tests."
-            venv_name=$1
-            venv_path=${PWD}/${venv_name}
-            source_path=${venv_path}/lib/python3.9/site-packages/
-            python3 -m venv ${venv_name}
-            source ${venv_name}/bin/activate
-            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
-            python3 -m pip list | grep tessell
-            echo ${source_path}
-            cp -r tests pytest.ini $source_path
-          }
-          runPythonUnitTest() {
-            initialiseCoverage 'test-venv'
-            source_path=${venv_path}/lib/python3.9/site-packages/
-            include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
-            pushd $source_path
-            echo "Running unit tests"
-            python3 -m coverage run --branch --source "." -m pytest tests
-            echo "Generating code coverage report"
-            python3 -m coverage report --skip-empty --include="${include}"
-            python3 -m coverage html --include="${include}"
-            python3 -m coverage json --include="${include}"
-            popd
-            deactivate
-          }
           pythonDockerBuild() {
             set -e
             IMAGE="$1"
@@ -285,16 +279,6 @@ jobs:
             imageScan $IMAGE
             set +e
           }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -302,6 +286,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -334,23 +319,43 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check go Config
         run: |
@@ -384,16 +389,6 @@ jobs:
             fi
             set +e
           }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -404,6 +399,7 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -434,23 +430,43 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
@@ -469,19 +485,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          goDockerBuild() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installGoDependencies
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            imageScan $IMAGE
-            set +e
-          }
           goLibraryBuild() {
             set -e
             ARTIFACT="$1"
@@ -503,11 +506,6 @@ jobs:
             fi
             set +e
           }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
-          }
           tailscaleBuild() {
             set -e
             export GOPROXY=direct
@@ -519,16 +517,6 @@ jobs:
             gitops-pusher --policy-file ./policy.hujson test
             set +e
           }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -539,6 +527,7 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -569,28 +558,49 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      GOPATH: /home/github/go
-      NAMESPACE: "convoy"
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GOPATH: /home/github/go
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      NAMESPACE: "convoy"
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Check specific file changes
         id: changed-files
@@ -628,17 +638,6 @@ jobs:
             echo "Building Service"
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
-          }
-          buildConvoyTessellClient() {
-            installGoDependencies
-            ./setup --client --version 0.0.0
-          }
-          buildConvoyTessellImage() {
-            required_inputs="1"
-            validate_inputs "$required_inputs" "$@"
-            installGoDependencies
-            python3 -m pip install build
-            bash ./setup -i
           }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
@@ -700,19 +699,6 @@ jobs:
             cd ..
             set +e
           }
-          goDockerBuild() {
-            set -e
-            IMAGE="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installGoDependencies
-            echo "Building the service"
-            export PATH=${PATH}:$GOPATH/bin
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            ./setup -g -i
-            imageScan $IMAGE
-            set +e
-          }
           gradlewMaven() {
             set -e
             ./gradlew mavenPackage --refresh-dependencies --console plain \
@@ -754,32 +740,6 @@ jobs:
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
-          initialiseCoverage() {
-            echo "Setting up virtual environment for running unit tests."
-            venv_name=$1
-            venv_path=${PWD}/${venv_name}
-            source_path=${venv_path}/lib/python3.9/site-packages/
-            python3 -m venv ${venv_name}
-            source ${venv_name}/bin/activate
-            python3 -m pip install dist/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0
-            python3 -m pip list | grep tessell
-            echo ${source_path}
-            cp -r tests pytest.ini $source_path
-          }
-          runPythonUnitTest() {
-            initialiseCoverage 'test-venv'
-            source_path=${venv_path}/lib/python3.9/site-packages/
-            include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
-            pushd $source_path
-            echo "Running unit tests"
-            python3 -m coverage run --branch --source "." -m pytest tests
-            echo "Generating code coverage report"
-            python3 -m coverage report --skip-empty --include="${include}"
-            python3 -m coverage html --include="${include}"
-            python3 -m coverage json --include="${include}"
-            popd
-            deactivate
-          }
           pythonDockerBuild() {
             set -e
             IMAGE="$1"
@@ -812,11 +772,6 @@ jobs:
               cd $GITHUB_WORKSPACE
               set +e
             fi
-          }
-          installGoDependencies() {
-            go version
-            go install golang.org/x/tools/cmd/goimports@latest
-            which go
           }
           installPythonDependencies() {
             DIR=$1
@@ -959,26 +914,7 @@ jobs:
             curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
             ~/opa version
           }
-          setupQAEnv() {
-            INSTALL_DIR=/usr/local/bin
-            sudo mkdir -p $INSTALL_DIR/openapitools
-            curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
-            sudo cp openapi-generator-cli $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo chmod 755 $INSTALL_DIR/openapitools/openapi-generator-cli
-            sudo ln -f -s $INSTALL_DIR/openapitools/openapi-generator-cli $INSTALL_DIR/openapi-generator
-            wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
-            python3 -m pip cache purge
-            sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-            python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install yq wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m venv qavenv
-            source qavenv/bin/activate
-            python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-            python3 -m pip install -r scripts/requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
-            python3 -m pip list | grep harness
-            deactivate
-          }
-          terraformBuild(){
+          terraformBuild() {
             set -e
             modifiedDir
             BASE_DIR=$PWD
@@ -1000,45 +936,6 @@ jobs:
             ls -lrta $BUILD_DIR
             set +e
           }
-          tsmZipBuild() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            mkdir -p build; cd tsmv101; terraform_build $PWD ../build/$ARTIFACT.zip; cd ../build; ls -l;
-            unzip -l $ARTIFACT.zip
-            cd ..
-            set +e
-          }
-          vssTarBuild() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
-            DIR="build_$CLOUD"
-            mkdir $DIR
-            cp -r  ../tessell-vss/tessell-vss-requestor/TessellVssRequestor.exe ../tessell-vss/tessell-vss-provider/$CLOUD/install-provider $DIR
-            cd $DIR
-            tar -cf ../$ARTIFACT.$EXTENSION .
-            cd ..
-            ls
-            set +e
-          }
-          zipDirectory() {
-            DIR="$1"
-            ARTIFACT_FILE="$2"
-            zip -r ${ARTIFACT_FILE} ${DIR}
-          }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -1048,6 +945,7 @@ jobs:
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
+            source ./ci-scripts/bash/functions-for-build
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
               return
@@ -1091,23 +989,43 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_REPO_NPM: tessell-repos-npm-development
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Build
         shell: bash
@@ -1163,16 +1081,6 @@ jobs:
             dockerBuild "$@"
             set +e
           }
-          validateInputs() {
-            local required=($1)
-            shift
-            for index in "${required[@]}"; do
-              if [ -z "${!index}" ]; then
-                echo "Error: Required Argument at index $index is null or empty."
-                exit 1
-              fi
-            done
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -1180,6 +1088,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
+            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
