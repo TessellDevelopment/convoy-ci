@@ -201,8 +201,8 @@ ops_ui_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXT="${2}"
+  sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
   gradlew_ui_build
-  sed -i '' 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType\.Production;/g' src/constants/env.ts
   push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
   set +e
 }
