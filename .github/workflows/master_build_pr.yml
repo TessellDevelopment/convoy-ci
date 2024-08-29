@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI-BRANCH: TDEVOPS-1848-1
+      CI-BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}

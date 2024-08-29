@@ -28,7 +28,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
-      CI-BRANCH: TDEVOPS-1848-1
+      CI-BRANCH: main
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -995,7 +995,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
