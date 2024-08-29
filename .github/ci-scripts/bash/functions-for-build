@@ -118,10 +118,10 @@ gradlew_ui_build_and_push() {
   gradlew_ui_build "$@"
   set -e
   ./gradlew publish --console plain \
-    -Pnexus_push_username="${CIPIPELINE_NEXUS_USERNAME}" \
-    -Pnexus_push_password="${CIPIPELINE_NEXUS_PASSWORD}" \
-    -Pnexus_username="${CIPIPELINE_NEXUS_USERNAME}" \
-    -Pnexus_password="${CIPIPELINE_NEXUS_PASSWORD}" \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
     -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
