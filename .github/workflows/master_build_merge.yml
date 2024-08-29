@@ -29,9 +29,11 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       CI-BRANCH: TDEVOPS-1848-1
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
@@ -124,12 +126,14 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       GOPATH: /home/runner/go
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PULL_REPOS_M2: tessell-m2-development
@@ -502,6 +506,8 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -712,6 +718,8 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -967,6 +975,8 @@ jobs:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI-BRANCH: main
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -1565,6 +1575,8 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
     env:
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LATEST_TAG: ${{inputs.tag}}
       LABEL: ${{inputs.label}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
