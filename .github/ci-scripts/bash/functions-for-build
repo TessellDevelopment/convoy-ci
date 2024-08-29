@@ -71,6 +71,7 @@ docker_build() {
               --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
               --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
               --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
+  imageScan ${IMAGE}
   set +e
 }
 
