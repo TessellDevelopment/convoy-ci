@@ -689,13 +689,17 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            cd tessell;
+            if [ ! -f "Makefile" ]; then
+              cd tessell;
+            fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             echo $OS
             echo $CLOUD
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            cd ..
+            if [ ! -f "Makefile" ]; then
+              cd ..;
+            fi
             set +e
           }
           gradlewMaven() {
