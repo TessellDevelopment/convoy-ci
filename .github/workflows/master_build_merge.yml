@@ -18,13 +18,13 @@ on:
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-22.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
       BRANCH_COVERAGE:
         description: 'Branch coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-22.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-22.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
 
 jobs:
 
@@ -773,6 +773,138 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
+          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Cleanup
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          helm repo remove nexus-prod
+          docker container prune --force
+          docker volume prune --force
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+
+  build-amd-go-22:
+    if: ${{ inputs.type == 'amd-go-22' }}
+    runs-on: amd-go-22
+    outputs:
+      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
+      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
+    env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      CI_BRANCH: main
+      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
+      COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
+      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      LABEL: ${{inputs.label}}
+      LATEST_TAG: ${{inputs.tag}}
+      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-development
+      NEXUS_PULL_REPOS_PY: tessell-py-development
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+      REPO: "${{github.event.pull_request.base.repo.name}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
+      - name: Login to docker
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}   
+
+      - name: Check go Config
+        run: |
+          go version
+          echo $GOPATH
+          echo $GOROOT
+          echo $PATH
+          go env
+          
+      - name: Build
+        id: build
+        shell: bash
+        run: |
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+            source ./ci-scripts/bash/functions-for-build
+            environments=("dev" "qa" "stage" "prod")
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              "${buildFunction}AndPush" $name $ext $version $file 
+              echo "$type $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
+          }
+          set +e
+          ARTIFACT_CHECKSUMS=""
+          BRANCH_COVERAGE=""
+          STATEMENT_COVERAGE=""
+          build "artifacts"
+          build "dockerImages"
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
