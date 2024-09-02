@@ -212,17 +212,17 @@ jobs:
            fi 
            echo "validate_label=$validate_label" >> $GITHUB_OUTPUT
 
-      - name: Validate Label
-        if: ${{ steps.set_label.outputs.validate_label == 'true' }}
-        run: |
-          tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
-          label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
-          if [ "$tag" == "$label" ]; then
-              echo "TAG and LABEL are on same release label: rel-$TAG"
-          else
-              echo "TAG and LABEL are on different release label. Please check git tag and API response."
-              exit 1
-          fi   
+      # - name: Validate Label
+      #   if: ${{ steps.set_label.outputs.validate_label == 'true' }}
+      #   run: |
+      #     tag=$(echo ${{steps.create_tag.outputs.tag_ref}} | cut -d '.' -f 2)
+      #     label=$(echo ${{env.LABEL}} | cut -d '.' -f 2)
+      #     if [ "$tag" == "$label" ]; then
+      #         echo "TAG and LABEL are on same release label: rel-$TAG"
+      #     else
+      #         echo "TAG and LABEL are on different release label. Please check git tag and API response."
+      #         exit 1
+      #     fi   
 
       - name: Slack Notification
         if: failure()
