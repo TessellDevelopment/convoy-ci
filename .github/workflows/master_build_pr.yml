@@ -689,8 +689,9 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
+            changed_dir=false
             if [ ! -f "Makefile" ]; then
-              cd tessell;
+              cd tessell; changed_dir=false;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
@@ -699,7 +700,7 @@ jobs:
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             # cd ..
             pwd
-            if [ -f "Makefile" ]; then
+            if $changed_dir; then
               cd ..;
             fi
             pwd
