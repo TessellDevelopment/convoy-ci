@@ -691,7 +691,8 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             changed_dir=false
             if [ ! -f "Makefile" ]; then
-              cd tessell; changed_dir=false;
+              cd tessell; 
+              changed_dir=true;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
