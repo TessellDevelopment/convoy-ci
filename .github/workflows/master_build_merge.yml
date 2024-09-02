@@ -993,7 +993,7 @@ jobs:
               pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
-            if [ ! -f "Makefile" ]; then
+            if $changed_dir; then
               cd ..;
             fi
             set +e
