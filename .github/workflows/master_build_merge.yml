@@ -1104,7 +1104,7 @@ jobs:
             done
             generateChecksum "$ARTIFACT.$EXTENSION"
             # cd ..
-            if [ ! -f "Makefile" ]; then
+            if [ -f "Makefile" ]; then
               cd ..;
             fi
             set +e
