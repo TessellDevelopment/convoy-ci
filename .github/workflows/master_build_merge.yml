@@ -976,8 +976,10 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureProdAssets
+            changed_dir=false
             if [ ! -f "Makefile" ]; then
-              cd tessell;
+              cd tessell; 
+              changed_dir=true;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
