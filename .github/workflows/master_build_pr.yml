@@ -36,6 +36,7 @@ jobs:
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -55,132 +56,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          configureNpmrc(){
-            set +e 
-            REPO="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            rm ~/.npmrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:_auth = $TOKEN" >> ~/.npmrc
-            echo "//${{ env.NEXUS_SERVER_ENDPOINT }}/repository/:always-auth = true" >> ~/.npmrc 
-            echo "@tessell:registry=${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/$REPO" >> ~/.npmrc
-            cat ~/.npmrc
-          }
-          dockerBuild() {
-            set -e
-            IMAGE="$1"
-            FILE="$4"
-            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
-              FILE="./Dockerfile"
-            fi
-            echo "$FILE"
-            docker build -f $FILE -t $IMAGE \
-                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
-                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
-                --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
-                --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
-                --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
-                --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
-            # imageScan $IMAGE
-            set +e
-          }
-          gradlewUIBuild() {
-            rm ~/.npmrc
-            rm ~/.yarnrc
-            TOKEN=$(echo -n '${{env.NEXUS_USERNAME}}:${{env.NEXUS_PASSWORD}}' | base64 -w 0)
-            echo '"@tessell:registry" "${{env.NEXUS_PROTOCOL}}://${{ env.NEXUS_SERVER_ENDPOINT }}/repository/${{ vars.NEXUS_PUSH_REPOS_NPM }}/"' >> .yarnrc
-            echo "always-auth=true" >> .npmrc
-            echo "_auth=$TOKEN" >> .npmrc
-            cat .npmrc
-            cat .yarnrc
-            set -e
-            ENV_JSON='${{secrets.TESSELL_UI_ENV_SECRET}}'
-            echo "$ENV_JSON" | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
-            cat .env
-            ./gradlew zipUiBuild --console plain --stacktrace \
-              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-            set +e
-          }
-          imageScan(){
-            set -e
-            export IMAGE="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-            python3 - <<EOF
-          import requests
-          import json
-          import os
-          from slack_sdk import WebClient
-          from slack_sdk.errors import SlackApiError
-          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
-          REPO = os.environ.get('REPO')
-          IMAGE = os.environ.get('IMAGE')
-
-          def post_to_slack(message):
-            usergroup_id=os.environ.get('DEVOPS_TEAM')
-            mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
-            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-            try:
-              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-              return response["ok"]
-            except SlackApiError as e:
-              print(f"Error posting to Slack: {e.response['error']}")
-              return False
-
-          with open('trivy_image_scan_result.json') as json_file:
-            trivy_json = json.load(json_file)
-          with open('dockle_image_scan_result.json') as json_file:
-            dockle_json = json.load(json_file)
-          payload = {
-            "repository": REPO,
-            "CVE":trivy_json,
-            "DOCKER_BEST_PRACTICE":dockle_json,
-          }
-
-          headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': CONVOY_API_KEY
-          }
-          
-          try:
-            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
-            if response.status_code == 200:
-              print(response.status_code)
-              print(response.text)
-            elif response.status_code == 409:
-              print(json.dumps(response.json(), indent=2))
-              print("Get approval for these vulnerabilities or fix them")
-              exit(1)
-            else:
-              print(response.status_code)
-              print(response.text)
-              post_to_slack(response.text)
-              exit(1)
-          except Exception as e:
-            print(e)
-            post_to_slack(e)
-            exit(1)
-          EOF
-            set +e
-          }
-          npmBuild() {
-            set -e
-            npm install
-            npm run build
-            configureNpmrc "${{env.NEXUS_REPO_NPM}}"
-            set -e
-            version="$3"
-            requiredInputs="3"
-            validateInputs "$requiredInputs" "$@" 
-            yq ".version = \"$version\"" package.json > tmp_package.json
-            mv tmp_package.json package.json
-            npm publish   
-            set +e
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -371,70 +246,6 @@ jobs:
             ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
-          }
-          # imageScan(){
-          #   set -e
-          #   export IMAGE="$1"
-          #   trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-          #   dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-          #   python3 - <<EOF
-          # import requests
-          # import json
-          # import os
-          # from slack_sdk import WebClient
-          # from slack_sdk.errors import SlackApiError
-          # IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          # CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
-          # REPO = os.environ.get('REPO')
-          # IMAGE = os.environ.get('IMAGE')
-
-          # def post_to_slack(message):
-          #   usergroup_id=os.environ.get('DEVOPS_TEAM')
-          #   mention = f"<!subteam^{usergroup_id}>"
-          #   full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
-          #   client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-          #   try:
-          #     response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-          #     return response["ok"]
-          #   except SlackApiError as e:
-          #     print(f"Error posting to Slack: {e.response['error']}")
-          #     return False
-
-          # with open('trivy_image_scan_result.json') as json_file:
-          #   trivy_json = json.load(json_file)
-          # with open('dockle_image_scan_result.json') as json_file:
-          #   dockle_json = json.load(json_file)
-          # payload = {
-          #   "repository": REPO,
-          #   "CVE":trivy_json,
-          #   "DOCKER_BEST_PRACTICE":dockle_json,
-          # }
-
-          # headers = {
-          #   'Content-Type': 'application/json',
-          #   'x-api-key': CONVOY_API_KEY
-          # }
-          
-          try:
-            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
-            if response.status_code == 200:
-              print(response.status_code)
-              print(response.text)
-            elif response.status_code == 409:
-              print(json.dumps(response.json(), indent=2))
-              print("Get approval for these vulnerabilities or fix them")
-              exit(1)
-            else:
-              print(response.status_code)
-              print(response.text)
-              post_to_slack(response.text)
-              exit(1)
-          except Exception as e:
-            print(e)
-            post_to_slack(e)
-            exit(1)
-          EOF
-            set +e
           }
           infraProvisionBuild() {
             set -e
@@ -695,70 +506,6 @@ jobs:
             fi
             set +e
           }
-          imageScan(){
-            set -e
-            export IMAGE="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-            python3 - <<EOF
-          import requests
-          import json
-          import os
-          from slack_sdk import WebClient
-          from slack_sdk.errors import SlackApiError
-          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
-          REPO = os.environ.get('REPO')
-          IMAGE = os.environ.get('IMAGE')
-
-          def post_to_slack(message):
-            usergroup_id=os.environ.get('DEVOPS_TEAM')
-            mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
-            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-            try:
-              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-              return response["ok"]
-            except SlackApiError as e:
-              print(f"Error posting to Slack: {e.response['error']}")
-              return False
-
-          with open('trivy_image_scan_result.json') as json_file:
-            trivy_json = json.load(json_file)
-          with open('dockle_image_scan_result.json') as json_file:
-            dockle_json = json.load(json_file)
-          payload = {
-            "repository": REPO,
-            "CVE":trivy_json,
-            "DOCKER_BEST_PRACTICE":dockle_json,
-          }
-
-          headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': CONVOY_API_KEY
-          }
-          
-          try:
-            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
-            if response.status_code == 200:
-              print(response.status_code)
-              print(response.text)
-            elif response.status_code == 409:
-              print(json.dumps(response.json(), indent=2))
-              print("Get approval for these vulnerabilities or fix them")
-              exit(1)
-            else:
-              print(response.status_code)
-              print(response.text)
-              post_to_slack(response.text)
-              exit(1)
-          except Exception as e:
-            print(e)
-            post_to_slack(e)
-            exit(1)
-          EOF
-            set +e
-          }
           tailscaleBuild() {
             set -e
             export GOPROXY=direct
@@ -930,24 +677,6 @@ jobs:
             gradlewPackagePlugin
             set +e
           }
-          dockerBuild() {
-            set -e
-            IMAGE="$1"
-            FILE="$4"
-            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
-              FILE="./Dockerfile"
-            fi
-            echo "$FILE"
-            docker build -f $FILE -t $IMAGE \
-                --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
-                --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
-                --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
-                --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
-                --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
-                --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
-            # imageScan $IMAGE
-            set +e
-          }
           elasticAgentBuild() {
             set -e
             IMAGE="$1"
@@ -960,7 +689,6 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            # cd tessell;
             if [ ! -f "Makefile" ]; then
               cd tessell;
             fi
@@ -1048,70 +776,6 @@ jobs:
               cd $GITHUB_WORKSPACE
               set +e
             fi
-          }
-          # imageScan(){
-          #   set -e
-          #   export IMAGE="$1"
-          #   trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-          #   dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-          #   python3 - <<EOF
-          # import requests
-          # import json
-          # import os
-          # from slack_sdk import WebClient
-          # from slack_sdk.errors import SlackApiError
-          # IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          # CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
-          # REPO = os.environ.get('REPO')
-          # IMAGE = os.environ.get('IMAGE')
-
-          # def post_to_slack(message):
-          #   usergroup_id=os.environ.get('DEVOPS_TEAM')
-          #   mention = f"<!subteam^{usergroup_id}>"
-          #   full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
-          #   client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-          #   try:
-          #     response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-          #     return response["ok"]
-          #   except SlackApiError as e:
-          #     print(f"Error posting to Slack: {e.response['error']}")
-          #     return False
-
-          # with open('trivy_image_scan_result.json') as json_file:
-          #   trivy_json = json.load(json_file)
-          # with open('dockle_image_scan_result.json') as json_file:
-          #   dockle_json = json.load(json_file)
-          # payload = {
-          #   "repository": REPO,
-          #   "CVE":trivy_json,
-          #   "DOCKER_BEST_PRACTICE":dockle_json,
-          # }
-
-          # headers = {
-          #   'Content-Type': 'application/json',
-          #   'x-api-key': CONVOY_API_KEY
-          # }
-          
-          try:
-            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
-            if response.status_code == 200:
-              print(response.status_code)
-              print(response.text)
-            elif response.status_code == 409:
-              print(json.dumps(response.json(), indent=2))
-              print("Get approval for these vulnerabilities or fix them")
-              exit(1)
-            else:
-              print(response.status_code)
-              print(response.text)
-              post_to_slack(response.text)
-              exit(1)
-          except Exception as e:
-            print(e)
-            post_to_slack(e)
-            exit(1)
-          EOF
-            set +e
           }
           installPythonDependencies() {
             DIR=$1
@@ -1371,26 +1035,6 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          dockerBuild() {
-            set -e
-            IMAGE="$1"
-            FILE="$4"
-            if [[ "$FILE" == "null" || -z "$FILE" ]]; then
-              FILE="./Dockerfile"
-            fi
-            echo "$FILE"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            docker build -f $FILE -t $IMAGE \
-                        --build-arg GITHUB_USER=${{ secrets.CIPIPELINE_GITHUB_USER }} \
-                        --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
-                        --build-arg NEXUS_PROTOCOL=${{env.NEXUS_PROTOCOL}} \
-                        --build-arg NEXUS_SERVER_ENDPOINT=${{env.NEXUS_SERVER_ENDPOINT}} \
-                        --build-arg NEXUS_USERNAME=${{env.NEXUS_USERNAME}} \
-                        --build-arg NEXUS_PASSWORD=${{env.NEXUS_PASSWORD}} .
-            # imageScan $IMAGE
-            set +e
-          }
           dockerMultiBuild() {
             docker buildx rm multi-platform-builder
             docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
@@ -1421,70 +1065,6 @@ jobs:
                                 --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                                 --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
-            set +e
-          }
-          imageScan() {
-            set -e
-            export IMAGE="$1"
-            trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
-            dockle -f json -o dockle_image_scan_result.json $IMAGE:latest
-            python3 - <<EOF
-          import requests
-          import json
-          import os
-          from slack_sdk import WebClient
-          from slack_sdk.errors import SlackApiError
-          IMAGE_SCAN_API_URL = os.environ.get('IMAGE_SCAN_API_URL')
-          CONVOY_API_KEY = os.environ.get('CONVOY_API_KEY')
-          REPO = os.environ.get('REPO')
-          IMAGE = os.environ.get('IMAGE')
-
-          def post_to_slack(message):
-            usergroup_id=os.environ.get('DEVOPS_TEAM')
-            mention = f"<!subteam^{usergroup_id}>"
-            full_message=f"{mention}\n vulnerability validation failed in \`{REPO}\` for \`{IMAGE}\`, please check \n\`\`\`{message}\`\`\`"
-            client = WebClient(token=os.environ.get('SLACK_TOKEN'))
-            try:
-              response = client.chat_postMessage(channel=os.environ.get('CHANNEL_ID'), text=full_message)
-              return response["ok"]
-            except SlackApiError as e:
-              print(f"Error posting to Slack: {e.response['error']}")
-              return False
-
-          with open('trivy_image_scan_result.json') as json_file:
-            trivy_json = json.load(json_file)
-          with open('dockle_image_scan_result.json') as json_file:
-            dockle_json = json.load(json_file)
-          payload = {
-            "repository": REPO,
-            "CVE":trivy_json,
-            "DOCKER_BEST_PRACTICE":dockle_json,
-          }
-
-          headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': CONVOY_API_KEY
-          }
-          
-          try:
-            response = requests.post(IMAGE_SCAN_API_URL, json=payload, headers=headers)
-            if response.status_code == 200:
-              print(response.status_code)
-              print(response.text)
-            elif response.status_code == 409:
-              print(json.dumps(response.json(), indent=2))
-              print("Get approval for these vulnerabilities or fix them")
-              exit(1)
-            else:
-              print(response.status_code)
-              print(response.text)
-              post_to_slack(response.text)
-              exit(1)
-          except Exception as e:
-            print(e)
-            post_to_slack(e)
-            exit(1)
-          EOF
             set +e
           }
           jarBuild() {

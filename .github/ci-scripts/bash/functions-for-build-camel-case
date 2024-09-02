@@ -36,6 +36,14 @@ createTFBackend() {
   create_tf_backend "$@"
 }
 
+configureNpmrc() {
+  configure_npmrc "$@"
+}
+
+configureNpmrcYarnrc() {
+  configure_npmrc_yarnrc "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -50,6 +58,14 @@ frpBuild() {
 
 frpBuildAndPush() {
   frp_build_and_push "$@"
+}
+
+gradlewUIBuild() {
+  gradlew_ui_build "$@"
+}
+
+gradlewUIBuildAndPush() {
+  gradlew_ui_build_and_push "$@"
 }
 
 generateChecksum() {
@@ -68,12 +84,32 @@ gradlewDockerTag() {
   gradlew_docker_tag "$@"
 }
 
+imageScan(){
+  image_scan "$@"
+}
+
 installGoDependencies() {
  install_go_dependencies "$@"
 }
 
 mvnDeploy() {
   mvn_deploy "$@"
+}
+
+npmBuild() {
+  npm_build "$@"
+}
+
+npmBuildAndPush() {
+  npm_build_and_push "$@"
+}
+
+opsUIBuild() {
+  ops_ui_build "$@"
+}
+
+opsUIBuildAndPush() {
+  ops_ui_build_and_push "$@"
 }
 
 pushToMinio() {
