@@ -406,6 +406,9 @@ parse_coverage_report_java() {
     zip -r coverage.zip jacoco/*
     cd -
     mv ${jacoco_dir}/../coverage.zip ./
+  else 
+    echo "Skipping jacoco code coverage for non-java repository."
+    exit 0
   fi
 }
 
