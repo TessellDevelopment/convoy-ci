@@ -386,16 +386,18 @@ parse_coverage_report_java() {
       echo "No site/jacoco folder found. Skipping coverage report parsing."
       exit 0 
     fi
+    sudo apt-get update
     sudo apt install libxml2-utils
+    sudo apt-get install bc
     xml_file="${jacoco_dir}/jacoco.xml"
-    branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "$xml_file")
-    branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "$xml_file")
+    branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
+    branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
     branch_total=$((branch_covered + branch_missed))
-    branch_percentage=$(echo "scale=2; ${branch_covered}*100/${branch_total}" | bc)
-    statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "$xml_file")
-    statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "$xml_file")
+    branch_percentage=$(echo "scale=2; ${branch_covered} / ${branch_total} * 100" | bc)
+    statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
+    statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
     statement_total=$((statement_covered + statement_missed))
-    statement_percentage=$(echo "scale=2; ${statement_covered}*100/${statement_total}" | bc)
+    statement_percentage=$(echo "scale=2; ${statement_covered} / ${statement_total} * 100" | bc)
     export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
     export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
     echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
