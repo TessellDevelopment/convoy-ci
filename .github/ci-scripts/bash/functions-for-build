@@ -364,6 +364,7 @@ ops_ui_build_and_push() {
 
 parse_coverage_report() {
   coverage_report=$(find . -type f -name "coverage.json")
+  coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
   covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
   missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
   total_branches=$(jq '.totals.num_branches' ${coverage_report})
@@ -425,6 +426,7 @@ python_docker_build_and_push() {
   if [ -f "pytest.ini" ]; then
     run_python_unit_test
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
   fi
   set +e
 }
