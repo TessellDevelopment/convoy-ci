@@ -402,7 +402,10 @@ parse_coverage_report_java() {
     export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
     echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
     echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
-    zip -r coverage.zip "${jacoco_dir}"/*
+    cd ${jacoco_dir}/..
+    zip -r coverage.zip jacoco/*
+    cd -
+    mv ${jacoco_dir}/../coverage.zip ./
   fi
 }
 
