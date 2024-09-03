@@ -403,7 +403,6 @@ parse_coverage_report_java() {
     echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
     echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
     zip -r coverage.zip "${jacoco_dir}"/*
-    mv coverage.zip ./
   fi
 }
 
