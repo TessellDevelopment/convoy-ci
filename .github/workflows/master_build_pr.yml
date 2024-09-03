@@ -314,6 +314,7 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReportJava
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -1077,6 +1078,7 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+          parseCoverageReportJava
 
       - name: Cleanup
         if: always()
@@ -1215,6 +1217,7 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReportJava
 
       - name: Cleanup
         if: always()
