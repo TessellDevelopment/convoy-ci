@@ -898,7 +898,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             configureJava
             gradlewMavenDocker
-            # imageScan $IMAGE
+            imageScan $IMAGE
             set +e
           }
           javaLibraryBuild() {
