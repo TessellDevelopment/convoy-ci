@@ -386,6 +386,7 @@ parse_coverage_report_java() {
       echo "No site/jacoco folder found. Skipping coverage report parsing."
       exit 0 
     fi
+    sudo apt install libxml2-utils
     xml_file="${jacoco_dir}/jacoco.xml"
     branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "$xml_file")
     branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "$xml_file")
