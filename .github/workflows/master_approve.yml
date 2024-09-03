@@ -6,12 +6,12 @@ on:
 jobs:
   
   file-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.ymlTDEVOPS-2531
     secrets: inherit
   
   read-codeowners:
     needs: file-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_read_codeowners.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_read_codeowners.ymlTDEVOPS-2531
     secrets: inherit
     with:
       changed-files: ${{needs.file-check.outputs.changed-files}}
@@ -19,7 +19,7 @@ jobs:
   post-message: 
     if: ${{ github.event.action == 'opened' || github.event.action == 'synchronize' }}
     needs: read-codeowners
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_message.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_message.ymlTDEVOPS-2531
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
@@ -58,7 +58,7 @@ jobs:
   check-approval:
     needs: [check-update-branch,read-codeowners,file-check]
     if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested' || needs.check-update-branch.outputs.update-branch == 'true' || (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) }}
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.ymlTDEVOPS-2531
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
