@@ -364,8 +364,11 @@ ops_ui_build_and_push() {
 
 parse_coverage_report() {
   coverage_report=$(find . -type f -name "coverage.json")
-  coverage_html=$(dirname "${coverage_report}")/index.html
+  coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
   coverage_dir=$(dirname "${coverage_report}")
+  echo $coverage_report
+  echo $coverage_html
+  echo $coverage_dir
   ls "$coverage_dir"
   covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
   missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
