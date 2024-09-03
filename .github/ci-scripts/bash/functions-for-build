@@ -377,6 +377,38 @@ parse_coverage_report() {
   export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
 }
 
+parse_coverage_report_java() {
+  set -e
+  language=$(yq '.language' convoy.yaml)
+  if [[ "${language}" == "java" ]]; then
+    jacoco_dir=$(find . -type d -path '*/site/jacoco')
+    if [ -z "${jacoco_dir}" ]; then
+      echo "No site/jacoco folder found. Skipping coverage report parsing."
+      exit 0 
+    fi
+    xml_file="${jacoco_dir}/jacoco.xml"
+    branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "$xml_file")
+    branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "$xml_file")
+    branch_total=$((branch_covered + branch_missed))
+    branch_percentage=$(echo "scale=2; ${branch_covered}*100/${branch_total}" | bc)
+    statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "$xml_file")
+    statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "$xml_file")
+    statement_total=$((statement_covered + statement_missed))
+    statement_percentage=$(echo "scale=2; ${statement_covered}*100/${statement_total}" | bc)
+    export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
+    export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
+    echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+    echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+    zip -r coverage.zip "${jacoco_dir}"/*
+    mv coverage.zip ./
+  fi
+}
+
+parse_and_push_coverage_report_java() {
+  parse_coverage_report_java
+  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+}
+
 push_to_minio() {
   SOURCE="${1}"
   DESTINATION="${2}"

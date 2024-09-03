@@ -106,7 +106,10 @@
                 yaml_data = yaml.safe_load(yaml_file)
               APP_GROUP = yaml_data.get('appGroup')
               LANGUAGE = yaml_data.get('language')
-              REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.html"
+              if LANGUAGE == 'java':
+                REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.zip"
+              else:
+                REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.html"
 
               payload = {
                 "repoName": REPO,

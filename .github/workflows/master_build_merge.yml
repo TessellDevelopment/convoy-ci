@@ -442,6 +442,7 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseAndPushCoverageReportJava
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
@@ -1425,6 +1426,7 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+          parseAndPushCoverageReportJava
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
@@ -1634,6 +1636,7 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseAndPushCoverageReportJava
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT

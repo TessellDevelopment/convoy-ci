@@ -112,6 +112,14 @@ opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
 }
 
+parseCoverageReportJava() {
+  parse_coverage_report_java "$@"
+}
+
+parseAndPushCoverageReportJava() {
+  parse_and_push_coverage_report_java "$@"
+}
+
 pushToMinio() {
   push_to_minio "$@"
 }
