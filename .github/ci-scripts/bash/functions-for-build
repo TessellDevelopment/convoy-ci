@@ -95,19 +95,23 @@ configure_and_push_aws() {
 }
 
 convoy_codegen_build() {
+  set -e
   ARTIFACT="$1"
   cd ./${ARTIFACT}
   mvn clean package -Drevision=${LATEST_TAG:-0.0.0}
   cd ..
+  set +e
 }
 
 convoy_codegen_build_and_push() {
+  set -e
   ARTIFACT="$1"
   EXT="$2"
   VERSION="$3"
   convoy_codegen_build ${ARTIFACT}
   ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXT}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${LATEST_TAG}"
+  set +e
 }
 
 create_tf_backend() {
