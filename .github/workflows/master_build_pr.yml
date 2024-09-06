@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -94,7 +94,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -320,7 +320,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -431,7 +431,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -559,7 +559,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-22' }}
     runs-on: amd-go-22
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -655,7 +655,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
@@ -1092,7 +1092,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH: TDEVOPS-2559_codegen
+      CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}

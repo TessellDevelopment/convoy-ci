@@ -48,12 +48,12 @@
             echo "type=$runner" >> $GITHUB_OUTPUT
   
     find-latest-tag:
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-2559_codegen
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
       secrets: inherit
   
     build:
       needs: [build-file,find-latest-tag]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2559_codegen
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
       secrets: inherit
       with:
         type: ${{needs.build-file.outputs.type}}
