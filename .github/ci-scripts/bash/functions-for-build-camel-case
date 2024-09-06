@@ -44,6 +44,14 @@ configureNpmrcYarnrc() {
   configure_npmrc_yarnrc "$@"
 }
 
+convoyCodegenBuild() {
+  convoy_codegen_build "$@"
+}
+
+convoyCodegenBuildAndPush() {
+  convoy_codegen_build_and_push "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }

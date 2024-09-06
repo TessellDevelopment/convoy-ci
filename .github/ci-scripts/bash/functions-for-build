@@ -94,6 +94,26 @@ configure_and_push_aws() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
+convoy_codegen_build() {
+  set -e
+  ARTIFACT="$1"
+  cd ./${ARTIFACT}
+  mvn clean package -Drevision=${LATEST_TAG:-0.0.0}
+  cd ..
+  set +e
+}
+
+convoy_codegen_build_and_push() {
+  set -e
+  ARTIFACT="$1"
+  EXTENSION="$2"
+  convoy_codegen_build ${ARTIFACT}
+  set -e
+  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${LATEST_TAG}"
+  set +e
+}
+
 create_tf_backend() {
   S3_BUCKET="$1"
   KEY="$2"
