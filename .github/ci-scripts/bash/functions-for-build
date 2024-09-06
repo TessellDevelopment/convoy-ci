@@ -107,9 +107,9 @@ convoy_codegen_build_and_push() {
   set -e
   ARTIFACT="$1"
   EXTENSION="$2"
-  VERSION="$3"
   convoy_codegen_build ${ARTIFACT}
-  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  set -e
+  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${LATEST_TAG}"
   set +e
 }
