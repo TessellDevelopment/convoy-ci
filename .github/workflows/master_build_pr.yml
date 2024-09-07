@@ -1096,6 +1096,7 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+          build "softwareImages"
           parseCoverageReportJava
 
       - name: Cleanup
