@@ -1017,6 +1017,7 @@ jobs:
             set +e
           }
           softwareDefBuild() {
+            setupPackerEnv
             echo $TAGS
             echo $CUSTOM_TAGS
             source pkenv/bin/activate
