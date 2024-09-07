@@ -544,6 +544,20 @@ setup_qa_env() {
   deactivate
 }
 
+setup_packer_env() {
+  sudo python3 -m pip uninstall -y packer_framework
+  python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+  python3 -m venv pkenv
+  source pkenv/bin/activate
+  python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+  python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+  find /usr/bin /usr/local/bin -name build_all_artifacts
+  rm -rf /usr/lib/python3/dist-packages/OpenSSL
+  pip3 install pyopenssl
+  pip3 install pyopenssl --upgrade
+  pip3 install --force-reinstall setuptools==45.2.0
+}
+
 terraform_apply() {
   set -e
   mkdir -p build
