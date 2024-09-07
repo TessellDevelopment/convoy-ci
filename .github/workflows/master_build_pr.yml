@@ -1059,6 +1059,7 @@ jobs:
           }
           build() {
             type="$1"
+            echo "first"
             check=$(grep "$type" convoy.yaml)
             if [[ -z "$check" ]]; then
               return
@@ -1067,6 +1068,7 @@ jobs:
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             source ./ci-scripts/bash/functions-for-build
+            echo "2nd version"
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
               return
