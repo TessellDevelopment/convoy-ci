@@ -42,6 +42,7 @@ jobs:
       - name: POST API to Convoy
         env:
           API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           COMMIT_HASH: "${{github.sha}}"
@@ -153,6 +154,12 @@ jobs:
                 exit(1)
               print("POST request Complete")
 
+            def get_software_def_url(payload, API_URL):
+              if STATUS == 'SUCCESSFUL':
+                API_URL = os.environ.get('API_URL_REPLICATE')
+                payload.pop("buildStatus")              
+              return payload, API_URL
+
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
@@ -214,7 +221,8 @@ jobs:
                 key = artifact["name"]
                 if key in checksum_map:
                     artifact["checksum"] = checksum_map[key]
-                    
+            if "softwareImages" in generates:
+              payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))
           
             post_request(payload)
