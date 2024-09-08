@@ -99,8 +99,6 @@ convoy_codegen_build() {
   ARTIFACT="$1"
   VERSION="${3}"
   cd ./${ARTIFACT}
-  echo "SUNDEEP" ${VERSION}
-  echo mvn clean package -Drevision=${VERSION:-0.0.0}
   mvn clean package -Drevision=${VERSION:-0.0.0}
   cd ..
   set +e
