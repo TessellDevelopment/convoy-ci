@@ -557,7 +557,7 @@ jobs:
 
   build-amd-go-22:
     if: ${{ inputs.type == 'amd-go-22' }}
-    runs-on: amd-go-22
+    runs-on: go-build-test
     env:
       CI_BRANCH: TDEVOPS-2566_sqlc
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
