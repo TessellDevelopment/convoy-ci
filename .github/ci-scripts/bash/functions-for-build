@@ -110,11 +110,11 @@ convoy_codegen_build_and_push() {
   EXTENSION="$2"
   VERSION="${3}"
   convoy_codegen_build ${ARTIFACT} ${VERSION}
-  set -e
+  set -ex
   ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
   echo "vv ${VERSION}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
-  set +e
+  set +ex
 }
 
 create_tf_backend() {
