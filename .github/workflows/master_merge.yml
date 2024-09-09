@@ -25,12 +25,12 @@ jobs:
         shell: bash
         run: |
           if [ -f convoy.yaml ]; then
-            if [[ "${{ github.event.pull_request.base.ref }}" == "TDEVOPS-2573_fixCg" ]]; then
+            if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
               APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-              URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-TDEVOPS-2573_fixCg-release-label"
+              URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
               RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
               echo "$RESPONSE"
-              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-TDEVOPS-2573_fixCg-release-label"]')
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
               echo "$LABEL"
               if [[ $LABEL == rel-* ]]; then
                   echo "LABEL=$LABEL" >> $GITHUB_OUTPUT

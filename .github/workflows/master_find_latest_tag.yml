@@ -66,7 +66,7 @@ jobs:
               console.log("There is only one tag. Using it." + tags[0])
               latest_tag = tags[0]
             } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "TDEVOPS-2573_fixCg") {
+              if ("${{ env.SOURCE_BRANCH }}" == "main") {
                 for (i in tags) {
                   tag = tags[i]
                   console.log("Checking tag " + tag)

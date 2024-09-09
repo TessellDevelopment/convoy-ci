@@ -53,7 +53,7 @@ jobs:
           echo ${{ env.TARGET_BRANCH }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
-          echo $TARGET_BRANCH_TDEVOPS-2573_fixCg
+          echo $TARGET_BRANCH_main
           echo $BRANCH_NAME
           echo ${{ github.head_ref }}
           cat ${GITHUB_EVENT_PATH} | jq '.'
@@ -62,7 +62,7 @@ jobs:
           echo ${{ env.RESOURCE_ID }}
 
       - name: Set Pull repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
@@ -87,7 +87,7 @@ jobs:
           find /usr/bin /usr/local/bin -name build_all_artifacts
 
       - name: Replicate given artifact
-        # if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' && inputs.workflowType == 'dry_run' }}
+        # if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
           export PATH="/home/github/.local/bin:$PATH"
           region_replication_wf -rd $RESOURCE_ID

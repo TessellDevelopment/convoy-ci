@@ -760,7 +760,7 @@ jobs:
       - name: check to verify same branch is exist
         if: ${{ startsWith(env.TARGET_BRANCH,'rel-') && !contains(env.SOURCE_BRANCH,'double_commit') }}
         run: |
-          branch_to_check=${{ env.SOURCE_BRANCH }}-TDEVOPS-2573_fixCg-double_commit
+          branch_to_check=${{ env.SOURCE_BRANCH }}-main-double_commit
           list_of_branches=($(git branch -r | awk -F '/' '{print $2}'))
           for branch in "${list_of_branches[@]}";do
           if [[ "$branch" == "$branch_to_check" ]];then

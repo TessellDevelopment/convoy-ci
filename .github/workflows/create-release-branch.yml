@@ -37,7 +37,7 @@ jobs:
     runs-on: self-hosted
     env:
       DEFAULT_ORGANISATION: TessellDevelopment
-      DEFAULT_BRANCH: TDEVOPS-2573_fixCg
+      DEFAULT_BRANCH: main
     name: Build Repository
     needs: find_repos_to_build
     strategy:
@@ -52,7 +52,7 @@ jobs:
 
       - name: Find latest tag
         run: |
-          latest_commit=$(git log -n 1 origin/TDEVOPS-2573_fixCg --pretty=format:"%H")
+          latest_commit=$(git log -n 1 origin/main --pretty=format:"%H")
           echo "LATEST_COMMIT=${latest_commit}" >> $GITHUB_ENV
           echo "LATEST_TAG=$(git tag --contains ${latest_commit})" >> $GITHUB_ENV
         id: latest_tag
@@ -65,11 +65,11 @@ jobs:
           script: |
             versions = "${{ env.LATEST_TAG }}".split('.')
             next_rel_branch = ['rel-' + versions[0], versions[1], '0'].join('.')
-            next_tag_on_TDEVOPS-2573_fixCg = [versions[0], parseInt(versions[1]) + 1, '0'].join('.')
+            next_tag_on_main = [versions[0], parseInt(versions[1]) + 1, '0'].join('.')
 
             console.log("Next Release Branch: " + next_rel_branch)
             core.setOutput('next_rel_branch', next_rel_branch)
-            core.setOutput('next_tag_on_TDEVOPS-2573_fixCg', next_tag_on_TDEVOPS-2573_fixCg)
+            core.setOutput('next_tag_on_main', next_tag_on_main)
 
       - name: Create branch
         uses: ./github-actions/create-release-branch
@@ -86,7 +86,7 @@ jobs:
           script: |
             // head of the branch needs to be tagged
             sha_to_tag = "${{ env.LATEST_COMMIT }}"
-            new_tag = "${{ steps.set_rel_branch.outputs.next_tag_on_TDEVOPS-2573_fixCg }}"
+            new_tag = "${{ steps.set_rel_branch.outputs.next_tag_on_main }}"
 
             console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
 

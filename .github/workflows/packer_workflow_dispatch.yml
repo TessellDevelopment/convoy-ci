@@ -59,7 +59,7 @@ jobs:
           echo ${{ env.TARGET_BRANCH }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
-          echo $TARGET_BRANCH_TDEVOPS-2573_fixCg
+          echo $TARGET_BRANCH_main
           echo $BRANCH_NAME
           echo ${{ github.head_ref }}
           cat ${GITHUB_EVENT_PATH} | jq '.'
@@ -68,7 +68,7 @@ jobs:
           echo $CLOUD_BUILD_TYPE_ARG
 
       - name: Set Pull repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
@@ -105,19 +105,19 @@ jobs:
           pip3 install --force-reinstall setuptools==45.2.0
           
       - name: Dry-run artifacts Input-config
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' && inputs.workflowType == 'dry_run' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
           source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' && inputs.workflowType == 'build' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source pkenv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
         run: |
           # source $(share_aws_artifacts -sec)
           share_aws_artifacts -i $PWD/image_manifest_local.json

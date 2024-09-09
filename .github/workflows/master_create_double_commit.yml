@@ -54,8 +54,8 @@ jobs:
 
             // create rel branches array
             const branches = "${{ env.BRANCHES }}".split(' ')
-            // add 'TDEVOPS-2573_fixCg' branch to the list
-            branches.push("TDEVOPS-2573_fixCg")
+            // add 'main' branch to the list
+            branches.push("main")
             // loop through the available active branches to create DC
             console.log("prBaseBranch: " + prBaseBranch)
             console.log("prBaseBranchMinVer: " + prBaseBranchMinVer)
@@ -69,7 +69,7 @@ jobs:
               dstBranch = branches[branch].trim()
               console.log("dstBranch:" + dstBranch)
               // check if its a forward active branch
-              if (dstBranch != "TDEVOPS-2573_fixCg") {
+              if (dstBranch != "main") {
                 // remove the 'origin' from the remote branch name
                 dstBranch = dstBranch.split('/')[1]
 
