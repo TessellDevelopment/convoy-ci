@@ -321,7 +321,6 @@ initialise_coverage() {
 install_go_dependencies() {
   go version
   go install golang.org/x/tools/cmd/goimports@latest
-  go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
   which go
 }
 
