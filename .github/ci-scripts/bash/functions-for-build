@@ -95,7 +95,7 @@ configure_and_push_aws() {
 }
 
 convoy_codegen_build() {
-  set -ex
+  set -e
   ARTIFACT="$1"
   VERSION="${2}"
   cd ./${ARTIFACT}
@@ -114,7 +114,7 @@ convoy_codegen_build_and_push() {
   set -ex
   ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
   echo "vv ${VERSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "0.0.1"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +ex
 }
 
