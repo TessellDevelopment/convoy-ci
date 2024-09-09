@@ -1,6 +1,6 @@
 ---
 ###################################################################################
-# GitHub workflow to automatically create a PR against 'main' branch,
+# GitHub workflow to automatically create a PR against 'TDEVOPS-2573_fixCg' branch,
 # when there is a PR on 'rel-*' branch created.
 #
 # 1. It checks if the PR already exist and if so, does not create one.
@@ -65,7 +65,7 @@ jobs:
               if (tags.length == 1) {
                 latest_tag = tags[0]
               } else {
-                if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                if ("${{ github.event.pull_request.base.ref }}" == "TDEVOPS-2573_fixCg") {
                   for (i in tags) {
                     tag = tags[i]
                     console.log("Checking tag " + tag)
@@ -167,12 +167,12 @@ jobs:
               echo "Version present in convoy.yaml, No validation needed using version as tag."
             else
               validate_label=true
-              if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+              if [[ "${{ github.event.pull_request.base.ref }}" == "TDEVOPS-2573_fixCg" ]]; then
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-                URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+                URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-TDEVOPS-2573_fixCg-release-label"
                 RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"
-                LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+                LABEL=$(echo "$RESPONSE" | jq -r '.["latest-TDEVOPS-2573_fixCg-release-label"]')
                 echo "$LABEL"
                 if [[ $LABEL == rel-* ]]; then
                     echo "LABEL=$LABEL" >> $GITHUB_ENV

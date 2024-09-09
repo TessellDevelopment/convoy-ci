@@ -21,7 +21,7 @@ jobs:
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
 
       - name: Set Docker Repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         shell: bash
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
@@ -29,7 +29,7 @@ jobs:
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
@@ -42,7 +42,7 @@ jobs:
 
       - name: Get tags
         uses: nick-fields/retry@v3.0.0
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -62,7 +62,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
@@ -74,7 +74,7 @@ jobs:
               console.log("There is only one tag. Using it." + tags[0])
               latest_tag = tags[0]
             } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+              if ("${{ env.SOURCE_BRANCH }}" == "TDEVOPS-2573_fixCg") {
                 for (i in tags) {
                   tag = tags[i]
                   console.log("Checking tag " + tag)
@@ -155,7 +155,7 @@ jobs:
           docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
 
       - name: Build image
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' }}
         shell: bash
         run: |
             while IFS=$'\t' read -r image function file _; do
@@ -166,7 +166,7 @@ jobs:
             done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg')}}
         shell: bash
         run: |
             while IFS=$'\t' read -r image function file _; do
@@ -188,7 +188,7 @@ jobs:
   
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg') }}
         with:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}
@@ -262,7 +262,7 @@ jobs:
           docker system prune --force
       
       - name: Build image
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' }}
         run: |
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}} \
                       --build-arg HANDLER_TAG=${{env.TASKHANDLER_VERSION}} \
@@ -275,7 +275,7 @@ jobs:
                       --build-arg NEXUS_SERVER_ENDPOINT=${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }} .
           
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg')}}
         shell: bash
         run: |
           docker build --no-cache -t ${{env.DOCKERHUB_ORG}}/${{env.DOCKER_IMAGE_NAME}}:${{env.TAG}} \
@@ -293,7 +293,7 @@ jobs:
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg') }}
         with:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}
@@ -333,12 +333,12 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         env:
           API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"

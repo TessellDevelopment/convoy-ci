@@ -63,7 +63,7 @@ jobs:
                   owner: "${{ github.event.inputs.organisation }}",
                   repo: repo_name,
                   accept: 'application/vnd.github.v3+json',
-                  branch: 'main'
+                  branch: 'TDEVOPS-2573_fixCg'
                 })
                 if (result.data['required_status_checks']['strict'] == false ||
                   result.data['required_pull_request_reviews']['require_code_owner_reviews'] == false ||
@@ -95,7 +95,7 @@ jobs:
                 repo: repo_name,
                 accept: 'application/vnd.github.v3+json'
               })
-              if (result.data['default_branch'] != 'main') {
+              if (result.data['default_branch'] != 'TDEVOPS-2573_fixCg') {
                 failed_repos.push(repo_name)
               }
             }

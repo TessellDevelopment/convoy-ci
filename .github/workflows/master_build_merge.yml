@@ -42,7 +42,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -80,7 +80,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -162,7 +162,7 @@ jobs:
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -470,7 +470,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -505,7 +505,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -633,7 +633,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -668,7 +668,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -809,7 +809,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -844,7 +844,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -942,7 +942,7 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -980,7 +980,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -1331,8 +1331,8 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
             MODIFIED_DIRECTORIES=$(modifiedDir)
-            if [[ ${BASE_BRANCH} == 'main' ]]; then
-              manifestLabel="latest-main"
+            if [[ ${BASE_BRANCH} == 'TDEVOPS-2573_fixCg' ]]; then
+              manifestLabel="latest-TDEVOPS-2573_fixCg"
             else 
               manifestLabel="${LABEL}"
             fi
@@ -1463,7 +1463,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -1500,7 +1500,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull

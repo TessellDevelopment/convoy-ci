@@ -114,7 +114,7 @@ jobs:
         run: |
           
           source qavenv/bin/activate
-          python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+          python3 ./TDEVOPS-2573_fixCg.py ./testcases -s -v --dry-run --run-long-tests --business-edition
       
       - name: Extract version
         id: extract-version
@@ -124,7 +124,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV    
       
       - name: Build and push to tessellDev
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && needs.file-check.outputs.any-modified == 'true' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' && needs.file-check.outputs.any-modified == 'true' }}
         env:
           DOCKERHUB_ORG: tesselldev
         run: |
@@ -137,7 +137,7 @@ jobs:
           docker push $DOCKERHUB_ORG/${{env.DOCKER_IMAGE_NAME}}:${{ env.VERSION }}
   
       - name: Build and push to tessellProd
-        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') && needs.file-check.outputs.any-modified == 'true' }}
+        if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg') && needs.file-check.outputs.any-modified == 'true' }}
         env:
           DOCKERHUB_ORG: tessellprod
         run: |
@@ -182,12 +182,12 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         env:
           API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"

@@ -108,7 +108,7 @@ jobs:
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
@@ -121,7 +121,7 @@ jobs:
               
       - name: Get tags
         uses: nick-fields/retry@v3.0.0
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -142,7 +142,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
@@ -154,7 +154,7 @@ jobs:
               console.log("There is only one tag. Using it." + tags[0])
               latest_tag = tags[0]
             } else {
-              if ("${{ env.SOURCE_BRANCH }}" == "main") {
+              if ("${{ env.SOURCE_BRANCH }}" == "TDEVOPS-2573_fixCg") {
                 for (i in tags) {
                   tag = tags[i]
                   console.log("Checking tag " + tag)
@@ -218,7 +218,7 @@ jobs:
           popd
           
       - name: steps to upload tar files to nexus
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         run: |
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
@@ -238,7 +238,7 @@ jobs:
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
       - name: Upload tar file to S3 Bucket
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         run: |
           VERSION=${{ steps.latest_tag.outputs.tag_ref }}
           aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
@@ -246,25 +246,25 @@ jobs:
 
             
       - name: Set Push repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         shell: bash
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
               
       - name: tagging docker image with scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' }}
         run: |
            docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
       
       - name: tagging the latest tag
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         shell: bash
         run: |
            docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
               
 
       - name: Docker image scan
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
@@ -275,14 +275,14 @@ jobs:
           trivy-version: ${{ vars.TRIVY_VERSION }}
 
       - uses: actions/upload-artifact@v3
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'TDEVOPS-2573_fixCg' }}
         with:
           name: image-scan-report
           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
           
           
       - name: Sign and push docker image
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
         with:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
@@ -293,7 +293,7 @@ jobs:
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg') }}
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -318,12 +318,12 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - uses: technote-space/workflow-conclusion-action@v3.0.3
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'TDEVOPS-2573_fixCg' }}
         env:
           API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"

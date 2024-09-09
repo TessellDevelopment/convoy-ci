@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -46,7 +46,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -94,7 +94,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -320,7 +320,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -351,7 +351,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -431,7 +431,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -462,7 +462,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -559,7 +559,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-22' }}
     runs-on: amd-go-22
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -590,7 +590,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -655,7 +655,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
@@ -692,7 +692,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
@@ -1000,7 +1000,7 @@ jobs:
             source qavenv/bin/activate
             make clients -B
             source qavenv/bin/activate
-            python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+            python3 ./TDEVOPS-2573_fixCg.py ./testcases -s -v --dry-run --run-long-tests --business-edition
             deactivate
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
               cd scripts
@@ -1092,7 +1092,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2573_fixCg
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -1123,7 +1123,7 @@ jobs:
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
-          git checkout main
+          git checkout TDEVOPS-2573_fixCg
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
