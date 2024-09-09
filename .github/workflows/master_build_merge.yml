@@ -42,7 +42,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -162,7 +162,7 @@ jobs:
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -470,7 +470,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -633,7 +633,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -809,7 +809,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -942,7 +942,7 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -1463,7 +1463,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2566_sqlc
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
