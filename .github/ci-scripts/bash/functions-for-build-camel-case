@@ -140,6 +140,14 @@ pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
 }
 
+pythonSetupBuild() {
+  python_setup_build "$@"
+}
+
+pythonSetupBuildAndPush() {
+  python_setup_build_and_push "$@"
+}
+
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
@@ -186,8 +194,4 @@ validateInputs() {
 
 zipDirectory() {
   zip_directory "$@"
-}
-
-pythonSetupBuild() {
-  python_setup_build "$@"
 }
