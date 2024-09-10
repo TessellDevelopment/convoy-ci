@@ -1065,6 +1065,7 @@ jobs:
           build() {
             type="$1"
             echo "first"
+            echo "last"
             check=$(grep "$type" convoy.yaml)
             echo "whyyy"
             if [[ -z "$check" ]]; then
