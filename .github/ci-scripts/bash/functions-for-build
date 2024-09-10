@@ -1,7 +1,6 @@
 #!/bin/bash
 
 source ./ci-scripts/bash/functions-for-build-camel-case
-echo "hi there"
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
   aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
@@ -460,8 +459,6 @@ push_to_nexus() {
   URL_PATH="${2}"
   required_inputs="1 2"
   validate_inputs "${required_inputs}" "$@" 
-  echo ${FILE_PATH}
-  echo ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
   RESPONSE=$(curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
       --upload-file ${FILE_PATH}  -w "%{http_code}" \
       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
@@ -510,7 +507,6 @@ python_setup_build_and_push() {
     --username ${NEXUS_USERNAME} \
     --password ${NEXUS_PASSWORD} \
     dist/*.whl
-  # push_to_nexus dist/*.whl ${NEXUS_PUSH_REPOS_PY}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
 }
 
 qa_build_and_push(){
@@ -569,21 +565,6 @@ setup_qa_env() {
   deactivate
 }
 
-setup_packer_env() {
-  sudo python3 -m pip uninstall -y packer_framework
-  echo ${NEXUS_SERVER_ENDPOINT}
-  echo "hello world"
-  python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m venv pkenv
-  source pkenv/bin/activate
-  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  find /usr/bin /usr/local/bin -name build_all_artifacts
-  rm -rf /usr/lib/python3/dist-packages/OpenSSL
-  pip3 install pyopenssl
-  pip3 install pyopenssl --upgrade
-  pip3 install --force-reinstall setuptools==45.2.0
-}
 
 terraform_apply() {
   set -e

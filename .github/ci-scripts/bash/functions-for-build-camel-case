@@ -160,10 +160,6 @@ setupQAEnv() {
   setup_qa_env "$@"
 }
 
-setupPackerEnv() {
-  setup_packer_env "$@"
-}
-
 terraformApply() {
   terraform_apply "$@"
 }

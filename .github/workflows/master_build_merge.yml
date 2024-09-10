@@ -968,12 +968,6 @@ jobs:
       RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
-      AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
-      AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
-      AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout code
@@ -1320,23 +1314,6 @@ jobs:
             gradlewTwineUpload
             set +e
           }
-          softwareDefBuildAndPush() {
-            setupPackerEnv
-            echo $TAGS
-            echo $CUSTOM_TAGS
-            source pkenv/bin/activate
-            export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
-            echo $CURRENT_VERSION_TAG
-            mkdir -p ~/.packer.d/plugins
-            
-            # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
-            build_all_artifacts -r $PWD --base_commit  --pipeline_run
-            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                --upload-file ./common_manifest.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
-            pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
-
-          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa
@@ -1448,7 +1425,6 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-          build "softwareImages"
           parseAndPushCoverageReportJava
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
