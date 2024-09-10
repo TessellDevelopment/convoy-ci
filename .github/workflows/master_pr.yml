@@ -4,29 +4,29 @@ on:
   workflow_call:
 
 jobs:
-  # dev-checks:
-  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-2568_master_packer_frm
-  #   secrets: inherit
+  dev-checks:
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-2568_master_packer_frm
+    secrets: inherit
 
-  # version-check:
-  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-2568_master_packer_frm
-  #   secrets: inherit
+  version-check:
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-2568_master_packer_frm
+    secrets: inherit
 
-  # runner-check:
-  #   runs-on: non-build
-  #   outputs:
-  #     type: ${{steps.runner-type.outputs.type}}
-  #   needs: [dev-checks, version-check]
-  #   steps:
-  #     - uses: actions/checkout@v4.1.1
-  #       with:
-  #         fetch-depth: 0
+  runner-check:
+    runs-on: non-build
+    outputs:
+      type: ${{steps.runner-type.outputs.type}}
+    needs: [dev-checks, version-check]
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
 
-  #     - name: Determine build type from Convoy
-  #       id: runner-type
-  #       run: |
-  #         runner=$(yq '.runner' convoy.yaml)
-  #         echo "type=$runner" >> $GITHUB_OUTPUT
+      - name: Determine build type from Convoy
+        id: runner-type
+        run: |
+          runner=$(yq '.runner' convoy.yaml)
+          echo "type=$runner" >> $GITHUB_OUTPUT
 
   build:
     needs: runner-check
