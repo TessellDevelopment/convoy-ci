@@ -1066,6 +1066,7 @@ jobs:
             type="$1"
             echo "first"
             check=$(grep "$type" convoy.yaml)
+            echo "whyyy"
             if [[ -z "$check" ]]; then
               echo "return"
               return
