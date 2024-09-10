@@ -1067,6 +1067,7 @@ jobs:
             echo "first"
             pwd
             ls
+            echo $type
             check=$(grep "$type" convoy.yaml)
             echo "whyyy"
             if [[ -z "$check" ]]; then
