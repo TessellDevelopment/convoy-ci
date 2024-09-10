@@ -4,17 +4,16 @@ on:
   workflow_call:
     inputs:
       type:
-        description: 'This is used to determine build type'
+        description: "This is used to determine build type"
         required: true
         type: string
 
 jobs:
-
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -89,12 +88,12 @@ jobs:
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-  
+
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -133,8 +132,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          java-version: "17"
+          distribution: "adopt"
 
       - name: Set up Docker Buildx
         id: buildx
@@ -320,7 +319,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -365,7 +364,7 @@ jobs:
           echo $GOROOT
           echo $PATH
           go env
-          
+
       - name: Build
         shell: bash
         run: |
@@ -431,7 +430,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -473,7 +472,7 @@ jobs:
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}   
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Check go Config
         run: |
@@ -482,7 +481,7 @@ jobs:
           echo $GOROOT
           echo $PATH
           go env
-          
+
       - name: Build
         shell: bash
         run: |
@@ -559,7 +558,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-22' }}
     runs-on: amd-go-22
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -601,7 +600,7 @@ jobs:
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}   
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Check go Config
         run: |
@@ -610,7 +609,7 @@ jobs:
           echo $GOROOT
           echo $PATH
           go env
-          
+
       - name: Build
         shell: bash
         run: |
@@ -655,7 +654,7 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
@@ -1114,7 +1113,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH: TDEVOPS-2568_master_packer
+      CI_BRANCH: TDEVOPS-2568_master_packer_frm
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}

@@ -2,11 +2,10 @@
 name: Master CI Merge Workflows
 on:
   workflow_call:
-    
-jobs:
 
+jobs:
   file-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-2568_master_packer
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
 
   runner-check:
@@ -19,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
       - name: Get Label
         id: get-label
         shell: bash
@@ -44,17 +43,17 @@ jobs:
             fi
            else
             echo "convoy.yaml not found"
-           fi 
-          
+           fi
+
       - name: Determine runner type from Convoy
         id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
-  
+
   create-tag:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-2568_master_packer
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
     with:
       label: ${{needs.runner-check.outputs.label}}
@@ -62,7 +61,7 @@ jobs:
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-2568_master_packer
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
@@ -71,12 +70,12 @@ jobs:
   find-latest-tag:
     if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-2568_master_packer
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
 
   build:
-    needs: [runner-check,find-latest-tag]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2568_master_packer
+    needs: [runner-check, find-latest-tag]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
@@ -85,8 +84,8 @@ jobs:
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
-    needs: [find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-2568_master_packer
+    needs: [find-latest-tag, build, runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
     with:
       ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
@@ -95,11 +94,11 @@ jobs:
 
   post-coverage-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
-    needs: [find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@TDEVOPS-2568_master_packer
+    needs: [find-latest-tag, build, runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
     with:
-      BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      BRANCH_COVERAGE: ${{needs.build.outputs.BRANCH_COVERAGE}}
       LABEL: ${{needs.runner-check.outputs.label}}
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
       TAG: ${{needs.find-latest-tag.outputs.tag}}
@@ -107,11 +106,11 @@ jobs:
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-2568_master_packer
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
 
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-2568_master_packer 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-2568_master_packer_frm
     secrets: inherit
