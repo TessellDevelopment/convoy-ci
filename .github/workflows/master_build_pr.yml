@@ -997,7 +997,6 @@ jobs:
             set +e
           }
           pythonSetupBuild() {
-            set -e
             ARTIFACT="$1"
             VERSION="$3"
             pythonWheelBuild VERSION
