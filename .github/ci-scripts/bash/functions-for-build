@@ -504,7 +504,7 @@ python_setup_build_and_push() {
   fi
   VERSION="$3"
   python3 setup.py bdist_wheel --version ${VERSION}
-  push_to_nexus dist/*.whl ${NEXUS_PUSH_REPOS_PY}
+  push_to_nexus dist/*.whl ${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
 }
 
 qa_build_and_push(){
