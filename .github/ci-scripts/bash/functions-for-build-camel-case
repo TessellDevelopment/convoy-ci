@@ -188,6 +188,6 @@ zipDirectory() {
   zip_directory "$@"
 }
 
-pythonWheelBuild() {
-  python_wheel_build "$@"
+pythonSetupBuild() {
+  python_setup_build "$@"
 }

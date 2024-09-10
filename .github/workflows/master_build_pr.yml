@@ -996,11 +996,6 @@ jobs:
             gradlewPythonwheel
             set +e
           }
-          pythonSetupBuild() {
-            ARTIFACT="$1"
-            VERSION="$3"
-            pythonWheelBuild VERSION
-          }
           qaBuild(){
             set -e
             requiredInputs="1 3"
@@ -1063,22 +1058,15 @@ jobs:
           }
           build() {
             type="$1"
-            echo "first"
-            pwd
-            ls
-            echo $type
             check=$(grep "$type" convoy.yaml)
-            echo "whyyy"
             if [[ -z "$check" ]]; then
               echo "return"
               return
             fi
-            echo "hii"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
             source ./ci-scripts/bash/functions-for-build
-            echo "2nd version"
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
               return

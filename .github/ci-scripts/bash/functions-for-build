@@ -650,10 +650,10 @@ zip_directory() {
   zip -r ${ARTIFACT_FILE} ${DIR}
 }
 
-python_wheel_build() {
+python_setup_build() {
   if [ -f requirements.txt ]; then 
     python3 -m pip install -r requirements.txt --dry-run --trusted-host ${NEXUS_SERVER_ENDPOINT}; 
   fi
-  # VERSION="${3}"
+  VERSION="$3"
   python3 setup.py bdist_wheel --version ${VERSION}
 }
