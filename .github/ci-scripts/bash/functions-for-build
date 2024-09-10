@@ -460,6 +460,8 @@ push_to_nexus() {
   URL_PATH="${2}"
   required_inputs="1 2"
   validate_inputs "${required_inputs}" "$@" 
+  echo ${FILE_PATH}
+  echo ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
   RESPONSE=$(curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
       --upload-file ${FILE_PATH}  -w "%{http_code}" \
       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
