@@ -1067,8 +1067,10 @@ jobs:
             echo "first"
             check=$(grep "$type" convoy.yaml)
             if [[ -z "$check" ]]; then
+              echo "return"
               return
             fi
+            echo "hii"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
