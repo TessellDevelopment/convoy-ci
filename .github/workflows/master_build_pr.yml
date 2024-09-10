@@ -998,8 +998,9 @@ jobs:
           }
           pythonSetupBuild() {
             set -e
-            # ARTIFACT="$1"
-            pythonWheelBuild
+            ARTIFACT="$1"
+            VERSION="$3"
+            pythonWheelBuild VERSION
           }
           qaBuild(){
             set -e
