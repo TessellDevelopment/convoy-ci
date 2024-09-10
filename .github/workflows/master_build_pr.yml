@@ -996,6 +996,11 @@ jobs:
             gradlewPythonwheel
             set +e
           }
+          pythonSetupBuild() {
+            set -e
+            # ARTIFACT="$1"
+            pythonWheelBuild
+          }
           qaBuild(){
             set -e
             requiredInputs="1 3"

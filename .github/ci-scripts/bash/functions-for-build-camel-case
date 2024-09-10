@@ -187,3 +187,7 @@ validateInputs() {
 zipDirectory() {
   zip_directory "$@"
 }
+
+pythonWheelBuild() {
+  python_wheel_build "$@"
+}
