@@ -20,10 +20,10 @@ jobs:
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Get branch name
         shell: bash
         run: |
@@ -56,7 +56,7 @@ jobs:
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
            status: ${{ job.status }}
@@ -78,28 +78,27 @@ jobs:
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
    
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: build
     if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
 
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
-
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -108,25 +107,24 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           STATUS = (os.environ.get('STATUS')).upper()
-          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
@@ -139,17 +137,20 @@ jobs:
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = {
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
-
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            'x-api-key': API_KEY
           }
 
           max_retries = 3
@@ -173,7 +174,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}

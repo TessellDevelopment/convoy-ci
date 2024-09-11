@@ -11,7 +11,7 @@ jobs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           
@@ -23,8 +23,16 @@ jobs:
               echo "Version found in convoy.yaml"
               echo "check=true" >> $GITHUB_OUTPUT
             else
-              echo "Version not found in convoy.yaml"
-              echo "check=false" >> $GITHUB_OUTPUT
+              if grep -q 'terraform' convoy.yaml; then
+                echo "Tf-module repository running version check"
+                echo "check=true" >> $GITHUB_OUTPUT
+              elif grep -q 'helm' convoy.yaml; then
+                echo "Helm repository running version check"
+                echo "check=true" >> $GITHUB_OUTPUT
+              else
+                echo "Version not found in convoy.yaml"
+                echo "check=false" >> $GITHUB_OUTPUT
+              fi
             fi
           else
             echo "convoy.yaml not present, skipping version check."
@@ -37,23 +45,27 @@ jobs:
     runs-on: non-build
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 
         
       - name: Changed files
         id: changed-files
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             services/**
 
+      - name: Check All file changes
+        id: changed-files-all
+        uses: tj-actions/changed-files@v42.0.2
+
       - name: Check Version in Nexus 
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         env:
-          NEXUS_URL: https://${{vars.NEXUS_SERVER_ENDPOINT}}/service/rest/v1/search?repository
-          NEXUS_USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-          NEXUS_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
+          NEXUS_URL: ${{vars.NEXUS_PROTOCOL_LOCAL}}://${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/service/rest/v1/search?repository
+          NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
         with:
           script: |
             const exp = require('constants');
@@ -73,7 +85,7 @@ jobs:
                   API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
                   echo $API_URL
                   echo $file
-                  response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL")
+                  response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL")
                   check="$(echo $response | grep $file)"
                   if [ ! -z "$check" ]
                       then
@@ -83,7 +95,7 @@ jobs:
                   
                   while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
                       continuationToken=$(echo $response | jq -r '.continuationToken')
-                      response=$(curl -u "$NEXUS_USER:$NEXUS_TOKEN" -X GET "$API_URL&continuationToken=$continuationToken")
+                      response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL&continuationToken=$continuationToken")
                       check="$(echo $response | grep $file)"
                       if [ ! -z "$check" ]
                       then
@@ -110,11 +122,20 @@ jobs:
               const data = yaml.load(content);
               var language = data.language
               if(language === 'terraform'){
-                modifiedDir = "${{ steps.terraform_file_check.outputs.modifiedDir }}"
+                modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
+                pathsArray = modifiedFiles.split(" ");
+                dir = pathsArray.map(path => path.split("/")[0]);
+                uniqueDirectories = [...new Set(dir)];
+                modifiedDir = uniqueDirectories.join(" ");
                 console.log(modifiedDir);
                 const directories = modifiedDir.split(' ');
+                const excludeDirectories = ['.github', 'convoy.yaml','.gitignore','README.md'];
                 for (let i = 0; i < directories.length; i++) {
                   console.log(directories[i]);
+                  const directory = directories[i];
+                  if (excludeDirectories.includes(directory)) {
+                    continue;
+                  }
                   const path = `./${directories[i]}/convoy.yaml`
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);

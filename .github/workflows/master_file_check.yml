@@ -6,6 +6,9 @@ on:
       github-changes:
           description: "Github File Changes output"
           value: ${{ jobs.file-check.outputs.github-changes }}
+      convoy-changes:
+        description: "Convoy.yaml Changes output"
+        value: ${{ jobs.file-check.outputs.convoy-changes }}
       changed-files:
         description: "All Changed File output"
         value: ${{ jobs.file-check.outputs.changed-files }}
@@ -16,9 +19,10 @@ jobs:
     runs-on: non-build
     outputs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
+      convoy-changes: ${{ steps.set-output.outputs.convoy-changes }}
       changed-files: ${{ steps.set-output.outputs.changed-files }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 
 
@@ -30,18 +34,26 @@ jobs:
 
       - name: Check .github changes
         id: changed-files-github
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
             .github/**
 
+      - name: Check convoy.yaml changes
+        id: changed-files-convoy
+        uses: tj-actions/changed-files@v42.0.2
+        with:
+          files: |
+            convoy.yaml
+
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v39
+        uses: tj-actions/changed-files@v42.0.2
 
       - name: Set Output
         id: set-output
         run: |
           echo "github-changes=${{ steps.changed-files-github.outputs.only_changed }}" >> $GITHUB_OUTPUT
+          echo "convoy-changes=${{ steps.changed-files-convoy.outputs.only_changed }}" >> $GITHUB_OUTPUT
           echo "changed-files=${{ steps.changed-files-all.outputs.all_changed_and_modified_files }}" >> $GITHUB_OUTPUT
           

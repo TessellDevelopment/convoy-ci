@@ -9,16 +9,15 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
-  build-file:
+  runner-check:
     runs-on: non-build
     needs: file-check
     outputs:
-      type: ${{steps.build-type.outputs.type}}
+      type: ${{steps.runner-type.outputs.type}}
       label: ${{steps.get-label.outputs.label}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
           
       - name: Get Label
@@ -27,10 +26,9 @@ jobs:
         run: |
           if [ -f convoy.yaml ]; then
             if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-              TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
               APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
               URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-              RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+              RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
               echo "$RESPONSE"
               LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
               echo "$LABEL"
@@ -48,18 +46,18 @@ jobs:
             echo "convoy.yaml not found"
            fi 
           
-      - name: Determine build type from Convoy
-        id: build-type
+      - name: Determine runner type from Convoy
+        id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
   
   create-tag:
-    needs: build-file
+    needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
     secrets: inherit
     with:
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     if: needs.file-check.outputs.github-changes == 'false'
@@ -77,19 +75,34 @@ jobs:
     secrets: inherit
 
   build:
-    needs: [build-file,find-latest-tag]
+    needs: [runner-check,find-latest-tag]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
     with:
-      type: ${{needs.build-file.outputs.type}}
+      type: ${{needs.runner-check.outputs.type}}
       tag: ${{needs.find-latest-tag.outputs.tag}}
-      label: ${{needs.build-file.outputs.label}}
+      label: ${{needs.runner-check.outputs.label}}
 
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
-    needs: build
+    needs: [find-latest-tag,build,runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
+    with:
+      ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
+      LABEL: ${{needs.runner-check.outputs.label}}
+
+  post-coverage-to-convoy:
+    if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
+    needs: [find-latest-tag,build,runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
+    secrets: inherit
+    with:
+      BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      LABEL: ${{needs.runner-check.outputs.label}}
+      STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
+      TAG: ${{needs.find-latest-tag.outputs.tag}}
 
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel')

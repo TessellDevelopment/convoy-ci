@@ -27,19 +27,9 @@ jobs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
       uses_custom_version: ${{ steps.tag_output.outputs.uses_custom_version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
-      - name: Adding Common UI config
-        run: |
-          set +e
-          rm ~/.npmrc
-          TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:_auth = '$TOKEN'" >> .npmrc
-          echo "//${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}:always-auth = true" >> .npmrc
-          echo "@tessell:registry=https://${{vars.NEXUS_SERVER_ENDPOINT}}/repository/${{vars.NEXUS_PUSH_REPOS_NPM}}" >> .npmrc
-          cat .npmrc
 
       - name: Find latest tag
         id: latest_tag
@@ -48,12 +38,22 @@ jobs:
           for tag in $latest_tags; do tag_arr+=($tag); done
           echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
 
+      - name: Check if tag exists
+        run: |
+          current_tag="$(git tag --contains ${{ github.event.pull_request.merge_commit_sha }})"
+          if [[ ! -z "$current_tag" ]]; then
+            echo "Tag already exists for commit ${{ github.event.pull_request.merge_commit_sha }}: $current_tag"
+            echo "CURRENT_TAG=$current_tag" >> $GITHUB_ENV
+            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
 
       - name: Create tag and update ref
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: create_tag
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             const fs = require('fs');
             const yaml = require('js-yaml');
@@ -62,101 +62,109 @@ jobs:
             var language = data.language
             var version = data.version
             var uses_custom_version = "false"
-            if (language === 'helm'){
-              const path = data.generates.helmCharts[0].chartPath
-              const contentHelm = fs.readFileSync(path, 'utf8');
-              const dataHelm = yaml.load(contentHelm);
-              new_tag = dataHelm.version
-              uses_custom_version = "true"
-            } else{
-              if (version !== undefined ){
+            if ("${{env.TAG_EXISTS}}" === 'true'){
+              new_tag = "${{env.CURRENT_TAG}}"
+              if (language === 'helm' || version !== undefined){
                 uses_custom_version = "true"
-              }
-              latest_tag = '0.0.0'
-              // process multiple tags if any
-              tags = "${{ env.TAGS }}".split(' ')
-              if (tags.length == 1) {
-                latest_tag = tags[0]
-              } else {
-                if ("${{ github.event.pull_request.base.ref }}" == "main") {
-                  for (i in tags) {
-                    tag = tags[i]
-                    console.log("Checking tag " + tag)
-                    if (latest_tag == null) {
-                      latest_tag = tag
-                      continue
-                    }
-                    latest_parts = latest_tag.split(".")
-                    tag_parts = tag.split(".")
-                    for (i = 0; i < tag_parts.length; i++) {
-                      if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
-                        console.log("Skipping " + tag)
-                        break
-                      }
-                      if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
-                        latest_tag = tag
-                        console.log("Setting " + latest_tag)
-                        break
-                      }
-                    }
-                  }
+              } 
+              console.log("Skipping New tag creation")
+            } else {
+              if (language === 'helm'){
+                const path = data.generates.helmCharts[0].chartPath
+                const contentHelm = fs.readFileSync(path, 'utf8');
+                const dataHelm = yaml.load(contentHelm);
+                new_tag = dataHelm.version
+                uses_custom_version = "true"
+              } else{
+                if (version !== undefined ){
+                  uses_custom_version = "true"
+                }
+                latest_tag = '0.0.0'
+                // process multiple tags if any
+                tags = "${{ env.TAGS }}".split(' ')
+                if (tags.length == 1) {
+                  latest_tag = tags[0]
                 } else {
-                  tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
-                  latest_tag = tag_base.join(".") + ".0"
-                  for (i in tags) {
-                    tag = tags[i]
-                    console.log("branch - Checking tag " + tag)
-                    tag_parts = tag.split(".")
-                    if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                      latest_parts = latest_tag.split(".")
-                      if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                  if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                    for (i in tags) {
+                      tag = tags[i]
+                      console.log("Checking tag " + tag)
+                      if (latest_tag == null) {
                         latest_tag = tag
+                        continue
+                      }
+                      latest_parts = latest_tag.split(".")
+                      tag_parts = tag.split(".")
+                      for (i = 0; i < tag_parts.length; i++) {
+                        if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                          console.log("Skipping " + tag)
+                          break
+                        }
+                        if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                          latest_tag = tag
+                          console.log("Setting " + latest_tag)
+                          break
+                        }
+                      }
+                    }
+                  } else {
+                    tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
+                    latest_tag = tag_base.join(".") + ".0"
+                    for (i in tags) {
+                      tag = tags[i]
+                      console.log("branch - Checking tag " + tag)
+                      tag_parts = tag.split(".")
+                      if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                        latest_parts = latest_tag.split(".")
+                        if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                          latest_tag = tag
+                        }
                       }
                     }
                   }
                 }
-              }
-              console.log("Latest tag: " + latest_tag)
+                console.log("Latest tag: " + latest_tag)
 
-              // check if we have
-              if ( latest_tag == '' || latest_tag === undefined) {
-                console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-                process.exit(1);
-              }
+                // check if we have
+                if ( latest_tag == '' || latest_tag === undefined) {
+                  console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+                  process.exit(1);
+                }
 
-              // increase the minor version lineraly to get the new tag
-              tag_parts = latest_tag.split('.')
-              new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-               
+                // increase the minor version lineraly to get the new tag
+                tag_parts = latest_tag.split('.')
+                new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+                
+              }
+            
+              // head of the branch needs to be tagged
+              sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
+
+              console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
+
+              result = await github.rest.git.createTag({
+                  owner: "${{ github.repository_owner }}",
+                  repo: "${{  github.repository }}".split('/')[1],
+                  tag: new_tag,
+                  message: 'Tag created by CI pipeline',
+                  type: 'commit',
+                  object: sha_to_tag
+              });
+
+              console.log(result)
+
+              fullTagName = "refs/tags/" + new_tag
+
+              console.log("Updating tag with REF: " + fullTagName)
+
+              newRef = await github.rest.git.createRef({
+                  owner: "${{ github.repository_owner }}",
+                  repo: "${{  github.repository }}".split('/')[1],
+                  ref: fullTagName,
+                  sha: sha_to_tag
+              });
+              console.log('Ref updated.');
             }
-
-            // head of the branch needs to be tagged
-            sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
-
-            console.log("Creating tag: " + new_tag + " against commit " + sha_to_tag)
-
-            result = await github.rest.git.createTag({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                tag: new_tag,
-                message: 'Tag created by CI pipeline',
-                type: 'commit',
-                object: sha_to_tag
-            });
-
-            console.log(result)
-
-            fullTagName = "refs/tags/" + new_tag
-
-            console.log("Updating tag with REF: " + fullTagName)
-
-            newRef = await github.rest.git.createRef({
-                owner: "${{ github.repository_owner }}",
-                repo: "${{  github.repository }}".split('/')[1],
-                ref: fullTagName,
-                sha: sha_to_tag
-            });
-            console.log('Ref updated.');
             core.setOutput('tag_ref', new_tag) 
             core.setOutput('uses_custom_version', uses_custom_version)  
 
@@ -181,10 +189,9 @@ jobs:
             else
               validate_label=true
               if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-                TOKEN=$(echo -n '${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}}' | base64 -w 0)
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
                 URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-                RESPONSE=$(curl -f --location "$URL" --header "Authorization: Basic $TOKEN")
+                RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"
                 LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
                 echo "$LABEL"
@@ -219,7 +226,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}

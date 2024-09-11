@@ -30,9 +30,8 @@ jobs:
     outputs:
       update-branch: ${{steps.check-commit.outputs.update-branch}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
           fetch-depth: 0
 
       - name: Check head commit
@@ -43,6 +42,10 @@ jobs:
             exit 0
           fi
           HEAD_COMMIT=${{github.event.pull_request.base.sha}}
+          if [[ -z "${{github.event.before}}" ]]; then
+            echo "First Push Commit"
+            exit 0
+          fi
           MERGE_COMMIT=$(git merge-base ${{github.event.before}} ${{github.event.pull_request.base.sha}})
           if [[ "$HEAD_COMMIT" == "$MERGE_COMMIT" ]]; then
             echo "Push Commit to the PR"
@@ -53,10 +56,55 @@ jobs:
           fi
 
   check-approval:
-    needs: [check-update-branch,read-codeowners]
-    if: ${{ github.event.review.state == 'approved' || needs.check-update-branch.outputs.update-branch == 'true' }}
+    needs: [check-update-branch,read-codeowners,file-check]
+    if: ${{ github.event.review.state == 'approved' || github.event.review.state == 'commented' || github.event.review.state == 'changes_requested' || needs.check-update-branch.outputs.update-branch == 'true' || (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) }}
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_approval.yml@main
     secrets: inherit
     with:
       required-teams: ${{needs.read-codeowners.outputs.required-teams}}
+      convoy-changes: ${{needs.file-check.outputs.convoy-changes}}
+
+  rerun-approval:
+    needs: [check-approval]
+    if: ${{ github.event.review.state == 'approved' }}
+    runs-on: non-build
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+          token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
       
+      - name: Fetch and Rerun Failed workflow
+        run: |
+          WORKFLOW_ID=$(gh run list --branch "${{github.event.pull_request.head.ref}}" --status 'failure' --event 'pull_request' --workflow 'Master CI Approve Workflow' --limit 1 --json 'databaseId' | jq '.[0].databaseId')
+          echo $WORKFLOW_ID
+          if [[ ! -z "$WORKFLOW_ID" && "$WORKFLOW_ID" != "null" ]]; then
+            echo "Rerunning Failed Approval Workflow"
+            gh run rerun $WORKFLOW_ID --failed
+          else
+            echo "No failed workflow found. Skipping re-run of 'Master CI Approve Workflow'"
+          fi
+
+  auto-merge:
+    needs: check-approval
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    runs-on: non-build
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+          token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+
+      - name: Enable Auto merge
+        run: |
+          gh pr merge -R "${{github.repository}}" --squash --auto "${{ github.event.pull_request.number }}"
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+        if: failure()

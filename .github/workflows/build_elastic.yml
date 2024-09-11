@@ -18,14 +18,16 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       DOCKERHUB_ORG: "tesselldev"
       IMAGE_NAME: "tessell-filebeat"
-      NEXUS_SERVER: "nexus.tessell.cloud"
+      NEXUS_SERVER_ENDPOINT: ${{ vars.NEXUS_SERVER_ENDPOINT_PUBLIC }}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PUSH_REPOS_M2: tessell-repos-m2-component
-      GITHUB_USER: ${{ secrets.CIPIPELINE_NEXUS_USERNAME }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
 
     steps:
       - name: Get branch name
@@ -36,12 +38,18 @@ jobs:
           echo "GOPATH=/home/runner/go" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           
       - name: Setup Go
         uses: actions/setup-go@v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.0.0
+        with:
+          java-version: '17'
+          distribution: 'adopt'
 
       - name: Install dependencies
         run: |
@@ -83,11 +91,11 @@ jobs:
           
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1    
+        uses: docker/setup-buildx-action@v3.0.0
           
 
       - name: Login to docker
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}    
@@ -98,11 +106,11 @@ jobs:
           docker build -t  ${{ env.IMAGE_NAME }}  .   
           
       - name: getting commit id for workflow_dispatch
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v7.0.1
         id: find_commit
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.CIPIPELINE_USER_PASSWORD  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             if (${{ github.event_name  == 'workflow_dispatch'}} ){
                 core.setOutput('commit_id', "${{ github.sha }}" )
@@ -112,7 +120,7 @@ jobs:
             }
               
       - name: Get tags
-        uses: nick-fields/retry@v2.8.1
+        uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           timeout_seconds: 10
@@ -132,11 +140,11 @@ jobs:
       
 
       - name: Find latest tag
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7.0.1
         id: latest_tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          github-token: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD  }}
+          github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
           script: |
             console.log("Tags are " + "${{ env.TAGS }}")
             latest_tag = '0.0.0'
@@ -215,18 +223,18 @@ jobs:
             mkdir -p $HOME/.m2
             cp .github/scripts/settings.xml $HOME/.m2/settings.xml
             cat $HOME/.m2/settings.xml
-            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
               -DgroupId=tessell.filebeat -DartifactId=filebeat-linux -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
               -DgeneratePom=true -Dpackaging=tar.gz \
-              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-linux.tar.gz -DrepositoryId=nexus
             cat $HOME/.m2/settings.xml
-            mvn deploy:deploy-file -Dnexus_url=https://${NEXUS_SERVER}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${GITHUB_USER} -Dnexus_password=${GITHUB_TOKEN} \
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
               -DgroupId=tessell.filebeat -DartifactId=filebeat-windows -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
               -DgeneratePom=true -Dpackaging=tar.gz \
-              -Durl=https://${NEXUS_SERVER}/repository/${NEXUS_PUSH_REPOS_M2} \
+              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
               -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
       - name: Upload tar file to S3 Bucket
@@ -264,7 +272,7 @@ jobs:
           image-name: ${{ env.IMAGE_NAME }}:scan
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          trivy-version: "0.29.1"
+          trivy-version: ${{ vars.TRIVY_VERSION }}
 
       - uses: actions/upload-artifact@v3
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -284,7 +292,7 @@ jobs:
 
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
           status: ${{ job.status }}
@@ -292,28 +300,27 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
   post-build-status-to-convoy:
-    runs-on: self-hosted
+    runs-on: non-build
     needs: build
-    if: always() 
+    if: always()  
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }} 
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      
+      - uses: actions/checkout@v4.1.1
+        name: Checkout repos
+        with:
+          fetch-depth: 0
 
       - name: Get branch name
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests pybase64
-
-      - uses: technote-space/workflow-conclusion-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.3
+        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -322,25 +329,24 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}
-          USER: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
           SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
         run: |
-          python - <<EOF
+          python3 - <<EOF
           import requests
           import json
           import os
           import time
           import base64
+          import yaml
 
           API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
           REPO = os.environ.get('REPO')
           COMMIT_HASH = os.environ.get('COMMIT_HASH')
           BASE_BRANCH = os.environ.get('BASE_BRANCH')
           STATUS = (os.environ.get('STATUS')).upper()
-          CONVOY_AUTH_TOKEN = os.environ.get('USER')+':'+ os.environ.get('GITHUB_TOKEN')
-          CONVOY_AUTH_TOKEN = base64.b64encode(CONVOY_AUTH_TOKEN.encode('utf-8')).decode('utf-8')
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
@@ -353,17 +359,20 @@ jobs:
           if STATUS == 'FAILURE':
             STATUS = 'FAILED'
 
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
           payload = {
             "repoName": REPO,
+            "appGroup": APP_GROUP,
             "commitHash": COMMIT_HASH[:7],
             "baseBranch": BASE_BRANCH,
             "buildStatus": STATUS
           }
-
           print(payload)
           headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Basic {CONVOY_AUTH_TOKEN}'
+            'x-api-key': API_KEY
           }
 
           max_retries = 3
@@ -387,7 +396,7 @@ jobs:
           EOF
 
       - name: Slack Notification
-        uses: act10ns/slack@v1.5.0
+        uses: act10ns/slack@v2.0.0
         with:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}
