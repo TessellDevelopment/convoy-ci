@@ -218,18 +218,23 @@ frp_build_and_push() {
 generate_checksum() {
   ARTIFACT=${1}
   BUILD_FILE=${2}
+  echo "$ARTIFACT"
   if [[ -z "${BUILD_FILE}" ]]; then
     echo "Build File name same as Artifact name"
     BUILD_FILE=${ARTIFACT}
   fi
   file_path=$(find . -type f -name "${BUILD_FILE}" 2>/dev/null | head -n 1)
+  echo "$FILE_PATH"
   if [[ -z "${file_path}" ]]; then
     echo "File not found!"
     return 1
   fi
-  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
-  ARTIFACT="${ARTIFACT%%.*}"         
-  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')  
+  echo $CHECKSUM 
+  ARTIFACT="${ARTIFACT%%.*}" 
+  echo $ARTIFACT        
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"         
+  echo $ARTIFACT_CHECKSUMS   
 }
 
 go_docker_build() {
