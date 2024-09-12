@@ -227,9 +227,9 @@ generate_checksum() {
     echo "File not found!"
     return 1
   fi
-  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
-  ARTIFACT="${ARTIFACT%%.*}"         
-  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')
+  ARTIFACT="${ARTIFACT%%.*}"
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
 }
 
 go_docker_build() {
@@ -406,7 +406,6 @@ parse_coverage_report_java() {
     jacoco_dir=$(find . -type d -path '*/site/jacoco')
     if [ -z "${jacoco_dir}" ]; then
       echo "No site/jacoco folder found. Skipping coverage report parsing."
-      exit 0 
     fi
     xml_file="${jacoco_dir}/jacoco.xml"
     branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
@@ -425,15 +424,19 @@ parse_coverage_report_java() {
     zip -r coverage.zip jacoco/*
     cd -
     mv ${jacoco_dir}/../coverage.zip ./
+    flag=1
   else 
     echo "Skipping jacoco code coverage for non-java repository."
-    exit 0
   fi
 }
 
 parse_and_push_coverage_report_java() {
+  flag=0
   parse_coverage_report_java
-  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  if [ ${flag} -eq 1 ]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
 }
 
 push_to_minio() {
