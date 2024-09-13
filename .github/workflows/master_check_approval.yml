@@ -95,7 +95,7 @@ jobs:
                 -H "Authorization: Bearer $TOKEN" \
                 -H "X-GitHub-Api-Version: 2022-11-28" \
                 "${{vars.GH_API_URL}}/repos/$REPO/pulls/$PR_NUMBER/reviews?per_page=100&page=$PAGE_NUMBER" | jq -r '.[] | select(.state == "APPROVED") | .user.login')
-              if [ -z "$REVIEWERS" ]; then
+              if [ "$(echo "$REVIEWERS" | jq -r '. | length')" -eq 0 ]; then
                 break
               fi
               ALL_REVIEWERS+="$REVIEWERS"
