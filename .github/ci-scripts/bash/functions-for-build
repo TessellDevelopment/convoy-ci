@@ -406,6 +406,7 @@ parse_coverage_report_java() {
     jacoco_dir=$(find . -type d -path '*/site/jacoco')
     if [ -z "${jacoco_dir}" ]; then
       echo "No site/jacoco folder found. Skipping coverage report parsing."
+      return 
     fi
     xml_file="${jacoco_dir}/jacoco.xml"
     branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
