@@ -280,6 +280,8 @@ gradlew_ui_build() {
 }
 
 gradlew_ui_build_and_push() {
+  ARTIFACT=${1}
+  EXTENSION=${2}
   gradlew_ui_build "$@"
   set -e
   ./gradlew publish --console plain \
@@ -293,6 +295,14 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
+  lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+  build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+  generate_checksum $ARTIFACT $build_file_name
+  push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  for env in "${environments[@]}"
+  do
+    push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  done
   set +e
 }
 
