@@ -655,6 +655,8 @@ jobs:
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       CI_BRANCH: TDEVOPS-1968-1
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
