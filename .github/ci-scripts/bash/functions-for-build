@@ -282,7 +282,6 @@ gradlew_ui_build() {
   ./gradlew zipUiBuild --console plain --stacktrace \
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}"
-  nvm use ${base_version}
   set +e
 }
 
@@ -387,7 +386,6 @@ npm_build() {
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
-  nvm use ${base_version}
   set +e
 }
 
@@ -404,7 +402,6 @@ npm_build_and_push() {
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
-  nvm use ${base_version}
   set +e
 }
 
