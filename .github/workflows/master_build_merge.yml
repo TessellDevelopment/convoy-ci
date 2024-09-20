@@ -1367,11 +1367,11 @@ jobs:
                   urls=$(yq eval '.externalUrls[]' convoy.yaml)
                   for url in ${urls}; do
                     echo "Processing URL: ${url}"
-                    filename=$(basename "$url")
-                    wget "$url" 
-                    unzip "$filename"
-                    rm "$download_dir/$filename"
-                    echo "Downloaded and extracted: $filename"
+                    filename=$(basename "${url}")
+                    wget "${url}" 
+                    unzip "${filename}"
+                    rm "${filename}"
+                    echo "Downloaded and extracted: ${filename}"
                   done
                 fi
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
