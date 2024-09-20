@@ -346,7 +346,7 @@ install_node() {
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
   base_node_version=$(node --version)
-  node_version=$(yq eval '.nodeVersion // strenv(base_version)' convoy.yaml)
+  node_version=$(yq eval '.nodeVersion // strenv(base_node_version)' convoy.yaml)
   nvm which "$node_version" > /dev/null 2>&1
   if [ $? -eq 0 ]; then
     echo "Node version $node_version is already installed."
