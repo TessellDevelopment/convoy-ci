@@ -342,6 +342,7 @@ install_go_dependencies() {
 }
 
 install_node() {
+  source ~/.bashrc
   base_node_version=$(node --version)
   node_version=$(yq eval '.nodeVersion // strenv(base_version)' convoy.yaml)
   if nvm ls | grep -q "${node_version}"; then
