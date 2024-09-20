@@ -275,12 +275,14 @@ gradlew_docker_tag() {
 gradlew_ui_build() {
   configure_npmrc_yarnrc
   set -e
+  install_node
   ENV_JSON=${TESSELL_UI_ENV_SECRET}
   echo $ENV_JSON | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
   cat .env
   ./gradlew zipUiBuild --console plain --stacktrace \
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}"
+  nvm use ${base_version}
   set +e
 }
 
@@ -339,6 +341,19 @@ install_go_dependencies() {
   which go
 }
 
+install_node() {
+  base_node_version=$(node --version)
+  node_version=$(yq eval '.nodeVersion // strenv(base_version)' convoy.yaml)
+  if nvm ls | grep -q "${node_version}"; then
+    echo "Node version ${node_version} is already installed."
+    nvm use ${node_version}
+  else
+    echo "Node version ${node_version} not found. Installing..."
+    nvm install "${node_version}"
+    nvm use "${node_version}"
+  fi
+}
+
 mvn_deploy() {
   ARTIFACT_ID="${1}"
   EXTENSION="${2}"
@@ -357,6 +372,7 @@ mvn_deploy() {
 
 npm_build() {
   set -e
+  install_node
   npm install
   npm run build
   configureNpmrc "${NEXUS_REPO_NPM}"
@@ -367,11 +383,13 @@ npm_build() {
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
+  nvm use ${base_version}
   set +e
 }
 
 npm_build_and_push() {
   set -e
+  install_node
   npm install
   npm run build
   configureNpmrc "${NEXUS_PUSH_REPOS_NPM}"
@@ -382,6 +400,7 @@ npm_build_and_push() {
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
+  nvm use ${base_version}
   set +e
 }
 
