@@ -30,7 +30,7 @@ jobs:
 
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
-    runs-on: ui-build
+    runs-on: ui-build-test
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
