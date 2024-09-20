@@ -274,8 +274,8 @@ gradlew_docker_tag() {
 
 gradlew_ui_build() {
   configure_npmrc_yarnrc
-  set -e
   install_node
+  set -e
   ENV_JSON=${TESSELL_UI_ENV_SECRET}
   echo $ENV_JSON | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
   cat .env
@@ -343,22 +343,10 @@ install_go_dependencies() {
 
 install_node() {
   export NVM_DIR="$HOME/.nvm"
-  echo "---------------------"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  echo "---------------------"
-
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-  echo "---------------------"
-
-  nvm --version
-  echo "---------------------"
   base_node_version=$(node --version)
-  echo "---------------------"
-
   node_version=$(yq eval '.nodeVersion // strenv(base_node_version)' convoy.yaml)
-  echo "---------------------"
-
-
   nvm which "$node_version" > /dev/null 2>&1
   if [ $? -eq 0 ]; then
     echo "Node version $node_version is already installed."
@@ -387,8 +375,8 @@ mvn_deploy() {
 }
 
 npm_build() {
-  set -e
   install_node
+  set -e
   npm install
   npm run build
   configureNpmrc "${NEXUS_REPO_NPM}"
@@ -404,8 +392,8 @@ npm_build() {
 }
 
 npm_build_and_push() {
-  set -e
   install_node
+  set -e
   npm install
   npm run build
   configureNpmrc "${NEXUS_PUSH_REPOS_NPM}"
