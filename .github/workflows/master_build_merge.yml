@@ -42,7 +42,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -162,7 +162,7 @@ jobs:
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -470,7 +470,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -633,7 +633,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -809,7 +809,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -942,7 +942,7 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
@@ -968,7 +968,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
@@ -1362,6 +1362,18 @@ jobs:
                 ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
+                if yq eval '.externalUrls' convoy.yaml &> /dev/null; then
+                  echo "externalUrls present in convoy.yaml. Downloading required binaries."
+                  urls=$(yq eval '.externalUrls[]' convoy.yaml)
+                  for url in ${urls}; do
+                    echo "Processing URL: ${url}"
+                    filename=$(basename "$url")
+                    wget "$url" 
+                    unzip "$filename"
+                    rm "$download_dir/$filename"
+                    echo "Downloaded and extracted: $filename"
+                  done
+                fi
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
@@ -1463,7 +1475,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2619
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       COMMON_INFRA_ACCESS_KEY: ${{ secrets.COMMON_INFRA_ACCESS_KEY }}
       COMMON_INFRA_SECRET_KEY: ${{ secrets.COMMON_INFRA_SECRET_KEY }}
