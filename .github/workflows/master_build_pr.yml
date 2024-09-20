@@ -11,7 +11,7 @@ on:
 jobs:
 
   build-ui:
-    if: ${{ inputs.type == 'ui-build' }}
+    if: ${{ inputs.type == 'ui-build-test' }}
     runs-on: ui-build-test
     env:
       CI_BRANCH: TDEVOPS-2609

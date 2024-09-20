@@ -29,7 +29,7 @@ on:
 jobs:
 
   build-ui:
-    if: ${{ inputs.type == 'ui-build' }}
+    if: ${{ inputs.type == 'ui-build-test' }}
     runs-on: ui-build-test
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
