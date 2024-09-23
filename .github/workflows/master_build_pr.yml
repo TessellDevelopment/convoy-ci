@@ -169,17 +169,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade --no-build-isolation pip
-            python3 -m pip install --no-build-isolation flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install --no-build-isolation -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
           installPythonDependencies
 
       - name: Setup Trivy and Dockle

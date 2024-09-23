@@ -263,17 +263,6 @@ jobs:
             done  
             mc alias list
           }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
           installAwsCli() {
             curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
             chmod +x install-aws.sh
