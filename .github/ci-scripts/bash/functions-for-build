@@ -83,34 +83,30 @@ configure_and_push_aws() {
   BUCKET_NAME=${2}
   SOURCE=${3}
   DESTINATION=${4}
-  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
-  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
-  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
-  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
-  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
-  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+  generate_sts_session_token ${BUCKET_ACCOUNT}
   aws s3 cp "${SOURCE}" "${DESTINATION}"
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 convoy_codegen_build() {
   set -e
-  ARTIFACT="$1"
+  ARTIFACT="${1}"
+  VERSION="${3}"
   cd ./${ARTIFACT}
-  mvn clean package -Drevision=${LATEST_TAG:-0.0.0}
+  mvn clean package -Drevision=${VERSION:-0.0.0}
   cd ..
   set +e
 }
 
 convoy_codegen_build_and_push() {
   set -e
-  ARTIFACT="$1"
-  EXTENSION="$2"
-  convoy_codegen_build ${ARTIFACT}
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  convoy_codegen_build $@
   set -e
-  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${LATEST_TAG}"
+  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +e
 }
 
@@ -225,9 +221,20 @@ generate_checksum() {
     echo "File not found!"
     return 1
   fi
-  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
-  ARTIFACT="${ARTIFACT%%.*}"         
-  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')
+  ARTIFACT="${ARTIFACT%%.*}"
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
+}
+
+generate_sts_session_token() {
+  BUCKET_ACCOUNT=${1}
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
+  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
 }
 
 go_docker_build() {
@@ -278,6 +285,8 @@ gradlew_ui_build() {
 }
 
 gradlew_ui_build_and_push() {
+  ARTIFACT=${1}
+  EXTENSION=${2}
   gradlew_ui_build "$@"
   set -e
   ./gradlew publish --console plain \
@@ -291,6 +300,14 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
+  lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+  build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+  generate_checksum $ARTIFACT $build_file_name
+  push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  for env in "${environments[@]}"
+  do
+    push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  done
   set +e
 }
 
@@ -318,7 +335,7 @@ initialise_coverage() {
 
 install_go_dependencies() {
   go version
-  go install golang.org/x/tools/cmd/goimports@latest
+  go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
 }
 
@@ -404,7 +421,7 @@ parse_coverage_report_java() {
     jacoco_dir=$(find . -type d -path '*/site/jacoco')
     if [ -z "${jacoco_dir}" ]; then
       echo "No site/jacoco folder found. Skipping coverage report parsing."
-      exit 0 
+      return 
     fi
     xml_file="${jacoco_dir}/jacoco.xml"
     branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
@@ -423,15 +440,19 @@ parse_coverage_report_java() {
     zip -r coverage.zip jacoco/*
     cd -
     mv ${jacoco_dir}/../coverage.zip ./
+    flag=1
   else 
     echo "Skipping jacoco code coverage for non-java repository."
-    exit 0
   fi
 }
 
 parse_and_push_coverage_report_java() {
+  flag=0
   parse_coverage_report_java
-  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  if [ ${flag} -eq 1 ]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
 }
 
 push_to_minio() {
@@ -562,9 +583,8 @@ setup_packer_env() {
 
 terraform_apply() {
   set -e
-  mkdir -p build
   cd terraform
-  create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
+  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
   terraform init
   terraform plan
   cd ..
