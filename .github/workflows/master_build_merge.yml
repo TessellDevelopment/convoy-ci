@@ -1332,7 +1332,7 @@ jobs:
           # }
           softwareDefBuildAndPush() {
             echo $LATEST_TAG
-            export BRANCH_NAME="${{ github.event.pull_request.head.ref }}""
+            export BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
             export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
 
             software_def_build_and_push "$@"
