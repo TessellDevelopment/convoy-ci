@@ -412,7 +412,7 @@ parse_coverage_report() {
 }
 
 parse_and_push_coverage_report() {
-  set -e  
+  set -e
   language=$(yq '.language' convoy.yaml)
   if [[ "${language}" == "java" ]]; then
     parse_and_push_coverage_report_java "$@"
@@ -571,8 +571,7 @@ run_python_unit_test() {
   python3 -m coverage html --include="${include}"
   python3 -m coverage json --include="${include}"
   popd
-  deactivate
-  parse_coverage_report_python 
+  deactivate 
 }
 
 setup_qa_env() {
