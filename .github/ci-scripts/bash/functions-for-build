@@ -598,24 +598,33 @@ software_def_build() {
 
 software_def_build_and_push() {
   setupPackerEnv
-  export TAGS=LATEST_TAG
+  export TAGS=${LATEST_TAG}
   echo $CUSTOM_TAGS
   source pkenv/bin/activate
   echo $CURRENT_VERSION_TAG
   # export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
   echo $CURRENT_VERSION_TAG
   echo $TAGS
+  echo $LATEST_TAG
   echo $LABEL
   echo $NEXUS_ARTIFACT_REPO
+  echo $BRANCH_NAME
   mkdir -p ~/.packer.d/plugins
+
   PR_COMMITS=$(curl -L \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
   echo "Number of commits in PR: $PR_COMMITS"
+  
+  major=$(echo "$LATEST_TAG" | cut -d. -f1)
+  prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
+  PREV_TAG="$major.$prev_minor."
+  echo $PREV_TAG
+  PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
+  echo $PREVIOUS_LATEST_TAG
   # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
-  github.event.pull_request.head.ref
 
   build_all_artifacts -r $PWD --base_commit  --pipeline_run
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"

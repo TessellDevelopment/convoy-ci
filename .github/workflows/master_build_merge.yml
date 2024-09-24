@@ -1331,7 +1331,8 @@ jobs:
           #   pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
           # }
           softwareDefBuildAndPush() {
-            export BRANCH_NAME=github.event.pull_request.head.ref
+            echo $LATEST_TAG
+            export BRANCH_NAME="${{ github.event.pull_request.head.ref }}""
             export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
 
             software_def_build_and_push "$@"
