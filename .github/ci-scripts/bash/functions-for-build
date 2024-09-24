@@ -439,22 +439,27 @@ parse_coverage_report_python() {
     statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
     export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
     export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+    flag=1
   else
     echo "pytest.ini not present skipping unit test and code coverage report generation"
   fi
 }
 
 parse_and_push_coverage_report_python() {
+  flag=0
   parse_coverage_report_python
-  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
-  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"}
+  if [ ${flag} -eq 1 ]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
+  fi
 }
 
 parse_coverage_report_java() {
   jacoco_dir=$(find . -type d -path '*/site/jacoco')
   if [ -z "${jacoco_dir}" ]; then
     echo "No site/jacoco folder found. Skipping coverage report parsing."
-    exit 0 
+    return
   fi
   xml_file="${jacoco_dir}/jacoco.xml"
   branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
@@ -473,6 +478,7 @@ parse_coverage_report_java() {
   zip -r coverage.zip jacoco/*
   cd -
   mv ${jacoco_dir}/../coverage.zip ./
+  flag=1
 }
 
 parse_and_push_coverage_report_java() {
