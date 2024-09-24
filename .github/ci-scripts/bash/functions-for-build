@@ -586,29 +586,41 @@ software_def_build() {
   echo $TAGS
   echo $CUSTOM_TAGS
   source pkenv/bin/activate
-  export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
   echo $CURRENT_VERSION_TAG
+  echo $SOURCE_BRANCH
   mkdir -p ~/.packer.d/plugins
   
-  validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run
-  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run
+  validate_all -r $PWD --src_branch ${SOURCE_BRANCH} --pipeline_run
+  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
 }
 
 software_def_build_and_push() {
   setupPackerEnv
-  echo $TAGS
+  export TAGS=LATEST_TAG
   echo $CUSTOM_TAGS
   source pkenv/bin/activate
-  export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
   echo $CURRENT_VERSION_TAG
+  # export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+  echo $CURRENT_VERSION_TAG
+  echo $TAGS
+  echo $LABEL
+  echo $NEXUS_ARTIFACT_REPO
   mkdir -p ~/.packer.d/plugins
-  
+  PR_COMMITS=$(curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+  echo "Number of commits in PR: $PR_COMMITS"
   # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
+  github.event.pull_request.head.ref
+
   build_all_artifacts -r $PWD --base_commit  --pipeline_run
-  curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-      --upload-file ./common_manifest.json \
-      ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
-  pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  # curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+  #     --upload-file ./common_manifest.json \
+  #     ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
+  # pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
 terraform_apply() {
