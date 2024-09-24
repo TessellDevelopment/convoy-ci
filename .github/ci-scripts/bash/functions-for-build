@@ -581,6 +581,36 @@ setup_packer_env() {
   pip3 install --force-reinstall setuptools==45.2.0
 }
 
+software_def_build() {
+  setupPackerEnv
+  echo $TAGS
+  echo $CUSTOM_TAGS
+  source pkenv/bin/activate
+  export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+  echo $CURRENT_VERSION_TAG
+  mkdir -p ~/.packer.d/plugins
+  
+  validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run
+  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --dry_run --pipeline_run
+}
+
+software_def_build_and_push() {
+  setupPackerEnv
+  echo $TAGS
+  echo $CUSTOM_TAGS
+  source pkenv/bin/activate
+  export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
+  echo $CURRENT_VERSION_TAG
+  mkdir -p ~/.packer.d/plugins
+  
+  # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
+  build_all_artifacts -r $PWD --base_commit  --pipeline_run
+  curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+      --upload-file ./common_manifest.json \
+      ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
+  pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+}
+
 terraform_apply() {
   set -e
   cd terraform
