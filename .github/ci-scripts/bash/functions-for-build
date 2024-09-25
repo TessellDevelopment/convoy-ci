@@ -659,8 +659,7 @@ software_def_build_and_push() {
   PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
   echo $PREVIOUS_LATEST_TAG
 
-  # build_all_artifacts -r $PWD --base_commit  --pipeline_run
-  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  # push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
 terraform_apply() {
