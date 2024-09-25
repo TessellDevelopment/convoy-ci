@@ -224,10 +224,10 @@ jobs:
               exit 1
           fi   
 
-      - name: Slack Notification
-        if: failure()
-        uses: act10ns/slack@v2.0.0
-        with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+      # - name: Slack Notification
+      #   if: failure()
+      #   uses: act10ns/slack@v2.0.0
+      #   with:
+      #      status: ${{ job.status }}
+      #      steps: ${{ toJson(steps) }}
+      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
