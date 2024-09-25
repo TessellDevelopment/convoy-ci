@@ -137,13 +137,13 @@ jobs:
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
     
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
@@ -444,13 +444,13 @@ jobs:
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -605,13 +605,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
    
   build-amd-go-21:
     if: ${{ inputs.type == 'amd-go-21' }}
@@ -779,13 +779,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd-go-22:
     if: ${{ inputs.type == 'amd-go-22' }}
@@ -909,13 +909,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
@@ -1464,13 +1464,13 @@ jobs:
           docker container prune --force
           docker volume prune --force
                   
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-arm:
     if: ${{ inputs.type == 'arm' }}
@@ -1672,10 +1672,10 @@ jobs:
           docker container prune --force
           docker volume prune --force
                     
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
