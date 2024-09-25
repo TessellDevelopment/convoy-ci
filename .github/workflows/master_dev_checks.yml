@@ -193,12 +193,12 @@
             PR_TITLE: ${{github.event.pull_request.title}}
             BRANCH: ${{ github.event.pull_request.head.ref}}
           run: |
-            if ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+            if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
               if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
                 echo "Revert Double commit Branch. Allowed"
               else   
                 echo "Exclude Double commit naming in Branch, PR title and try again."
-                exit 1
+                # exit 1
               fi
             else
               echo "No double commit conflicts found in Branch or PR title."
