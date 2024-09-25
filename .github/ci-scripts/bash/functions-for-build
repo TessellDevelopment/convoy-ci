@@ -602,10 +602,11 @@ software_def_build() {
   mkdir -p ~/.packer.d/plugins
   echo $BRANCH_NAME
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
-    echo "BRANCH_NAME contains double_commit, skipping build"
+    echo "BRANCH_NAME contains double_commit"
     get_pr_commits
     echo $PR_COMMITS
     if [[ "$PR_COMMITS" -le 2 ]]; then
+      echo "BRANCH_NAME contains double_commit and more than 2 commits, skipping build"
       return  # Early exit if PR_COMMITS is 2 or less
     fi
   fi

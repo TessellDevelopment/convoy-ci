@@ -692,6 +692,7 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
+      GH_API_URL: ${{vars.GH_API_URL}}
 
     steps:
       - name: Checkout code
