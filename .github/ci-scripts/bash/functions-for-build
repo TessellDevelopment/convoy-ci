@@ -625,12 +625,9 @@ software_def_build_and_push() {
   source pkenv/bin/activate
   echo $CURRENT_VERSION_TAG
   # export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
-  echo $CURRENT_VERSION_TAG
   echo $TAGS
   echo $LATEST_TAG
   echo $LABEL
-  echo $NEXUS_ARTIFACT_REPO
-  echo $BRANCH_NAME
   echo $PR_NUMBER
   mkdir -p ~/.packer.d/plugins
 
