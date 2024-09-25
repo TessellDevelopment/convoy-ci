@@ -8,6 +8,10 @@ awsConfigureProdAssets() {
   aws_configure_prod_assets "$@"
 }
 
+awsConfigureTessellopsArtifacts() {
+  aws_configure_tessellops_artifacts "$@"
+}
+
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
@@ -107,8 +111,24 @@ installGoDependencies() {
  install_go_dependencies "$@"
 }
 
+jarBuild() {
+  jar_build "$@"
+}
+
+jarBuildAndPush() {
+  jar_build_and_push "$@"
+}
+
 mvnDeploy() {
   mvn_deploy "$@"
+}
+
+mvnwBuild() {
+  mvnw_build "$@"
+}
+
+mvnwBuildAndPush() {
+  mvnw_build_and_push "$@"
 }
 
 npmBuild() {
@@ -117,6 +137,14 @@ npmBuild() {
 
 npmBuildAndPush() {
   npm_build_and_push "$@"
+}
+
+opsImageBuild() {
+  ops_image_build "$@"
+}
+
+opsImageBuildAndPush() {
+  ops_image_build_and_push "$@"
 }
 
 opsUIBuild() {
