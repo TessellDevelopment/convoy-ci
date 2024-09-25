@@ -601,6 +601,9 @@ software_def_build() {
   echo $SOURCE_BRANCH
   mkdir -p ~/.packer.d/plugins
   echo $BRANCH_NAME
+  echo $REPO
+  echo $PR_NUMBER
+  echo $GH_API_URL
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
