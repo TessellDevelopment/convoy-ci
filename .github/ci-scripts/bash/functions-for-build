@@ -641,15 +641,12 @@ software_def_build_and_push() {
     if [[ "$PR_COMMITS" -le 2 ]]; then
       major=$(echo "$LATEST_TAG" | cut -d. -f1)
       prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-      PREV_TAG="$major.$prev_minor."
-      echo $PREV_TAG
-      PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
+      PREVIOUS_LATEST_TAG=$(git tag | grep "$major.$prev_minor." | tail -n 1)
       PREVIOUS_LABEL="rel-$major.$prev_minor.0"
       URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
-      # push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
     else
       build_all_artifacts -r $PWD --base_commit  --pipeline_run
     fi
@@ -667,10 +664,6 @@ software_def_build_and_push() {
 
   # build_all_artifacts -r $PWD --base_commit  --pipeline_run
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
-  # curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-  #     --upload-file ./common_manifest.json \
-  #     ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/delta-image-manifest/delta-image-manifest-${{ steps.latest_tag.outputs.tag_ref }}.json
-  # pushToNexus "./common_manifest.json" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
 terraform_apply() {
