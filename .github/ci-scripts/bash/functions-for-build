@@ -624,7 +624,6 @@ software_def_build_and_push() {
   echo $CUSTOM_TAGS
   source pkenv/bin/activate
   echo $CURRENT_VERSION_TAG
-  # export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
   echo $TAGS
   echo $LATEST_TAG
   echo $LABEL

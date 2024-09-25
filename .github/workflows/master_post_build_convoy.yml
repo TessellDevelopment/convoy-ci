@@ -140,6 +140,7 @@ jobs:
           
               for _ in range(max_retries):
                 response = requests.post(API_URL, json=payload, headers=headers)
+                print(API_URL)
                 if response.status_code == 200:
                   print(response.status_code)
                   print(response.text)
