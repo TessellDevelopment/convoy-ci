@@ -609,6 +609,7 @@ software_def_build_and_push() {
   echo $LABEL
   echo $NEXUS_ARTIFACT_REPO
   echo $BRANCH_NAME
+  echo $PR_NUMBER
   mkdir -p ~/.packer.d/plugins
 
   PR_COMMITS=$(curl -L \
@@ -618,15 +619,41 @@ software_def_build_and_push() {
               ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
   echo "Number of commits in PR: $PR_COMMITS"
   
+  if [[ "$BRANCH_NAME" == *double_commit* ]]; then
+    echo "BRANCH_NAME contains double_commit"
+    PR_COMMITS=$(curl -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+
+    if [[ "$PR_COMMITS" -le 2 ]]; then
+      major=$(echo "$LATEST_TAG" | cut -d. -f1)
+      prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
+      PREV_TAG="$major.$prev_minor."
+      echo $PREV_TAG
+      PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
+      PREVIOUS_LABEL="rel-$major.$prev_minor.0"
+
+      curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
+        "${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+      # push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+    else
+      build_all_artifacts -r $PWD --base_commit  --pipeline_run
+    fi
+  else
+    echo "BRANCH_NAME does not contain double_commit"
+    build_all_artifacts -r $PWD --base_commit  --pipeline_run
+  fi
+
   major=$(echo "$LATEST_TAG" | cut -d. -f1)
   prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
   PREV_TAG="$major.$prev_minor."
   echo $PREV_TAG
   PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
   echo $PREVIOUS_LATEST_TAG
-  # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
 
-  build_all_artifacts -r $PWD --base_commit  --pipeline_run
+  # build_all_artifacts -r $PWD --base_commit  --pipeline_run
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
   # curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
   #     --upload-file ./common_manifest.json \
