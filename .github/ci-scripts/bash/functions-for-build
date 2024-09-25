@@ -605,7 +605,7 @@ software_def_build() {
     echo "BRANCH_NAME contains double_commit, skipping build"
     get_pr_commits
     echo $PR_COMMITS
-    if [[ "$PR_COMMITS" <= 2 ]]; then
+    if [[ "$PR_COMMITS" -le 2 ]]; then
       return  # Early exit if PR_COMMITS is 2 or less
     fi
   fi
