@@ -609,7 +609,7 @@ software_def_build() {
     get_pr_commits
     echo $PR_COMMITS
     if [[ "$PR_COMMITS" -le 2 ]]; then
-      echo "BRANCH_NAME contains double_commit and more than 2 commits, skipping build"
+      echo "BRANCH_NAME contains double_commit and less than 2 commits, skipping build"
       return  # Early exit if PR_COMMITS is 2 or less
     fi
   fi
@@ -645,9 +645,10 @@ software_def_build_and_push() {
       echo $PREV_TAG
       PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
       PREVIOUS_LABEL="rel-$major.$prev_minor.0"
-
+      URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+      echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
-        "${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
       # push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
     else
       build_all_artifacts -r $PWD --base_commit  --pipeline_run
