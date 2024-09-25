@@ -582,6 +582,15 @@ setup_packer_env() {
   pip3 install pyopenssl --upgrade
   pip3 install --force-reinstall setuptools==45.2.0
 }
+get_pr_commits() {
+  PR_COMMITS=$(curl -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+  echo "Number of commits in PR: $PR_COMMITS"
+  export $PR_COMMITS
+}
 
 software_def_build() {
   setupPackerEnv
@@ -591,9 +600,18 @@ software_def_build() {
   echo $CURRENT_VERSION_TAG
   echo $SOURCE_BRANCH
   mkdir -p ~/.packer.d/plugins
-  
+  echo $BRANCH_NAME
+  if [[ "$BRANCH_NAME" == *double_commit* ]]; then
+    echo "BRANCH_NAME contains double_commit, skipping build"
+    get_pr_commits
+    echo $PR_COMMITS
+    if [[ "$PR_COMMITS" <= 2 ]]; then
+      return  # Early exit if PR_COMMITS is 2 or less
+    fi
+  fi
   validate_all -r $PWD --src_branch ${SOURCE_BRANCH} --pipeline_run
   build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
+
 }
 
 software_def_build_and_push() {
