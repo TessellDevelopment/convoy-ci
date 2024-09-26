@@ -635,15 +635,14 @@ software_def_build_and_push() {
       get_dc_messages
       root_pr_number=$(echo $dc_message | grep -oE '[0-9]+' | tail -1 )
       echo $root_pr_number
+      #       root_pr_number=$(git log ${BASE_BRANCH}..${BRANCH_NAME} --oneline | tail -1 | grep -oE '[0-9]+' | tail -1 )
+      # $(git tag | grep "$major.$prev_minor." | tail -n 1)
       get_base_branch_from_pr_number root_pr_number
       echo $base_branch_of_pr
-      root_pr_tag=$(echo "$version" | cut -d'-' -f2 | cut -d'.' -f1,2)
-      major=$(echo "$LATEST_TAG" | cut -d. -f1)
-      prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-
+      root_pr_tag=$(echo "$base_branch_of_pr" | cut -d'-' -f2 | cut -d'.' -f1,2)
+      echo $root_pr_tag
       PREVIOUS_LATEST_TAG=$(git tag | grep "$root_pr_tag." | tail -n 1)
-      PREVIOUS_LABEL="rel-$major.$prev_minor.0"
-      URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_pr}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
