@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "hello world"
 source ./ci-scripts/bash/functions-for-build-camel-case
 echo "hi there"
 aws_configure_devqa_infra() {
