@@ -607,7 +607,6 @@ setup_packer_env() {
 }
 
 software_def_build() {
-  source pkenv/bin/activate
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
@@ -625,7 +624,6 @@ software_def_build() {
 software_def_build_and_push() {
   setupPackerEnv
   export CURRENT_VERSION_TAG=${LATEST_TAG}
-  source pkenv/bin/activate
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
