@@ -41,8 +41,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           COMMIT_HASH: "${{github.sha}}"
@@ -140,7 +140,6 @@ jobs:
           
               for _ in range(max_retries):
                 response = requests.post(API_URL, json=payload, headers=headers)
-                print(API_URL)
                 if response.status_code == 200:
                   print(response.status_code)
                   print(response.text)
@@ -155,11 +154,11 @@ jobs:
                 exit(1)
               print("POST request Complete")
 
-            def get_software_def_url(payload, API_URL):
+            def get_software_def_url(payload, api_url):
               if STATUS == 'SUCCESSFUL':
-                API_URL = os.environ.get('API_URL_REPLICATE')
+                api_url = os.environ.get('API_URL_REPLICATE')
                 payload.pop("buildStatus")              
-              return payload, API_URL
+              return payload, api_url
 
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')

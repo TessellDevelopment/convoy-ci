@@ -214,7 +214,7 @@ get_pr_commits() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+  ${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
   echo "Number of commits in PR: $PR_COMMITS"
 }
 
@@ -224,7 +224,7 @@ get_base_branch_from_pr_number() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPO}/pulls/${root_pr_number}"| jq -r '.base.ref')
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.base.ref')
 }
 
 get_dc_messages() {
@@ -232,7 +232,7 @@ get_dc_messages() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
 }
 
 generate_checksum() {
@@ -607,7 +607,6 @@ setup_packer_env() {
 }
 
 software_def_build() {
-  setupPackerEnv
   source pkenv/bin/activate
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins

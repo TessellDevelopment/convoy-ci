@@ -658,12 +658,12 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
-      AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
-      AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
-      AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
-      AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+      PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
+      PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
+      PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
+      PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
+      PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
+      PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
@@ -689,11 +689,12 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
+      REPOSITORY: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
 
     steps:
       - name: Checkout code
