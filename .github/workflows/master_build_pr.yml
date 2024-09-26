@@ -1022,11 +1022,6 @@ jobs:
             fi
             set +e
           }
-          softwareDefBuild() {
-            export SOURCE_BRANCH=${{ github.head_ref }}
-            export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
-            software_def_build "$@"
-          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa
