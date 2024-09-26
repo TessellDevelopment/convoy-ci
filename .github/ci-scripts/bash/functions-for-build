@@ -226,6 +226,14 @@ get_base_branch_from_pr_number() {
   "${GH_API_URL}/repos/${REPO}/pulls/69"| jq -r '.base.ref')
 }
 
+get_dc_messages() {
+  dc_message=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
+}
+
 generate_checksum() {
   ARTIFACT=${1}
   BUILD_FILE=${2}
@@ -624,7 +632,9 @@ software_def_build_and_push() {
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
     if [[ "$PR_COMMITS" -le 2 ]]; then
-      root_pr_number=$(git log ${BASE_BRANCH}..${BRANCH_NAME} --oneline | tail -1 | grep -oE '[0-9]+' | tail -1 )
+      get_dc_messages
+      root_pr_number=$(echo $dc_message | grep -oE '[0-9]+' | tail -1 )
+      echo $root_pr_number
       get_base_branch_from_pr_number root_pr_number
       echo $base_branch_of_pr
       root_pr_tag=$(echo "$version" | cut -d'-' -f2 | cut -d'.' -f1,2)
