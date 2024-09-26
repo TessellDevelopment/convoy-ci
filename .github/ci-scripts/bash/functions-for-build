@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ./ci-scripts/bash/functions-for-build-camel-case
-echo "hi there"
+
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
   aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
@@ -224,7 +224,15 @@ get_base_branch_from_pr_number() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPO}/pulls/69"| jq -r '.base.ref')
+  "${GH_API_URL}/repos/${REPO}/pulls/${root_pr_number}"| jq -r '.base.ref')
+}
+
+get_dc_messages() {
+  dc_message=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
 }
 
 generate_checksum() {
@@ -589,7 +597,7 @@ setup_packer_env() {
   python3 -m venv pkenv
   source pkenv/bin/activate
   python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r ./requirements.txt --extra-index-url=https://$GITHUB_USER:$GITHUB_TOKEN@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python3 -m pip install -r ./requirements.txt --extra-index-url=https://$GITHUB_USER:$GITHUB_TOKEN@nexus.tessell.cloud/repository/${NEXUS_PULL_REPOS_PY}/simple
 
   find /usr/bin /usr/local/bin -name build_all_artifacts
   rm -rf /usr/lib/python3/dist-packages/OpenSSL
@@ -625,16 +633,15 @@ software_def_build_and_push() {
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
     if [[ "$PR_COMMITS" -le 2 ]]; then
-      root_pr_number=$(git log ${BASE_BRANCH}..${BRANCH_NAME} --oneline | tail -1 | grep -oE '[0-9]+' | tail -1 )
+      get_dc_messages
+      root_pr_number=$(echo $dc_message | grep -oE '[0-9]+' | tail -1 )
+      echo $root_pr_number
       get_base_branch_from_pr_number root_pr_number
       echo $base_branch_of_pr
-      root_pr_tag=$(echo "$version" | cut -d'-' -f2 | cut -d'.' -f1,2)
-      major=$(echo "$LATEST_TAG" | cut -d. -f1)
-      prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-
+      root_pr_tag=$(echo "$base_branch_of_pr" | cut -d'-' -f2 | cut -d'.' -f1,2)
+      echo $root_pr_tag
       PREVIOUS_LATEST_TAG=$(git tag | grep "$root_pr_tag." | tail -n 1)
-      PREVIOUS_LABEL="rel-$major.$prev_minor.0"
-      URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_pr}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
