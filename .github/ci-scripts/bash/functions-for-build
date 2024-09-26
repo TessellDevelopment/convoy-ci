@@ -209,6 +209,24 @@ frp_build_and_push() {
   set +e
 }
 
+get_pr_commits() {
+  PR_COMMITS=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+  echo "Number of commits in PR: $PR_COMMITS"
+}
+
+get_base_branch_from_pr_number() {
+  pr_number="$1"
+  base_branch_of_pr=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPO}/pulls/69"| jq -r '.base.ref')
+}
+
 generate_checksum() {
   ARTIFACT=${1}
   BUILD_FILE=${2}
@@ -567,14 +585,11 @@ setup_qa_env() {
 
 setup_packer_env() {
   sudo python3 -m pip uninstall -y packer_framework
-  echo ${NEXUS_SERVER_ENDPOINT}
-  echo "hello world"
   python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
   python3 -m venv pkenv
   source pkenv/bin/activate
   python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r ./requirements.txt --extra-index-url=https://$GITHUB_USER:$GITHUB_TOKEN@nexus.tessell.cloud/repository/tessell-py-development/simple
+  python3 -m pip install -r ./requirements.txt --extra-index-url=https://$GITHUB_USER:$GITHUB_TOKEN@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 
   find /usr/bin /usr/local/bin -name build_all_artifacts
   rm -rf /usr/lib/python3/dist-packages/OpenSSL
@@ -582,62 +597,42 @@ setup_packer_env() {
   pip3 install pyopenssl --upgrade
   pip3 install --force-reinstall setuptools==45.2.0
 }
-get_pr_commits() {
-  PR_COMMITS=$(curl -L \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
-  echo "Number of commits in PR: $PR_COMMITS"
-  export PR_COMMITS
-}
 
 software_def_build() {
   setupPackerEnv
-  echo $TAGS
-  echo $CUSTOM_TAGS
   source pkenv/bin/activate
-  echo $CURRENT_VERSION_TAG
-  echo $SOURCE_BRANCH
+  export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
-  echo $BRANCH_NAME
-  echo $REPO
-  echo $PR_NUMBER
-  echo $GH_API_URL
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
-    echo $PR_COMMITS
     if [[ "$PR_COMMITS" -le 2 ]]; then
       echo "BRANCH_NAME contains double_commit and less than 2 commits, skipping build"
-      return  # Early exit if PR_COMMITS is 2 or less
+      return
     fi
   fi
   validate_all -r $PWD --src_branch ${SOURCE_BRANCH} --pipeline_run
   build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
-
 }
 
 software_def_build_and_push() {
   setupPackerEnv
-  export TAGS=${LATEST_TAG}
-  echo $CUSTOM_TAGS
+  export CURRENT_VERSION_TAG=${LATEST_TAG}
   source pkenv/bin/activate
   echo $CURRENT_VERSION_TAG
-  echo $TAGS
-  echo $LATEST_TAG
-  echo $LABEL
-  echo $PR_NUMBER
   mkdir -p ~/.packer.d/plugins
-
-  
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
     if [[ "$PR_COMMITS" -le 2 ]]; then
+      root_pr_number=$(git log ${BASE_BRANCH}..${BRANCH_NAME} --oneline | tail -1 | grep -oE '[0-9]+' | tail -1 )
+      get_base_branch_from_pr_number root_pr_number
+      echo $base_branch_of_pr
+      root_pr_tag=$(echo "$version" | cut -d'-' -f2 | cut -d'.' -f1,2)
       major=$(echo "$LATEST_TAG" | cut -d. -f1)
       prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-      PREVIOUS_LATEST_TAG=$(git tag | grep "$major.$prev_minor." | tail -n 1)
+
+      PREVIOUS_LATEST_TAG=$(git tag | grep "$root_pr_tag." | tail -n 1)
       PREVIOUS_LABEL="rel-$major.$prev_minor.0"
       URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
@@ -647,17 +642,8 @@ software_def_build_and_push() {
       build_all_artifacts -r $PWD --base_commit  --pipeline_run
     fi
   else
-    echo "BRANCH_NAME does not contain double_commit"
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
-
-  major=$(echo "$LATEST_TAG" | cut -d. -f1)
-  prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-  PREV_TAG="$major.$prev_minor."
-  echo $PREV_TAG
-  PREVIOUS_LATEST_TAG=$(git tag | grep $PREV_TAG | tail -n 1)
-  echo $PREVIOUS_LATEST_TAG
-
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
