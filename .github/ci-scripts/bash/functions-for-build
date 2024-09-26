@@ -211,12 +211,20 @@ frp_build_and_push() {
 
 get_pr_commits() {
   PR_COMMITS=$(curl -L \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  ${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits| jq -r '. | length')
   echo "Number of commits in PR: $PR_COMMITS"
-  export PR_COMMITS
+}
+
+get_base_branch_from_pr_number() {
+  pr_number="$1"
+  base_branch_of_pr=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPO}/pulls/69"| jq -r '.base.ref')
 }
 
 generate_checksum() {
@@ -593,6 +601,7 @@ setup_packer_env() {
 software_def_build() {
   setupPackerEnv
   source pkenv/bin/activate
+  export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "BRANCH_NAME contains double_commit"
@@ -616,9 +625,14 @@ software_def_build_and_push() {
     echo "BRANCH_NAME contains double_commit"
     get_pr_commits
     if [[ "$PR_COMMITS" -le 2 ]]; then
+      root_pr_number=$(git log ${BASE_BRANCH}..${BRANCH_NAME} --oneline | tail -1 | grep -oE '[0-9]+' | tail -1 )
+      get_base_branch_from_pr_number root_pr_number
+      echo $base_branch_of_pr
+      root_pr_tag=$(echo "$version" | cut -d'-' -f2 | cut -d'.' -f1,2)
       major=$(echo "$LATEST_TAG" | cut -d. -f1)
       prev_minor=$(($(echo "$LATEST_TAG" | cut -d. -f2) - 1))
-      PREVIOUS_LATEST_TAG=$(git tag | grep "$major.$prev_minor." | tail -n 1)
+
+      PREVIOUS_LATEST_TAG=$(git tag | grep "$root_pr_tag." | tail -n 1)
       PREVIOUS_LABEL="rel-$major.$prev_minor.0"
       URL_PATH="${NEXUS_ARTIFACT_REPO}/${PREVIOUS_LABEL}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"

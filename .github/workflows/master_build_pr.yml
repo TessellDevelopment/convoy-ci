@@ -691,6 +691,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
 
