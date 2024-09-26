@@ -210,13 +210,13 @@ jobs:
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
-      #   with:
-      #      status: ${{ job.status }}
-      #      steps: ${{ toJson(steps) }}
-      #      channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
+        with:
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
@@ -328,13 +328,13 @@ jobs:
           print("POST request Complete")
           EOF
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   with:
-      #       status: ${{ job.status }}
-      #       steps: ${{ toJson(steps) }}
-      #       channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-      #   if: failure()
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
   
   send-mail:
     uses: ./.github/workflows/email_dc.yaml

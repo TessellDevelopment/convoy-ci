@@ -156,6 +156,9 @@ setupPackerEnv() {
   setup_packer_env "$@"
 }
 
+softwareDefBuildAndPush() {
+  software_def_build_and_push "$@"
+}
 terraformApply() {
   terraform_apply "$@"
 }

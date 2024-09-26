@@ -198,7 +198,7 @@
                 echo "Revert Double commit Branch. Allowed"
               else   
                 echo "Exclude Double commit naming in Branch, PR title and try again."
-                # exit 1
+                exit 1
               fi
             else
               echo "No double commit conflicts found in Branch or PR title."
