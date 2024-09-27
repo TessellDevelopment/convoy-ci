@@ -15,6 +15,11 @@ on:
         description: 'Release label for upload'
         required: true
         type: string
+      dev_build:
+        description: 'Is developer build'
+        required: false
+        type: boolean  
+
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'

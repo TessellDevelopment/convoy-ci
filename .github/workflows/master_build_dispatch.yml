@@ -66,3 +66,4 @@
         type: ${{needs.build-file.outputs.type}}
         tag: ${{needs.find-latest-tag.outputs.tag}}
         label: ${{needs.build-file.outputs.label}}
+        dev_build: ${{inputs.artifact_version}} == ""
