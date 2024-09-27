@@ -16,7 +16,18 @@
         type: ${{steps.build-type.outputs.type}}
         label: ${{steps.get-label.outputs.label}}
       steps:
-        - uses: actions/checkout@v4.1.1
+        - name: Check developer build
+          run: |
+            if [[ "${{ github.ref_name}}" == "main" || "${{ github.ref_name}}" == rel-* ]]; then
+              echo "Not a developer build"
+            else
+              if [ -z "${{ inputs.artifact_version }}" ]; then
+                echo "ERROR!!! You must specify artifact_version when running against non release branches"
+                exit 1
+              fi
+            fi
+        - name: Checkout
+          uses: actions/checkout@v4.1.1
           with:
             fetch-depth: 0
 
