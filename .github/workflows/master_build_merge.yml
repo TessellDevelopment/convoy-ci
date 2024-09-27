@@ -205,6 +205,17 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -507,6 +518,18 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+    
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -668,6 +691,18 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -842,6 +877,18 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -977,6 +1024,17 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -1502,6 +1560,18 @@ jobs:
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
     steps: 
+
+      - name: Set Repositories for Dev Build
+        if: ${{ inputs.dev_build }}
+        run: |
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+
+          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
