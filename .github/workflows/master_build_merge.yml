@@ -1201,7 +1201,7 @@ jobs:
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" \
+              -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" \
               -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}"
           }
           gradlewMavenDocker() {
@@ -1217,7 +1217,7 @@ jobs:
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_py="${{ vars.NEXUS_PUSH_REPOS_PY }}" \
+              -Pnexus_push_repo_py="${{ env.NEXUS_PUSH_REPOS_PY }}" \
               -Pnexus_pull_repo_py="${{ env.NEXUS_PULL_REPOS_PY }}" 
           }
           gradlewUploadPlugin() {
@@ -1226,7 +1226,7 @@ jobs:
               -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-              -Pnexus_push_repo_m2="${{ vars.NEXUS_PUSH_REPOS_M2 }}" 
+              -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" 
           }
           helmChartBuildAndPush() {
             set -e
@@ -1571,7 +1571,7 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
-          
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
