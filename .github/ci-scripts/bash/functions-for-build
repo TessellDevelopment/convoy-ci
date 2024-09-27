@@ -607,6 +607,7 @@ setup_packer_env() {
 }
 
 software_def_build() {
+  setupPackerEnv
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
