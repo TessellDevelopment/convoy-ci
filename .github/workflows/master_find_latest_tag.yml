@@ -2,6 +2,10 @@
 name: Find latest tag
 on:
   workflow_call:
+    inputs:
+      artifact_version:
+        description: 'Version with which to push the artifact'
+        type: string
     outputs:
       tag:
         description: "Latest tag"
@@ -55,6 +59,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
+        if: ${{ inputs.artifacts_version }} == ""
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
@@ -115,7 +120,11 @@ jobs:
       - name: Tag Output
         id: tag_output
         run: |
-          echo "tag_ref=${{steps.latest_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+          if [ ${{inputs.artifact_version}} == '' ]; then
+            echo "tag_ref=${{steps.latest_tag.outputs.tag_ref}}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_ref=${{inputs.artifact_version}}" >> $GITHUB_OUTPUT
+          fi
           
       - name: Slack Notification
         if: failure()

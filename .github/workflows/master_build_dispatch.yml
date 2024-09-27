@@ -2,6 +2,11 @@
   name: Master CI Build Dispatch Workflows
   on:
     workflow_call:
+      inputs:
+        artifact_version:
+          description: 'Version with which to push the artifact'
+          type: string
+
       
   jobs:
   
@@ -48,8 +53,10 @@
             echo "type=$runner" >> $GITHUB_OUTPUT
   
     find-latest-tag:
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-433
       secrets: inherit
+      with:
+        artifact_version: ${{ inputs.artifact_version }}
   
     build:
       needs: [build-file,find-latest-tag]
