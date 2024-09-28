@@ -1179,25 +1179,6 @@ jobs:
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
             set +e
           }
-          jarBuild() {
-            set -e
-            VERSION="$3"
-            requiredInputs="3"
-            validateInputs "$requiredInputs" "$@" 
-            ./mvnw package -Drevision=$VERSION
-            set +e
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          opsImageBuild() {
-            set -e
-            mvnwBuild
-            dockerBuild "$@"
-            set +e
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)

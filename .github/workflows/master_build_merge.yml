@@ -1490,6 +1490,9 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELLOPS_ARTIFACTS_DEV_S3: ${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}
+      TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
+      TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
     steps: 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -1514,11 +1517,6 @@ jobs:
         id: build
         shell: bash
         run: |
-          awsConfigureTessellopsArtifacts() {
-            aws configure set aws_access_key_id ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
-            aws configure set aws_secret_access_key ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
-            aws configure set region ap-south-1
-          }
           dockerMultiBuildAndPush() {
             awsConfigureDevqaInfra
             docker buildx rm multi-platform-builder
@@ -1565,38 +1563,6 @@ jobs:
             docker tag ${DOCKERHUB_ORG}/$IMAGE:$VERSION ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG}
             docker push ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG} 
             docker buildx imagetools create -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} ${DOCKERHUB_ORG}/$IMAGE:$VERSION
-            set +e
-          }
-          jarBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            VERSION="$3"
-            requiredInputs="1 2 3"
-            validateInputs "$requiredInputs" "$@" 
-            ./mvnw clean deploy -Drevision=$VERSION -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-              -DgeneratePom=true -Dpackaging=$EXTENSION -DrepositoryId=nexus \
-              -DgroupId=tessellops -DartifactId=$ARTIFACT \
-              -DaltDeploymentRepository=nexus::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{vars.NEXUS_PUSH_REPOS_M2}}
-            set +e
-          }
-          mvnwBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            awsConfigureTessellopsArtifacts
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            pushToNexus "./target/function.zip" "${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip"
-            mv ./target/function.zip  $ARTIFACT-${LATEST_TAG}.zip
-            aws s3 cp $ARTIFACT-${LATEST_TAG}.zip s3://${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.zip   
-            set +e
-          }
-          opsImageBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            dockerBuildAndPush "$@"
             set +e
           }
           build() {

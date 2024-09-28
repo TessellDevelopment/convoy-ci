@@ -14,6 +14,12 @@ aws_configure_prod_assets() {
   aws configure set region ap-south-1
 }
 
+aws_configure_tessellops_artifacts() {
+  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
 build_convoy_tessell_client() {
   install_go_dependencies
   ./setup --client --version 0.0.0
@@ -291,6 +297,23 @@ go_docker_build_and_push() {
   set +e
 }
 
+gradlew_build() {
+  ./gradlew build --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
+gradlew_build_and_push() {
+  ./gradlew build publish --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
 gradlew_docker_tag() {
   ./gradlew dockerTag --console plain \
     -Pnexus_username="${NEXUS_USERNAME}" \
@@ -365,6 +388,29 @@ install_go_dependencies() {
   which go
 }
 
+jarBuild() {
+  set -e
+  VERSION="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw package -Drevision=${VERSION}
+  set +e
+}
+
+jar_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw clean deploy -Drevision=${VERSION} -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+    -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
+    -DgroupId=tessellops -DartifactId=${ARTIFACT} \
+    -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  set +e
+}
+
 mvn_deploy() {
   ARTIFACT_ID="${1}"
   EXTENSION="${2}"
@@ -379,6 +425,25 @@ mvn_deploy() {
       -DgeneratePom=true -Dpackaging=${EXTENSION} \
       -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
       -Dfile=${FILE} -DrepositoryId=nexus
+}
+
+ mvnw_build() {
+  set -e
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  set +e
+}
+
+mvnw_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  aws_configure_tessellops_artifacts
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+  mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
+  aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+  set +e
 }
 
 npm_build() {
@@ -408,6 +473,21 @@ npm_build_and_push() {
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
+  set +e
+}
+
+ops_image_build() {
+  set -e
+  mvnw_build
+  docker_build "$@"
+  set +e
+}
+
+ops_image_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  docker_build_and_push "$@"
   set +e
 }
 
