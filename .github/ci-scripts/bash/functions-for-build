@@ -630,6 +630,7 @@ software_def_build() {
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "${BRANCH_NAME} contains double_commit"
     get_pr_commits
+    get_dc_root_pr_diff
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
     cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../root_pr_diff) ]]; then
@@ -647,21 +648,15 @@ software_def_build_and_push() {
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
-    echo "BRANCH_NAME contains double_commit"
-
-    get_root_pr_tag
+    echo "${BRANCH_NAME} contains double_commit"
 
     get_pr_commits
+    get_dc_root_pr_diff
     git diff HEAD~1 --compact-summary > ../current_pr_diff
     cat ../current_pr_diff
-    # get_current_pr_diff
-    git diff origin/${base_branch_of_root_pr}~1 origin/${base_branch_of_root_pr} --compact-summary  > ../root_pr_diff
     cat ../root_pr_diff
 
-    # get_root_pr_diff
-    # if [[ "$PR_COMMITS" -le 2 ]]; then
     if [[ ! $(diff ../root_pr_diff ../root_pr_diff) ]]; then
-      get_root_pr_tag
       PREVIOUS_LATEST_TAG=$(git tag | grep "$root_pr_tag." | tail -n 1)
       URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
