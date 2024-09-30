@@ -188,6 +188,22 @@ docker_tag_and_push() {
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
 }
 
+elastic_agent_build() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build "$@"
+  set +e
+}
+
+elastic_agent_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build_and_push "$@"
+  set +e
+}
+
 frp_build() {
   set -e
   ./setup -b

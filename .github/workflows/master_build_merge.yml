@@ -1085,13 +1085,6 @@ jobs:
             generateChecksum "$ARTIFACT.$EXTENSION"
             set +e
           }
-          elasticAgentBuildAndPush() {
-            set -e
-            IMAGE="$1"
-            GOOS=linux GOARCH=amd64 go build .
-            dockerBuildAndPush "$@"
-            set +e
-          }
           functionBuildAndPush() {
             set -e
             ARTIFACT="$1"
