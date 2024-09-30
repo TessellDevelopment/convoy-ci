@@ -51,6 +51,7 @@ jobs:
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -186,6 +187,7 @@ jobs:
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -380,17 +382,19 @@ jobs:
             awsConfigureProdAssets
             aws s3 cp $FILE_PATH_LINUX s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp $FILE_PATH_WINDOWS s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp "$FILE_PATH_LINUX" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-            aws s3 cp "$FILE_PATH_WINDOWS" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-            pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-            pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-              pushToMinio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-            done
-            generateChecksum "filebeat-linux.tar.gz" 
-            generateChecksum "filebeat-windows.tar.gz" 
+            if !${DEV_BUILD}; then
+              aws s3 cp "$FILE_PATH_LINUX" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
+              aws s3 cp "$FILE_PATH_WINDOWS" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
+              pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
+              pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
+                pushToMinio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
+              done
+              generateChecksum "filebeat-linux.tar.gz" 
+              generateChecksum "filebeat-windows.tar.gz"
+            fi
             set +e
           }
           elasticTarBuild() {
@@ -497,6 +501,7 @@ jobs:
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -583,13 +588,15 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
+            if !${DEV_BUILD}; then
+              aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+            fi
             set +e
           }
           build() {
@@ -673,6 +680,7 @@ jobs:
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -765,13 +773,15 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
+            if !${DEV_BUILD}; then
+              aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+            fi
             set +e
           }
           tailscaleBuildAndPush() {
@@ -862,6 +872,7 @@ jobs:
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -1009,6 +1020,7 @@ jobs:
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
@@ -1108,13 +1120,15 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/agent/${LATEST_TAG}/"
-            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
+            if !${DEV_BUILD}; then
+              aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+            fi
             set +e
           }
           awsConfigureTessellArtifacts() {
@@ -1163,13 +1177,15 @@ jobs:
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/plugins/${LATEST_TAG}/"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
+            if !${DEV_BUILD}; then
+              aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+            fi
             set +e
           }
           functionBuildAndPush() {
@@ -1189,15 +1205,17 @@ jobs:
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
             aws s3 cp "$ARTIFACT.tar" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/functions/${LATEST_TAG}/"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
-            if $changed_dir; then
-              cd ..;
+            if !${DEV_BUILD}; then
+              aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+              if $changed_dir; then
+                cd ..;
+              fi
             fi
             set +e
           }
@@ -1240,7 +1258,11 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             cd scripts
-            ./package-and-push --prod -n $CHART_NAME
+            if !${DEV_BUILD}; then
+              ./package-and-push -n $CHART_NAME
+            else
+              ./package-and-push --prod -n $CHART_NAME
+            fi
             cd ..
             set +e
           }
@@ -1251,7 +1273,7 @@ jobs:
               validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
-              if [[ ${{inputs.dev_build == 'true'}} ]]; then
+              if !${DEV_BUILD}; then
                 ./package-and-push -n $CHART_NAME
               else
                 ./package-and-push --prod -n $CHART_NAME
@@ -1309,13 +1331,15 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/pushprox/$VERSION/
-            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-            pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum "$ARTIFACT.$EXTENSION"
+            if !${DEV_BUILD}; then
+              aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+              pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum "$ARTIFACT.$EXTENSION"
+            fi
             set +e
           }
           makeImageAndPush() {
@@ -1351,16 +1375,18 @@ jobs:
             else
               ~/opa build policies --output bundles/${file_name}
             fi
-            awsConfigureTessellArtifacts
-            aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             awsConfigureProdAssets
             aws s3 cp "bundles/${file_name}" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            for env in "${environments[@]}"
-            do
-              pushToMinio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            done
-            generateChecksum ${file_name}
+            if !${DEV_BUILD}; then
+              awsConfigureTessellArtifacts
+              aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              for env in "${environments[@]}"
+              do
+                pushToMinio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+              done
+              generateChecksum ${file_name}
+            fi
             set +e
           }
           pythonApiClientBuildAndPush() {
@@ -1538,6 +1564,7 @@ jobs:
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      DEV_BUILD: ${{inputs.dev_build}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}

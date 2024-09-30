@@ -123,7 +123,7 @@ jobs:
       - name: Tag Output
         id: tag_output
         run: |
-          if [ ${{inputs.dev_build}} ]; then
+          if ${{inputs.dev_build}}; then
             branch_name="${{github.ref_name}}"
             if [[ "${branch_name}" =~ ^[^-]+-([0-9]+) ]]; then
               version="0.0.${BASH_REMATCH[1]}"
