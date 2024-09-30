@@ -596,8 +596,7 @@ setup_packer_env() {
   python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
   python3 -m venv pkenv
   source pkenv/bin/activate
-  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r ./requirements.txt --extra-index-url=https://$GITHUB_USER:$GITHUB_TOKEN@nexus.tessell.cloud/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python3 -m pip install -r ./requirements.txt --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 
   # find /usr/bin /usr/local/bin -name build_all_artifacts
   # rm -rf /usr/lib/python3/dist-packages/OpenSSL
@@ -611,10 +610,10 @@ software_def_build() {
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
-    echo "BRANCH_NAME contains double_commit"
+    echo "${BRANCH_NAME} contains double_commit"
     get_pr_commits
     if [[ "$PR_COMMITS" -le 2 ]]; then
-      echo "BRANCH_NAME contains double_commit and less than 2 commits, skipping build"
+      echo "${BRANCH_NAME} contains double_commit and less than 2 commits, skipping build"
       return
     fi
   fi
