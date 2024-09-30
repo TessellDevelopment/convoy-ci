@@ -203,8 +203,8 @@ frp_build_and_push() {
   for OS in "${os_type[@]}"; do
     echo "frpc-{$OS}"
     mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/terls/tessell/frp/${LATEST_TAG}/
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
     push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
     for env in "${environments[@]}"
     do

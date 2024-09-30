@@ -2,32 +2,14 @@
   name: Master CI Build Dispatch Workflows
   on:
     workflow_call:
-      inputs:
-        artifact_version:
-          description: 'Version with which to push the artifact'
-          type: string
-
-      
+ 
   jobs:
-    validate-dev-build:
-      runs-on: non-build
-      steps:
-        - name: Check developer build
-          run: |
-            if [[ "${{ github.ref_name}}" == "main" || "${{ github.ref_name}}" == rel-* ]]; then
-              echo "Not a developer build"
-            else
-              if [ -z "${{ inputs.artifact_version }}" ]; then
-                echo "ERROR!!! You must specify artifact_version when running against non release branches"
-                exit 1
-              fi
-            fi
     build-file:
       runs-on: non-build
-      needs: [validate-dev-build]
       outputs:
         type: ${{steps.build-type.outputs.type}}
         label: ${{steps.get-label.outputs.label}}
+        dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
       steps:
         - name: Checkout
           uses: actions/checkout@v4.1.1
@@ -65,13 +47,24 @@
           run: |
             runner=$(yq '.runner' convoy.yaml)
             echo "type=$runner" >> $GITHUB_OUTPUT
+
+        - name: Determine dev workflow dispatch
+          id: dev-dispatch
+          run: |
+            if [[ "${{ github.ref_name}}" == "main" || "${{ github.ref_name}}" == rel-* ]]; then
+              echo "Not a developer build. Finding latest git tag and running dispatch build."
+              echo "dev_build=false" >> $GITHUB_OUTPUT
+            else
+              echo "Dev branch detected. Constructing dev branch tag and running dispatch build."
+              echo "dev_build=true" >> $GITHUB_OUTPUT
+            fi
   
     find-latest-tag:
-      needs: [validate-dev-build]
+      needs: [build-file]
       uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-433
       secrets: inherit
       with:
-        artifact_version: ${{ inputs.artifact_version }}
+        dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
   
     build:
       needs: [build-file,find-latest-tag]
@@ -81,4 +74,4 @@
         type: ${{needs.build-file.outputs.type}}
         tag: ${{needs.find-latest-tag.outputs.tag}}
         label: ${{needs.build-file.outputs.label}}
-        dev_build: ${{ inputs.artifact_version  != '' }}
+        dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}

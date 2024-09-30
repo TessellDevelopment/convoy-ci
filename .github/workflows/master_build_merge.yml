@@ -16,8 +16,9 @@ on:
         required: true
         type: string
       dev_build:
-        description: 'Is developer build'
+        description: 'Determine whether dispatch is on dev branch or not'
         required: false
+        default: false
         type: boolean  
 
     outputs:
@@ -73,19 +74,20 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_UI_ENV_SECRET: ${{secrets.TESSELL_UI_ENV_SECRET}}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -205,18 +207,19 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -371,13 +374,13 @@ jobs:
             elasticTarBuild
             FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
             FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${{env.LATEST_TAG}}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${{env.LATEST_TAG}}"
+            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
+            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp $FILE_PATH_LINUX s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp $FILE_PATH_WINDOWS s3://tesselltools/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp "$FILE_PATH_LINUX" "s3://tesselltools/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-            aws s3 cp "$FILE_PATH_WINDOWS" "s3://tesselltools/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
+            aws s3 cp $FILE_PATH_LINUX s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp $FILE_PATH_WINDOWS s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
+            aws s3 cp "$FILE_PATH_LINUX" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
+            aws s3 cp "$FILE_PATH_WINDOWS" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
             pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
             pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
             for env in "${environments[@]}"
@@ -519,19 +522,20 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
     
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -582,8 +586,8 @@ jobs:
             fi
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -693,19 +697,20 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
 
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -762,8 +767,8 @@ jobs:
             fi
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/terls/tessell/$NAME/${LATEST_TAG}/
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
+            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -880,19 +885,20 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
 
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -1028,19 +1034,21 @@ jobs:
       RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/citest/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
 
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
@@ -1098,10 +1106,10 @@ jobs:
             agentBuild "$@"
             set -e
             EXTENSION="$2"
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${{env.LATEST_TAG}}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/agent/${{env.LATEST_TAG}}/"
-            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/agent/${LATEST_TAG}/"
+            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -1155,8 +1163,8 @@ jobs:
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/terls/tessell/plugins/${{env.LATEST_TAG}}/"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/plugins/${LATEST_TAG}/"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -1187,9 +1195,9 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${{env.LATEST_TAG}}"
-            aws s3 cp "$ARTIFACT.tar" "s3://tesselltools/terls/tessell/functions/${{env.LATEST_TAG}}/"
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
+            aws s3 cp "$ARTIFACT.tar" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/functions/${LATEST_TAG}/"
+            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -1306,10 +1314,10 @@ jobs:
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${{env.LATEST_TAG}}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/terls/tessell/pushprox/$VERSION/
-            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/pushprox/$VERSION/
+            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
             pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -1354,7 +1362,7 @@ jobs:
             awsConfigureTessellArtifacts
             aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             awsConfigureProdAssets
-            aws s3 cp "bundles/${file_name}" "s3://tesselltools/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
+            aws s3 cp "bundles/${file_name}" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
             for env in "${environments[@]}"
             do
@@ -1565,19 +1573,20 @@ jobs:
       TESSELLOPS_ARTIFACTS_DEV_S3: ${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps: 
 
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-
+          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
+          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
+          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
