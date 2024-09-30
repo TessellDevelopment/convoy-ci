@@ -219,14 +219,16 @@ frp_build_and_push() {
   for OS in "${os_type[@]}"; do
     echo "frpc-{$OS}"
     mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/terls/tessell/frp/${LATEST_TAG}/
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
-    push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-    do
-      push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-    done
-    generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
+    if !${DEV_BUILD}; then
+      push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      for env in "${environments[@]}"
+      do
+        push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      done
+      generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+    fi
   done
   set +e
 }
@@ -339,14 +341,16 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
-  lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
-  build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
-  generate_checksum $ARTIFACT $build_file_name
-  push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  for env in "${environments[@]}"
-  do
-    push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  done
+  if !${DEV_BUILD}; then
+    lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+    build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+    generate_checksum $ARTIFACT $build_file_name
+    push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+    do
+      push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+  fi
   set +e
 }
 
@@ -440,7 +444,7 @@ npm_build() {
   set -e
   npm install
   npm run build
-  configureNpmrc "${NEXUS_REPO_NPM}"
+  configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
   version="${3}"
   required_inputs="3"
@@ -455,10 +459,10 @@ npm_build_and_push() {
   set -e
   npm install
   npm run build
-  configureNpmrc "${NEXUS_PUSH_REPOS_NPM}"
+  configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   set -e
   version="${3}"
-  requiredInputs="3"
+  required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
@@ -544,7 +548,7 @@ parse_coverage_report_python() {
 parse_and_push_coverage_report_python() {
   flag=0
   parse_coverage_report_python
-  if [ ${flag} -eq 1 ]; then
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
@@ -580,7 +584,7 @@ parse_coverage_report_java() {
 parse_and_push_coverage_report_java() {
   flag=0
   parse_coverage_report_java
-  if [ ${flag} -eq 1 ]; then
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
   fi
@@ -753,12 +757,14 @@ vss_tar_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
-  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  for env in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  done
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  if !${DEV_BUILD}; then
+    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  fi
   set +e
 }
 
