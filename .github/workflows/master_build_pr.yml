@@ -672,6 +672,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_BASE_REF: ${GITHUB_BASE_REF}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
