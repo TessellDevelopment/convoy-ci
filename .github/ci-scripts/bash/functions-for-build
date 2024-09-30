@@ -188,6 +188,22 @@ docker_tag_and_push() {
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
 }
 
+elastic_agent_build() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build "$@"
+  set +e
+}
+
+elastic_agent_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build_and_push "$@"
+  set +e
+}
+
 frp_build() {
   set -e
   ./setup -b
@@ -480,50 +496,85 @@ ops_ui_build_and_push() {
 }
 
 parse_coverage_report() {
-  coverage_report=$(find . -type f -name "coverage.json")
-  coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
-  covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
-  missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
-  total_branches=$(jq '.totals.num_branches' ${coverage_report})
-  branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
-  covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
-  missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
-  total_statements=$(jq '.totals.num_statements' ${coverage_report})
-  statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
-  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
-  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
-}
-
-parse_coverage_report_java() {
   set -e
   language=$(yq '.language' convoy.yaml)
   if [[ "${language}" == "java" ]]; then
-    jacoco_dir=$(find . -type d -path '*/site/jacoco')
-    if [ -z "${jacoco_dir}" ]; then
-      echo "No site/jacoco folder found. Skipping coverage report parsing."
-      return 
-    fi
-    xml_file="${jacoco_dir}/jacoco.xml"
-    branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
-    branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
-    branch_total=$((branch_covered + branch_missed))
-    branch_percentage=$(echo "scale=0; ${branch_covered} * 100 / ${branch_total}" | bc)
-    statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
-    statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
-    statement_total=$((statement_covered + statement_missed))
-    statement_percentage=$(echo "scale=0; ${statement_covered} * 100 / ${statement_total}" | bc)
-    export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
-    export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
-    echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
-    echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
-    cd ${jacoco_dir}/..
-    zip -r coverage.zip jacoco/*
-    cd -
-    mv ${jacoco_dir}/../coverage.zip ./
-    flag=1
-  else 
-    echo "Skipping jacoco code coverage for non-java repository."
+    parse_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
   fi
+}
+
+parse_and_push_coverage_report() {
+  set -e
+  language=$(yq '.language' convoy.yaml)
+  if [[ "${language}" == "java" ]]; then
+    parse_and_push_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_and_push_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
+  fi
+}
+
+parse_coverage_report_python() {
+  if [ -f "pytest.ini" ]; then
+    echo "Running python Unit test and generating code coverage report"
+    run_python_unit_test "$@"
+    coverage_report=$(find . -type f -name "coverage.json")
+    coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
+    covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
+    missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
+    total_branches=$(jq '.totals.num_branches' ${coverage_report})
+    branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
+    covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
+    missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
+    total_statements=$(jq '.totals.num_statements' ${coverage_report})
+    statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+    flag=1
+  else
+    echo "pytest.ini not present skipping unit test and code coverage report generation"
+  fi
+}
+
+parse_and_push_coverage_report_python() {
+  flag=0
+  parse_coverage_report_python
+  if [ ${flag} -eq 1 ]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
+  fi
+}
+
+parse_coverage_report_java() {
+  jacoco_dir=$(find . -type d -path '*/site/jacoco')
+  if [ -z "${jacoco_dir}" ]; then
+    echo "No site/jacoco folder found. Skipping coverage report parsing."
+    return
+  fi
+  xml_file="${jacoco_dir}/jacoco.xml"
+  branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
+  branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
+  branch_total=$((branch_covered + branch_missed))
+  branch_percentage=$(echo "scale=0; ${branch_covered} * 100 / ${branch_total}" | bc)
+  statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
+  statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
+  statement_total=$((statement_covered + statement_missed))
+  statement_percentage=$(echo "scale=0; ${statement_covered} * 100 / ${statement_total}" | bc)
+  export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
+  export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
+  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+  cd ${jacoco_dir}/..
+  zip -r coverage.zip jacoco/*
+  cd -
+  mv ${jacoco_dir}/../coverage.zip ./
+  flag=1
 }
 
 parse_and_push_coverage_report_java() {
@@ -581,11 +632,6 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-  if [ -f "pytest.ini" ]; then
-    run_python_unit_test
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
-  fi
   set +e
 }
 
@@ -621,8 +667,7 @@ run_python_unit_test() {
   python3 -m coverage html --include="${include}"
   python3 -m coverage json --include="${include}"
   popd
-  deactivate
-  parse_coverage_report 
+  deactivate 
 }
 
 setup_qa_env() {
