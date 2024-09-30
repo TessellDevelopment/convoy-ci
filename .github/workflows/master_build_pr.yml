@@ -695,6 +695,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       REPOSITORY: "${{github.repository}}"
+      GITHUB_BASE_REF: ${GITHUB_BASE_REF}
 
     steps:
       - name: Checkout code
