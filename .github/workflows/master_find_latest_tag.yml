@@ -39,7 +39,7 @@ jobs:
               
       - name: Get tags
         uses: nick-fields/retry@v3.0.0
-        if: ${{ inputs.dev_build }}
+        if: ${{ inputs.dev_build == false }}
         with:
           timeout_seconds: 10
           max_attempts: 3
@@ -62,7 +62,7 @@ jobs:
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
-        if: ${{ inputs.dev_build }}
+        if: ${{ inputs.dev_build == false}}
         with:
           github-token: ${{ secrets.PIPELINES_REPO_TOKEN  }}
           script: |
