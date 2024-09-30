@@ -64,6 +64,14 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+elasticAgentBuild() {
+  elastic_agent_build "$@"
+}
+
+elasticAgentBuildAndPush() {
+  elastic_agent_build_and_push "$@"
+}
+
 frpBuild() {
   frp_build "$@"
 }
@@ -153,6 +161,14 @@ opsUIBuild() {
 
 opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
+}
+
+parseCoverageReport() {
+  parse_coverage_report "$@"
+}
+
+parseAndPushCoverageReport() {
+  parse_and_push_coverage_report "$@"
 }
 
 parseCoverageReportJava() {
