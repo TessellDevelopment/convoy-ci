@@ -245,9 +245,9 @@ get_root_pr_tag() {
   echo $root_pr_tag
 }
 
-get_current_pr_diff() {
+# get_current_pr_diff() {
 
-}
+# }
 
 generate_checksum() {
   ARTIFACT=${1}
