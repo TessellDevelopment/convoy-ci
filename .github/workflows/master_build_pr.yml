@@ -775,13 +775,6 @@ jobs:
             gradlewPackagePlugin
             set +e
           }
-          elasticAgentBuild() {
-            set -e
-            IMAGE="$1"
-            GOOS=linux GOARCH=amd64 go build .
-            dockerBuild "$@"
-            set +e
-          }
           functionBuild() {
             set -e
             ARTIFACT="$1"

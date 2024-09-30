@@ -64,6 +64,14 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+elasticAgentBuild() {
+  elastic_agent_build "$@"
+}
+
+elasticAgentBuildAndPush() {
+  elastic_agent_build_and_push "$@"
+}
+
 frpBuild() {
   frp_build "$@"
 }
