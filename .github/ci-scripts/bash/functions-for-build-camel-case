@@ -163,6 +163,14 @@ opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
 }
 
+parseCoverageReport() {
+  parse_coverage_report "$@"
+}
+
+parseAndPushCoverageReport() {
+  parse_and_push_coverage_report "$@"
+}
+
 parseCoverageReportJava() {
   parse_coverage_report_java "$@"
 }
