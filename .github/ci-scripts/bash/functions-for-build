@@ -626,7 +626,7 @@ software_def_build() {
   mkdir -p ~/.packer.d/plugins
   get_root_pr_tag
   git diff origin/${base_branch_of_root_pr}~1 origin/${base_branch_of_root_pr} --compact-summary  > ../root_pr_diff
-  git diff origin/${SOURCE_BRANCH} --compact-summary  > ../current_pr_diff
+  git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
   cat ../current_pr_diff
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "${BRANCH_NAME} contains double_commit"
@@ -636,7 +636,7 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r $PWD --src_branch ${SOURCE_BRANCH} --pipeline_run
+  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
   build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
 }
 
