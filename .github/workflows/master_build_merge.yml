@@ -1258,7 +1258,7 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             cd scripts
-            if ! ${DEV_BUILD}; then
+            if ${DEV_BUILD}; then
               ./package-and-push -n $CHART_NAME -v ${LATEST_TAG}
             else
               ./package-and-push --prod -n $CHART_NAME
@@ -1273,7 +1273,7 @@ jobs:
               validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
-              if ! ${DEV_BUILD}; then
+              if ${DEV_BUILD}; then
                 ./package-and-push -n $CHART_NAME -v ${LATEST_TAG}
               else
                 ./package-and-push --prod -n $CHART_NAME
