@@ -221,7 +221,7 @@ frp_build_and_push() {
     mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
     aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
     aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
-    if !${DEV_BUILD}; then
+    if ! ${DEV_BUILD}; then
       push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
       for env in "${environments[@]}"
       do
@@ -341,7 +341,7 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
-  if !${DEV_BUILD}; then
+  if ! ${DEV_BUILD}; then
     lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
     build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
     generate_checksum $ARTIFACT $build_file_name
@@ -757,7 +757,7 @@ vss_tar_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
-  if !${DEV_BUILD}; then
+  if ! ${DEV_BUILD}; then
     push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     for env in "${environments[@]}"
       do
