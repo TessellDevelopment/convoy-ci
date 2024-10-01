@@ -382,7 +382,7 @@ jobs:
             awsConfigureProdAssets
             aws s3 cp $FILE_PATH_LINUX s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp $FILE_PATH_WINDOWS s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "$FILE_PATH_LINUX" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
               aws s3 cp "$FILE_PATH_WINDOWS" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
               pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
@@ -588,7 +588,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
               pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -773,7 +773,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
               pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -1120,7 +1120,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/agent/${LATEST_TAG}/"
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -1177,7 +1177,7 @@ jobs:
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/plugins/${LATEST_TAG}/"
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -1205,7 +1205,7 @@ jobs:
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
             aws s3 cp "$ARTIFACT.tar" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/functions/${LATEST_TAG}/"
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -1258,8 +1258,8 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             cd scripts
-            if !${DEV_BUILD}; then
-              ./package-and-push -n $CHART_NAME
+            if ! ${DEV_BUILD}; then
+              ./package-and-push -n $CHART_NAME -v ${LATEST_TAG}
             else
               ./package-and-push --prod -n $CHART_NAME
             fi
@@ -1273,8 +1273,8 @@ jobs:
               validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
-              if !${DEV_BUILD}; then
-                ./package-and-push -n $CHART_NAME
+              if ! ${DEV_BUILD}; then
+                ./package-and-push -n $CHART_NAME -v ${LATEST_TAG}
               else
                 ./package-and-push --prod -n $CHART_NAME
               fi
@@ -1331,7 +1331,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/pushprox/$VERSION/
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
               pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               for env in "${environments[@]}"
@@ -1377,7 +1377,7 @@ jobs:
             fi
             awsConfigureProdAssets
             aws s3 cp "bundles/${file_name}" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            if !${DEV_BUILD}; then
+            if ! ${DEV_BUILD}; then
               awsConfigureTessellArtifacts
               aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
               pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
