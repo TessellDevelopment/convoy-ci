@@ -239,15 +239,16 @@ get_root_pr_tag() {
   get_dc_messages
   root_pr_number=$(echo $dc_message | grep -oE '[0-9]+' | tail -1 )
   echo $root_pr_number
-  get_base_branch_from_pr_number root_pr_number
-  echo $base_branch_of_root_pr
-  root_pr_tag=$(echo "$base_branch_of_root_pr" | cut -d'-' -f2 | cut -d'.' -f1,2)
-  echo $root_pr_tag
+  get_base_branch_commit_from_pr_number root_pr_number
+  echo $base_branch_commit_of_root_pr
+  git diff $base_branch_commit_of_root_pr^!
+  # root_pr_tag=$(echo "$base_branch_of_root_pr" | cut -d'-' -f2 | cut -d'.' -f1,2)
+  # echo $root_pr_tag
 }
 
 get_dc_root_pr_diff() {
   get_root_pr_tag
-  git diff origin/${base_branch_of_root_pr}~1 origin/${base_branch_of_root_pr} --compact-summary  > ../root_pr_diff
+  git diff $base_branch_commit_of_root_pr^! --compact-summary  > ../root_pr_diff
   cat ../root_pr_diff
 }
 
