@@ -242,8 +242,8 @@ get_root_pr_tag() {
   get_base_branch_commit_from_pr_number root_pr_number
   echo $base_branch_commit_of_root_pr
   git diff $base_branch_commit_of_root_pr^!
-  # root_pr_tag=$(echo "$base_branch_of_root_pr" | cut -d'-' -f2 | cut -d'.' -f1,2)
-  # echo $root_pr_tag
+  root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | head -n 1)
+  base_branch_of_root_pr="rel-$(echo "$root_pr_tag" | cut -d. -f1,2).0"
 }
 
 get_dc_root_pr_diff() {
@@ -654,8 +654,7 @@ software_def_build_and_push() {
     git diff HEAD~1 --compact-summary > ../current_pr_diff
     cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
-      PREVIOUS_LATEST_TAG=$(git tag --contains ${base_branch_commit_of_root_pr} | head -n 1)
-      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${PREVIOUS_LATEST_TAG}.json"
+      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
