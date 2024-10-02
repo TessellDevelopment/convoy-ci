@@ -224,7 +224,7 @@ get_base_branch_commit_from_pr_number() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.head.sha')
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.merge_commit_sha')
 }
 
 get_dc_messages() {
