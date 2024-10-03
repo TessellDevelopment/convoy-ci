@@ -655,7 +655,7 @@ python_setup_build() {
   if [ -f requirements.txt ]; then
     install_python_dependencies
   fi
-  VERSION="$3"
+  VERSION="${3}"
   python3 setup.py bdist_wheel --version ${VERSION}
 }
 
