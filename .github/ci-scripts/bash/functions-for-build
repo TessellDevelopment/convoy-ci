@@ -14,6 +14,12 @@ aws_configure_prod_assets() {
   aws configure set region ap-south-1
 }
 
+aws_configure_tessellops_artifacts() {
+  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
 build_convoy_tessell_client() {
   install_go_dependencies
   ./setup --client --version 0.0.0
@@ -83,34 +89,30 @@ configure_and_push_aws() {
   BUCKET_NAME=${2}
   SOURCE=${3}
   DESTINATION=${4}
-  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
-  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
-  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
-  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
-  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
-  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+  generate_sts_session_token ${BUCKET_ACCOUNT}
   aws s3 cp "${SOURCE}" "${DESTINATION}"
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 convoy_codegen_build() {
   set -e
-  ARTIFACT="$1"
+  ARTIFACT="${1}"
+  VERSION="${3}"
   cd ./${ARTIFACT}
-  mvn clean package -Drevision=${LATEST_TAG:-0.0.0}
+  mvn clean package -Drevision=${VERSION:-0.0.0}
   cd ..
   set +e
 }
 
 convoy_codegen_build_and_push() {
   set -e
-  ARTIFACT="$1"
-  EXTENSION="$2"
-  convoy_codegen_build ${ARTIFACT}
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  convoy_codegen_build $@
   set -e
-  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${LATEST_TAG}"
+  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +e
 }
 
@@ -186,6 +188,22 @@ docker_tag_and_push() {
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
 }
 
+elastic_agent_build() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build "$@"
+  set +e
+}
+
+elastic_agent_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build_and_push "$@"
+  set +e
+}
+
 frp_build() {
   set -e
   ./setup -b
@@ -201,14 +219,16 @@ frp_build_and_push() {
   for OS in "${os_type[@]}"; do
     echo "frpc-{$OS}"
     mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/terls/tessell/frp/${LATEST_TAG}/
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://tesselltools/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
-    push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-    do
-      push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-    done
-    generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
+    if ! ${DEV_BUILD}; then
+      push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      for env in "${environments[@]}"
+      do
+        push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      done
+      generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+    fi
   done
   set +e
 }
@@ -225,9 +245,20 @@ generate_checksum() {
     echo "File not found!"
     return 1
   fi
-  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')   
-  ARTIFACT="${ARTIFACT%%.*}"         
-  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"            
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')
+  ARTIFACT="${ARTIFACT%%.*}"
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
+}
+
+generate_sts_session_token() {
+  BUCKET_ACCOUNT=${1}
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
+  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
 }
 
 go_docker_build() {
@@ -258,6 +289,23 @@ go_docker_build_and_push() {
   set +e
 }
 
+gradlew_build() {
+  ./gradlew build --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
+gradlew_build_and_push() {
+  ./gradlew build publish --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
 gradlew_docker_tag() {
   ./gradlew dockerTag --console plain \
     -Pnexus_username="${NEXUS_USERNAME}" \
@@ -278,6 +326,8 @@ gradlew_ui_build() {
 }
 
 gradlew_ui_build_and_push() {
+  ARTIFACT=${1}
+  EXTENSION=${2}
   gradlew_ui_build "$@"
   set -e
   ./gradlew publish --console plain \
@@ -291,6 +341,16 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
+  if ! ${DEV_BUILD}; then
+    lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+    build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+    generate_checksum $ARTIFACT $build_file_name
+    push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+    do
+      push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+  fi
   set +e
 }
 
@@ -318,7 +378,7 @@ initialise_coverage() {
 
 install_go_dependencies() {
   go version
-  go install golang.org/x/tools/cmd/goimports@latest
+  go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
 }
 
@@ -332,6 +392,29 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
   fi
+}
+
+jarBuild() {
+  set -e
+  VERSION="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw package -Drevision=${VERSION}
+  set +e
+}
+
+jar_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw clean deploy -Drevision=${VERSION} -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+    -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
+    -DgroupId=tessellops -DartifactId=${ARTIFACT} \
+    -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  set +e
 }
 
 mvn_deploy() {
@@ -350,11 +433,30 @@ mvn_deploy() {
       -Dfile=${FILE} -DrepositoryId=nexus
 }
 
+ mvnw_build() {
+  set -e
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  set +e
+}
+
+mvnw_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  aws_configure_tessellops_artifacts
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+  mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
+  aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+  set +e
+}
+
 npm_build() {
   set -e
   npm install
   npm run build
-  configureNpmrc "${NEXUS_REPO_NPM}"
+  configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
   version="${3}"
   required_inputs="3"
@@ -369,14 +471,29 @@ npm_build_and_push() {
   set -e
   npm install
   npm run build
-  configureNpmrc "${NEXUS_PUSH_REPOS_NPM}"
+  configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   set -e
   version="${3}"
-  requiredInputs="3"
+  required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
+  set +e
+}
+
+ops_image_build() {
+  set -e
+  mvnw_build
+  docker_build "$@"
+  set +e
+}
+
+ops_image_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  docker_build_and_push "$@"
   set +e
 }
 
@@ -395,55 +512,94 @@ ops_ui_build_and_push() {
 }
 
 parse_coverage_report() {
-  coverage_report=$(find . -type f -name "coverage.json")
-  coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
-  covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
-  missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
-  total_branches=$(jq '.totals.num_branches' ${coverage_report})
-  branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
-  covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
-  missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
-  total_statements=$(jq '.totals.num_statements' ${coverage_report})
-  statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
-  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
-  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
-}
-
-parse_coverage_report_java() {
   set -e
   language=$(yq '.language' convoy.yaml)
   if [[ "${language}" == "java" ]]; then
-    jacoco_dir=$(find . -type d -path '*/site/jacoco')
-    if [ -z "${jacoco_dir}" ]; then
-      echo "No site/jacoco folder found. Skipping coverage report parsing."
-      exit 0 
-    fi
-    xml_file="${jacoco_dir}/jacoco.xml"
-    branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
-    branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
-    branch_total=$((branch_covered + branch_missed))
-    branch_percentage=$(echo "scale=0; ${branch_covered} * 100 / ${branch_total}" | bc)
-    statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
-    statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
-    statement_total=$((statement_covered + statement_missed))
-    statement_percentage=$(echo "scale=0; ${statement_covered} * 100 / ${statement_total}" | bc)
-    export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
-    export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
-    echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
-    echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
-    cd ${jacoco_dir}/..
-    zip -r coverage.zip jacoco/*
-    cd -
-    mv ${jacoco_dir}/../coverage.zip ./
-  else 
-    echo "Skipping jacoco code coverage for non-java repository."
-    exit 0
+    parse_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
   fi
 }
 
+parse_and_push_coverage_report() {
+  set -e
+  language=$(yq '.language' convoy.yaml)
+  if [[ "${language}" == "java" ]]; then
+    parse_and_push_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_and_push_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
+  fi
+}
+
+parse_coverage_report_python() {
+  if [ -f "pytest.ini" ]; then
+    echo "Running python Unit test and generating code coverage report"
+    run_python_unit_test "$@"
+    coverage_report=$(find . -type f -name "coverage.json")
+    coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
+    covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
+    missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
+    total_branches=$(jq '.totals.num_branches' ${coverage_report})
+    branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
+    covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
+    missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
+    total_statements=$(jq '.totals.num_statements' ${coverage_report})
+    statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+    flag=1
+  else
+    echo "pytest.ini not present skipping unit test and code coverage report generation"
+  fi
+}
+
+parse_and_push_coverage_report_python() {
+  flag=0
+  parse_coverage_report_python
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
+  fi
+}
+
+parse_coverage_report_java() {
+  jacoco_dir=$(find . -type d -path '*/site/jacoco')
+  if [ -z "${jacoco_dir}" ]; then
+    echo "No site/jacoco folder found. Skipping coverage report parsing."
+    return
+  fi
+  xml_file="${jacoco_dir}/jacoco.xml"
+  branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
+  branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
+  branch_total=$((branch_covered + branch_missed))
+  branch_percentage=$(echo "scale=0; ${branch_covered} * 100 / ${branch_total}" | bc)
+  statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
+  statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
+  statement_total=$((statement_covered + statement_missed))
+  statement_percentage=$(echo "scale=0; ${statement_covered} * 100 / ${statement_total}" | bc)
+  export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
+  export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
+  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+  cd ${jacoco_dir}/..
+  zip -r coverage.zip jacoco/*
+  cd -
+  mv ${jacoco_dir}/../coverage.zip ./
+  flag=1
+}
+
 parse_and_push_coverage_report_java() {
+  flag=0
   parse_coverage_report_java
-  configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
 }
 
 push_to_minio() {
@@ -492,11 +648,6 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
-  if [ -f "pytest.ini" ]; then
-    run_python_unit_test
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
-  fi
   set +e
 }
 
@@ -555,8 +706,7 @@ run_python_unit_test() {
   python3 -m coverage html --include="${include}"
   python3 -m coverage json --include="${include}"
   popd
-  deactivate
-  parse_coverage_report 
+  deactivate 
 }
 
 setup_qa_env() {
@@ -581,9 +731,8 @@ setup_qa_env() {
 
 terraform_apply() {
   set -e
-  mkdir -p build
   cd terraform
-  create_tf_backend "tf-state-convoy-dev-deployment" "tf-state-convoy-dev-deployment/terraform.tfstate-md5" "${COMMON_INFRA_ACCESS_KEY}" "${COMMON_INFRA_SECRET_KEY}"
+  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
   terraform init
   terraform plan
   cd ..
@@ -643,12 +792,14 @@ vss_tar_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
-  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  for env in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  done
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  if ! ${DEV_BUILD}; then
+    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  fi
   set +e
 }
 

@@ -8,6 +8,10 @@ awsConfigureProdAssets() {
   aws_configure_prod_assets "$@"
 }
 
+awsConfigureTessellopsArtifacts() {
+  aws_configure_tessellops_artifacts "$@"
+}
+
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
@@ -60,12 +64,27 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+elasticAgentBuild() {
+  elastic_agent_build "$@"
+}
+
+elasticAgentBuildAndPush() {
+  elastic_agent_build_and_push "$@"
+}
+
 frpBuild() {
   frp_build "$@"
 }
 
 frpBuildAndPush() {
   frp_build_and_push "$@"
+}
+gradlewBuild() {
+  gradlew_build "$@"
+}
+
+gradlewBuildAndPush() {
+  gradlew_build_and_push "$@"
 }
 
 gradlewUIBuild() {
@@ -104,8 +123,24 @@ installPythonDependencies() {
   install_python_dependencies "$@"
 }
 
+jarBuild() {
+  jar_build "$@"
+}
+
+jarBuildAndPush() {
+  jar_build_and_push "$@"
+}
+
 mvnDeploy() {
   mvn_deploy "$@"
+}
+
+mvnwBuild() {
+  mvnw_build "$@"
+}
+
+mvnwBuildAndPush() {
+  mvnw_build_and_push "$@"
 }
 
 npmBuild() {
@@ -116,12 +151,28 @@ npmBuildAndPush() {
   npm_build_and_push "$@"
 }
 
+opsImageBuild() {
+  ops_image_build "$@"
+}
+
+opsImageBuildAndPush() {
+  ops_image_build_and_push "$@"
+}
+
 opsUIBuild() {
   ops_ui_build "$@"
 }
 
 opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
+}
+
+parseCoverageReport() {
+  parse_coverage_report "$@"
+}
+
+parseAndPushCoverageReport() {
+  parse_and_push_coverage_report "$@"
 }
 
 parseCoverageReportJava() {
