@@ -371,11 +371,12 @@ initialise_coverage() {
   source_path=${venv_path}/lib/python${python_version}/site-packages/
   python3 -m venv ${venv_name}
   source ${venv_name}/bin/activate
-  DIST_DIR=$(find . -type d -name "dist" 2>/dev/null | head -n 1)
-  python3 -m pip install "$DIST_DIR"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  dist_dir=$(find . -type d -name "dist" 2>/dev/null | head -n 1)
+  python3 -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   python3 -m pip list | grep tessell
   echo ${source_path}
-  cp -r tests pytest.ini ${source_path}
+  test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
+  cp -r ${test_dir} pytest.ini ${source_path}
 }
 
 install_go_dependencies() {
