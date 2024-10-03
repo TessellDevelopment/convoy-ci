@@ -4,7 +4,6 @@ on:
   workflow_call:
 
 jobs:
-
   dev-checks:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@main
     secrets: inherit
@@ -17,9 +16,8 @@ jobs:
     runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
-    needs: [dev-checks,version-check]
+    needs: [dev-checks, version-check]
     steps:
-
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
@@ -45,7 +43,7 @@ jobs:
       REPO: ${{github.repository}}
       PR_NUMBER: ${{github.event.number}}
       GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
-    steps:  
+    steps:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
@@ -70,12 +68,12 @@ jobs:
             echo "More than one commit present in DC, need approval."
             exit 1
           fi
-    
+
   auto-merge:
     needs: check-commits
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
-    secrets: inherit 
+    secrets: inherit
 
   send-mail:
     needs: auto-merge

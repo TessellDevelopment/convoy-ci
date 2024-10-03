@@ -214,7 +214,7 @@ jobs:
                 key = artifact["name"]
                 if key in checksum_map:
                     artifact["checksum"] = checksum_map[key]
-                    
+
             print(json.dumps(payload, indent=4))
           
             post_request(payload)
