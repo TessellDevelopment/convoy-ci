@@ -580,11 +580,13 @@ python_setup_build_and_push() {
   EXTENSION="${2}"
   VERSION="${3}"
   underscore_artifact_name="${ARTIFACT//-/_}"
+  echo "setup install"
   python3 setup.py bdist_wheel --version ${VERSION}
   twine upload --repository-url ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_PY}/ \
     --username ${NEXUS_USERNAME} \
     --password ${NEXUS_PASSWORD} \
     dist/${underscore_artifact_name}-${VERSION}-py3-none-any.${EXTENSION}
+  echo "done"
 }
 
 qa_build_and_push(){
