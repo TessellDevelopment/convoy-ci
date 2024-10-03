@@ -171,17 +171,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade --no-build-isolation pip
-            python3 -m pip install --no-build-isolation flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install --no-build-isolation -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
+          source ./ci-scripts/bash/functions-for-build
           installPythonDependencies
 
       - name: Setup Trivy and Dockle
@@ -874,17 +864,6 @@ jobs:
               ./package-and-push --no-push -n $CHART_NAME
               cd $GITHUB_WORKSPACE
               set +e
-            fi
-          }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
             fi
           }
           javaApiClientBuild() {

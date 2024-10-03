@@ -119,6 +119,10 @@ installGoDependencies() {
  install_go_dependencies "$@"
 }
 
+installPythonDependencies() {
+  install_python_dependencies "$@"
+}
+
 jarBuild() {
   jar_build "$@"
 }
@@ -189,6 +193,14 @@ pushToNexus() {
 
 pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
+}
+
+pythonSetupBuild() {
+  python_setup_build "$@"
+}
+
+pythonSetupBuildAndPush() {
+  python_setup_build_and_push "$@"
 }
 
 qaBuildAndPush(){
