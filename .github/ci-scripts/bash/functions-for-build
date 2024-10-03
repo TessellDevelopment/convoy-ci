@@ -664,7 +664,8 @@ qa_build_and_push(){
 
 run_python_unit_test() {
   initialise_coverage 'test-venv'
-  source_path=${venv_path}/lib/python3.9/site-packages/
+  python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  source_path=${venv_path}/lib/python${python_version}/site-packages/
   include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
   pushd ${source_path}
   echo "Running unit tests"
