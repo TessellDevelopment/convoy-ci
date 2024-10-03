@@ -261,23 +261,13 @@ jobs:
             done  
             mc alias list
           }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
           installAwsCli() {
             curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
             chmod +x install-aws.sh
             sudo ./install-aws.sh "v2" "amd64"
             rm install-aws.sh
           }
+          source ./ci-scripts/bash/functions-for-build
           installPythonDependencies
           installAwsCli
           installMinioClient
@@ -1185,17 +1175,6 @@ jobs:
               ./package-and-push --prod -n $CHART_NAME
               cd $GITHUB_WORKSPACE
               set +e
-            fi
-          }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple;
             fi
           }
           javaApiClientBuildAndPush() {

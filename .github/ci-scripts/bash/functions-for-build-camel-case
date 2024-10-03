@@ -140,6 +140,16 @@ pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
 }
 
+installPythonDependencies() {
+  install_python_dependencies "$@"
+}
+pythonSetupBuild() {
+  python_setup_build "$@"
+}
+
+pythonSetupBuildAndPush() {
+  python_setup_build_and_push "$@"
+}
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 

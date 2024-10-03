@@ -382,6 +382,18 @@ install_go_dependencies() {
   which go
 }
 
+install_python_dependencies() {
+  DIR=$1
+  if [[ -z "${DIR}" ]]; then
+    DIR='.'
+  fi
+  python3 -m pip install --upgrade pip
+  python3 -m pip install flake8 pytest twine wheel
+  if [ -f "${DIR}/requirements.txt" ]; then
+    python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
+  fi
+}
+
 mvn_deploy() {
   ARTIFACT_ID="${1}"
   EXTENSION="${2}"
@@ -550,6 +562,29 @@ python_docker_build_and_push() {
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
   fi
   set +e
+}
+
+python_setup_build() {
+  if [ -f requirements.txt ]; then
+    install_python_dependencies
+  fi
+  VERSION="${3}"
+  python3 setup.py bdist_wheel --version ${VERSION}
+}
+
+python_setup_build_and_push() {
+  if [ -f requirements.txt ]; then 
+    install_python_dependencies 
+  fi
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  underscore_artifact_name="${ARTIFACT//-/_}"
+  python3 setup.py bdist_wheel --version ${VERSION}
+  twine upload --repository-url ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_PY}/ \
+    --username ${NEXUS_USERNAME} \
+    --password ${NEXUS_PASSWORD} \
+    dist/${underscore_artifact_name}-${VERSION}-py3-none-any.${EXTENSION}
 }
 
 qa_build_and_push(){
