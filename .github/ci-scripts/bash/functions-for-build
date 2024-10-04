@@ -811,6 +811,7 @@ software_def_build_and_push() {
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  generate_checksum "delta-image-manifest-${LATEST_TAG}.json" "common_manifest.json"
 }
 
 
