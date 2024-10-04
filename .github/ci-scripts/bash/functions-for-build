@@ -234,7 +234,6 @@ frp_build_and_push() {
 }
 
 get_base_branch_commit_from_pr_number() {
-  pr_number="$1"
   base_branch_commit_of_root_pr=$(curl -L \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
@@ -254,7 +253,7 @@ get_root_pr_tag() {
   get_dc_messages
   root_pr_number=$(echo $dc_message | grep -oE '[0-9]+' | tail -1 )
   echo $root_pr_number
-  get_base_branch_commit_from_pr_number root_pr_number
+  get_base_branch_commit_from_pr_number
   echo $base_branch_commit_of_root_pr
   git diff $base_branch_commit_of_root_pr^!
   root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | head -n 1)
