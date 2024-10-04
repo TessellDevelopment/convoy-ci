@@ -416,7 +416,7 @@ install_go_dependencies() {
 }
 
 install_python_dependencies() {
-  DIR=$1
+  DIR=${1}
   if [[ -z "${DIR}" ]]; then
     DIR='.'
   fi
@@ -764,15 +764,15 @@ setup_qa_env() {
 
 setup_packer_env() {
   sudo python3 -m pip uninstall -y packer_framework
-  python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install --user virtualenv
   python3 -m venv pkenv
   source pkenv/bin/activate
-  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install wheel
   python3 -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 }
 
 software_def_build() {
-  setupPackerEnv
+  setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
@@ -790,7 +790,7 @@ software_def_build() {
 }
 
 software_def_build_and_push() {
-  setupPackerEnv
+  setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
