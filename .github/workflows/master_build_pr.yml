@@ -1069,6 +1069,8 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          echo $AWS_ACCESS_KEY_ID
+          echo ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
