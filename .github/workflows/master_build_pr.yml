@@ -63,7 +63,6 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -86,9 +85,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReport
   
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
@@ -256,10 +257,6 @@ jobs:
             mkdir -p build/tools
             wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
             gradlewPythonwheel
-            if [ -f "pytest.ini" ]; then
-              echo "Running unit tests"
-              runPythonUnitTest
-            fi
             imageScan $IMAGE
             set +e
           }
@@ -273,9 +270,6 @@ jobs:
             rm pip.conf
             lintCheck
             gradlewPythonwheel
-            if [ -f "pytest.ini" ]; then
-              runPythonUnitTest
-            fi
             imageScan $IMAGE
             set +e
           }
@@ -286,7 +280,6 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -311,10 +304,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          parseCoverageReportJava
+          parseCoverageReport
 
   build-amd-go-20:
     if: ${{ inputs.type == 'amd-go-20' }}
@@ -400,7 +394,6 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -423,9 +416,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReport
 
   build-amd-go-21:
     if: ${{ inputs.type == 'amd-go-21' }}
@@ -528,7 +523,6 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -551,9 +545,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReport
 
   build-amd-go-22:
     if: ${{ inputs.type == 'amd-go-22' }}
@@ -624,7 +620,6 @@ jobs:
             export PATH=${PATH}:$GOPATH/bin
             echo $PATH
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -647,9 +642,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
+          parseCoverageReport
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
@@ -775,13 +772,6 @@ jobs:
             gradlewPackagePlugin
             set +e
           }
-          elasticAgentBuild() {
-            set -e
-            IMAGE="$1"
-            GOOS=linux GOARCH=amd64 go build .
-            dockerBuild "$@"
-            set +e
-          }
           functionBuild() {
             set -e
             ARTIFACT="$1"
@@ -848,9 +838,6 @@ jobs:
             IMAGE="$1"
             lintCheck
             gradlewDocker
-            if [ -f "pytest.ini" ]; then
-              runPythonUnitTest
-            fi
             imageScan $IMAGE
             set +e
           }
@@ -1060,7 +1047,6 @@ jobs:
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version' convoy.yaml)
             language=$(yq '.language' convoy.yaml)
-            source ./ci-scripts/bash/functions-for-build
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
               return
@@ -1087,11 +1073,12 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-          parseCoverageReportJava
+          parseCoverageReport
 
       - name: Cleanup
         if: always()
@@ -1178,25 +1165,6 @@ jobs:
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
             set +e
           }
-          jarBuild() {
-            set -e
-            VERSION="$3"
-            requiredInputs="3"
-            validateInputs "$requiredInputs" "$@" 
-            ./mvnw package -Drevision=$VERSION
-            set +e
-          }
-          mvnwBuild() {
-            set -e
-            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            set +e
-          }
-          opsImageBuild() {
-            set -e
-            mvnwBuild
-            dockerBuild "$@"
-            set +e
-          }
           build() {
             type="$1"
             check=$(grep "$type" convoy.yaml)
@@ -1204,7 +1172,6 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            source ./ci-scripts/bash/functions-for-build
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
@@ -1227,10 +1194,11 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
-          parseCoverageReportJava
+          parseCoverageReport
 
       - name: Cleanup
         if: always()
