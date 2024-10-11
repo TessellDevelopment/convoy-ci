@@ -580,11 +580,15 @@ jobs:
             fi
             ENGINE=$(echo "$ARTIFACT" | awk -F "$NAME-$OS" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
             echo "Name: $NAME, OS: $OS, Engine: $ENGINE"
-            if [[ "$ENGINE" == "null" || -z "$ENGINE" ]]; then
-              make service os=$OS
-            else
-              make service os=$OS engine=$ENGINE
-            fi
+            # if [[ "$ENGINE" == "null" || -z "$ENGINE" ]]; then
+            #   make service os=$OS
+            # else
+            #   make service os=$OS engine=$ENGINE
+            # fi
+            LATEST_TAG="0.124.0"
+            CURRENT_TAG="0.123.0"
+            curl ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/tessell-repos-m2-component/tessell/$NAME/$ARTIFACT/$CURRENT_TAG/$ARTIFACT-$CURRENT_TAG.$EXTENSION \
+              --output $ARTIFACT.$EXTENSION
             mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
