@@ -12,9 +12,11 @@
         dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
       steps:
         - run: |
+            set +e
             git config --global core.compression 0
-            git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
             pwd
+            rm -rf tessell-mysql-go-lib
+            git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
             cd tessell-mysql-go-lib
             git fetch --unshallow
             git fetch --depth=2147483647
