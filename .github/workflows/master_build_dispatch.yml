@@ -12,9 +12,8 @@
         dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
       steps:
         - run: |
-            git config --global http.postBuffer 157286400
-            git config --global protocol.version 1
-            git clone https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
+            git config --global core.compression 0
+            git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
             
         - name: Checkout
           uses: actions/checkout@v4.1.1
