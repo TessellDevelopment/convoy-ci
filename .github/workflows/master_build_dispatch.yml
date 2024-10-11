@@ -11,22 +11,22 @@
         label: ${{steps.get-label.outputs.label}}
         dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
       steps:
-        # - run: |
-        #     set +e
-        #     git config --global core.compression 0
-        #     pwd
-        #     rm -rf tessell-mysql-go-lib
-        #     git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
-        #     cd tessell-mysql-go-lib
-        #     git fetch --unshallow
-        #     git fetch --depth=2147483647
-        #     git pull --all
+        - run: |
+            set +e
+            git config --global core.compression 0
+            pwd
+            rm -rf tessell-mysql-go-lib
+            git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
+            cd tessell-mysql-go-lib
+            git fetch --unshallow
+            git fetch --depth=2147483647
+            git pull --all
             
-        - name: Checkout
-          uses: actions/checkout@v4.1.1
-          with:
-            fetch-depth: 1
-            token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+        # - name: Checkout
+        #   uses: actions/checkout@v4.1.1
+        #   with:
+        #     fetch-depth: 1
+        #     token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
         - name: Get Label
           id: get-label

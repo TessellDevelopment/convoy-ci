@@ -22,9 +22,19 @@ jobs:
     outputs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
     steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 1
+      - run: |
+            set +e
+            git config --global core.compression 0
+            pwd
+            rm -rf tessell-mysql-go-lib
+            git clone --depth 1 https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
+            cd tessell-mysql-go-lib
+            git fetch --unshallow
+            git fetch --depth=2147483647
+            git pull --all
+      # - uses: actions/checkout@v4.1.1
+      #   with:
+      #     fetch-depth: 1
 
       - name: Dump GitHub context
         env:
