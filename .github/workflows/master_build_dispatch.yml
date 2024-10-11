@@ -11,10 +11,16 @@
         label: ${{steps.get-label.outputs.label}}
         dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
       steps:
+        - run: |
+            git config --global http.postBuffer 157286400
+            git config --global protocol.version 1
+            git clone https://${{secrets.CIPIPELINE_GITHUB_TOKEN}}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
+            
         - name: Checkout
           uses: actions/checkout@v4.1.1
           with:
             fetch-depth: 0
+            token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
         - name: Get Label
           id: get-label
