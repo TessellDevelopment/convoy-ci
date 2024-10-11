@@ -585,6 +585,7 @@ jobs:
             # else
             #   make service os=$OS engine=$ENGINE
             # fi
+            LABEL="rel-0.124.0"
             LATEST_TAG="0.124.0"
             CURRENT_TAG="0.123.0"
             curl ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/tessell-repos-m2-component/tessell/$NAME/$ARTIFACT/$CURRENT_TAG/$ARTIFACT-$CURRENT_TAG.$EXTENSION \
@@ -773,6 +774,7 @@ jobs:
             #   make service os=$OS engine=$ENGINE
             # fi
             LATEST_TAG="0.124.0"
+            LABEL="rel-0.124.0"
             CURRENT_TAG="0.123.0"
             curl ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/tessell-repos-m2-component/tessell/$NAME/$ARTIFACT/$CURRENT_TAG/$ARTIFACT-$CURRENT_TAG.$EXTENSION \
               --output $ARTIFACT.$EXTENSION
