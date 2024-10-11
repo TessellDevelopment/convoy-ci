@@ -73,7 +73,7 @@
   
     find-latest-tag:
       needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-push_artifacts
       secrets: inherit
       with:
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
