@@ -538,10 +538,16 @@ jobs:
       #     echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
       #     echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
+      - run: |
+          git config --global http.postBuffer 157286400
+          git config --global protocol.version 1
+          git clone https://${GITHUB_TOKEN}@github.com/TessellDevelopment/tessell-mysql-go-lib.git
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+          token: ${{env.GITHUB_TOKEN}}
 
       - name: Setup CI Scripts
         run: |
