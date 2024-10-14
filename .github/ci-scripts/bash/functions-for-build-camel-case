@@ -119,6 +119,10 @@ installGoDependencies() {
  install_go_dependencies "$@"
 }
 
+installPythonDependencies() {
+  install_python_dependencies "$@"
+}
+
 jarBuild() {
   jar_build "$@"
 }
@@ -191,6 +195,14 @@ pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
 }
 
+pythonSetupBuild() {
+  python_setup_build "$@"
+}
+
+pythonSetupBuildAndPush() {
+  python_setup_build_and_push "$@"
+}
+
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
@@ -201,6 +213,18 @@ runPythonUnitTest(){
 
 setupQAEnv() {
   setup_qa_env "$@"
+}
+
+setupPackerEnv() {
+  setup_packer_env "$@"
+}
+
+softwareDefBuild() {
+  software_def_build "$@"
+}
+
+softwareDefBuildAndPush() {
+  software_def_build_and_push "$@"
 }
 
 terraformApply() {

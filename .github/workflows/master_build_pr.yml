@@ -171,17 +171,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade --no-build-isolation pip
-            python3 -m pip install --no-build-isolation flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install --no-build-isolation -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
-            fi
-          }
+          source ./ci-scripts/bash/functions-for-build
           installPythonDependencies
 
       - name: Setup Trivy and Dockle
@@ -655,6 +645,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
+      BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -665,6 +656,8 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      GITHUB_BASE_REF: ${{ github.base_ref }}
+      GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NAMESPACE: "convoy"
@@ -678,9 +671,19 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
+      PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
+      PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
+      PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
+      PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
+      PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
+      REPOSITORY: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+      SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -861,17 +864,6 @@ jobs:
               ./package-and-push --no-push -n $CHART_NAME
               cd $GITHUB_WORKSPACE
               set +e
-            fi
-          }
-          installPythonDependencies() {
-            DIR=$1
-            if [[ -z "${DIR}" ]]; then
-              DIR='.'
-            fi
-            python3 -m pip install --upgrade pip
-            python3 -m pip install flake8 pytest twine wheel
-            if [ -f "${DIR}/requirements.txt" ]; then
-              python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple
             fi
           }
           javaApiClientBuild() {
@@ -1078,6 +1070,7 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+          build "softwareImages"
           parseCoverageReport
 
       - name: Cleanup
