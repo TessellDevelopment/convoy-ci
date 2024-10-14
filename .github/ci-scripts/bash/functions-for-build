@@ -346,6 +346,7 @@ install_node() {
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
   base_node_version=$(node --version)
   echo $base_node_version
+  export base_node_version
   node_version=$(yq eval '.nodeVersion // strenv(base_node_version)' convoy.yaml)
   echo $node_version
   nvm which "$node_version" > /dev/null 2>&1
