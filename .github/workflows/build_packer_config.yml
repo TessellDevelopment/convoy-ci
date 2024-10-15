@@ -222,7 +222,7 @@ jobs:
           echo $CURRENT_VERSION_TAG
           mkdir -p ~/.packer.d/plugins
           
-          validate_all -r $PWD --src_branch ${{ github.head_ref }} --pipeline_run
+          validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
 
       - name: Dry Run Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
