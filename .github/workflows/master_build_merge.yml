@@ -29,8 +29,8 @@ on:
 jobs:
 
   build-ui:
-    if: ${{ inputs.type == 'ui-build-test' }}
-    runs-on: ui-build-test
+    if: ${{ inputs.type == 'ui-build' }}
+    runs-on: ui-build
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}

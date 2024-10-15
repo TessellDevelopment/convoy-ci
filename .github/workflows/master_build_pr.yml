@@ -11,8 +11,8 @@ on:
 jobs:
 
   build-ui:
-    if: ${{ inputs.type == 'ui-build-test' }}
-    runs-on: ui-build-test
+    if: ${{ inputs.type == 'ui-build' }}
+    runs-on: ui-build
     env:
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
