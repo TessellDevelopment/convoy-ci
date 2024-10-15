@@ -350,12 +350,11 @@ install_node() {
   nvm which "$node_version" > /dev/null 2>&1
   if [ $? -eq 0 ]; then
     echo "Node version $node_version is already installed."
-    nvm use ${node_version}
   else
     echo "Node version $node_version not found. Installing..."
     nvm install "$node_version"
-    nvm use "$node_version"
   fi
+  nvm use ${node_version}
 }
 
 mvn_deploy() {
