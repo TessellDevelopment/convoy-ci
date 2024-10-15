@@ -291,7 +291,8 @@ gradlew_ui_build() {
   echo ${JS_PATH}
   INTEGRITY_HASH=$(openssl dgst -sha384 -binary "${JS_PATH}" | openssl base64 -A)
   echo ${INTEGRITY_HASH}
-  sed -i "s|<script defer=\"defer\" src=\"/static/js/$JS_FILE\"|<script defer=\"defer\" src=\"/static/js/$JS_FILE\" integrity=\"sha384-$INTEGRITY_HASH\" crossorigin=\"anonymous\"|" "$INDEX_FILE"  echo "Updated index.html with integrity and crossorigin attributes."
+  sed -i "s|<script defer=\"defer\" src=\"/static/js/$JS_FILE\"|<script defer=\"defer\" src=\"/static/js/$JS_FILE\" integrity=\"sha384-$INTEGRITY_HASH\" crossorigin=\"anonymous\"|" "$INDEX_FILE"  
+  echo "Updated index.html with integrity and crossorigin attributes."
   ./gradlew zipUiBuild --console plain --stacktrace \
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}"
