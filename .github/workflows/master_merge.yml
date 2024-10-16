@@ -86,7 +86,7 @@ jobs:
   post-build-to-convoy:
     if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     needs: [find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-2692_post_convoy_fix
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
     with:
       ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
