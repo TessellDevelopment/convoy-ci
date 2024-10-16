@@ -21,13 +21,13 @@ jobs:
       BRANCH_NAME: ${{ inputs.branchName }}
       TAGS: '{"build-source": "workflow-dispatch"}'
       CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
-      RESOURCE_ID: ${{ inputs.resourceId }}
       PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
       PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
       PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
       PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+      RESOURCE_ID: ${{ inputs.resourceId }}
 
     steps:
       - name: Checkout code
