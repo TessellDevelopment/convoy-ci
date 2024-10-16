@@ -20,13 +20,13 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       BRANCH_NAME: ${{ inputs.branchName }}
       TAGS: '{"build-source": "workflow-dispatch"}'
-      AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
-      AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
-      AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
-      AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
+      PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
+      PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
+      PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
+      PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
+      PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
+      PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       RESOURCE_ID: ${{ inputs.resourceId }}
 
     steps:
