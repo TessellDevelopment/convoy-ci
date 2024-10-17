@@ -76,7 +76,7 @@ jobs:
           elif [[  "${{ env.BRANCH_NAME }}" == rel-* ]]; then
             LABEL=${{ env.BRANCH_NAME }}
           else
-            echo "LABEL=${{ env.SOURCE_BRANCH }}" >> $GITHUB_ENV
+            LABEL=${{ env.SOURCE_BRANCH }} >> $GITHUB_ENV
           fi
           echo "LABEL=$LABEL" >> $GITHUB_ENV
           
