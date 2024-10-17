@@ -78,7 +78,7 @@ jobs:
           else
             echo "LABEL=${{ env.SOURCE_BRANCH }}" >> $GITHUB_ENV
           fi
-          echo echo "LABEL=$LABEL" >> $GITHUB_ENV
+          echo "LABEL=$LABEL" >> $GITHUB_ENV
           
       - name: Get arg for Cloud build type
         shell: bash
