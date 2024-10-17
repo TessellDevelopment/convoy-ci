@@ -67,9 +67,7 @@ jobs:
             echo "$RESPONSE"
             LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
             echo "$LABEL"
-            if [[ $LABEL == rel-* ]]; then
-                echo "LABEL=$LABEL" >> $GITHUB_ENV
-            else
+            if [[ $LABEL != rel-* ]]; then
                 echo "Response: $LABEL"
                 echo "Label does not start with 'rel'. Check response."
                 exit 1 
@@ -80,7 +78,7 @@ jobs:
           else
             echo "LABEL=${{ env.SOURCE_BRANCH }}" >> $GITHUB_ENV
           fi
-          echo "LABEL=${{ env.SOURCE_BRANCH }}" >> $GITHUB_ENV
+          echo echo "LABEL=$LABEL" >> $GITHUB_ENV
           
       - name: Get arg for Cloud build type
         shell: bash
