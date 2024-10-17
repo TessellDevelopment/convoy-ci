@@ -158,7 +158,7 @@ jobs:
 
       - name: Push to Nexus
       # we do not want this to run when the dev starts this workflow from main or rel-* branches. (the "Use workflow from"). and if the dev is comparing from a branch which is not main or doesn't start with "rel-*", then also don't run.
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
