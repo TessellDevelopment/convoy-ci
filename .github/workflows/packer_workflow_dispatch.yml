@@ -1,5 +1,8 @@
 name: Tessell Packer Wokflow Dispatch
 
+# Source branch is "Use workflow from" in "Run Workflow". We do not want this workflow to run when source branch is main or "rel-*".
+# BRANCH_NAME is " Provide branch name or commit id ". We only want to push to nexus when Branch_name is main or "rel-*".
+
 on:
   workflow_call:
   workflow_dispatch:
@@ -29,6 +32,7 @@ jobs:
       PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
+      NEXUS_ARTIFACT_REPO: tessell-artifacts
 
     steps:
       - name: Checkout code
@@ -42,12 +46,41 @@ jobs:
           echo "$GITHUB_CONTEXT"
       - name: Get branch name
         shell: bash
-        run: |
+        run: | 
+          # Source branch is "Use workflow from" in "Run Workflow".
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo "TARGET_BRANCH=$(echo ${{ github.event.ref }} | tr / -)" >> $GITHUB_ENV
 
           echo $pull_request_number
 
+      - name: Set Label
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        shell: bash
+        run: |
+          # this label value will get value from "Provide branch name or commit id".
+          if [[ "${{ env.BRANCH_NAME }}" == "main" ]]; then
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            echo "$APP_GROUP"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            echo "$URL"
+            RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
+            echo "$RESPONSE"
+            LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+            echo "$LABEL"
+            if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_ENV
+            else
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
+            fi
+          # if branch starts rel, take it as it is.
+          elif [[  "${{ env.BRANCH_NAME }}" == rel-* ]]; then
+            echo "LABEL=${{ env.BRANCH_NAME }}"
+          else
+            echo "LABEL=${{ env.SOURCE_BRANCH }}" >> $GITHUB_ENV
+          fi
+          
       - name: Get arg for Cloud build type
         shell: bash
         run: |
@@ -57,6 +90,7 @@ jobs:
         run: |
           echo ${{ env.SOURCE_BRANCH }}
           echo ${{ env.TARGET_BRANCH }}
+          echo ${{ env.LABEL }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
           echo $TARGET_BRANCH_MAIN
@@ -121,3 +155,11 @@ jobs:
         run: |
           # source $(share_aws_artifacts -sec)
           share_aws_artifacts -i $PWD/image_manifest_local.json
+
+      - name: Push to Nexus
+      # we do not want this to run when the dev starts this workflow from main or rel-* branches. (the "Use workflow from"). and if the dev is comparing from a branch which is not main or doesn't start with "rel-*", then also don't run.
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
+        run: |
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                --upload-file ./common_manifest.json \
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
