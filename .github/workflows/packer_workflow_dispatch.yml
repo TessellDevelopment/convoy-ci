@@ -162,4 +162,4 @@ jobs:
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.LABEL }}/delta-image-manifest-${{ github.run_id }}.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
