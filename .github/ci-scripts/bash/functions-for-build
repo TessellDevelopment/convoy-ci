@@ -560,6 +560,7 @@ npm_build() {
   install_node
   set -e
   npm install
+  npm run style-check
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
