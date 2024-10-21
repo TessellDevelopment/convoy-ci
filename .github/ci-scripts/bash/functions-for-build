@@ -796,6 +796,7 @@ setup_packer_env() {
 }
 
 software_def_build() {
+  set -e
   setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
@@ -814,6 +815,7 @@ software_def_build() {
 }
 
 software_def_build_and_push() {
+  set -e
   setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
   echo $CURRENT_VERSION_TAG
