@@ -323,7 +323,7 @@ go_docker_build_and_push() {
 }
 
 go_library_build() {
-  go build .
+  go build ./...
 }
 
 gradlew_build() {
