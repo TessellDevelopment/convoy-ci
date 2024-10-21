@@ -221,7 +221,7 @@ jobs:
                 key = artifact["name"]
                 if key in checksum_map:
                     artifact["checksum"] = checksum_map[key]
-            if "softwareImages" in generates:
+            if generates and "softwareImages" in generates:
               payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))
           
