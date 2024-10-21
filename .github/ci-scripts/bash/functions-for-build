@@ -322,6 +322,10 @@ go_docker_build_and_push() {
   set +e
 }
 
+go_library_build() {
+  go build .
+}
+
 gradlew_build() {
   ./gradlew build --console plain \
     -Pnexus_username="${NEXUS_USERNAME}" \

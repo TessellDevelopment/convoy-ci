@@ -79,6 +79,11 @@ frpBuild() {
 frpBuildAndPush() {
   frp_build_and_push "$@"
 }
+
+goLibraryBuild() {
+  go_library_build "$@"
+}
+
 gradlewBuild() {
   gradlew_build "$@"
 }
