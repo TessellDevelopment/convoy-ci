@@ -322,7 +322,7 @@ go_docker_build_and_push() {
   set +e
 }
 
-go_library_build() {
+convoy_go_library_build() {
   set -e
   go build ./...
   set +e

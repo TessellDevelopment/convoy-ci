@@ -80,8 +80,8 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-goLibraryBuild() {
-  go_library_build "$@"
+convoyGoLibraryBuild() {
+  convoy_go_library_build "$@"
 }
 
 gradlewBuild() {
