@@ -411,6 +411,7 @@ image_scan(){
     else
         echo "Trivy scan failed with exit code ${exit_code}: ${output}"
         exit 1
+    fi
   done
   if [ ${i} -gt ${RETRIES} ]; then
     echo "Trivy scan failed after ${RETRIES} attempts."
