@@ -116,6 +116,12 @@ convoy_codegen_build_and_push() {
   set +e
 }
 
+convoy_go_library_build() {
+  set -e
+  go build ./...
+  set +e
+}
+
 create_tf_backend() {
   S3_BUCKET="$1"
   KEY="$2"
