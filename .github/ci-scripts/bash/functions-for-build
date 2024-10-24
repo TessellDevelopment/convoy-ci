@@ -395,11 +395,14 @@ gradlew_ui_build_and_push() {
 }
 
 image_scan(){
-  set -e
+  set -ex
   export IMAGE="${1}"
   RETRIES=5
+  echo "Starting trivy"
   for ((i=1; i<=RETRIES; i++)); do
-    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln "${IMAGE}:latest" 2>&1)
+    echo "Try: ${i}"
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    echo $output
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
         echo "Encountered TOOMANYREQUESTS error. Retrying."
         sleep 60
@@ -408,6 +411,7 @@ image_scan(){
       break
     fi
   done
+  echo "Loop complete"
   if [ ${i} -gt ${RETRIES} ]; then
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
