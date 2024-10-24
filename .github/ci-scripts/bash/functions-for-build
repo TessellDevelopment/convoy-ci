@@ -399,15 +399,18 @@ image_scan(){
   export IMAGE="${1}"
   RETRIES=5
   for ((i=1; i<=RETRIES; i++)); do
-    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1)
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    exit_code=$?
     echo ${output}
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
         echo "Encountered TOOMANYREQUESTS error. Retrying."
         sleep 60
+    elif [ ${exit_code} -eq 0 ]; then
+        echo "Trivy scan completed successfully."
+        break
     else
-      echo "Trivy image scan complete"
-      break
-    fi
+        echo "Trivy scan failed with exit code ${exit_code}: ${output}"
+        exit 1
   done
   if [ ${i} -gt ${RETRIES} ]; then
     echo "Trivy scan failed after ${RETRIES} attempts."
