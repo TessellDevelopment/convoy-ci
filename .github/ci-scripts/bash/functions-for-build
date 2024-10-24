@@ -417,7 +417,7 @@ image_scan(){
     exit 1
   fi
   if [ ${i} -lt ${RETRIES} ]; then
-    echo "Trivy scan successful after ${RETRIES} attempts."
+    echo "Trivy scan successful after ${i} attempts."
     exit 1
   fi
   dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
