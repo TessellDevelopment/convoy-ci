@@ -56,6 +56,10 @@ convoyCodegenBuildAndPush() {
   convoy_codegen_build_and_push "$@"
 }
 
+convoyGoLibraryBuild() {
+  convoy_go_library_build "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -78,10 +82,6 @@ frpBuild() {
 
 frpBuildAndPush() {
   frp_build_and_push "$@"
-}
-
-convoyGoLibraryBuild() {
-  convoy_go_library_build "$@"
 }
 
 gradlewBuild() {
