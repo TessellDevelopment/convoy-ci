@@ -395,7 +395,7 @@ gradlew_ui_build_and_push() {
 }
 
 image_scan(){
-  set -ex
+  set -e
   export IMAGE="${1}"
   RETRIES=5
   for ((i=1; i<=RETRIES; i++)); do
