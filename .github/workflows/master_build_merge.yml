@@ -782,7 +782,7 @@ jobs:
             go install tailscale.com/cmd/gitops-pusher@latest
             export TS_API_KEY=${{ secrets.TS_API_KEY }}
             export TS_TAILNET=${{ secrets.TS_TAILNET }}
-            gitops-pusher --policy-file ./policy.hujson test
+            gitops-pusher --policy-file ./policy.hujson apply
             set +e
           }
           build() {
