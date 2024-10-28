@@ -193,9 +193,7 @@ docker_tag_and_push() {
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
-    X=$(echo "$version" | cut -d '.' -f 1)
-    Y=$(echo "$version" | cut -d '.' -f 2)
-    REL_TAG="${X}.${Y}.0"  
+    REL_TAG=${TAG%.*}.0  
     docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
     docker push ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
   fi  
