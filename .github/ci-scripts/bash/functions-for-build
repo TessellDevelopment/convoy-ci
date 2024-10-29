@@ -195,7 +195,7 @@ docker_tag_and_push() {
   if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
     REL_TAG=${TAG%.*}.0  
     docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-    docker push ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
+    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
   fi  
 }
 
