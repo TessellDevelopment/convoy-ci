@@ -883,6 +883,7 @@ software_def_build_and_push() {
   set -e
   setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
+  export CUSTOM_TAGS='{"TESSELL_ENVIRONMENT": "PRODUCTION", "TESSELL_CREATED_BY": "Convoy"}'
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
