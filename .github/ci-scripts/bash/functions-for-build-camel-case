@@ -1,0 +1,265 @@
+#!/bin/bash
+
+awsConfigureDevqaInfra() {
+  aws_configure_devqa_infra "$@"
+}
+
+awsConfigureProdAssets() {
+  aws_configure_prod_assets "$@"
+}
+
+awsConfigureTessellopsArtifacts() {
+  aws_configure_tessellops_artifacts "$@"
+}
+
+buildConvoyTessellClient() {
+  build_convoy_tessell_client "$@"
+}
+
+buildConvoyTessellClientAndPush() {
+  build_convoy_tessell_client_and_push "$@"
+}
+
+buildConvoyTessellImage() {
+  build_convoy_tessell_image "$@"
+}
+
+buildConvoyTessellImageAndPush() {
+  build_convoy_tessell_image_and_push "$@"
+}
+
+checkFlyway() {
+  check_flyway "$@"
+}
+
+configureAndPushAWS() {
+  configure_and_push_aws "$@"
+}
+
+createTFBackend() {
+  create_tf_backend "$@"
+}
+
+configureNpmrc() {
+  configure_npmrc "$@"
+}
+
+configureNpmrcYarnrc() {
+  configure_npmrc_yarnrc "$@"
+}
+
+convoyCodegenBuild() {
+  convoy_codegen_build "$@"
+}
+
+convoyCodegenBuildAndPush() {
+  convoy_codegen_build_and_push "$@"
+}
+
+convoyGoLibraryBuild() {
+  convoy_go_library_build "$@"
+}
+
+dockerBuild() {
+  docker_build "$@"
+}
+
+dockerBuildAndPush() {
+  docker_build_and_push "$@"
+}
+
+elasticAgentBuild() {
+  elastic_agent_build "$@"
+}
+
+elasticAgentBuildAndPush() {
+  elastic_agent_build_and_push "$@"
+}
+
+frpBuild() {
+  frp_build "$@"
+}
+
+frpBuildAndPush() {
+  frp_build_and_push "$@"
+}
+
+gradlewBuild() {
+  gradlew_build "$@"
+}
+
+gradlewBuildAndPush() {
+  gradlew_build_and_push "$@"
+}
+
+gradlewUIBuild() {
+  gradlew_ui_build "$@"
+}
+
+gradlewUIBuildAndPush() {
+  gradlew_ui_build_and_push "$@"
+}
+
+generateChecksum() {
+  generate_checksum "$@"
+}
+
+goDockerBuild() {
+  go_docker_build "$@"
+}
+
+goDockerBuildAndPush() {
+  go_docker_build_and_push "$@"
+}
+
+gradlewDockerTag() {
+  gradlew_docker_tag "$@"
+}
+
+imageScan(){
+  image_scan "$@"
+}
+
+installGoDependencies() {
+ install_go_dependencies "$@"
+}
+
+installPythonDependencies() {
+  install_python_dependencies "$@"
+}
+
+jarBuild() {
+  jar_build "$@"
+}
+
+jarBuildAndPush() {
+  jar_build_and_push "$@"
+}
+
+mvnDeploy() {
+  mvn_deploy "$@"
+}
+
+mvnwBuild() {
+  mvnw_build "$@"
+}
+
+mvnwBuildAndPush() {
+  mvnw_build_and_push "$@"
+}
+
+npmBuild() {
+  npm_build "$@"
+}
+
+npmBuildAndPush() {
+  npm_build_and_push "$@"
+}
+
+opsImageBuild() {
+  ops_image_build "$@"
+}
+
+opsImageBuildAndPush() {
+  ops_image_build_and_push "$@"
+}
+
+opsUIBuild() {
+  ops_ui_build "$@"
+}
+
+opsUIBuildAndPush() {
+  ops_ui_build_and_push "$@"
+}
+
+parseCoverageReport() {
+  parse_coverage_report "$@"
+}
+
+parseAndPushCoverageReport() {
+  parse_and_push_coverage_report "$@"
+}
+
+parseCoverageReportJava() {
+  parse_coverage_report_java "$@"
+}
+
+parseAndPushCoverageReportJava() {
+  parse_and_push_coverage_report_java "$@"
+}
+
+pushToMinio() {
+  push_to_minio "$@"
+}
+
+pushToNexus() {
+  push_to_nexus "$@"
+}
+
+pythonDockerBuildAndPush() {
+  python_docker_build_and_push "$@"
+}
+
+pythonSetupBuild() {
+  python_setup_build "$@"
+}
+
+pythonSetupBuildAndPush() {
+  python_setup_build_and_push "$@"
+}
+
+qaBuildAndPush(){
+  qa_build_and_push "$@"
+} 
+
+runPythonUnitTest(){
+  run_python_unit_test "$@"
+} 
+
+setupQAEnv() {
+  setup_qa_env "$@"
+}
+
+setupPackerEnv() {
+  setup_packer_env "$@"
+}
+
+softwareDefBuild() {
+  software_def_build "$@"
+}
+
+softwareDefBuildAndPush() {
+  software_def_build_and_push "$@"
+}
+
+terraformApply() {
+  terraform_apply "$@"
+}
+
+terraformApplyAndPush() {
+  terraform_apply_and_push "$@"
+}
+
+tsmZipBuild() {
+  tsm_zip_build "$@"
+}
+
+tsmZipBuildAndPush() {
+  tsm_zip_build_and_push "$@"
+}
+
+vssTarBuild() {
+  vss_tar_build "$@"
+}
+
+vssTarBuildAndPush() {
+  vss_tar_build_and_push "$@"
+}
+
+validateInputs() {
+  validate_inputs "$@"
+}
+
+zipDirectory() {
+  zip_directory "$@"
+}

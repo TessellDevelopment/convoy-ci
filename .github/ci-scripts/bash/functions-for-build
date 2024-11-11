@@ -1,0 +1,957 @@
+#!/bin/bash
+
+source ./ci-scripts/bash/functions-for-build-camel-case
+
+aws_configure_devqa_infra() {
+  aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
+aws_configure_prod_assets() {
+  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
+aws_configure_tessellops_artifacts() {
+  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}
+  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}
+  aws configure set region ap-south-1
+}
+
+build_convoy_tessell_client() {
+  install_go_dependencies
+  ./setup --client --version 0.0.0
+}
+
+build_convoy_tessell_client_and_push() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  install_go_dependencies
+  ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+}
+
+build_convoy_tessell_image() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  install_go_dependencies
+  python3 -m pip install build
+  bash ./setup -i
+}
+
+build_convoy_tessell_image_and_push() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  IMAGE="${1}"
+  build_convoy_tessell_image  "$@"
+  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+}
+
+check_flyway() {
+  if [ -d "flyway" ]; then
+    echo "The 'flyway' directory exists in this repository."
+    DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+    docker tag ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+    docker push ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+  else
+    echo "The 'flyway' directory does not exists in this repository."
+  fi
+}
+
+configure_npmrc(){
+  set +e 
+  REPO="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  rm ~/.npmrc
+  TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
+  echo "//${NEXUS_SERVER_ENDPOINT}/repository/:_auth = ${TOKEN}" >> ~/.npmrc
+  echo "//${NEXUS_SERVER_ENDPOINT}/repository/:always-auth = true" >> ~/.npmrc 
+  echo "@tessell:registry=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${REPO}" >> ~/.npmrc
+  cat ~/.npmrc
+}
+
+configure_npmrc_yarnrc() {
+  set +e
+  rm ~/.npmrc
+  rm ~/.yarnrc
+  TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
+  echo "\"@tessell:registry\" \"${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/\"" >> .yarnrc
+  echo "always-auth=true" >> .npmrc
+  echo "_auth=${TOKEN}" >> .npmrc
+  cat .npmrc
+  cat .yarnrc
+} 
+
+configure_and_push_aws() {
+  BUCKET_ACCOUNT=${1}
+  BUCKET_NAME=${2}
+  SOURCE=${3}
+  DESTINATION=${4}
+  generate_sts_session_token ${BUCKET_ACCOUNT}
+  aws s3 cp "${SOURCE}" "${DESTINATION}"
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+}
+
+convoy_codegen_build() {
+  set -e
+  ARTIFACT="${1}"
+  VERSION="${3}"
+  cd ./${ARTIFACT}
+  mvn clean package -Drevision=${VERSION:-0.0.0}
+  cd ..
+  set +e
+}
+
+convoy_codegen_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  convoy_codegen_build $@
+  set -e
+  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
+  set +e
+}
+
+convoy_go_library_build() {
+  set -e
+  go build ./...
+  set +e
+}
+
+create_tf_backend() {
+  S3_BUCKET="$1"
+  KEY="$2"
+  AWS_ACCESS_KEY_ID="$3"
+  AWS_SECRET_ACCESS_KEY="$4"
+  AWS_REGION="ap-south-1"
+  cat <<EOL > "backend.tf"
+  terraform {
+    backend "s3" {
+      bucket               = "${S3_BUCKET}"
+      key                  = "${KEY}"
+      region               = "${AWS_REGION}"
+      access_key           = "${AWS_ACCESS_KEY_ID}"
+      secret_key           = "${AWS_SECRET_ACCESS_KEY}"
+      encrypt              = true
+    }
+  }
+EOL
+}
+
+docker_build() {
+  set -e
+  IMAGE="${1}"
+  FILE="${4}"
+  if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
+    FILE="./Dockerfile"
+  fi
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  docker build -f ${FILE} -t ${IMAGE} \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+              --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
+              --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+              --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
+  image_scan ${IMAGE}
+  set +e
+}
+
+docker_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  VERSION="${3}"
+  FILE="${4}"
+  TAG=${LATEST_TAG}
+  if [[ "${VERSION}" != "null" ]]; then
+    TAG=${VERSION}
+  fi
+  if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
+    FILE="./Dockerfile"
+  fi
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  docker build -f ${FILE} -t ${IMAGE} \
+              --build-arg GITHUB_USER=${GITHUB_USER} \
+              --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+              --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+              --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
+              --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+              --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
+  docker_tag_and_push "${IMAGE}" "${TAG}"
+  set +e
+}
+
+docker_tag_and_push() {
+  IMAGE="${1}"
+  TAG="${2}"
+  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+}
+
+elastic_agent_build() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build "$@"
+  set +e
+}
+
+elastic_agent_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  GOOS=linux GOARCH=amd64 go build .
+  docker_build_and_push "$@"
+  set +e
+}
+
+frp_build() {
+  set -e
+  ./setup -b
+  set +e
+}
+
+frp_build_and_push() {
+  frp_build
+  set -e
+  EXTENSION="${2}"
+  aws_configure_prod_assets
+  os_type=("linux" "windows")
+  for OS in "${os_type[@]}"; do
+    echo "frpc-{$OS}"
+    mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
+    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
+    if ! ${DEV_BUILD}; then
+      push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      for env in "${environments[@]}"
+      do
+        push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
+      done
+      generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
+    fi
+  done
+  set +e
+}
+
+get_base_branch_commit_from_pr_number() {
+  base_branch_commit_of_root_pr=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.merge_commit_sha')
+}
+
+get_dc_messages() {
+  dc_message=$(curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message' | head -n 1)
+}
+
+get_root_pr_tag() {
+  get_dc_messages
+  root_pr_number=$(echo ${dc_message} | grep -oE '[0-9]+' | tail -1 )
+  echo "root_pr_number" ${root_pr_number}
+  get_base_branch_commit_from_pr_number
+  echo "base branch commit" ${base_branch_commit_of_root_pr}
+  git diff ${base_branch_commit_of_root_pr}^!
+  root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | head -n 1)
+  base_branch_of_root_pr="rel-$(echo "${root_pr_tag}" | cut -d. -f1,2).0"
+}
+
+get_dc_root_pr_diff() {
+  get_root_pr_tag
+  git diff ${base_branch_commit_of_root_pr}^! --compact-summary  > ../root_pr_diff
+  cat ../root_pr_diff
+}
+
+generate_checksum() {
+  ARTIFACT=${1}
+  BUILD_FILE=${2}
+  if [[ -z "${BUILD_FILE}" ]]; then
+    echo "Build File name same as Artifact name"
+    BUILD_FILE=${ARTIFACT}
+  fi
+  file_path=$(find . -type f -name "${BUILD_FILE}" 2>/dev/null | head -n 1)
+  if [[ -z "${file_path}" ]]; then
+    echo "File not found!"
+    return 1
+  fi
+  checksum=$(md5sum "${file_path}" | awk '{ print $1 }')
+  ARTIFACT="${ARTIFACT%%.*}"
+  ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
+}
+
+generate_sts_session_token() {
+  BUCKET_ACCOUNT=${1}
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
+  export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
+  export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
+  export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+}
+
+go_docker_build() {
+  set -e
+  IMAGE="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  install_go_dependencies
+  echo "Building the service"
+  export PATH=${PATH}:${GOPATH}/bin
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  ./setup -g -i
+  image_scan ${IMAGE}
+  set +e
+}
+
+go_docker_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  install_go_dependencies
+  echo "Building the service"
+  export PATH=${PATH}:${GOPATH}/bin
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  ./setup -g -i
+  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  check_flyway ${IMAGE}
+  set +e
+}
+
+gradlew_build() {
+  ./gradlew build --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
+gradlew_build_and_push() {
+  ./gradlew build publish --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
+}
+
+gradlew_docker_tag() {
+  ./gradlew dockerTag --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pdockerhub_org="${DOCKERHUB_ORG}"
+}
+
+gradlew_ui_build() {
+  configure_npmrc_yarnrc
+  install_node
+  set -e
+  ENV_JSON=${TESSELL_UI_ENV_SECRET}
+  echo $ENV_JSON | jq -r 'to_entries | .[] | "\(.key)=\"\(.value)\"" ' | sed '1s/^/\n/' >> .env
+  cat .env
+  ./gradlew zipUiBuild --console plain --stacktrace \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
+gradlew_ui_build_and_push() {
+  ARTIFACT=${1}
+  EXTENSION=${2}
+  gradlew_ui_build "$@"
+  set -e
+  ./gradlew publish --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
+    -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
+    -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
+    -Pnexus_protocol="${NEXUS_PROTOCOL}" \
+    -Plabel="${LABEL}" 
+  if ! ${DEV_BUILD}; then
+    lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+    build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+    generate_checksum $ARTIFACT $build_file_name
+    push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+    do
+      push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+  fi
+  set +e
+}
+
+image_scan(){
+  set -e
+  export IMAGE="${1}"
+  RETRIES=5
+  for ((i=1; i<=RETRIES; i++)); do
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    exit_code=$?
+    echo ${output}
+    if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
+        echo "Encountered TOOMANYREQUESTS error. Retrying."
+        sleep 60
+    elif [ ${exit_code} -eq 0 ]; then
+        echo "Trivy scan completed successfully."
+        break
+    else
+        echo "Trivy scan failed with exit code ${exit_code}: ${output}"
+        exit 1
+    fi
+  done
+  if [ ${i} -gt ${RETRIES} ]; then
+    echo "Trivy scan failed after ${RETRIES} attempts."
+    exit 1
+  fi
+  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
+  python3 ./ci-scripts/python/image_scan.py
+  set +e
+}
+
+initialise_coverage() {
+  echo "Setting up virtual environment for running unit tests."
+  venv_name=${1}
+  venv_path=${PWD}/${venv_name}
+  python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  source_path=${venv_path}/lib/python${python_version}/site-packages/
+  python3 -m venv ${venv_name}
+  source ${venv_name}/bin/activate
+  dist_dir=$(find . -type d -name "dist" 2>/dev/null | head -n 1)
+  python3 -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip list | grep tessell
+  echo ${source_path}
+  test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
+  cp -r ${test_dir} pytest.ini ${source_path}
+}
+
+install_go_dependencies() {
+  go version
+  go install golang.org/x/tools/cmd/goimports@v0.24.0
+  which go
+}
+
+install_node() {
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  base_node_version=$(node --version)
+  export base_node_version
+  node_version=$(yq eval '.nodeVersion // strenv(base_node_version)' convoy.yaml)
+  nvm which "$node_version" > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "Node version $node_version is already installed."
+  else
+    echo "Node version $node_version not found. Installing..."
+    nvm install "$node_version"
+  fi
+  nvm use ${node_version}
+}
+
+install_python_dependencies() {
+  DIR=${1}
+  if [[ -z "${DIR}" ]]; then
+    DIR='.'
+  fi
+  python3 -m pip install --upgrade pip
+  python3 -m pip install flake8 pytest twine wheel
+  if [ -f "${DIR}/requirements.txt" ]; then
+    python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  fi
+}
+
+jarBuild() {
+  set -e
+  VERSION="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw package -Drevision=${VERSION}
+  set +e
+}
+
+jar_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  ./mvnw clean deploy -Drevision=${VERSION} -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+    -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
+    -DgroupId=tessellops -DartifactId=${ARTIFACT} \
+    -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  set +e
+}
+
+mvn_deploy() {
+  ARTIFACT_ID="${1}"
+  EXTENSION="${2}"
+  FILE="${3}"
+  GROUP_ID="${4}"
+  VERSION="${5}"
+  required_inputs="1 2 3 4 5"
+  validate_inputs "${required_inputs}" "$@" 
+  mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
+      -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+      -DgroupId=${GROUP_ID} -DartifactId=${ARTIFACT_ID} -Dversion=${VERSION} \
+      -DgeneratePom=true -Dpackaging=${EXTENSION} \
+      -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+      -Dfile=${FILE} -DrepositoryId=nexus
+}
+
+ mvnw_build() {
+  set -e
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  set +e
+}
+
+mvnw_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  aws_configure_tessellops_artifacts
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+  mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
+  aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+  set +e
+}
+
+npm_build() {
+  install_node
+  set -e
+  npm install
+  npm run build
+  configure_npmrc "${NEXUS_REPO_NPM}"
+  set -e
+  version="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  yq ".version = \"${version}\"" package.json > tmp_package.json
+  mv tmp_package.json package.json
+  npm publish   
+  set +e
+}
+
+npm_build_and_push() {
+  install_node
+  set -e
+  npm install
+  npm run build
+  configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
+  set -e
+  version="${3}"
+  required_inputs="3"
+  validate_inputs "${required_inputs}" "$@" 
+  yq ".version = \"${version}\"" package.json > tmp_package.json
+  mv tmp_package.json package.json
+  npm publish   
+  set +e
+}
+
+ops_image_build() {
+  set -e
+  mvnw_build
+  docker_build "$@"
+  set +e
+}
+
+ops_image_build_and_push() {
+  set -e
+  IMAGE="${1}"
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  docker_build_and_push "$@"
+  set +e
+}
+
+ops_ui_build() {
+  gradlew_ui_build
+}
+
+ops_ui_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXT="${2}"
+  sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
+  gradlew_ui_build
+  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  set +e
+}
+
+parse_coverage_report() {
+  set -e
+  language=$(yq '.language' convoy.yaml)
+  if [[ "${language}" == "java" ]]; then
+    parse_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
+  fi
+}
+
+parse_and_push_coverage_report() {
+  set -e
+  language=$(yq '.language' convoy.yaml)
+  if [[ "${language}" == "java" ]]; then
+    parse_and_push_coverage_report_java "$@"
+  elif [[ "${language}" == "python" ]]; then
+    parse_and_push_coverage_report_python "$@"
+  else
+    echo "Code coverage currently not supported for ${language} based repositories"
+  fi
+}
+
+parse_coverage_report_python() {
+  if [ -f "pytest.ini" ]; then
+    echo "Running python Unit test and generating code coverage report"
+    run_python_unit_test "$@"
+    coverage_report=$(find . -type f -name "coverage.json")
+    coverage_html=$(dirname "${coverage_report}")/htmlcov/index.html
+    covered_branches=$(jq '.totals.covered_branches' ${coverage_report})
+    missing_branches=$(jq '.totals.missing_branches' ${coverage_report})
+    total_branches=$(jq '.totals.num_branches' ${coverage_report})
+    branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
+    covered_statements=$(jq '.totals.covered_lines' ${coverage_report})
+    missing_statements=$(jq '.totals.missing_lines' ${coverage_report})
+    total_statements=$(jq '.totals.num_statements' ${coverage_report})
+    statement_coverage_percentage=$(jq '.totals.percent_covered' ${coverage_report} | awk '{print int($1)}')
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage}"
+    flag=1
+  else
+    echo "pytest.ini not present skipping unit test and code coverage report generation"
+  fi
+}
+
+parse_and_push_coverage_report_python() {
+  flag=0
+  parse_coverage_report_python
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
+  fi
+}
+
+parse_coverage_report_java() {
+  jacoco_dir=$(find . -type d -path '*/site/jacoco')
+  if [ -z "${jacoco_dir}" ]; then
+    echo "No site/jacoco folder found. Skipping coverage report parsing."
+    return
+  fi
+  xml_file="${jacoco_dir}/jacoco.xml"
+  branch_covered=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@covered)' "${xml_file}")
+  branch_missed=$(xmllint --xpath 'sum(//counter[@type="BRANCH"]/@missed)' "${xml_file}")
+  branch_total=$((branch_covered + branch_missed))
+  branch_percentage=$(echo "scale=0; ${branch_covered} * 100 / ${branch_total}" | bc)
+  statement_covered=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@covered)' "${xml_file}")
+  statement_missed=$(xmllint --xpath 'sum(//counter[@type="INSTRUCTION"]/@missed)' "${xml_file}")
+  statement_total=$((statement_covered + statement_missed))
+  statement_percentage=$(echo "scale=0; ${statement_covered} * 100 / ${statement_total}" | bc)
+  export BRANCH_COVERAGE="${branch_covered} ${branch_missed} ${branch_total} ${branch_percentage}"
+  export STATEMENT_COVERAGE="${statement_covered} ${statement_missed} ${statement_total} ${statement_percentage}"
+  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+  cd ${jacoco_dir}/..
+  zip -r coverage.zip jacoco/*
+  cd -
+  mv ${jacoco_dir}/../coverage.zip ./
+  flag=1
+}
+
+parse_and_push_coverage_report_java() {
+  flag=0
+  parse_coverage_report_java
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
+}
+
+push_to_minio() {
+  SOURCE="${1}"
+  DESTINATION="${2}"
+  MAX_RETRIES=5
+  RETRY_DELAY=3
+  local attempt=0
+  while [ ${attempt} -lt ${MAX_RETRIES} ]; do
+    mc cp "${SOURCE}" "${DESTINATION}"
+    if [ $? -eq 0 ]; then
+      echo "Artifact successfully pushed to minio ${DESTINATION}."
+      return
+    else
+      attempt=$((attempt + 1))
+      echo "Pushing artifact to minio failed. Attempt ${attempt} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY} seconds."
+      sleep ${RETRY_DELAY}
+    fi
+  done
+  echo "Pushing artifact to minio failed after ${MAX_RETRIES} attempts."
+  return 1
+}
+
+push_to_nexus() {
+  FILE_PATH="${1}"
+  URL_PATH="${2}"
+  required_inputs="1 2"
+  validate_inputs "${required_inputs}" "$@" 
+  RESPONSE=$(curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+      --upload-file ${FILE_PATH}  -w "%{http_code}" \
+      ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
+  echo ${REPONSE}
+  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
+  echo ${HTTP_CODE}
+  HTTP_CODE=$((HTTP_CODE))
+  if [ "${HTTP_CODE}" -ne 201 ]; then
+    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
+    exit 1
+  fi
+}
+
+python_docker_build_and_push() {
+  set -e
+  IMAGE="$1"
+  required_inputs="1"
+  validate_inputs "$required_inputs" "$@"
+  gradlew_docker_tag
+  docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
+python_setup_build() {
+  if [ -f requirements.txt ]; then
+    install_python_dependencies
+  fi
+  VERSION="${3}"
+  python3 setup.py bdist_wheel --version ${VERSION}
+}
+
+python_setup_build_and_push() {
+  if [ -f requirements.txt ]; then 
+    install_python_dependencies 
+  fi
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  underscore_artifact_name="${ARTIFACT//-/_}"
+  python3 setup.py bdist_wheel --version ${VERSION}
+  twine upload --repository-url ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_PY}/ \
+    --username ${NEXUS_USERNAME} \
+    --password ${NEXUS_PASSWORD} \
+    dist/${underscore_artifact_name}-${VERSION}-py3-none-any.${EXTENSION}
+}
+
+qa_build_and_push(){
+  set -e
+  required_inputs="1 3"
+  validate_inputs "${required_inputs}" "$@" 
+  setup_qa_env
+  export GITHUB_TOKEN="${GITHUB_TOKEN}"
+  cp configs/qabusiness.json config.json
+  source qavenv/bin/activate
+  make clients -B
+  source qavenv/bin/activate
+  python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+  deactivate
+  if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
+    cd scripts
+    docker_build_and_push $@
+    cd ..
+  fi
+  set +e
+}
+
+run_python_unit_test() {
+  initialise_coverage 'test-venv'
+  python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  source_path=${venv_path}/lib/python${python_version}/site-packages/
+  include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
+  pushd ${source_path}
+  echo "Running unit tests"
+  python3 -m coverage run --branch --source "." -m pytest tests
+  echo "Generating code coverage report"
+  python3 -m coverage report --skip-empty --include="${include}"
+  python3 -m coverage html --include="${include}"
+  python3 -m coverage json --include="${include}"
+  popd
+  deactivate 
+}
+
+setup_qa_env() {
+  INSTALL_DIR=/usr/local/bin
+  sudo mkdir -p ${INSTALL_DIR}/openapitools
+  curl https://raw.githubusercontent.com/OpenAPITools/openapi-generator/master/bin/utils/openapi-generator-cli.sh > openapi-generator-cli
+  sudo cp openapi-generator-cli ${INSTALL_DIR}/openapitools/openapi-generator-cli
+  sudo chmod 755 ${INSTALL_DIR}/openapitools/openapi-generator-cli
+  sudo ln -f -s ${INSTALL_DIR}/openapitools/openapi-generator-cli ${INSTALL_DIR}/openapi-generator
+  wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
+  python3 -m pip cache purge
+  sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
+  python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install yq wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m venv qavenv
+  source qavenv/bin/activate
+  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python3 -m pip list | grep harness
+  deactivate
+}
+
+setup_packer_env() {
+  sudo python3 -m pip uninstall -y packer_framework
+  python3 -m pip install --user virtualenv
+  python3 -m venv pkenv
+  source pkenv/bin/activate
+  python3 -m pip install wheel
+  python3 -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+}
+
+software_def_build() {
+  set -e
+  setup_packer_env
+  export CURRENT_VERSION_TAG="0.0.0"
+  mkdir -p ~/.packer.d/plugins
+  if [[ "$BRANCH_NAME" == *double_commit* ]]; then
+    echo "${BRANCH_NAME} contains double_commit"
+    get_dc_root_pr_diff
+    git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
+    cat ../current_pr_diff
+    if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
+      echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
+      return
+    fi
+  fi
+  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
+}
+
+software_def_build_and_push() {
+  set -e
+  setup_packer_env
+  export CURRENT_VERSION_TAG=${LATEST_TAG}
+  echo $CURRENT_VERSION_TAG
+  mkdir -p ~/.packer.d/plugins
+  if [[ "$BRANCH_NAME" == *double_commit* ]]; then
+    echo "${BRANCH_NAME} contains double_commit"
+    get_dc_root_pr_diff
+    git diff HEAD~1 --compact-summary > ../current_pr_diff
+    cat ../current_pr_diff
+    if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
+      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
+      echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
+      curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
+       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
+    else
+      build_all_artifacts -r $PWD --base_commit  --pipeline_run
+    fi
+  else
+    build_all_artifacts -r $PWD --base_commit  --pipeline_run
+  fi
+  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+}
+
+
+terraform_apply() {
+  set -e
+  cd terraform
+  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
+  terraform init
+  terraform plan
+  cd ..
+  set +e
+}
+
+terraform_apply_and_push() {
+  set -e
+  terraform_apply
+  cd terraform
+  terraform apply -auto-approve
+  cd ..
+  set +e
+}
+
+tsm_zip_build() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@" 
+  mkdir -p build; cd tsmv101; terraform_build $PWD ../build/${ARTIFACT}.zip; cd ../build; ls -l;
+  unzip -l ${ARTIFACT}.zip
+  cd ..
+  set +e
+}
+
+tsm_zip_build_and_push() {
+  tsm_zip_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "tessell.tsm.infra" "${VERSION}"
+  set +e
+}
+
+vss_tar_build() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  CLOUD=$(echo "${ARTIFACT}" | awk -F'[-]' '{print $3}')
+  DIR="build_${CLOUD}"
+  mkdir ${DIR}
+  cp -r  ./tessell-vss-requestor/TessellVssRequestor.exe ./tessell-vss-provider/${CLOUD}/install-provider ${DIR}
+  cd ${DIR}
+  tar -cf ../${ARTIFACT}.${EXTENSION} .
+  cd ..
+  ls
+  set +e
+}
+
+vss_tar_build_and_push() {
+  vss_tar_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
+  if ! ${DEV_BUILD}; then
+    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  fi
+  set +e
+}
+
+validate_inputs() {
+  local required=($1)
+  shift
+  for index in "${required[@]}"; do
+    if [ -z "${!index}" ]; then
+      echo "Error: Required Argument at index ${index} is null or empty."
+      exit 1
+    fi
+  done
+}
+
+zip_directory() {
+  DIR="${1}"
+  ARTIFACT_FILE="${2}"
+  zip -r ${ARTIFACT_FILE} ${DIR}
+}
