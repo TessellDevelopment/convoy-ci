@@ -24,7 +24,7 @@ bash_build() {
   set -e
   DIR="${1}"
   export PATH=$PATH:/home/github/.local/bin
-  ./$DIR/$DIR.sh
+  ./$DIR/build.sh
   set +e
 }
 
