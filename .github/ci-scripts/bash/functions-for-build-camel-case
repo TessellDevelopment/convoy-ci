@@ -12,6 +12,14 @@ awsConfigureTessellopsArtifacts() {
   aws_configure_tessellops_artifacts "$@"
 }
 
+bashBuild() {
+  bash_build "$@"
+}
+
+bashBuildAndPush() {
+  bash_build_and_push "$@"
+}
+
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
@@ -262,4 +270,12 @@ validateInputs() {
 
 zipDirectory() {
   zip_directory "$@"
+}
+
+zipFile() {
+  zip_file "$@"
+}
+
+zipFileAndPush() {
+  zip_file_and_push "$@"
 }

@@ -20,6 +20,24 @@ aws_configure_tessellops_artifacts() {
   aws configure set region ap-south-1
 }
 
+bash_build() {
+  set -e
+  DIR="${1}"
+  export PATH=$PATH:/home/github/.local/bin
+  ./$DIR/build.sh
+  set +e
+}
+
+bash_build_and_push() {
+  set -e
+  bash_build "$@"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  set +e
+}
+
+
 build_convoy_tessell_client() {
   install_go_dependencies
   ./setup --client --version 0.0.0
@@ -402,14 +420,14 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
-  RETRIES=5
+  RETRIES=50
   for ((i=1; i<=RETRIES; i++)); do
     output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
     exit_code=$?
     echo ${output}
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
         echo "Encountered TOOMANYREQUESTS error. Retrying."
-        sleep 60
+        sleep 15
     elif [ ${exit_code} -eq 0 ]; then
         echo "Trivy scan completed successfully."
         break
@@ -959,4 +977,23 @@ zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
   zip -r ${ARTIFACT_FILE} ${DIR}
+}
+
+zip_file() {
+  set -e
+  DIR=${1}
+  BASE_DIR=$PWD
+  cd ${DIR}
+  zip -r ${BASE_DIR}/${DIR}.zip ./*
+  cd ${BASE_DIR}
+  set +e  
+}
+
+zip_file_and_push() {
+  set -e
+  zip_file "$@"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  set +e  
 }
