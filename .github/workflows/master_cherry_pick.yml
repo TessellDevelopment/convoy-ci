@@ -48,21 +48,28 @@ jobs:
           git checkout -b $JIRA_ID
           commits=$(git rev-list --reverse $last_common_commit..upstream/$BASE_BRANCH)
           for commit in $commits; do
-            if [ $(git cat-file -p $commit | grep -c ^parent) -gt 1 ]; then
-              echo "Cherry-picking merge commit $commit"
-              git cherry-pick -m 1 $commit || {
-                echo "Conflict detected in merge commit $commit"
-                git status --short | grep 'UU' | awk '{print $2}' | xargs git add
-                git commit --no-edit
-              }
-            else
-              echo "Cherry-picking regular commit $commit"
-              git cherry-pick $commit || {
-                echo "Conflict detected in regular commit $commit"
-                git status --short | grep 'UU' | awk '{print $2}' | xargs git add
-                git commit --no-edit
-              }
-            fi
+            echo "Cherry-picking commit $commit"
+            git cherry-pick $commit || {
+              echo "Conflict detected in commit $commit"
+              logs=$(git status --short)
+              echo "$logs"
+              while IFS= read -r line; do
+                echo "$line"
+                if [[ $line == UU* ]]; then
+                  file_path=$(echo "$line" | awk '{print $2}')
+                  if [[ $file_path == 'Merge' ]]; then
+                    file_path=$(echo "$line" | awk '{print $4}')
+                    echo "$file_path"
+                    git add "$file_path"
+                  else
+                    echo "$file_path"
+                    git rm "$file_path"
+                  fi
+                fi
+              done <<< "$logs"
+              git add .
+              git commit --no-edit || git cherry-pick --skip
+            }
           done
           git push origin $JIRA_ID
           curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
