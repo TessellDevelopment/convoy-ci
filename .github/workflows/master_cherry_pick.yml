@@ -37,33 +37,25 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Cherry Pick changes from FRP repo
+      - name: Find and Cherry Pick changes from base repo
         run: |
           #!/bin/bash
-          set +e
+          set -e
           git remote add upstream $URL
           git fetch upstream $BASE_BRANCH
+          
+          last_common_commit=$(git merge-base HEAD upstream/$BASE_BRANCH)
+          echo "Last common commit: $last_common_commit"
           git checkout -b $JIRA_ID
-          logs=$(git cherry-pick -m 1 upstream/$BASE_BRANCH)
-          echo "$logs"
-          while IFS= read -r line; do
-            echo "$line"
-            if [[ $line == CONFLICT* ]]; then
-              file_path=$(echo "$line" | awk '{print $3}')
-              if [[ $file_path == 'Merge' ]]; then
-                file_path=$(echo "$line" | awk '{print $6}')
-                echo "$file_path"
-                git add $file_path
-              else
-                echo "$file_path"
-                git rm $file_path
-              fi
-            fi
-          done <<< "$logs"
-          git add .
-          git commit -m "$PR_TITLE"
+          git cherry-pick $last_common_commit..upstream/$BASE_BRANCH || {
+            echo "Cherry-pick encountered conflicts, resolving automatically"
+            git status --short | grep 'UU' | awk '{print $2}' | xargs git add
+            git commit -m "$PR_TITLE (with conflict resolution)"
+          }
+      
           git push origin $JIRA_ID
-
+      
           curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
-            -d '{"title": "${{ env.PR_TITLE }}", "head": "${{ env.JIRA_ID }}", "base": "main"}' \
+            -d "{\"title\": \"${{ env.PR_TITLE }}\", \"head\": \"${{ env.JIRA_ID }}\", \"base\": \"main\"}" \
             "https://api.github.com/repos/$REPO/pulls"
+      
