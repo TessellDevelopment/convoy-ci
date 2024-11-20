@@ -6,6 +6,11 @@ on:
         description: 'Base repo url to get changes'
         required: true
         type: string
+      base_branch: 
+        description: 'Base branch to pull from in public repo'
+        required: true
+        default: master
+        type: string
       jira_id:
         description: 'Jira ID for cherry pick'
         required: true
@@ -22,6 +27,7 @@ jobs:
     runs-on: self-hosted
     env: 
       URL: ${{inputs.base_repo}}
+      BASE_BRANCH: ${{inputs.base_branch}}
       REPO: ${{github.repository}}
       JIRA_ID: ${{inputs.jira_id}}
       PR_TITLE: ${{inputs.pr_title}}
@@ -36,9 +42,9 @@ jobs:
           #!/bin/bash
           set +e
           git remote add upstream $URL
-          git fetch upstream master
+          git fetch upstream $BASE_BRANCH
           git checkout -b $JIRA_ID
-          logs=$(git cherry-pick -m 1 upstream/master)
+          logs=$(git cherry-pick -m 1 upstream/$BASE_BRANCH)
           echo "$logs"
           while IFS= read -r line; do
             echo "$line"
