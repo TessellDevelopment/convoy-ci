@@ -1,7 +1,7 @@
 name: Tessell Packer Wokflow Dispatch
 
-# Source branch is "Use workflow from" in "Run Workflow". We do not want this workflow to run when source branch is main or "rel-*".
-# BRANCH_NAME is " Provide branch name or commit id ". We only want to push to nexus when Branch_name is main or "rel-*".
+# UPDATED_BRANCH is "Use workflow from" in "Run Workflow". This is the branch which will have new DB engines (so branch which will merge in main). We do not want this workflow to run when UPDATED_BRANCH is main or "rel-*".
+# BASE_BRANCH is " Provide branch name or commit id ". This is the branch which we will compare to UPDATED_BRANCH and generate delta. We only want to push to nexus when BASE_BRANCH is main or "rel-*".
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ jobs:
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
-      BRANCH_NAME: ${{ inputs.branchName }}
+      BASE_BRANCH: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
       CUSTOM_TAGS: '{"build-source": "workflow-dispatch", "workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -47,18 +47,20 @@ jobs:
       - name: Get branch name
         shell: bash
         run: | 
-          # Source branch is "Use workflow from" in "Run Workflow".
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          # UPDATE_BRANCH is "Use workflow from" in "Run Workflow".
+          echo "UPDATED_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+          # TARGET_BRANCH is not getting used anywhere.
           echo "TARGET_BRANCH=$(echo ${{ github.event.ref }} | tr / -)" >> $GITHUB_ENV
 
           echo $pull_request_number
 
       - name: Set Label
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+      # We do not want this workflow to run when UPDATED_BRANCH is main or "rel-*" or workflowType is "build.".
+        if: ${{ !startsWith(env.UPDATED_BRANCH,'rel-') && env.UPDATED_BRANCH != 'main' && inputs.workflowType == 'build' }}
         shell: bash
         run: |
-          # this label value will get value from "Provide branch name or commit id".
-          if [[ "${{ env.BRANCH_NAME }}" == "main" ]]; then
+          # If BASE_BRANCH is main, get the latest label from nexus.
+          if [[ "${{ env.BASE_BRANCH }}" == "main" ]]; then
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
@@ -72,11 +74,12 @@ jobs:
                 echo "Label does not start with 'rel'. Check response."
                 exit 1 
             fi
-          # if branch starts rel, take it as it is.
-          elif [[  "${{ env.BRANCH_NAME }}" == rel-* ]]; then
-            LABEL=${{ env.BRANCH_NAME }}
+          # if BASE_BRANCH is given by dev and starts with rel, take it as it is. This means the dev wants to generate delta using a particular release as base.
+          elif [[  "${{ env.BASE_BRANCH }}" == rel-* ]]; then
+            LABEL=${{ env.BASE_BRANCH }}
           else
-            LABEL=${{ env.SOURCE_BRANCH }}
+          # otherwise
+            LABEL=${{ env.UPDATED_BRANCH }}
           fi
           echo "LABEL=$LABEL" >> $GITHUB_ENV
           
@@ -87,13 +90,13 @@ jobs:
 
       - name: visible
         run: |
-          echo ${{ env.SOURCE_BRANCH }}
+          echo ${{ env.UPDATED_BRANCH }}
           echo ${{ env.TARGET_BRANCH }}
           echo ${{ env.LABEL }}
           echo ${GITHUB_BASE_REF}
           echo "Source branch is ${{ github.head_ref }}"
           echo $TARGET_BRANCH_MAIN
-          echo $BRANCH_NAME
+          echo $BASE_BRANCH
           echo ${{ github.head_ref }}
           cat ${GITHUB_EVENT_PATH} | jq '.'
           echo ${{ env.AWS_ACCESS_KEY_ID }}
@@ -101,7 +104,7 @@ jobs:
           echo $CLOUD_BUILD_TYPE_ARG
 
       - name: Set Pull repository
-        if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
+        if: ${{ startsWith(env.UPDATED_BRANCH,'rel-') || env.UPDATED_BRANCH == 'main' }}
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
@@ -138,27 +141,27 @@ jobs:
           pip3 install --force-reinstall setuptools==45.2.0
           
       - name: Dry-run artifacts Input-config
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
+        if: ${{ !startsWith(env.UPDATED_BRANCH,'rel-') && env.UPDATED_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
           source pkenv/bin/activate
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
+          build_all_artifacts -r $PWD --dest_branch ${BASE_BRANCH} --src_branch ${{ env.UPDATED_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        if: ${{ !startsWith(env.UPDATED_BRANCH,'rel-') && env.UPDATED_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source pkenv/bin/activate
-          build_all_artifacts -r $PWD --dest_branch ${BRANCH_NAME} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
+          build_all_artifacts -r $PWD --dest_branch ${BASE_BRANCH} --src_branch ${{ env.UPDATED_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
+        if: ${{ !startsWith(env.UPDATED_BRANCH,'rel-') && env.UPDATED_BRANCH != 'main' && inputs.workflowType == 'build' && env.DESTINATION_ACCOUNT != 'none'}}
         run: |
           # source $(share_aws_artifacts -sec)
           share_aws_artifacts -i $PWD/image_manifest_local.json
 
       - name: Push to Nexus
       # we do not want this to run when the dev starts this workflow from main or rel-* branches. (the "Use workflow from"). and if the dev is comparing from a branch which is not main or doesn't start with "rel-*", then also don't run.
-        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
+        if: ${{ !startsWith(env.UPDATED_BRANCH,'rel-') && env.UPDATED_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.UPDATED_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
