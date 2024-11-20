@@ -43,18 +43,28 @@ jobs:
           set -e
           git remote add upstream $URL
           git fetch upstream $BASE_BRANCH
-          
           last_common_commit=$(git merge-base HEAD upstream/$BASE_BRANCH)
           echo "Last common commit: $last_common_commit"
           git checkout -b $JIRA_ID
-          git cherry-pick $last_common_commit..upstream/$BASE_BRANCH || {
-            echo "Cherry-pick encountered conflicts, resolving automatically"
-            git status --short | grep 'UU' | awk '{print $2}' | xargs git add
-            git commit -m "$PR_TITLE (with conflict resolution)"
-          }
-      
+          commits=$(git rev-list --reverse $last_common_commit..upstream/$BASE_BRANCH)
+          for commit in $commits; do
+            if [ $(git cat-file -p $commit | grep -c ^parent) -gt 1 ]; then
+              echo "Cherry-picking merge commit $commit"
+              git cherry-pick -m 1 $commit || {
+                echo "Conflict detected in merge commit $commit"
+                git status --short | grep 'UU' | awk '{print $2}' | xargs git add
+                git commit --no-edit
+              }
+            else
+              echo "Cherry-picking regular commit $commit"
+              git cherry-pick $commit || {
+                echo "Conflict detected in regular commit $commit"
+                git status --short | grep 'UU' | awk '{print $2}' | xargs git add
+                git commit --no-edit
+              }
+            fi
+          done
           git push origin $JIRA_ID
-      
           curl -X POST -H "Authorization: token ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
             -d "{\"title\": \"${{ env.PR_TITLE }}\", \"head\": \"${{ env.JIRA_ID }}\", \"base\": \"main\"}" \
             "https://api.github.com/repos/$REPO/pulls"
