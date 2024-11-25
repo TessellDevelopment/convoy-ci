@@ -34,7 +34,6 @@ bash_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
 
