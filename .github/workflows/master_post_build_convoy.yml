@@ -220,9 +220,13 @@ jobs:
               for artifact in payload["artifacts"]:
                 key = artifact["name"]
                 type = artifact["type"]
-                if key in checksum_map and type == "artifacts":
+                if type == "artifacts":
+                  if key in checksum_map:
                     artifact["checksum"] = checksum_map[key]
-                    
+                  else:
+                    print(f"Checksum not found for artifact: {key}")
+                    exit(1)
+
             if generates and "softwareImages" in generates:
               payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))
