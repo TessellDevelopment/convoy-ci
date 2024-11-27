@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# source ./ci-scripts/bash/functions-for-build-camel-case
+source ./ci-scripts/bash/functions-for-build-camel-case
 
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
