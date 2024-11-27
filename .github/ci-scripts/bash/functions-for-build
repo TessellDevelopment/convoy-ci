@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./ci-scripts/bash/functions-for-build-camel-case
+# source ./ci-scripts/bash/functions-for-build-camel-case
 
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
@@ -163,6 +163,7 @@ EOL
 
 determine_go_version() {
   set -e
+  source /home/github/.gvm/scripts/gvm
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
@@ -963,7 +964,7 @@ tailscale_build() {
   go env
   go install tailscale.com/cmd/gitops-pusher@latest
   export TS_API_KEY=${TS_API_KEY}
-  export TS_TAILNET=${TS_TAILNET 
+  export TS_TAILNET=${TS_TAILNET}
   gitops-pusher --policy-file ./policy.hujson test
   set +e
 }
