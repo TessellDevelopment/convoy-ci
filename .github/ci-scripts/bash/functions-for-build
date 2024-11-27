@@ -179,6 +179,7 @@ determine_go_version() {
     esac
     echo "No explicit declaration of go version using ${go_version} based on runner conifg." 
   fi
+  source ~/.bashrc
   gvm install ${go_version}
   gvm use ${go_version}
 }
@@ -378,7 +379,7 @@ go_library_build() {
   set -e
   ARTIFACT="${1}"
   required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
   if [ "${NAME}" == "${ARTIFACT}" ]; then
       NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
