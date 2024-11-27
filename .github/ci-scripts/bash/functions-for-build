@@ -163,23 +163,23 @@ EOL
 
 determine_go_version() {
   set -e
-  export GVM_DIR="$HOME/.nvm"
-  [[ -s "${GVM_DIR}/.gvm/scripts/gvm" ]] && source "${GVM_DIR}/.gvm/scripts/gvm"
+  whoami
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
   else
     runner=$(yq e '.runner // ""' convoy.yaml)
-    case "${runner}" in
-      amd) go_version="go1.19.5" ;;
-      amd-go-20) go_version="go1.20.1" ;;
-      amd-go-21) go_version="go1.21.5" ;;
-      amd-go-22) go_version="go1.22.6" ;;
-      *) 
-        echo "Error: Unknown runner value '${runner}'!"
-        exit 1
-        ;;
-    esac
+    # case "$runner" in
+    #   amd) go_version="go1.19.5" ;;
+    #   amd-go-20) go_version="go1.20.1" ;;
+    #   amd-go-21) go_version="go1.21.5" ;;
+    #   amd-go-22) go_version="go1.22.6" ;;
+    #   *) 
+    #     echo "Error: Unknown runner value '${runner}'!"
+    #     exit 1
+    #     ;;
+    # esac
+    go_version="go1.19.5"
     echo "No explicit declaration of go version using ${go_version} based on runner conifg." 
   fi
   gvm install ${go_version}
