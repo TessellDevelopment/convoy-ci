@@ -163,8 +163,7 @@ EOL
 
 determine_go_version() {
   set -xe
-  ls $HOME/.gvm/scripts
-  source $HOME/.gvm/scripts/gvm
+  [[ -s "/home/github/.gvm/scripts/gvm" ]] && source "/home/github/.gvm/scripts/gvm"
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
