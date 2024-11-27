@@ -162,9 +162,11 @@ EOL
 }
 
 determine_go_version() {
-  set -xe
-  bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-  [[ -s "/home/github/.gvm/scripts/gvm" ]] && source "/home/github/.gvm/scripts/gvm"
+  set -e
+  chmod 644 /home/github/.gvm/environments/default
+  export PATH=$PATH:$HOME/.gvm/scripts/gvm
+  export GVM_ROOT="$HOME/.gvm"
+  source "$GVM_ROOT/scripts/gvm"
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
