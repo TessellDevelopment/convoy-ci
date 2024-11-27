@@ -162,6 +162,9 @@ EOL
 }
 
 determine_go_version() {
+  set -e
+  export GVM_DIR="$HOME/.nvm"
+  [[ -s "${GVM_DIR}/.gvm/scripts/gvm" ]] && source "${GVM_DIR}/.gvm/scripts/gvm"
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
@@ -179,9 +182,9 @@ determine_go_version() {
     esac
     echo "No explicit declaration of go version using ${go_version} based on runner conifg." 
   fi
-  source ~/.bashrc
   gvm install ${go_version}
   gvm use ${go_version}
+  set +e
 }
 
 docker_build() {
