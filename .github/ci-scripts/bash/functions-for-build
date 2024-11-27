@@ -165,6 +165,7 @@ determine_go_version() {
   set -e
   whoami
   env
+  source $HOME/.bashrc
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
