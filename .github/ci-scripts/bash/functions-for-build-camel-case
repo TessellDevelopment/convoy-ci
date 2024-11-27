@@ -68,6 +68,10 @@ convoyGoLibraryBuild() {
   convoy_go_library_build "$@"
 }
 
+determineGoVersion() {
+  determine_go_version "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -92,22 +96,6 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-gradlewBuild() {
-  gradlew_build "$@"
-}
-
-gradlewBuildAndPush() {
-  gradlew_build_and_push "$@"
-}
-
-gradlewUIBuild() {
-  gradlew_ui_build "$@"
-}
-
-gradlewUIBuildAndPush() {
-  gradlew_ui_build_and_push "$@"
-}
-
 generateChecksum() {
   generate_checksum "$@"
 }
@@ -120,8 +108,32 @@ goDockerBuildAndPush() {
   go_docker_build_and_push "$@"
 }
 
+goLibraryBuild() {
+  go_library_build "$@"
+}
+
+goLibraryBuildAndPush() {
+  go_library_build_and_push "$@"
+}
+
+gradlewBuild() {
+  gradlew_build "$@"
+}
+
+gradlewBuildAndPush() {
+  gradlew_build_and_push "$@"
+}
+
 gradlewDockerTag() {
   gradlew_docker_tag "$@"
+}
+
+gradlewUIBuild() {
+  gradlew_ui_build "$@"
+}
+
+gradlewUIBuildAndPush() {
+  gradlew_ui_build_and_push "$@"
 }
 
 imageScan(){
@@ -238,6 +250,14 @@ softwareDefBuild() {
 
 softwareDefBuildAndPush() {
   software_def_build_and_push "$@"
+}
+
+tailscaleBuild() {
+  tailscale_build "$@"
+}
+
+tailscaleBuildAndPush() {
+  tailscale_build_and_push "$@"
 }
 
 terraformApply() {
