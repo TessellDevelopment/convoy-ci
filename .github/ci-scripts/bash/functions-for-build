@@ -83,7 +83,7 @@ configure_npmrc(){
   REPO="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  rm ~/.npmrc
+  rm -f ~/.npmrc
   TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:_auth = ${TOKEN}" >> ~/.npmrc
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:always-auth = true" >> ~/.npmrc 
@@ -559,6 +559,7 @@ npm_build() {
   install_node
   set -e
   npm install
+  npm run style-check
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
