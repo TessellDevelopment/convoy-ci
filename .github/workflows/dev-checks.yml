@@ -256,6 +256,24 @@ jobs:
           else
             echo "No double commit conflicts found in Branch or PR title."
           fi
+
+      - name: Check All file changes
+        id: changed-files-all
+        uses: tj-actions/changed-files@v42.0.2
+      
+      - run: |
+          CHANGED_FILES="$(echo "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}" | sed 's/ /\n/g')"
+          echo "$CHANGED_FILES"
+          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+
+      - name: Validate YAML and .tmpl files
+        uses: GrantBirki/json-yaml-validate@v2.6.0
+        with:
+          comment: "true"
+          files: "${{env.CHANGED_FILES}}"
+          use_gitignore: "false"
+          json_extension: "jsonc.tmpl"
+          allow_multiple_documents: "true"
           
       - name: Check for Jsonlint
         run: |
