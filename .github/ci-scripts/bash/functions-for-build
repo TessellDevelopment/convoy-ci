@@ -161,12 +161,25 @@ create_tf_backend() {
 EOL
 }
 
+install_gvm() {
+  set -x
+  apt-get install bison bsdmainutils
+  bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+  source /home/github/.gvm/scripts/gvm
+  gvm version
+  gvm install go1.4 -B
+  gvm use go1.4
+  export GOROOT_BOOTSTRAP=$GOROOT
+  gvm install go1.17.13
+  gvm use go1.17.13
+  export GOROOT_BOOTSTRAP=$GOROOT
+  gvm install go1.20
+  gvm use go1.20
+}
+
 determine_go_version() {
   set -e
-  chmod 644 /home/github/.gvm/environments/default
-  export PATH=$PATH:$HOME/.gvm/scripts/gvm
-  export GVM_ROOT="$HOME/.gvm"
-  source "$GVM_ROOT/scripts/gvm"
+  install_gvm
   go_version=$(yq e '.goVersion // ""' convoy.yaml)
   if [[ -n "${go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${go_version}"
@@ -176,7 +189,7 @@ determine_go_version() {
       amd) go_version="go1.19.5" ;;
       amd-go-20) go_version="go1.20.1" ;;
       amd-go-21) go_version="go1.21.5" ;;
-      amd-go-22) go_version="go1.22.6" ;;
+      amd-go-22) go_version="go1.22.7" ;;
       *) 
         echo "Error: Unknown runner value '${runner}'!"
         exit 1

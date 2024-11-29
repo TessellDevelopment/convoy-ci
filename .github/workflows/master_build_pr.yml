@@ -302,7 +302,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
-    runs-on: gvm-test
+    runs-on: self-hosted
     env:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
