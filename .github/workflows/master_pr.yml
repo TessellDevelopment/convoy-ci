@@ -38,7 +38,7 @@ jobs:
     secrets: inherit
 
   check-commits:
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
     runs-on: non-build
     needs: build
     env:
@@ -73,7 +73,7 @@ jobs:
     
   auto-merge:
     needs: check-commits
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
     secrets: inherit 
 
