@@ -164,7 +164,7 @@ EOL
 install_gvm() {
   set -x
   export DEBIAN_FRONTEND=noninteractive
-  sudo apt-get install bison bsdmainutils
+  sudo apt-get install -y bison bsdmainutils
   bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
   source /home/github/.gvm/scripts/gvm
   gvm version
