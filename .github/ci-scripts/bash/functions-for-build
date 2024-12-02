@@ -930,7 +930,7 @@ terraform_zip_build() {
   BUILD_DIR=${2}
   BASE_DIR=${3}
   ARTIFACT_FILE="${ARTIFACT}.zip"
-  zip -r $BUILD_DIR/${ARTIFACT_FILE} ${BASE_DIR} 
+  zip -r $BUILD_DIR/${ARTIFACT_FILE} ${BASE_DIR} -x ".git*" "ci-scripts*"
   set +e
 }
 
