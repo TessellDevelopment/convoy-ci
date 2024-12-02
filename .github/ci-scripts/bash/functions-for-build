@@ -209,12 +209,16 @@ docker_build_and_push() {
 docker_tag_and_push() {
   IMAGE="${1}"
   TAG="${2}"
-  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-  docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-  if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
-    REL_TAG=${TAG%.*}.0  
-    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
+  if [[ "${IMAGE}" == *"gcp"* ]]; then
+    REGION=${2:-us-central1}
+    MASTER_PROJECT_ID=p-cicd-test-20241128
+    DOCKERHUB_ORG=citest-dev1
+    echo "hello world gcp $DOCKERHUB_ORG"
+    docker tag ${IMAGE}:latest $REGION-docker.pkg.dev/$MASTER_PROJECT_ID/$DOCKERHUB_ORG/${IMAGE}:${TAG}
+    docker push $REGION-docker.pkg.dev/$MASTER_PROJECT_ID/$DOCKERHUB_ORG/${IMAGE}:${TAG}
+  else
+    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+    docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   fi  
 }
 
@@ -287,6 +291,7 @@ gcp_docker_build_and_push() {
   gcloud auth configure-docker us-central1-docker.pkg.dev
   gcloud auth activate-service-account --key-file=sa-private-key.json
   gcloud auth list
+  docker_build_and_push
 }
 
 get_base_branch_commit_from_pr_number() {
