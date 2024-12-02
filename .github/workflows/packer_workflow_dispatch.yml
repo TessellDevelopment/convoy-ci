@@ -22,7 +22,7 @@ jobs:
       BASE_BRANCH: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
       # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#using-data-from-the-triggering-workflow
-      CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "GITHUB_USER": "${{ github.triggering_actor }}", "GITHUB_WORKFLOW_RUN_ID": "${{ github.run_id }}", "GITHUB_PR_NUMBER": "${{ github.event.number }}" }'
+      CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "GITHUB_USER": "${{ github.triggering_actor }}", "GITHUB_WORKFLOW_RUN_ID": "${{ github.run_id }}", "GITHUB_PR_BRANCH": "${{ github.ref_name }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
