@@ -210,7 +210,7 @@ docker_tag_and_push() {
   IMAGE="${1}"
   TAG="${2}"
   if [[ "${IMAGE}" == *"gcp"* ]]; then
-    REGION=${2:-us-central1}
+    REGION=us-central1
     MASTER_PROJECT_ID=p-cicd-test-20241128
     DOCKERHUB_ORG=citest-dev1
     echo "hello world gcp $DOCKERHUB_ORG"
