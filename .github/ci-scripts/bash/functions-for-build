@@ -292,7 +292,7 @@ gcp_docker_build_and_push() {
   gcloud auth configure-docker us-central1-docker.pkg.dev
   gcloud auth activate-service-account --key-file=sa-private-key.json
   gcloud auth list
-  docker_build_and_push
+  docker_build_and_push "$@"
 }
 
 get_base_branch_commit_from_pr_number() {
