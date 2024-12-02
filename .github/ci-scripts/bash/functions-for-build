@@ -603,8 +603,9 @@ ops_image_build_and_push() {
 }
 
 ops_terraform_build() {
+  set -x
   ARTIFACT="${1}"
-  terraform_zip_build $ARTIFACT $PWD
+  terraform_zip_build ${ARTIFACT} $PWD
 }
 
 ops_terraform_build_and_push() {
@@ -926,9 +927,9 @@ terraform_apply_and_push() {
 terraform_zip_build() {
   set -e
   ARTIFACT="${1}"
-  BASE_DIR=${2}
+  BUILD_DIR=${2}
   ARTIFACT_FILE="${ARTIFACT}.zip"
-  terraform_build $PWD ${BASE_DIR}/${ARTIFACT_FILE}
+  terraform_build $PWD ${BUILD_DIR}/${ARTIFACT_FILE}
   set +e
 }
 
