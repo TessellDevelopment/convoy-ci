@@ -602,6 +602,22 @@ ops_image_build_and_push() {
   set +e
 }
 
+ops_terraform_build() {
+  set -x
+  ARTIFACT="${1}"
+  terraform_zip_build ${ARTIFACT} $PWD "."
+}
+
+ops_terraform_build_and_push() {
+  ops_terraform_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  generateChecksum "${ARTIFACT}.${EXTENSION}"
+  set +e
+}
+
 ops_ui_build() {
   gradlew_ui_build
 }
@@ -905,6 +921,16 @@ terraform_apply_and_push() {
   cd terraform
   terraform apply -auto-approve
   cd ..
+  set +e
+}
+
+terraform_zip_build() {
+  set -e
+  ARTIFACT="${1}"
+  BUILD_DIR=${2}
+  BASE_DIR=${3}
+  ARTIFACT_FILE="${ARTIFACT}.zip"
+  zip -r ${BUILD_DIR}/${ARTIFACT_FILE} ${BASE_DIR} -x ".git*" "ci-scripts*"
   set +e
 }
 
