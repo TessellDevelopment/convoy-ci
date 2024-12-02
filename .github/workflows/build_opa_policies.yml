@@ -37,7 +37,7 @@ jobs:
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
             echo "$RESPONSE"
@@ -258,7 +258,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
