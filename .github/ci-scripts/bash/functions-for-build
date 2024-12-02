@@ -288,6 +288,7 @@ gcp_docker_build() {
 }
 
 gcp_docker_build_and_push() {
+  install_gcloud
   gcloud auth configure-docker us-central1-docker.pkg.dev
   gcloud auth activate-service-account --key-file=sa-private-key.json
   gcloud auth list
