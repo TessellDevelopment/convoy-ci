@@ -172,6 +172,14 @@ opsImageBuildAndPush() {
   ops_image_build_and_push "$@"
 }
 
+opsTerraformBuild() {
+  ops_terraform_build "$@"
+}
+
+opsTerraformBuildAndPush() {
+  ops_terraform_build_and_push "$@"
+}
+
 opsUIBuild() {
   ops_ui_build "$@"
 }
@@ -246,6 +254,10 @@ terraformApply() {
 
 terraformApplyAndPush() {
   terraform_apply_and_push "$@"
+}
+
+terraformZipBuild() {
+  terraform_zip_build "$@"
 }
 
 tsmZipBuild() {
