@@ -263,6 +263,32 @@ frp_build_and_push() {
   set +e
 }
 
+install_gcloud() {
+  sudo curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz > /tmp/google-cloud-sdk.tar.gz
+
+  sudo mkdir -p /usr/local/gcloud \
+  && sudo tar -C /usr/local/gcloud -xf /tmp/google-cloud-sdk.tar.gz \
+  && sudo /usr/local/gcloud/google-cloud-sdk/install.sh --quiet
+
+  export PATH="$PATH:/usr/local/gcloud/google-cloud-sdk/bin"
+}
+
+gcp_build() {
+  set -e
+  IMAGE="${1}"
+  go mod tidy
+  go mod vendor
+  go mod tidy
+  docker_build "$@"
+  set +e
+}
+
+gcp_build_and_push() {
+  gcloud auth configure-docker us-central1-docker.pkg.dev
+  gcloud auth activate-service-account --key-file=sa-private-key.json
+  gcloud auth list
+}
+
 get_base_branch_commit_from_pr_number() {
   base_branch_commit_of_root_pr=$(curl -L \
   -H "Accept: application/vnd.github+json" \

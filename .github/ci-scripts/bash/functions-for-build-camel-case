@@ -92,6 +92,14 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
+gcpBuild() {
+  gcp_build "$@"
+}
+
+gcpBuildAndPush() {
+  gcp_build_and_push "$@"
+}
+
 gradlewBuild() {
   gradlew_build "$@"
 }
