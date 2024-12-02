@@ -273,7 +273,7 @@ install_gcloud() {
   export PATH="$PATH:/usr/local/gcloud/google-cloud-sdk/bin"
 }
 
-gcp_build() {
+gcp_docker_build() {
   set -e
   IMAGE="${1}"
   go mod tidy
@@ -283,7 +283,7 @@ gcp_build() {
   set +e
 }
 
-gcp_build_and_push() {
+gcp_docker_build_and_push() {
   gcloud auth configure-docker us-central1-docker.pkg.dev
   gcloud auth activate-service-account --key-file=sa-private-key.json
   gcloud auth list

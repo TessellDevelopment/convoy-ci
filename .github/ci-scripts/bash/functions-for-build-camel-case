@@ -92,12 +92,12 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-gcpBuild() {
-  gcp_build "$@"
+gcpDockerBuild() {
+  gcp_docker_build "$@"
 }
 
-gcpBuildAndPush() {
-  gcp_build_and_push "$@"
+gcpDockerBuildAndPush() {
+  gcp_docker_build_and_push "$@"
 }
 
 gradlewBuild() {
