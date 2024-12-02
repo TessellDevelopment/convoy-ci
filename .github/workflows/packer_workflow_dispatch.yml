@@ -21,7 +21,8 @@ jobs:
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       BASE_BRANCH: ${{ inputs.branchName }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
-      CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}" }'
+      # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#using-data-from-the-triggering-workflow
+      CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "workflow-user": "${{ github.triggering_actor }}", "workflow-id": "${{ github.run_id }}", "PR-Number": "${{ github.event.number }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       CLOUD_BUILD_TYPE: ${{ inputs.cloudType }}
@@ -97,6 +98,7 @@ jobs:
           echo ${{ env.BASE_BRANCH }}
           echo ${{ env.SOURCE_BRANCH }}
           echo ${{ env.LABEL }}
+          echo ${{ env.CUSTOM_TAGS}}
           echo ${{ github.base_ref }}
           echo ${{ github.head_ref }}
           cat ${{ github.event_path}} | jq '.'
