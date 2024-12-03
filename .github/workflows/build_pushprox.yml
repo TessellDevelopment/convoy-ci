@@ -300,7 +300,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
