@@ -177,7 +177,7 @@ docker_build() {
               --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} \
               --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
               --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
-  # image_scan ${IMAGE}
+  image_scan ${IMAGE}
   set +e
 }
 
@@ -219,6 +219,12 @@ docker_tag_and_push() {
     docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
     docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   fi  
+}
+
+download_go_libraries() {
+  go mod tidy
+  go mod vendor
+  go mod tidy
 }
 
 elastic_agent_build() {
@@ -489,12 +495,6 @@ install_go_dependencies() {
   go version
   go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
-}
-
-download_go_libraries() {
-  go mod tidy
-  go mod vendor
-  go mod tidy
 }
 
 install_node() {
