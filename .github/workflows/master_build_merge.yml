@@ -1048,7 +1048,9 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
