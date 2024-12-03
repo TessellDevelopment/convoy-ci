@@ -210,11 +210,8 @@ docker_tag_and_push() {
   IMAGE="${1}"
   TAG="${2}"
   if [[ "${IMAGE}" == *"gcp"* ]]; then
-    REGION=${TESSELL_GCP_REGION}
-    MASTER_PROJECT_ID=${TESSELL_GCP_PROJECT_ID}
-    DOCKERHUB_ORG=${TESSELL_GCP_DOCKERHUB_ORG}
-    docker tag ${IMAGE}:latest $REGION-docker.pkg.dev/$MASTER_PROJECT_ID/$DOCKERHUB_ORG/${IMAGE}:${TAG}
-    docker push $REGION-docker.pkg.dev/$MASTER_PROJECT_ID/$DOCKERHUB_ORG/${IMAGE}:${TAG}
+    docker tag ${IMAGE}:latest $TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG/${IMAGE}:${TAG}
+    docker push $TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG/${IMAGE}:${TAG}
   else
     docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
     docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
