@@ -209,19 +209,13 @@ docker_build_and_push() {
 docker_tag_and_push() {
   IMAGE="${1}"
   TAG="${2}"
-  if [[ "${IMAGE}" == *"gcp"* ]]; then
-    docker tag ${IMAGE}:latest $TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG/${IMAGE}:${TAG}
-    docker push $TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG/${IMAGE}:${TAG}
-  else
-    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-    docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
+    REL_TAG=${TAG%.*}.0  
+    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
+    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
   fi  
-}
-
-download_go_libraries() {
-  go mod tidy
-  go mod vendor
-  go mod tidy
 }
 
 elastic_agent_build() {
@@ -267,26 +261,6 @@ frp_build_and_push() {
     fi
   done
   set +e
-}
-
-gcp_docker_build() {
-  set -e
-  IMAGE="${1}"
-  download_go_libraries
-  docker_build "$@"
-  set +e
-}
-
-gcp_docker_build_and_push() {
-  IMAGE="${1}"
-  download_go_libraries
-  login_to_vault
-  gcp_private_key_vault_path=kv/deployment-credentials/clouds/google/projects/"${TESSELL_GCP_PROJECT_ID}"/service-accounts/"${TESSELL_GCP_SERVICE_ACCOUNT_NAME}"
-  vault kv get -format=json ${gcp_private_key_vault_path} | jq -r .data.data > sa-private-key.json
-  gcloud auth configure-docker ${TESSELL_GCP_REGION}-docker.pkg.dev
-  gcloud auth activate-service-account --key-file=sa-private-key.json
-  gcloud auth list
-  docker_build_and_push "$@"
 }
 
 get_base_branch_commit_from_pr_number() {
@@ -544,14 +518,6 @@ jar_build_and_push() {
     -DgroupId=tessellops -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
   set +e
-}
-
-login_to_vault() {
-  echo "Logging into Vault using SvcAccntToken and exporting the Vault Token"
-  export VAULT_TOKEN=$(vault write -field=token ${VAULT_AUTH_PATH}/login \
-    role=${VAULT_K8S_ROLE} \
-    jwt=$(cat ${SVC_ACCOUNT_TOKEN_FILE}))
-  echo "Login Successful"
 }
 
 mvn_deploy() {
