@@ -270,8 +270,8 @@ frp_build_and_push() {
 gcp_docker_build() {
   set -e
   IMAGE="${1}"
-  # download_go_libraries
-  # docker_build "$@"
+  download_go_libraries
+  docker_build "$@"
   sleep 200
   set +e
 }
