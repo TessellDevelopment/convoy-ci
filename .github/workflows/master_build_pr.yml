@@ -587,8 +587,10 @@ jobs:
         run: |
           echo "APPLICATION_NAME=$(cat convoy.yaml | yq -P '.applicationName // ""' )" >> $GITHUB_ENV
           if [[ $APPLICATION_NAME == 'tessell-gcp' ]]; then
+            echo "hello"
             echo "DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
+          echo $DOCKERHUB_ORG
 
       - name: Login to docker
         if: ${{ env.APPLICATION_NAME != 'tessell-gcp' }}
