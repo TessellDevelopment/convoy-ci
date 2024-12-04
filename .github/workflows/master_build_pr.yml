@@ -583,13 +583,22 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
+      - name: Set Application Name
+        run: |
+          echo "APPLICATION_NAME=$(cat convoy.yaml | yq -P '.applicationName // ""' )" >> $GITHUB_ENV
+          if [[ $APPLICATION_NAME == 'tessell-gcp' ]]; then
+            echo "DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Login to docker
+        if: ${{ env.APPLICATION_NAME != 'tessell-gcp' }}
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login gcloud
+        if: ${{ env.APPLICATION_NAME == 'tessell-gcp' }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
