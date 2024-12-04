@@ -272,6 +272,7 @@ gcp_docker_build() {
   IMAGE="${1}"
   # download_go_libraries
   # docker_build "$@"
+  sleep 200
   set +e
 }
 
@@ -281,7 +282,7 @@ gcp_docker_build_and_push() {
   # login_to_vault
   # gcp_private_key_vault_path=kv/deployment-credentials/clouds/google/projects/"${TESSELL_GCP_PROJECT_ID}"/service-accounts/"${TESSELL_GCP_SERVICE_ACCOUNT_NAME}"
   # vault kv get -format=json ${gcp_private_key_vault_path} | jq -r .data.data > sa-private-key.json
-  # gcloud auth configure-docker ${TESSELL_GCP_REGION}-docker.pkg.dev
+  gcloud auth configure-docker ${TESSELL_GCP_REGION}-docker.pkg.dev
   # gcloud auth activate-service-account --key-file=sa-private-key.json
   gcloud auth list
   docker_build_and_push "$@"
