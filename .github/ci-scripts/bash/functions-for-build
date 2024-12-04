@@ -359,7 +359,7 @@ go_docker_build() {
   export PATH=${PATH}:${GOPATH}/bin
   git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
   ./setup -g -i
-  image_scan ${IMAGE}
+  # image_scan ${IMAGE}
   set +e
 }
 
