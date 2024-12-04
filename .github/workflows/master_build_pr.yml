@@ -590,7 +590,8 @@ jobs:
           echo "APPLICATION_NAME=$APPLICATION_NAME" >> $GITHUB_ENV
           if [[ ${APPLICATION_NAME} == 'tessell-gcp' ]]; then
             echo "hello"
-            echo "DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG" >> $GITHUB_ENV
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
           echo $DOCKERHUB_ORG
 
