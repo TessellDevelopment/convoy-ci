@@ -608,6 +608,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login gcloud
+        id: auth
         if: ${{ env.APPLICATION_NAME == 'tessell-gcp' }}
         uses: 'google-github-actions/auth@v2'
         with:
