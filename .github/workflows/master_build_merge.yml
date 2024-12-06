@@ -929,7 +929,7 @@ jobs:
           fi
 
       - name: Login to docker
-        if: ${{ env.APPLICATION_NAME != env.TESSELL_GCP_APP_NAME }}
+        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -937,14 +937,14 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ env.APPLICATION_NAME == env.TESSELL_GCP_APP_NAME }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
           token_format: access_token
 
       - name: Login to Artifact Registry
-        if: ${{ env.APPLICATION_NAME == env.TESSELL_GCP_APP_NAME }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v1
         with:
           registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
