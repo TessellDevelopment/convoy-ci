@@ -497,7 +497,7 @@ install_python_dependencies() {
   fi
 }
 
-jarBuild() {
+jar_build() {
   set -e
   VERSION="${3}"
   required_inputs="3"
@@ -552,6 +552,7 @@ mvnw_build_and_push() {
   push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
   mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
   aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+  generate_checksum "${ARTIFACT}-${LATEST_TAG}.zip"
   set +e
 }
 
