@@ -889,6 +889,7 @@ jobs:
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -919,15 +920,15 @@ jobs:
 
       - name: Set Application Name
         run: |
-          export APPLICATION_NAME=$(cat convoy.yaml | yq -P '.applicationName // ""')
-          echo "APPLICATION_NAME=$APPLICATION_NAME" >> $GITHUB_ENV
-          if [[ ${APPLICATION_NAME} == 'tessell-gcp' ]]; then
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
             export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
             echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
 
       - name: Login to docker
-        if: ${{ env.APPLICATION_NAME != 'tessell-gcp' }}
+        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -935,14 +936,14 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ env.APPLICATION_NAME == 'tessell-gcp' }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
           token_format: access_token
 
       - name: Login to Artifact Registry
-        if: ${{ env.APPLICATION_NAME == 'tessell-gcp' }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v1
         with:
           registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
