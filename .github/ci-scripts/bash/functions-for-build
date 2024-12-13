@@ -565,6 +565,8 @@ npm_build() {
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
   version="${3:-0.0.0}"
+  echo "ver.."
+  echo ${version}
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
@@ -580,7 +582,7 @@ npm_build_and_push() {
   npm run build
   configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   set -e
-  version="${3}"
+  version="${3:-${LATEST_TAG}}"
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
