@@ -564,7 +564,7 @@ npm_build() {
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
-  version="${3}"
+  version="${3:-0.0.0}"
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
