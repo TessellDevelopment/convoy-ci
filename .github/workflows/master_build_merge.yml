@@ -782,7 +782,7 @@ jobs:
             go install tailscale.com/cmd/gitops-pusher@latest
             export TS_API_KEY=${{ secrets.TS_API_KEY }}
             export TS_TAILNET=${{ secrets.TS_TAILNET }}
-            gitops-pusher --policy-file ./policy.hujson test
+            gitops-pusher --policy-file ./policy.hujson apply
             set +e
           }
           build() {
@@ -885,6 +885,11 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
     steps:
 
       - name: Set Repositories for Dev Build
@@ -914,11 +919,37 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Login to docker
+        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}   
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Check go Config
         run: |
@@ -1030,6 +1061,7 @@ jobs:
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
@@ -1047,7 +1079,6 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
-
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |

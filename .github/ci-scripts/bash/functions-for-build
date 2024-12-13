@@ -20,6 +20,25 @@ aws_configure_tessellops_artifacts() {
   aws configure set region ap-south-1
 }
 
+bash_build() {
+  set -e
+  DIR="${1}"
+  export PATH=$PATH:/home/github/.local/bin
+  ./$DIR/build.sh
+  set +e
+}
+
+bash_build_and_push() {
+  set -e
+  bash_build "$@"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  set +e
+}
+
+
 build_convoy_tessell_client() {
   install_go_dependencies
   ./setup --client --version 0.0.0
@@ -116,6 +135,12 @@ convoy_codegen_build_and_push() {
   set +e
 }
 
+convoy_go_library_build() {
+  set -e
+  go build ./...
+  set +e
+}
+
 create_tf_backend() {
   S3_BUCKET="$1"
   KEY="$2"
@@ -186,6 +211,11 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
+    REL_TAG=${TAG%.*}.0  
+    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
+    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
+  fi  
 }
 
 elastic_agent_build() {
@@ -304,7 +334,7 @@ go_docker_build() {
   export PATH=${PATH}:${GOPATH}/bin
   git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
   ./setup -g -i
-  imageScan ${IMAGE}
+  image_scan ${IMAGE}
   set +e
 }
 
@@ -391,7 +421,26 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
-  trivy image -f json -o trivy_image_scan_result.json  --severity HIGH,CRITICAL --scanners vuln $IMAGE:latest
+  RETRIES=50
+  for ((i=1; i<=RETRIES; i++)); do
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    exit_code=$?
+    echo ${output}
+    if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
+        echo "Encountered TOOMANYREQUESTS error. Retrying."
+        sleep 15
+    elif [ ${exit_code} -eq 0 ]; then
+        echo "Trivy scan completed successfully."
+        break
+    else
+        echo "Trivy scan failed with exit code ${exit_code}: ${output}"
+        exit 1
+    fi
+  done
+  if [ ${i} -gt ${RETRIES} ]; then
+    echo "Trivy scan failed after ${RETRIES} attempts."
+    exit 1
+  fi
   dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
   python3 ./ci-scripts/python/image_scan.py
   set +e
@@ -448,7 +497,7 @@ install_python_dependencies() {
   fi
 }
 
-jarBuild() {
+jar_build() {
   set -e
   VERSION="${3}"
   required_inputs="3"
@@ -503,6 +552,7 @@ mvnw_build_and_push() {
   push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
   mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
   aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+  generate_checksum "${ARTIFACT}-${LATEST_TAG}.zip"
   set +e
 }
 
@@ -551,6 +601,22 @@ ops_image_build_and_push() {
   IMAGE="${1}"
   ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
   docker_build_and_push "$@"
+  set +e
+}
+
+ops_terraform_build() {
+  set -x
+  ARTIFACT="${1}"
+  terraform_zip_build ${ARTIFACT} $PWD "."
+}
+
+ops_terraform_build_and_push() {
+  ops_terraform_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  generateChecksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
 
@@ -797,6 +863,7 @@ setup_packer_env() {
 }
 
 software_def_build() {
+  set -e
   setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
@@ -815,8 +882,10 @@ software_def_build() {
 }
 
 software_def_build_and_push() {
+  set -e
   setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
+  export CUSTOM_TAGS='{"TESSELL_ENVIRONMENT": "PRODUCTION", "TESSELL_CREATED_BY": "Convoy"}'
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
@@ -855,6 +924,16 @@ terraform_apply_and_push() {
   cd terraform
   terraform apply -auto-approve
   cd ..
+  set +e
+}
+
+terraform_zip_build() {
+  set -e
+  ARTIFACT="${1}"
+  BUILD_DIR=${2}
+  BASE_DIR=${3}
+  ARTIFACT_FILE="${ARTIFACT}.zip"
+  zip -r ${BUILD_DIR}/${ARTIFACT_FILE} ${BASE_DIR} -x ".git*" "ci-scripts*"
   set +e
 }
 
@@ -928,4 +1007,24 @@ zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
   zip -r ${ARTIFACT_FILE} ${DIR}
+}
+
+zip_file() {
+  set -e
+  DIR=${1}
+  BASE_DIR=$PWD
+  cd ${DIR}
+  zip -r ${BASE_DIR}/${DIR}.zip ./*
+  cd ${BASE_DIR}
+  set +e  
+}
+
+zip_file_and_push() {
+  set -e
+  zip_file "$@"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  set +e  
 }

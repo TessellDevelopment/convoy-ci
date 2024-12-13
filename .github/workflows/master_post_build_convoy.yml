@@ -124,7 +124,7 @@ jobs:
                   except:
                     print("Extension Details not present")
                   if artifact_type == 'artifacts':
-                    element["path"] = f"tessell-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
+                    element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
                   artifacts.append(element)
               if len(artifacts) == 0: 
                 return
@@ -219,8 +219,14 @@ jobs:
           
               for artifact in payload["artifacts"]:
                 key = artifact["name"]
-                if key in checksum_map:
+                type = artifact["type"]
+                if type == "artifacts":
+                  if key in checksum_map:
                     artifact["checksum"] = checksum_map[key]
+                  else:
+                    print(f"Checksum not found for artifact: {key}")
+                    exit(1)
+                    
             if generates and "softwareImages" in generates:
               payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))

@@ -12,6 +12,14 @@ awsConfigureTessellopsArtifacts() {
   aws_configure_tessellops_artifacts "$@"
 }
 
+bashBuild() {
+  bash_build "$@"
+}
+
+bashBuildAndPush() {
+  bash_build_and_push "$@"
+}
+
 buildConvoyTessellClient() {
   build_convoy_tessell_client "$@"
 }
@@ -56,6 +64,10 @@ convoyCodegenBuildAndPush() {
   convoy_codegen_build_and_push "$@"
 }
 
+convoyGoLibraryBuild() {
+  convoy_go_library_build "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -79,6 +91,7 @@ frpBuild() {
 frpBuildAndPush() {
   frp_build_and_push "$@"
 }
+
 gradlewBuild() {
   gradlew_build "$@"
 }
@@ -159,6 +172,14 @@ opsImageBuildAndPush() {
   ops_image_build_and_push "$@"
 }
 
+opsTerraformBuild() {
+  ops_terraform_build "$@"
+}
+
+opsTerraformBuildAndPush() {
+  ops_terraform_build_and_push "$@"
+}
+
 opsUIBuild() {
   ops_ui_build "$@"
 }
@@ -235,6 +256,10 @@ terraformApplyAndPush() {
   terraform_apply_and_push "$@"
 }
 
+terraformZipBuild() {
+  terraform_zip_build "$@"
+}
+
 tsmZipBuild() {
   tsm_zip_build "$@"
 }
@@ -257,4 +282,12 @@ validateInputs() {
 
 zipDirectory() {
   zip_directory "$@"
+}
+
+zipFile() {
+  zip_file "$@"
+}
+
+zipFileAndPush() {
+  zip_file_and_push "$@"
 }
