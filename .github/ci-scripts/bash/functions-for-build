@@ -564,12 +564,12 @@ npm_build() {
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -ex
-  version="${3}"
-  if [[ "${version}" == "null" ]]; then
-    version="${LATEST_TAG:-0.0.0}"
+  if [[ "${3}" == "null" ]]; then
+    3="0.0.0"
   fi
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
+  version="${3}"
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
@@ -583,9 +583,12 @@ npm_build_and_push() {
   npm run build
   configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   set -e
-  version="${3}"
+  if [[ "${3}" == "null" ]]; then
+    3="${LATEST_TAG}"
+  fi
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
+  version="${3}"
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
