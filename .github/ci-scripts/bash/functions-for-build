@@ -83,7 +83,7 @@ configure_npmrc(){
   REPO="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  rm ~/.npmrc
+  rm -f ~/.npmrc
   TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:_auth = ${TOKEN}" >> ~/.npmrc
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:always-auth = true" >> ~/.npmrc 
@@ -560,16 +560,20 @@ npm_build() {
   install_node
   set -e
   npm install
+  npm run style-check
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
-  set -e
-  version="${3}"
+  set -ex
+  if [[ "${3}" == "null" ]]; then
+    3="0.0.0"
+  fi
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
+  version="${3}"
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
-  set +e
+  set +ex
 }
 
 npm_build_and_push() {
@@ -579,9 +583,12 @@ npm_build_and_push() {
   npm run build
   configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   set -e
-  version="${3}"
+  if [[ "${3}" == "null" ]]; then
+    3="${LATEST_TAG}"
+  fi
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
+  version="${3}"
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
