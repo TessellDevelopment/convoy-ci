@@ -563,16 +563,17 @@ npm_build() {
   npm run style-check
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
-  set -e
-  version="${3:-0.0.0}"
-  echo "ver.."
-  echo ${version}
+  set -ex
+  version="${3}"
+  if [[ "${version}" == "null" ]]; then
+    version="0.0.0"
+  end
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
-  set +e
+  set +ex
 }
 
 npm_build_and_push() {
