@@ -85,26 +85,28 @@ jobs:
             echo "No failed workflow found. Skipping re-run of 'Master CI Approve Workflow'"
           fi
 
-  auto-merge:
-    needs: check-approval
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-    runs-on: non-build
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-    steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-          token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+  # Not needed anymore since auto-merge in master_pr is having always()
 
-      - name: Enable Auto merge
-        run: |
-          gh pr merge -R "${{github.repository}}" --squash --auto "${{ github.event.pull_request.number }}"
+  # auto-merge:
+  #   needs: check-approval
+  #   if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
+  #   runs-on: non-build
+  #   env:
+  #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  #   steps:
+  #     - uses: actions/checkout@v4.1.1
+  #       with:
+  #         fetch-depth: 0
+  #         token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-        if: failure()
+  #     - name: Enable Auto merge
+  #       run: |
+  #         gh pr merge -R "${{github.repository}}" --squash --auto "${{ github.event.pull_request.number }}"
+
+  #     - name: Slack Notification
+  #       uses: act10ns/slack@v2.0.0
+  #       with:
+  #           status: ${{ job.status }}
+  #           steps: ${{ toJson(steps) }}
+  #           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+  #       if: failure()
