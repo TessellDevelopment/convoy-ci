@@ -724,6 +724,10 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+push_release_manifest_artifacts() {
+  
+}
+
 push_to_minio() {
   SOURCE="${1}"
   DESTINATION="${2}"
