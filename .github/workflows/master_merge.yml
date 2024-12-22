@@ -50,6 +50,10 @@ jobs:
         id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
+          if [[ $runner == "amd-go-22" ]]; then
+            echo "Overriding the runner from ${runner} to amd"
+            runner="amd"
+          fi
           echo "type=$runner" >> $GITHUB_OUTPUT
   
   create-tag:
