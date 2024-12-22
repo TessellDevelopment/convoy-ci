@@ -194,7 +194,6 @@ get_required_go_version() {
 
 configure_go_version() {
   required_go_version=$(get_required_go_version)
-  echo "ONE ${required_go_version}"
   if ! is_go_version_installed $required_go_version; then
     echo "Go lang version ${required_go_version} is not installed."
     gvm install ${required_go_version}
@@ -211,7 +210,6 @@ configure_go_version() {
 
 is_go_version_installed() {
   local required_version=$1
-  echo "ONEa ${required_version}"
   installed_versions=$(gvm list)
   echo INSTA ${installed_versions}
   already_installed=0
