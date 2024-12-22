@@ -167,6 +167,62 @@ create_tf_backend() {
 EOL
 }
 
+get_required_go_version() {
+  if ! [[ -f "convoy.yaml" ]]; then
+    echo "Error: File 'convoy.yaml' not found." >&2
+    return 1
+  fi
+  required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
+  if [[ -n "${required_go_version}" ]]; then
+    echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
+  else
+    runner=$(yq e '.runner // ""' convoy.yaml)
+    case "$runner" in
+      amd) required_go_version="1.19.5" ;;
+      amd-go-20) required_go_version="1.20.1" ;;
+      amd-go-21) required_go_version="1.21.5" ;;
+      amd-go-22) required_go_version="1.22.7" ;;
+      *) 
+        echo "Error: Unknown runner value '${runner}'!"  >&2
+        exit 1
+        ;;
+    esac
+  fi
+  echo $required_go_version
+  return 0
+}
+
+configure_go_version() {
+  required_go_version=$(get_required_go_version)
+  echo "ONE ${required_go_version}"
+  if ! is_go_version_installed $required_go_version; then
+    echo "Go lang version ${required_go_version} is not installed."
+    gvm install ${required_go_version}
+  fi
+  gvm use ${required_go_version}
+  export GOROOT="/home/github/.gvm/versions/go${required_go_version}.linux.amd64"
+  export GOPATH="/home/github/.gvm/versions/go${required_go_version}"
+  export PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
+  echo $GOROOT
+  echo $GOPATH
+  echo $PATH
+  go version
+}
+
+is_go_version_installed() {
+  local required_version=$1
+  echo "ONEa ${required_version}"
+  installed_versions=$(gvm list)
+  echo INSTA ${installed_versions}
+  already_installed=0
+  for go_version in ${installed_versions[@]}; do
+      if [[ $go_version == $required_go_version ]]; then
+        return 0
+      fi
+  done
+  return 1
+}
+
 docker_build() {
   set -e
   IMAGE="${1}"

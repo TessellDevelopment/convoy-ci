@@ -48,6 +48,10 @@ createTFBackend() {
   create_tf_backend "$@"
 }
 
+configureGoVersion() {
+  configure_go_version "$@"
+}
+
 configureNpmrc() {
   configure_npmrc "$@"
 }
