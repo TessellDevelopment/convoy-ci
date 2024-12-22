@@ -407,7 +407,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
-          determineGoVersion
+          configureGoVersion
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
@@ -537,7 +537,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
-          determineGoVersion
+          configureGoVersion
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
@@ -635,7 +635,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
-          determineGoVersion
+          configureGoVersion
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
@@ -1069,7 +1069,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
-          determineGoVersion
+          configureGoVersion
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
