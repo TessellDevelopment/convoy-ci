@@ -167,31 +167,6 @@ create_tf_backend() {
 EOL
 }
 
-get_required_go_version() {
-  if ! [[ -f "convoy.yaml" ]]; then
-    echo "Error: File 'convoy.yaml' not found." >&2
-    return 1
-  fi
-  required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
-  if [[ -n "${required_go_version}" ]]; then
-    echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
-  else
-    runner=$(yq e '.runner // ""' convoy.yaml)
-    case "$runner" in
-      amd) required_go_version="1.19.5" ;;
-      amd-go-20) required_go_version="1.20.1" ;;
-      amd-go-21) required_go_version="1.21.5" ;;
-      amd-go-22) required_go_version="1.22.7" ;;
-      *) 
-        echo "Error: Unknown runner value '${runner}'!"  >&2
-        exit 1
-        ;;
-    esac
-  fi
-  echo $required_go_version
-  return 0
-}
-
 configure_go_version() {
   required_go_version=$(get_required_go_version)
   if ! is_go_version_installed $required_go_version; then
@@ -206,19 +181,6 @@ configure_go_version() {
   echo $GOPATH
   echo $PATH
   go version
-}
-
-is_go_version_installed() {
-  local required_version=$1
-  installed_versions=$(gvm list)
-  echo INSTA ${installed_versions}
-  already_installed=0
-  for go_version in ${installed_versions[@]}; do
-      if [[ $go_version == $required_go_version ]]; then
-        return 0
-      fi
-  done
-  return 1
 }
 
 docker_build() {
@@ -382,6 +344,31 @@ generate_sts_session_token() {
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
   export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+}
+
+get_required_go_version() {
+  if ! [[ -f "convoy.yaml" ]]; then
+    echo "Error: File 'convoy.yaml' not found." >&2
+    return 1
+  fi
+  required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
+  if [[ -n "${required_go_version}" ]]; then
+    echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
+  else
+    runner=$(yq e '.runner // ""' convoy.yaml)
+    case "$runner" in
+      amd) required_go_version="1.19.5" ;;
+      amd-go-20) required_go_version="1.20.1" ;;
+      amd-go-21) required_go_version="1.21.5" ;;
+      amd-go-22) required_go_version="1.22.7" ;;
+      *) 
+        echo "Error: Unknown runner value '${runner}'!"  >&2
+        exit 1
+        ;;
+    esac
+  fi
+  echo $required_go_version
+  return 0
 }
 
 go_docker_build() {
@@ -555,6 +542,17 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
+}
+
+is_go_version_installed() {
+  local required_version=$1
+  installed_versions=$(gvm list)
+  for go_version in ${installed_versions[@]}; do
+      if [[ $go_version == $required_go_version ]]; then
+        return 0
+      fi
+  done
+  return 1
 }
 
 jar_build() {
