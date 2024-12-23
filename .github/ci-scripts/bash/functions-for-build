@@ -86,7 +86,7 @@ check_flyway() {
 
 configure_go_version() {
   required_go_version=$(get_required_go_version)
-  if ! is_go_version_installed $required_go_version; then
+  if ! is_go_version_installed ${required_go_version}; then
     echo "Go lang version ${required_go_version} is not installed."
     gvm install ${required_go_version}
   fi
@@ -94,9 +94,9 @@ configure_go_version() {
   export GOROOT="/home/github/.gvm/versions/go${required_go_version}.linux.amd64"
   export GOPATH="/home/github/.gvm/versions/go${required_go_version}"
   export PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
-  echo $GOROOT
-  echo $GOPATH
-  echo $PATH
+  echo ${GOROOT}
+  echo ${GOPATH}
+  echo ${PATH}
   go version
 }
 
@@ -367,7 +367,7 @@ get_required_go_version() {
         ;;
     esac
   fi
-  echo $required_go_version
+  echo ${required_go_version}
   return 0
 }
 
@@ -588,10 +588,10 @@ install_python_dependencies() {
 }
 
 is_go_version_installed() {
-  local required_version=$1
+  local required_version=${1}
   installed_versions=$(gvm list)
   for go_version in ${installed_versions[@]}; do
-      if [[ $go_version == $required_go_version ]]; then
+      if [[ ${go_version} == ${required_go_version} ]]; then
         return 0
       fi
   done
