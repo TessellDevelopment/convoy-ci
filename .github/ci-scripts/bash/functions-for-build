@@ -730,6 +730,45 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+push_release_manifest_artifacts() {
+  if ! ${DEV_BUILD}; then
+    if [[ ${LABEL} =~ rel-0\.([0-9]+)\.0 ]]; then
+      RELEASE=${BASH_REMATCH[1]}
+      if (( RELEASE >= 126 )); then
+        LABEL="rel-${RELEASE}"
+      fi
+    fi
+    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for ENV in "${environments[@]}"
+    do
+      push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  fi
+}
+
+push_terraform_modules() {
+  if [[ ${LABEL} =~ rel-0\.([0-9]+)\.0 ]]; then
+    RELEASE=${BASH_REMATCH[1]}
+    if (( RELEASE >= 126 )); then
+      LABEL="rel-${RELEASE}"
+    fi
+  fi
+  mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
+  push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  aws_configure_devqa_infra
+  aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  for ENV in "${environments[@]}"
+  do
+    pushToMinio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  done
+}
+
 push_to_minio() {
   SOURCE="${1}"
   DESTINATION="${2}"
