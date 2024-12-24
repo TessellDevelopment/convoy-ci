@@ -109,7 +109,7 @@ jobs:
             IFS=' ' read -ra TEAMS_ARRAY <<< "$TEAMS"
             for TEAM in "${TEAMS_ARRAY[@]}"; do
               FLAG=0
-              MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "${{vars.GH_API_URL}}/orgs/$ORG_NAME/teams/$TEAM/members" | jq -r '.[].login')
+              MEMBERS=$(curl -s -H "Authorization: Bearer $TOKEN" "${{vars.GH_API_URL}}/orgs/$ORG_NAME/teams/$TEAM/members?per_page=100" | jq -r '.[].login')
               IFS=, read -r -a MEMBER_ARRAY <<< "$(echo -e "$MEMBERS" | tr '\n' ',')"
               for REVIEWER in "${REVIEWER_ARRAY[@]}"; do
                 for MEMBER in "${MEMBER_ARRAY[@]}"; do
