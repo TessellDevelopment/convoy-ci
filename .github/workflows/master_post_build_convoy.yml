@@ -177,7 +177,7 @@ jobs:
             match = re.match(r"rel-0\.(\d+)\.0", LABEL)
             if match:
                 release = int(match.group(1))
-                if release >= 126:
+                if release >= 118:
                   LABEL=f"rel-{release}"  
 
             if not(bool(BASE_BRANCH)):
