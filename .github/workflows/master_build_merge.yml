@@ -827,7 +827,7 @@ jobs:
             else
               ~/opa build policies --output bundles/${file_name}
             fi
-            push_release_manifest_artifacts ${file_name} "bundles/${file_name}""
+            push_release_manifest_artifacts ${file_name} "bundles/${file_name}"
             set +e
           }
           pythonApiClientBuildAndPush() {
