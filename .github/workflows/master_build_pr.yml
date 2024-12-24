@@ -14,7 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -95,7 +95,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -304,7 +304,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-20' }}
     runs-on: amd-go-20
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -416,7 +416,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-21' }}
     runs-on: amd-go-21
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -545,7 +545,7 @@ jobs:
     if: ${{ inputs.type == 'amd-go-22' }}
     runs-on: amd-go-22
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -647,7 +647,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
@@ -1085,7 +1085,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH:  TDEVOPS-2843
+      CI_BRANCH: TDEVOPS-2843
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
