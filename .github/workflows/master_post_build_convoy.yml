@@ -204,7 +204,7 @@ jobs:
               "artifactGenerated": ARTIFACT_GENERATED,
             }
 
-            if ARTIFACT_GENERATED:
+            if ARTIFACT_GENERATED == 'TRUE':
               generates = yaml_data.get('generates')
               language = yaml_data.get('language')
               if generates != None:

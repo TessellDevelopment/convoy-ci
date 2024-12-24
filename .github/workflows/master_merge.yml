@@ -85,7 +85,6 @@ jobs:
       uses_custom_version: ${{needs.create-tag.outputs.uses_custom_version}}
 
   find-latest-tag:
-    # if: needs.file-check.outputs.github-changes == 'false'
     needs: create-tag
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
     secrets: inherit
@@ -101,7 +100,6 @@ jobs:
       label: ${{needs.runner-check.outputs.label}}
 
   post-build-to-convoy:
-    # if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     if: always()
     needs: [file-check,find-latest-tag,build,runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
@@ -113,7 +111,6 @@ jobs:
       LABEL: ${{needs.runner-check.outputs.label}}
 
   post-coverage-to-convoy:
-    # if: ${{needs.file-check.outputs.github-changes == 'false' && always()}}
     needs: [find-latest-tag,build,runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
