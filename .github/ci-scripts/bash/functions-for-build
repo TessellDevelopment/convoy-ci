@@ -84,6 +84,22 @@ check_flyway() {
   fi
 }
 
+configure_go_version() {
+  required_go_version=$(get_required_go_version)
+  if ! is_go_version_installed ${required_go_version}; then
+    echo "Go lang version ${required_go_version} is not installed."
+    gvm install ${required_go_version}
+  fi
+  gvm use ${required_go_version}
+  export GOROOT="/home/github/.gvm/versions/go${required_go_version}.linux.amd64"
+  export GOPATH="/home/github/.gvm/versions/go${required_go_version}"
+  export PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
+  echo ${GOROOT}
+  echo ${GOPATH}
+  echo ${PATH}
+  go version
+}
+
 configure_npmrc(){
   set +e 
   REPO="${1}"
@@ -330,6 +346,31 @@ generate_sts_session_token() {
   export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
 }
 
+get_required_go_version() {
+  if ! [[ -f "convoy.yaml" ]]; then
+    echo "Error: File 'convoy.yaml' not found." >&2
+    return 1
+  fi
+  required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
+  if [[ -n "${required_go_version}" ]]; then
+    echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
+  else
+    runner=$(yq e '.runner // ""' convoy.yaml)
+    case "$runner" in
+      amd) required_go_version="1.19.5" ;;
+      amd-go-20) required_go_version="1.20.1" ;;
+      amd-go-21) required_go_version="1.21.5" ;;
+      amd-go-22) required_go_version="1.22.7" ;;
+      *) 
+        echo "Error: Unknown runner value '${runner}'!"  >&2
+        exit 1
+        ;;
+    esac
+  fi
+  echo ${required_go_version}
+  return 0
+}
+
 go_docker_build() {
   set -e
   IMAGE="${1}"
@@ -355,6 +396,48 @@ go_docker_build_and_push() {
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
   check_flyway ${IMAGE}
+  set +e
+}
+
+go_library_build() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
+  if [ "${NAME}" == "${ARTIFACT}" ]; then
+      NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
+      OS="windows"
+  else
+      OS="linux"
+  fi
+  ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
+  echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
+  if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
+    make service os=${OS}
+  else
+    make service os=${OS} engine=${ENGINE}
+  fi
+  set +e
+}
+
+go_library_build_and_push() {
+  go_library_build "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
+  aws_configure_prod_assets
+  aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/${NAME}/${LATEST_TAG}/
+  if ! ${DEV_BUILD}; then
+    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for env in "${environments[@]}"
+    do
+      push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  fi
   set +e
 }
 
@@ -472,6 +555,7 @@ install_go_dependencies() {
   go version
   go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
+  go env
 }
 
 install_node() {
@@ -501,6 +585,17 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
+}
+
+is_go_version_installed() {
+  local required_version=${1}
+  installed_versions=$(gvm list)
+  for go_version in ${installed_versions[@]}; do
+      if [[ ${go_version} == ${required_go_version} ]]; then
+        return 0
+      fi
+  done
+  return 1
 }
 
 jar_build() {
@@ -951,6 +1046,29 @@ software_def_build_and_push() {
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
+tailscale_build() {
+  set -e
+  export GOPROXY=direct
+  export GOSUMDB='sum.golang.org'
+  go env
+  go install tailscale.com/cmd/gitops-pusher@latest
+  export TS_API_KEY=${TS_API_KEY}
+  export TS_TAILNET=${TS_TAILNET}
+  gitops-pusher --policy-file ./policy.hujson test
+  set +e
+}
+
+tailscale_build_and_push() {
+  set -e
+  export GOPROXY=direct
+  export GOSUMDB='sum.golang.org'
+  go env
+  go install tailscale.com/cmd/gitops-pusher@latest
+  export TS_API_KEY=${TS_API_KEY}
+  export TS_TAILNET=${TS_TAILNET}
+  gitops-pusher --policy-file ./policy.hujson apply
+  set +e
+}
 
 terraform_apply() {
   set -e
