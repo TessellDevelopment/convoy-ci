@@ -664,8 +664,8 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             changed_dir=false
             if [ ! -f "Makefile" ]; then
-            cd tessell; 
-            changed_dir=true;
+              cd tessell; 
+              changed_dir=true;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
@@ -825,7 +825,7 @@ jobs:
             if [[ $ARTIFACT == *"wasm"* ]]; then
               ~/opa build -t wasm policies --output bundles/${file_name}
             else
-              ~/opa build policies --output bundles/${file_name} 
+              ~/opa build policies --output bundles/${file_name}
             fi
             push_release_manifest_artifacts ${file_name} "bundles/${file_name}""
             set +e
