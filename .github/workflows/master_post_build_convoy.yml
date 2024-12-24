@@ -41,8 +41,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           COMMIT_HASH: "${{github.sha}}"
@@ -177,7 +177,7 @@ jobs:
             match = re.match(r"rel-0\.(\d+)\.0", LABEL)
             if match:
                 release = int(match.group(1))
-                if release >= 118:
+                if release >= 126:
                   LABEL=f"rel-{release}"  
 
             if not(bool(BASE_BRANCH)):
