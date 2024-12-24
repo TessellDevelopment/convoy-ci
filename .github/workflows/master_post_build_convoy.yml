@@ -187,6 +187,11 @@ jobs:
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
 
+            if ARTIFACT_GENERATED == 'false':
+              ARTIFACT_GENERATED = 'FALSE'
+            if ARTIFACT_GENERATED == 'true':
+              ARTIFACT_GENERATED = 'TRUE'
+
             with open('convoy.yaml', 'r') as yaml_file:
               yaml_data = yaml.safe_load(yaml_file)
             APP_GROUP = yaml_data.get('appGroup')
