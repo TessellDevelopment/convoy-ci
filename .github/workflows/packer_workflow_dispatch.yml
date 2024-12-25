@@ -170,3 +170,22 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
+
+      - name: get_cloud_image_manifest_for_seed
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        run: |
+          source pkenv/bin/activate
+          get_cloud_image_manifest_for_seed
+      
+      - name: Generate final software manifest.
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        run: |
+          source pkenv/bin/activate
+          get_software_image_manifest_seed_file
+
+      - name: Push to Nexus
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
+        run: |
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                --upload-file ./output.json \
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software-image-manifest-${{ github.run_id }}.json
