@@ -20,6 +20,7 @@ jobs:
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       BASE_BRANCH: ${{ inputs.branchName }}
+      SOFT_IMAGE_VERSION: ${{ inputs.soft_image_version }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
       # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#using-data-from-the-triggering-workflow
       CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "GITHUB_USER": "${{ github.triggering_actor }}", "GITHUB_WORKFLOW_RUN_ID": "${{ github.run_id }}", "GITHUB_PR_BRANCH": "${{ github.ref_name }}" }'
@@ -171,16 +172,28 @@ jobs:
                 --upload-file ./common_manifest.json \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
 
+      - name: Download the software-image-manifest
+        if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
+        run: |
+          source pkenv/bin/activate
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                -sSL -X GET -G \
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/${{ env.SOFT_IMAGE_VERSION }}.json -o software_image_manifest.json
+ 
+
       - name: get_cloud_image_manifest_for_seed
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source pkenv/bin/activate
+          export WORKDIR=`pwd`
+          cp ./common_manifest.json ./combined_delta_cloud_image_manifest.json
           get_cloud_image_manifest_for_seed
       
       - name: Generate final software manifest.
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source pkenv/bin/activate
+          export WORKDIR=`pwd`
           get_software_image_manifest_seed_file
 
       - name: Push to Nexus
