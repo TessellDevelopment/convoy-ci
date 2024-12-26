@@ -171,6 +171,8 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
+      
+      # Below part will use the delta generated above and a base software image to generate final soft-image-manifest.
 
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
@@ -180,8 +182,7 @@ jobs:
                 -sSL -X GET -G \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/${{ env.SOFT_IMAGE_VERSION }}.json -o software_image_manifest.json
  
-
-      - name: get_cloud_image_manifest_for_seed
+      - name: Generate seed data
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           source pkenv/bin/activate
@@ -195,10 +196,11 @@ jobs:
           source pkenv/bin/activate
           export WORKDIR=`pwd`
           get_software_image_manifest_seed_file
+          echo $?
 
       - name: Push to Nexus
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./output.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software-image-manifest-${{ github.run_id }}.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ github.run_id }}.json
