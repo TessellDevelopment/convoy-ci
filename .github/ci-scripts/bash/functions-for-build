@@ -1139,7 +1139,7 @@ zip_file() {
   cd ${DIR}
   zip -r ${BASE_DIR}/${DIR}.zip ./*
   cd ${BASE_DIR}
-  sleep 2000
+  sleep 1000
 
   set +e  
 }
