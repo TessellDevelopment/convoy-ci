@@ -1139,6 +1139,8 @@ zip_file() {
   cd ${DIR}
   zip -r ${BASE_DIR}/${DIR}.zip ./*
   cd ${BASE_DIR}
+  echo "this is creds file path"
+  echo ${GOOGLE_GHA_CREDS_PATH}
   sleep 1000
 
   set +e  
