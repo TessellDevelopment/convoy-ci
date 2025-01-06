@@ -536,6 +536,7 @@ jobs:
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELLGCP_ARTIFACT_REGISTRY: ${{ vars.TESSELLGCP_ARTIFACT_REGISTRY }}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -601,6 +602,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
           token_format: access_token
+          create_credentials_file: true
 
       - name: Login to Artifact Registry
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
