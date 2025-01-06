@@ -1141,11 +1141,28 @@ zip_file() {
   cd ${BASE_DIR}
   echo "this is creds file path"
   echo ${GOOGLE_GHA_CREDS_PATH}
+  # gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  # gcloud artifacts generic upload \
+  #   --project=PROJECT \
+  #   --source=SOURCE \
+  #   --package=PACKAGE \
+  #   --version=VERSION \
+  #   --location=${TESSELL_GCP_REGION} \
+  #   --repository="tessellgcp-artifacts
   sleep 1000
 
   set +e  
 }
-
+# gcloud artifacts generic upload --location=asia-south1 --project=convoy-444204 --repository=tessellgcp-artifacts --package=tessell-gcp-workflows --version=rel-0.2939.0 --source=tessell-gcp-workflows.zip --destination-path=tessell-gcp-workflows-0.2939.2
+# gcloud artifacts files download \
+#     --project=convoy-444204 \
+#     --location=asia-south1 \
+#     --repository=tessellgcp-artifacts \
+#     --package=tessell-gcp-workflows \
+#     --destination=tessell-gcp-workflows.zip
+#     FILE
+# gcloud artifacts generic download --location=asia-south1 --project=convoy-444204 --repository=tessellgcp-artifacts --package=tessell-gcp-workflows --version=rel-0.2939.0 --name=tessell-gcp-workflows.zip --destination=./
+# Toggle full cell content for "projects/convoy-444204/locations/asia-south1/repositories/tessellgcp-artifacts/files/tessell-gcp-workflows:rel-0.2939.0:tessell-gcp-workflows%2Ftessell-gcp-workflows-0.2939.1.zip%2Ftessell-gcp-workflows.zip"
 zip_file_and_push() {
   set -e
   zip_file "$@"
