@@ -1148,6 +1148,7 @@ zip_file_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
+    sleep 2000
     push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     for env in "${environments[@]}"
       do
