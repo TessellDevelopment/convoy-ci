@@ -1141,7 +1141,7 @@ zip_file() {
   cd ${BASE_DIR}
   echo "this is creds file path"
   echo ${GOOGLE_GHA_CREDS_PATH}
-  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  # gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
   # gcloud artifacts generic upload \
   #   --project=PROJECT \
   #   --source=SOURCE \
@@ -1149,9 +1149,20 @@ zip_file() {
   #   --version=VERSION \
   #   --location=${TESSELL_GCP_REGION} \
   #   --repository="tessellgcp-artifacts
-  sleep 1000
+  # sleep 1000
 
   set +e  
+}
+
+upload_gcloud_artifacts() {
+  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  gcloud artifacts generic upload \
+    --location=${TESSELL_GCP_REGION} \
+    --project=${TESSELL_GCP_PROJECT_ID} \
+    --repository=tessellgcp-artifacts \
+    --package=tessell-gcp-workflows \
+    --version=${LABEL} --source=${ARTIFACT}.${EXTENSION} \
+    --destination-path=${LATEST_TAG}
 }
 # gcloud artifacts generic upload --location=asia-south1 --project=convoy-444204 --repository=tessellgcp-artifacts --package=tessell-gcp-workflows --version=rel-0.2939.0 --source=tessell-gcp-workflows.zip --destination-path=0.2939.2
 # gcloud artifacts files download \
@@ -1169,12 +1180,15 @@ zip_file_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
-    sleep 2000
-    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-      do
-        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
+    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+      upload_gcloud_artifacts
+    else
+      push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      for env in "${environments[@]}"
+        do
+          push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      done
+    fi
     generate_checksum "${ARTIFACT}.${EXTENSION}"
   fi
   set +e  
