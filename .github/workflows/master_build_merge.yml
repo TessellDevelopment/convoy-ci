@@ -601,6 +601,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
           token_format: access_token
+          create_credentials_file: true
 
       - name: Login to Artifact Registry
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
