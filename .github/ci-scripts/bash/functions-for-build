@@ -805,13 +805,17 @@ push_release_manifest_artifacts() {
         LABEL="rel-${RELEASE}"
       fi
     fi
-    aws_configure_prod_assets
-    aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
-    push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for ENV in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT_FILE_PATH}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
+    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+      upload_gcloud_artifacts
+    else
+      aws_configure_prod_assets
+      aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+      push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      for ENV in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT_FILE_PATH}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      done
+    fi
     if [[ ${ARTIFACT_FILE_NAME} == "${ARTIFACT}.${EXTENSION}" ]]; then
       generate_checksum "${ARTIFACT_FILE_NAME}"
     else
@@ -1133,6 +1137,17 @@ validate_inputs() {
       exit 1
     fi
   done
+}
+
+upload_gcloud_artifacts() {
+  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  gcloud artifacts generic upload \
+    --location=${TESSELL_GCP_REGION} \
+    --project=${TESSELL_GCP_PROJECT_ID} \
+    --repository=tessellgcp-artifacts \
+    --package=${ARTIFACT} \
+    --version=${LABEL} --source=${ARTIFACT}.${EXTENSION} \
+    --destination-path=${LATEST_TAG}
 }
 
 zip_directory() {
