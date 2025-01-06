@@ -347,11 +347,6 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
-      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
-      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
-      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
-      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
-      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -377,31 +372,6 @@ jobs:
             services/**
             scripts/Dockerfile
             scripts/initializeAutomation.sh
-
-      - name: Set Application Name
-        run: |
-          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
-          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
-            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
-          fi
-
-      - name: Login gcloud
-        id: auth
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
-          token_format: access_token
-
-      - name: Login to Artifact Registry
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: docker/login-action@v1
-        with:
-          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Check All file changes
         id: changed-files-all
