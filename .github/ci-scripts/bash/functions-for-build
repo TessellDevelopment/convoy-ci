@@ -825,6 +825,19 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+push_to_gcloud() {
+  SOURCE="${1}"
+  DESTINATION="${2}"
+  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  gcloud artifacts generic upload \
+    --location=${TESSELL_GCP_REGION} \
+    --project=${TESSELL_GCP_PROJECT_ID} \
+    --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
+    --package=${ARTIFACT} \
+    --version=${LABEL} --source=${SOURCE} \
+    --destination-path=${DESTINATION}
+}
+
 push_to_minio() {
   SOURCE="${1}"
   DESTINATION="${2}"
@@ -1142,17 +1155,6 @@ zip_file() {
   set +e  
 }
 
-upload_gcloud_artifacts() {
-  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud artifacts generic upload \
-    --location=${TESSELL_GCP_REGION} \
-    --project=${TESSELL_GCP_PROJECT_ID} \
-    --repository=tessellgcp-artifacts \
-    --package=${ARTIFACT} \
-    --version=${LABEL} --source=${ARTIFACT}.${EXTENSION} \
-    --destination-path=${LATEST_TAG}
-}
-
 zip_file_and_push() {
   set -e
   zip_file "$@"
@@ -1160,7 +1162,7 @@ zip_file_and_push() {
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-      upload_gcloud_artifacts
+      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "${LATEST_TAG}"
     else
       push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
       for env in "${environments[@]}"
