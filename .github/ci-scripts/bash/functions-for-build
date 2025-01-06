@@ -1103,6 +1103,17 @@ tsm_zip_build_and_push() {
   set +e
 }
 
+upload_gcloud_artifacts() {
+  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  gcloud artifacts generic upload \
+    --location=${TESSELL_GCP_REGION} \
+    --project=${TESSELL_GCP_PROJECT_ID} \
+    --repository=tessellgcp-artifacts \
+    --package=${ARTIFACT} \
+    --version=${LABEL} --source=${ARTIFACT}.${EXTENSION} \
+    --destination-path=${LATEST_TAG}
+}
+
 vss_tar_build() {
   set -e
   ARTIFACT="${1}"
@@ -1137,17 +1148,6 @@ validate_inputs() {
       exit 1
     fi
   done
-}
-
-upload_gcloud_artifacts() {
-  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud artifacts generic upload \
-    --location=${TESSELL_GCP_REGION} \
-    --project=${TESSELL_GCP_PROJECT_ID} \
-    --repository=tessellgcp-artifacts \
-    --package=${ARTIFACT} \
-    --version=${LABEL} --source=${ARTIFACT}.${EXTENSION} \
-    --destination-path=${LATEST_TAG}
 }
 
 zip_directory() {
