@@ -47,7 +47,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2939_gcp_workflows_arm
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEV_BUILD: ${{inputs.dev_build}}
@@ -180,7 +180,7 @@ jobs:
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2939_gcp_workflows_arm
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
@@ -490,7 +490,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2939_gcp_workflows_arm
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEV_BUILD: ${{inputs.dev_build}}
@@ -1093,7 +1093,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-2939_gcp_workflows_arm
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       DEV_BUILD: ${{inputs.dev_build}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -1124,6 +1124,12 @@ jobs:
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELLGCP_ARTIFACT_REGISTRY: ${{ vars.TESSELLGCP_ARTIFACT_REGISTRY }}
     steps: 
 
       - name: Set Repositories for Dev Build
@@ -1143,6 +1149,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
@@ -1154,8 +1169,26 @@ jobs:
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login to Docker
+        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
         run : |
           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push OPS
         id: build
