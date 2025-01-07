@@ -10,7 +10,7 @@ jobs:
     secrets: inherit
 
   version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-2941
     secrets: inherit
 
   runner-check:

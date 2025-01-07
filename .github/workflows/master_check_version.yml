@@ -191,3 +191,36 @@ jobs:
               console.error(e);
               process.exit(1);
             }
+
+      - name: Check version in helm-svc-defns
+        # if: endsWith(github.repository, '-helm-svc-defns')
+        if: endsWith(github.repository, '-repo-a')
+        env:
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          PR_NUMBER: "${{ github.event.pull_request.number }}"
+        run: |
+          CHART_PATH=$(grep 'chartPath:' convoy.yaml | awk '{print $2}')
+          VERSION=$(yq e '.version' "${CHART_PATH}")
+          PREVIOUS_VERSION=$(git show HEAD~1:"${CHART_PATH}" | yq e '.version' -)
+
+          echo "Base branch: ${BASE_BRANCH}"
+          echo "Chart path: ${CHART_PATH}"
+          echo "Current version: ${VERSION}"
+          echo "Previous version: ${PREVIOUS_VERSION}"
+
+          PREVIOUS_BASE=${PREVIOUS_VERSION%-*}
+          PREVIOUS_MINOR=${PREVIOUS_BASE##*.}
+          NEW_MINOR=$((PREVIOUS_MINOR + 1))
+
+          if [[ "${BASE_BRANCH}" == rel-* ]]; then
+            REL_VERSION_SUFFIX="-rel-${BASE_BRANCH#rel-}"
+            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}${REL_VERSION_SUFFIX}"
+          else
+            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}"
+          fi
+
+          if [[ "${VERSION}" != "${EXPECTED_VERSION}" ]]; then
+            echo "Error: Version is invalid. Expected: ${EXPECTED_VERSION}, Found: ${VERSION}"
+            gh pr comment "${PR_NUMBER}" --body "Expected version: \`${EXPECTED_VERSION}\`, but found: \`${VERSION}\`. Please update the version correctly."
+            exit 1
+          fi
