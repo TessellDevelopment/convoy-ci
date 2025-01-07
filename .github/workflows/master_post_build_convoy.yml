@@ -216,6 +216,9 @@ jobs:
               else:
                 print(f"Not able to build payload for API call. Please check convoy.yaml content")
                 exit(1)
+
+              if generates and "softwareImages" in generates:
+                payload, API_URL = get_software_def_url(payload, API_URL)
             
             if ARTIFACT_CHECKSUMS:
               checksum_map = {}
@@ -234,11 +237,7 @@ jobs:
                   else:
                     print(f"Checksum not found for artifact: {key}")
                     exit(1)
-                    
-            if generates and "softwareImages" in generates:
-              payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))
-          
             post_request(payload)
             EOF
 
