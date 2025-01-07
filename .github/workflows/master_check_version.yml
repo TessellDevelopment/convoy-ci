@@ -207,8 +207,7 @@ jobs:
           NEW_MINOR=$((PREVIOUS_MINOR + 1))
 
           if [[ "${BASE_BRANCH}" == rel-* ]]; then
-            REL_VERSION_SUFFIX="-rel-${BASE_BRANCH#rel-}"
-            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}${REL_VERSION_SUFFIX}"
+            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}-${BASE_BRANCH}"
           else
             EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}"
           fi
