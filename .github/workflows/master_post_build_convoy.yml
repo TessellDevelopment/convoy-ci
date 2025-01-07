@@ -196,7 +196,7 @@ jobs:
               "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
               "buildStatus": STATUS,
-              "artifactGenerated": ARTIFACT_GENERATED = "true",
+              "artifactGenerated": ARTIFACT_GENERATED == "true",
             }
 
             if ARTIFACT_GENERATED == 'true':
