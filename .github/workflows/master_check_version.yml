@@ -193,8 +193,7 @@ jobs:
             }
 
       - name: Check version in helm-svc-defns
-        # if: endsWith(github.repository, '-helm-svc-defns')
-        if: endsWith(github.repository, '-repo-a')
+        if: endsWith(github.repository, '-helm-svc-defns')
         env:
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_NUMBER: "${{ github.event.pull_request.number }}"
@@ -202,11 +201,6 @@ jobs:
           CHART_PATH=$(grep 'chartPath:' convoy.yaml | awk '{print $2}')
           VERSION=$(yq e '.version' "${CHART_PATH}")
           PREVIOUS_VERSION=$(git show HEAD~1:"${CHART_PATH}" | yq e '.version' -)
-
-          echo "Base branch: ${BASE_BRANCH}"
-          echo "Chart path: ${CHART_PATH}"
-          echo "Current version: ${VERSION}"
-          echo "Previous version: ${PREVIOUS_VERSION}"
 
           PREVIOUS_BASE=${PREVIOUS_VERSION%-*}
           PREVIOUS_MINOR=${PREVIOUS_BASE##*.}
@@ -224,3 +218,4 @@ jobs:
             gh pr comment "${PR_NUMBER}" --body "Expected version: \`${EXPECTED_VERSION}\`, but found: \`${VERSION}\`. Please update the version correctly."
             exit 1
           fi
+          echo "Version validation passed."
