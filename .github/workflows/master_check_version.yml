@@ -198,7 +198,7 @@ jobs:
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_NUMBER: "${{ github.event.pull_request.number }}"
         run: |
-          CHART_PATH=$(grep 'chartPath:' convoy.yaml | awk '{print $2}')
+          CHART_PATH=$(yq eval '.. | select(has("chartPath")) | .chartPath' convoy.yaml)
           VERSION=$(yq e '.version' "${CHART_PATH}")
           PREVIOUS_VERSION=$(git show origin/${BASE_BRANCH}:"${CHART_PATH}" | yq e '.version' -)
 
