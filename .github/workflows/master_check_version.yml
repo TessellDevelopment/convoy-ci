@@ -200,7 +200,7 @@ jobs:
         run: |
           CHART_PATH=$(grep 'chartPath:' convoy.yaml | awk '{print $2}')
           VERSION=$(yq e '.version' "${CHART_PATH}")
-          PREVIOUS_VERSION=$(git show HEAD~1:"${CHART_PATH}" | yq e '.version' -)
+          PREVIOUS_VERSION=$(git show origin/${BASE_BRANCH}:"${CHART_PATH}" | yq e '.version' -)
 
           PREVIOUS_BASE=${PREVIOUS_VERSION%-*}
           PREVIOUS_MINOR=${PREVIOUS_BASE##*.}
