@@ -618,7 +618,7 @@ jar_build_and_push() {
     -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
     -DgroupId=tessellops -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
-  generate_checksum "${ARTIFACT}-${VERSION}.${EXTENSION}"
+  generate_checksum $ARTIFACT "${ARTIFACT}-${VERSION}.${EXTENSION}"
   set +e
 }
 
