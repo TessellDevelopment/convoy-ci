@@ -717,7 +717,7 @@ ops_terraform_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  generateChecksum "${ARTIFACT}.${EXTENSION}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
 
