@@ -220,7 +220,7 @@ jobs:
               if generates and "softwareImages" in generates:
                 payload, API_URL = get_software_def_url(payload, API_URL)
             
-            if ARTIFACT_CHECKSUMS:
+            if ARTIFACT_CHECKSUMS and payload.get("artifacts"):
               checksum_map = {}
               parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
               for part in parts:
