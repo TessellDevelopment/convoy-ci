@@ -1152,7 +1152,7 @@ zip_file() {
   DIR=${1}
   BASE_DIR=$PWD
   cd ${DIR}
-  zip -r ${BASE_DIR}/${DIR}.zip ./*
+  zip -r ${BASE_DIR}/${DIR}.zip ./
   cd ${BASE_DIR}
   set +e  
 }
