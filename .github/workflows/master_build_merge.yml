@@ -1124,6 +1124,12 @@ jobs:
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELLGCP_ARTIFACT_REGISTRY: ${{ vars.TESSELLGCP_ARTIFACT_REGISTRY }}
     steps: 
 
       - name: Set Repositories for Dev Build
@@ -1143,6 +1149,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
@@ -1154,8 +1169,26 @@ jobs:
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login to Docker
+        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
         run : |
           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push OPS
         id: build

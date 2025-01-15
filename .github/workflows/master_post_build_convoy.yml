@@ -3,9 +3,13 @@ name: Build Status POST API to Convoy
 on:
   workflow_call:
     inputs:
+      ARTIFACT_GENERATED: 
+        description: 'Flag if any artifact was pushed during build'
+        required: true
+        type: string
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
-        required: true
+        default: ""
         type: string
       TAG:
         description: 'Tag created during create-tag'
@@ -45,6 +49,7 @@ jobs:
           API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
+          ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -163,6 +168,7 @@ jobs:
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
+            ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
@@ -190,24 +196,29 @@ jobs:
               "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
               "buildStatus": STATUS,
+              "artifactGenerated": ARTIFACT_GENERATED == "true",
             }
 
-            generates = yaml_data.get('generates')
-            language = yaml_data.get('language')
-            if generates != None:
-              version = yaml_data.get('version')
-              if version == None:
-                version = TAG
-              payload["artifacts"] = get_artifacts(generates, version)
-              if payload["artifacts"] == None:
-                del payload["artifacts"]
-            elif language == 'terraform':
-              payload["artifacts"] = get_artifacts_tf()
-            elif generates == None:
-              print("No artifact generated in the repo.")
-            else:
-              print(f"Not able to build payload for API call. Please check convoy.yaml content")
-              exit(1)
+            if ARTIFACT_GENERATED == 'true':
+              generates = yaml_data.get('generates')
+              language = yaml_data.get('language')
+              if generates != None:
+                version = yaml_data.get('version')
+                if version == None:
+                  version = TAG
+                payload["artifacts"] = get_artifacts(generates, version)
+                if payload["artifacts"] == None:
+                  del payload["artifacts"]
+              elif language == 'terraform':
+                payload["artifacts"] = get_artifacts_tf()
+              elif generates == None:
+                print("No artifact generated in the repo.")
+              else:
+                print(f"Not able to build payload for API call. Please check convoy.yaml content")
+                exit(1)
+
+              if generates and "softwareImages" in generates:
+                payload, API_URL = get_software_def_url(payload, API_URL)
             
             if ARTIFACT_CHECKSUMS:
               checksum_map = {}
@@ -226,11 +237,7 @@ jobs:
                   else:
                     print(f"Checksum not found for artifact: {key}")
                     exit(1)
-                    
-            if generates and "softwareImages" in generates:
-              payload, API_URL = get_software_def_url(payload, API_URL)
             print(json.dumps(payload, indent=4))
-          
             post_request(payload)
             EOF
 
