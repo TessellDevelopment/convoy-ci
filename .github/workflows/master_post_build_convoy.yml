@@ -171,8 +171,8 @@ jobs:
             STATUS = (os.environ.get('STATUS')).upper()
             TAG = os.environ.get('TAG')
             REPO = os.environ.get('REPO')
-            OWNER = os.environ.get('OWNER') 
-
+            OWNER = os.environ.get('OWNER')
+            
             if not(bool(BASE_BRANCH)):
               BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
             
