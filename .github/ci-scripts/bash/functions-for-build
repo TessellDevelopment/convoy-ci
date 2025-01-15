@@ -799,12 +799,6 @@ push_release_manifest_artifacts() {
   local ARTIFACT_FILE_NAME=${1:-"${ARTIFACT}.${EXTENSION}"}
   local ARTIFACT_FILE_PATH=${2:-"${ARTIFACT}.${EXTENSION}"}
   if ! ${DEV_BUILD}; then
-    if [[ ${LABEL} =~ rel-0\.([0-9]+)\.0 ]]; then
-      RELEASE=${BASH_REMATCH[1]}
-      if (( RELEASE >= 126 )); then
-        LABEL="rel-${RELEASE}"
-      fi
-    fi
     aws_configure_prod_assets
     aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
     push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
@@ -821,12 +815,6 @@ push_release_manifest_artifacts() {
 }
 
 push_terraform_modules() {
-  if [[ ${LABEL} =~ rel-0\.([0-9]+)\.0 ]]; then
-    RELEASE=${BASH_REMATCH[1]}
-    if (( RELEASE >= 126 )); then
-      LABEL="rel-${RELEASE}"
-    fi
-  fi
   mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
   push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
   aws_configure_devqa_infra

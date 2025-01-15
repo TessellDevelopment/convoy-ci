@@ -63,7 +63,6 @@ jobs:
             import time
             import base64
             import yaml
-            import re
 
             def get_tf_modules_folders():
               headers = {
@@ -172,13 +171,7 @@ jobs:
             STATUS = (os.environ.get('STATUS')).upper()
             TAG = os.environ.get('TAG')
             REPO = os.environ.get('REPO')
-            OWNER = os.environ.get('OWNER')
-
-            match = re.match(r"rel-0\.(\d+)\.0", LABEL)
-            if match:
-                release = int(match.group(1))
-                if release >= 126:
-                  LABEL=f"rel-{release}"  
+            OWNER = os.environ.get('OWNER') 
 
             if not(bool(BASE_BRANCH)):
               BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
