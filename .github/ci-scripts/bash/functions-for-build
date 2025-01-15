@@ -588,6 +588,7 @@ jar_build_and_push() {
     -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
     -DgroupId=tessellops -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  generate_checksum $ARTIFACT "${ARTIFACT}-${VERSION}.${EXTENSION}"
   set +e
 }
 
@@ -623,7 +624,7 @@ mvnw_build_and_push() {
   push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
   mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
   aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
-  generate_checksum "${ARTIFACT}-${LATEST_TAG}.zip"
+  generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
   set +e
 }
 
@@ -686,7 +687,7 @@ ops_terraform_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  generateChecksum "${ARTIFACT}.${EXTENSION}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
 
@@ -701,6 +702,7 @@ ops_ui_build_and_push() {
   sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
   gradlew_ui_build
   push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  generate_checksum $ARTIFACT "tessellops-ui-${LATEST_TAG}.zip"
   set +e
 }
 
@@ -827,6 +829,19 @@ push_terraform_modules() {
   do
     push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
   done
+}
+
+push_to_gcloud() {
+  SOURCE="${1}"
+  DESTINATION="${2}"
+  gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
+  gcloud artifacts generic upload \
+    --location=${TESSELL_GCP_REGION} \
+    --project=${TESSELL_GCP_PROJECT_ID} \
+    --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
+    --package=${ARTIFACT} \
+    --version=${LABEL} --source=${SOURCE} \
+    --destination-path=${DESTINATION}
 }
 
 push_to_minio() {
@@ -1144,6 +1159,13 @@ zip_file_and_push() {
   zip_file "$@"
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  push_release_manifest_artifacts
+  if ! ${DEV_BUILD}; then
+    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "${LATEST_TAG}"
+      generate_checksum "${ARTIFACT}.${EXTENSION}"
+    else
+      push_release_manifest_artifacts
+    fi
+  fi
   set +e  
 }
