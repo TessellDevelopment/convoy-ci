@@ -20,7 +20,7 @@ jobs:
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
       BASE_BRANCH: ${{ inputs.branchName }}
-      SOFT_IMAGE_RELEASE: ${{ inputs.soft_image_manifest_release }}
+      SOFTWARE_IMAGE_BASE_RELEASE: ${{ inputs.software_image_base_release }}
       JIRA_TICKET_ID: ${{ inputs.jira_ticket_id }}
       DESTINATION_ACCOUNT: ${{ inputs.accountId }}
       # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#using-data-from-the-triggering-workflow
@@ -59,25 +59,32 @@ jobs:
           echo $pull_request_number
       
       - name: Get Software Image release
-        if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') }}  
+      # if the base_branch is 
+        if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}  
         shell: bash
         run: |
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "$APP_GROUP"
-          URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
+
           # https://api.convoy.tessell.cloud/devops/applications/app-groups/tessell/release-manifests/rel-0.125.0
+          if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
+          elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}"
+          fi
+
           echo "$URL"
           RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
           echo "$RESPONSE"
-          # SOFT_IMAGE_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages | .software_image_manifest | .tag' )
-          SOFT_IMAGE_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages.software_image_manifest.tag' )
-          echo "$SOFT_IMAGE_RELEASE"
-          echo "SOFT_IMAGE_RELEASE=$SOFT_IMAGE_RELEASE" >> $GITHUB_ENV
+          # SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages | .software_image_manifest | .tag' )
+          SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages.software_image_manifest.tag' )
+          echo "$SOFTWARE_IMAGE_BASE_LATEST_RELEASE"
+          echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$SOFTWARE_IMAGE_BASE_LATEST_RELEASE" >> $GITHUB_ENV
 
       - name: Split Manifest Version
       # https://stackoverflow.com/questions/73402042/github-action-expressions-split-string
         id: split
-        run: echo "SOFT_IMAGE_RELEASE=${SOFT_IMAGE_RELEASE##*-}" >> $GITHUB_ENV
+        run: echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=${SOFTWARE_IMAGE_BASE_LATEST_RELEASE##*-}" >> $GITHUB_ENV
 
 
       - name: Set Label
@@ -119,24 +126,26 @@ jobs:
       - name: visible
       # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         run: |
-          echo ${{ env.BASE_BRANCH }}
-          echo ${{ env.SOURCE_BRANCH }}
-          echo ${{ env.LABEL }}
-          echo ${{ env.SOFT_IMAGE_RELEASE }}
-          echo ${{ env.CUSTOM_TAGS}}
-          echo ${{ github.base_ref }}
-          echo ${{ github.head_ref }}
+          echo BASE_BRANCH= ${{ env.BASE_BRANCH }}
+          echo SOURCE_BRANCH= ${{ env.SOURCE_BRANCH }}
+          echo LABEL= ${{ env.LABEL }}
+          echo SOFTWARE_IMAGE_BASE_LATEST_RELEASE= ${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}
+          echo CUSTOM_TAGS= ${{ env.CUSTOM_TAGS}}
+          echo github.base_ref= ${{ github.base_ref }}
+          echo github.head_ref= ${{ github.head_ref }}
+          echo github.event_path= 
           cat ${{ github.event_path}} | jq '.'
-          echo ${{ env.AWS_ACCESS_KEY_ID }}
-          echo ${{ env.AWS_SECRET_ACCESS_KEY }}
-          echo ${{ env.CLOUD_BUILD_TYPE_ARG }}
+
+          # echo ${{ env.AWS_ACCESS_KEY_ID }}
+          # echo ${{ env.AWS_SECRET_ACCESS_KEY }}
+          echo CLOUD_BUILD_TYPE_ARG= ${{ env.CLOUD_BUILD_TYPE_ARG }}
 
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 -sSL -X GET -G \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFT_IMAGE_RELEASE }}.json -o software_image_manifest.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json -o software_image_manifest.json
           # https://nexus.tessell.cloud/repository/tessell-artifacts/rel-0.126.0/software_image_manifest/software_image_manifest-0.126.1.json
 
 
