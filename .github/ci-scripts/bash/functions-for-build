@@ -285,6 +285,21 @@ frp_build_and_push() {
   set +e
 }
 
+gcp_ui_build() {
+  DIR=${1}
+  cd ${DIR}
+  yarn install
+  yarn build
+}
+
+gcp_ui_build_and_push() {
+  DIR=${1}
+  if [ -f "${DIR}/build.sh" ]; then
+    ./${DIR}/build.sh
+  fi
+  zip_file_and_push "$@"
+}
+
 get_base_branch_commit_from_pr_number() {
   base_branch_commit_of_root_pr=$(curl -L \
   -H "Accept: application/vnd.github+json" \
@@ -1152,9 +1167,6 @@ zip_file() {
   DIR=${1}
   BASE_DIR=$PWD
   cd ${DIR}
-  if [ -f "${DIR}/build.sh" ]; then
-    ./build.sh
-  fi
   zip -r ${BASE_DIR}/${DIR}.zip ./
   cd ${BASE_DIR}
   set +e  

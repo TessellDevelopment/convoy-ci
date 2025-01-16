@@ -96,6 +96,14 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
+gcpUIBuild() {
+  gcp_ui_build "$@"
+}
+
+gcpUIBuildAndPush() {
+  gcp_ui_build_and_push "$@"
+}
+
 generateChecksum() {
   generate_checksum "$@"
 }
@@ -274,6 +282,14 @@ terraformApply() {
 
 terraformApplyAndPush() {
   terraform_apply_and_push "$@"
+}
+
+terraformBuild() {
+  terraform_build "$@"
+}
+
+terraformBuildAndPush() {
+  terls_build_and_push "$@"
 }
 
 terraformZipBuild() {
