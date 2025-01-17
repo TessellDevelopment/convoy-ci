@@ -145,9 +145,9 @@ ui_build() {
   npm run style-check
   npm run build
   cd build
-  zip -r ../${ARTIFACT}-${VERSION}.${EXTENSION}  *
+  zip -r ../${ARTIFACT}.${EXTENSION}  *
   cd ..
-  ls -lrta ${ARTIFACT}-${VERSION}.${EXTENSION}
+  ls -lrta ${ARTIFACT}.${EXTENSION}
   set +e
 }
 
@@ -161,7 +161,7 @@ ui_build_and_push() {
   fi
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
   set -e
-  ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${VERSION}"
   set +e
 }
