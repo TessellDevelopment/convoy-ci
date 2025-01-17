@@ -1,0 +1,17 @@
+---
+name: Test Slack Notification
+on:
+  workflow_dispatch:
+jobs:
+  build-amd:
+    runs-on: self-hosted
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_TEST }}
+    steps:                 
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      
