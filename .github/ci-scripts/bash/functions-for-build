@@ -33,14 +33,7 @@ bash_build_and_push() {
   bash_build "$@"
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  if ! ${DEV_BUILD}; then
-    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-      do
-        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
-    generate_checksum "${ARTIFACT}.${EXTENSION}"
-  fi
+  push_release_manifest_artifacts
   set +e
 }
 
@@ -269,18 +262,10 @@ frp_build_and_push() {
   aws_configure_prod_assets
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
-    echo "frpc-{$OS}"
-    mvn_deploy "tessell-frpc-${OS}" "${EXTENSION}" "./tessell-frpc-${OS}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
-    aws s3 cp "tessell-frpc-${OS}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}
-    if ! ${DEV_BUILD}; then
-      push_to_nexus "tessell-frpc-${OS}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-      for env in "${environments[@]}"
-      do
-        push_to_minio "tessell-frpc-${OS}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/tessell-frpc-${OS}/tessell-frpc-${OS}-${LATEST_TAG}.${EXTENSION}"
-      done
-      generate_checksum "tessell-frpc-${OS}.${EXTENSION}"
-    fi
+    ARTIFACT="tessell-frpc-${OS}"
+    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
+    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
+    push_release_manifest_artifacts
   done
   set +e
 }
@@ -426,18 +411,10 @@ go_library_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
   aws_configure_prod_assets
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
   aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/${NAME}/${LATEST_TAG}/
-  if ! ${DEV_BUILD}; then
-    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
-    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
-    generate_checksum "${ARTIFACT}.${EXTENSION}"
-  fi
+  push_release_manifest_artifacts
   set +e
 }
 
@@ -494,16 +471,9 @@ gradlew_ui_build_and_push() {
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
-  if ! ${DEV_BUILD}; then
-    lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
-    build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
-    generate_checksum $ARTIFACT $build_file_name
-    push_to_nexus "./build/libs/${build_file_name}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-    do
-      push_to_minio "./build/libs/${build_file_name}" "minio-ci/tessell-artifacts-${env}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
-  fi
+  lib=$(cat settings.gradle | grep rootProject.name | sed "s/rootProject.name = '\(.*\)'/\1/")
+  build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
+  push_release_manifest_artifacts ${build_file_name} "./build/libs/${build_file_name}"
   set +e
 }
 
@@ -827,6 +797,44 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+push_release_manifest_artifacts() {
+  local ARTIFACT_FILE_NAME=${1:-"${ARTIFACT}.${EXTENSION}"}
+  local ARTIFACT_FILE_PATH=${2:-"${ARTIFACT}.${EXTENSION}"}
+  if ! ${DEV_BUILD}; then
+    aws_configure_prod_assets
+    aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_DEV_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_QA_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_QA_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_STAGE_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_STAGE_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_PROD_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_PROD_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    for ENV in "${environments[@]}"
+    do
+      push_to_minio "${ARTIFACT_FILE_PATH}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    done
+    if [[ ${ARTIFACT_FILE_NAME} == "${ARTIFACT}.${EXTENSION}" ]]; then
+      generate_checksum "${ARTIFACT_FILE_NAME}"
+    else
+      generate_checksum "${ARTIFACT}" "${ARTIFACT_FILE_NAME}"
+    fi
+  fi
+}
+
+push_terraform_modules() {
+  mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
+  push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  aws_configure_devqa_infra
+  aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  for ENV in "${environments[@]}"
+  do
+    push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+  done
+}
+
 push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
@@ -1119,14 +1127,7 @@ vss_tar_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
-  if ! ${DEV_BUILD}; then
-    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    for env in "${environments[@]}"
-      do
-        push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    done
-    generate_checksum "${ARTIFACT}.${EXTENSION}"
-  fi
+  push_release_manifest_artifacts
   set +e
 }
 
@@ -1165,14 +1166,10 @@ zip_file_and_push() {
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
       push_to_gcloud "${ARTIFACT}.${EXTENSION}" "${LATEST_TAG}"
+      generate_checksum "${ARTIFACT}.${EXTENSION}"
     else
-      push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-      for env in "${environments[@]}"
-        do
-          push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/tessell-artifacts-$env/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-      done
+      push_release_manifest_artifacts
     fi
-    generate_checksum "${ARTIFACT}.${EXTENSION}"
   fi
   set +e  
 }
