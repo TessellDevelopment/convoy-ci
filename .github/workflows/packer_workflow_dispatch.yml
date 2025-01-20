@@ -35,7 +35,6 @@ jobs:
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       NEXUS_ARTIFACT_REPO: tessell-artifacts
-      NEXUS_DEV_ARTIFACT_REPO: tessell-artifacts-dev
 
     steps:
       - name: Checkout code
@@ -247,4 +246,4 @@ jobs:
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./output.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_DEV_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.JIRA_TICKET_ID }}.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${ARTIFACTS_DEV_S3}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.JIRA_TICKET_ID }}.json
