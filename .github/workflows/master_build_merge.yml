@@ -924,7 +924,7 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
             MODIFIED_DIRECTORIES=$(modifiedDir)
-            if [[ "${{github.event_name}}" == "workflow_dispatch" && ! ${{inputs.dev_build}} ]]; then
+            if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES}
             fi
             if [[ ${BASE_BRANCH} == 'main' ]]; then
