@@ -955,6 +955,7 @@ jobs:
             for DIR in $MODIFIED_DIRECTORIES
             do
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
+                DIR=${DIR%/}
                 ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
