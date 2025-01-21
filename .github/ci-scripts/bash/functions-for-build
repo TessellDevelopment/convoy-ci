@@ -286,6 +286,7 @@ frp_build_and_push() {
 }
 
 gcp_ui_build() {
+  install_node
   DIR=${1}
   cd ${DIR}
   yarn install
@@ -293,6 +294,7 @@ gcp_ui_build() {
 }
 
 gcp_ui_build_and_push() {
+  install_node
   DIR=${1}
   if [ -f "${DIR}/build.sh" ]; then
     ./${DIR}/build.sh
@@ -846,13 +848,14 @@ push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud artifacts generic upload \
-    --location=${TESSELL_GCP_REGION} \
-    --project=${TESSELL_GCP_PROJECT_ID} \
-    --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
-    --package=${ARTIFACT} \
-    --version=${LABEL} --source=${SOURCE} \
-    --destination-path=${DESTINATION}
+  gcloud storage cp ${SOURCE} ${DESTINATION}
+  # gcloud artifacts generic upload \
+  #   --location=${TESSELL_GCP_REGION} \
+  #   --project=${TESSELL_GCP_PROJECT_ID} \
+  #   --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
+  #   --package=${ARTIFACT} \
+  #   --version=${LABEL} --source=${SOURCE} \
+  #   --destination-path=${DESTINATION}
 }
 
 push_to_minio() {
@@ -1179,7 +1182,7 @@ zip_file_and_push() {
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "${LATEST_TAG}"
+      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "tessell-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
     else
       push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
       for env in "${environments[@]}"
