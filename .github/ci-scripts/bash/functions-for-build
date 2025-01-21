@@ -294,7 +294,6 @@ gcp_ui_build() {
 }
 
 gcp_ui_build_and_push() {
-  install_node
   DIR=${1}
   if [ -f "${DIR}/build.sh" ]; then
     ./${DIR}/build.sh
