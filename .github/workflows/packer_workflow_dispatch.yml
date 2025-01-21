@@ -36,6 +36,9 @@ jobs:
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       NEXUS_ARTIFACT_REPO: tessell-artifacts
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
+      CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
+      CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
 
     steps:
       - name: Checkout code
@@ -46,6 +49,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+      
+      - name: Setup minio
+        run: |    
+          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          sudo mv ./mc /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+          export PATH=$PATH:/usr/local/bin
+          mc --version
+          while true; do
+              response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+              echo "$response"
+              if echo "$response" | grep -q "successfully"; then
+                  echo "Command succeeded: Added 'minio-ci' successfully."
+                  break
+              else
+                  echo "Command failed, retrying..."
+                  sleep 2
+              fi
+          done  
+          mc alias list
+
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -65,7 +89,6 @@ jobs:
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "$APP_GROUP"
 
-          # the format of url will be like -> https://api.convoy.tessell.cloud/devops/applications/app-groups/tessell/release-manifests/rel-0.125.0
           if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
           elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
@@ -153,7 +176,6 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 -sSL -X GET -G \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json -o software_image_manifest.json
-          # the format of url is -> https://nexus.tessell.cloud/repository/tessell-artifacts/rel-0.126.0/software_image_manifest/software_image_manifest-0.126.1.json
 
 
       - name: Set Pull repository
@@ -237,9 +259,35 @@ jobs:
           export WORKDIR=`pwd`
           get_software_image_manifest_seed_file
 
-      - name: Push Final software-image to Nexus
+      - name: Push Final software-image to Nexus & minio
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
         run: |
+          push_to_minio() {
+            SOURCE="${1}"
+            DESTINATION="${2}"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            local attempt=0
+            while [ ${attempt} -lt ${MAX_RETRIES} ]; do
+              mc cp "${SOURCE}" "${DESTINATION}"
+              if [ $? -eq 0 ]; then
+                echo "Artifact successfully pushed to minio ${DESTINATION}."
+                return
+              else
+                attempt=$((attempt + 1))
+                echo "Pushing artifact to minio failed. Attempt ${attempt} of ${MAX_RETRIES}. Retrying in ${RETRY_DELAY} seconds."
+                sleep ${RETRY_DELAY}
+              fi
+            done
+            echo "Pushing artifact to minio failed after ${MAX_RETRIES} attempts."
+            return 1
+          }
+
+          src_file="./output.json"
+          dest_path="${{ env.ARTIFACTS_DEV_S3 }}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json"
+
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                --upload-file ./output.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{ env.ARTIFACTS_DEV_S3 }}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json
+                --upload-file $src_file \
+                "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/$dest_path"
+          
+          push_to_minio $src_file $dest_path
