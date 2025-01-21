@@ -35,6 +35,7 @@ jobs:
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       NEXUS_ARTIFACT_REPO: tessell-artifacts
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
 
     steps:
       - name: Checkout code
@@ -58,14 +59,13 @@ jobs:
           echo $pull_request_number
       
       - name: Get Software Image release
-      # if the base_branch is 
         if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}  
         shell: bash
         run: |
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "$APP_GROUP"
 
-          # https://api.convoy.tessell.cloud/devops/applications/app-groups/tessell/release-manifests/rel-0.125.0
+          # the format of url will be like -> https://api.convoy.tessell.cloud/devops/applications/app-groups/tessell/release-manifests/rel-0.125.0
           if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
           elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
@@ -75,13 +75,11 @@ jobs:
           echo "$URL"
           RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
           echo "$RESPONSE"
-          # SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages | .software_image_manifest | .tag' )
           SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages.software_image_manifest.tag' )
           echo "$SOFTWARE_IMAGE_BASE_LATEST_RELEASE"
           echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$SOFTWARE_IMAGE_BASE_LATEST_RELEASE" >> $GITHUB_ENV
 
       - name: Split Manifest Version
-      # https://stackoverflow.com/questions/73402042/github-action-expressions-split-string
         id: split
         run: echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=${SOFTWARE_IMAGE_BASE_LATEST_RELEASE##*-}" >> $GITHUB_ENV
 
@@ -95,8 +93,8 @@ jobs:
             echo "Error: Branch name is not in format 'TS/TDEVOPS/SRE-XXXX'"
             exit 1
           fi
-          echo "Jira Ticket ID: ${version}"
-          echo "JIRA_TICKET_ID=${version}" >> $GITHUB_ENV
+          echo "DEV_BUILD_VERSION: ${version}"
+          echo "DEV_BUILD_VERSION=${version}" >> $GITHUB_ENV
 
       - name: Set Label
       # We do not want this workflow to run when SOURCE_BRANCH (PR_SOURCE_BRANCH) is main or "rel-*" or workflowType is "build.".
@@ -147,8 +145,6 @@ jobs:
           echo github.event_path= 
           cat ${{ github.event_path}} | jq '.'
 
-          # echo ${{ env.AWS_ACCESS_KEY_ID }}
-          # echo ${{ env.AWS_SECRET_ACCESS_KEY }}
           echo CLOUD_BUILD_TYPE_ARG= ${{ env.CLOUD_BUILD_TYPE_ARG }}
 
       - name: Download the software-image-manifest
@@ -157,7 +153,7 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 -sSL -X GET -G \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json -o software_image_manifest.json
-          # https://nexus.tessell.cloud/repository/tessell-artifacts/rel-0.126.0/software_image_manifest/software_image_manifest-0.126.1.json
+          # the format of url is -> https://nexus.tessell.cloud/repository/tessell-artifacts/rel-0.126.0/software_image_manifest/software_image_manifest-0.126.1.json
 
 
       - name: Set Pull repository
@@ -246,4 +242,4 @@ jobs:
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./output.json \
-                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${ARTIFACTS_DEV_S3}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.JIRA_TICKET_ID }}.json
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${{ env.ARTIFACTS_DEV_S3 }}/${{ env.LABEL }}/software_image_manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json
