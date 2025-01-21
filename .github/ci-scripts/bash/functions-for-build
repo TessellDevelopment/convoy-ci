@@ -576,6 +576,7 @@ install_go_dependencies() {
 }
 
 install_node() {
+  echo "4heelo world"
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
