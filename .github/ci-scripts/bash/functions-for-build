@@ -288,9 +288,11 @@ frp_build_and_push() {
 gcp_ui_build() {
   install_node
   DIR=${1}
+  BASE_DIR=$PWD
   cd ${DIR}
   yarn install
   yarn build
+  cd ${BASE_DIR}
 }
 
 gcp_ui_build_and_push() {
