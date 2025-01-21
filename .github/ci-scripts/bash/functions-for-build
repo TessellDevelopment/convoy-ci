@@ -286,6 +286,7 @@ frp_build_and_push() {
 }
 
 gcp_ui_build() {
+  set -e
   install_node
   DIR=${1}
   BASE_DIR=$PWD
@@ -293,14 +294,17 @@ gcp_ui_build() {
   yarn install
   yarn build
   cd ${BASE_DIR}
+  set +e
 }
 
 gcp_ui_build_and_push() {
+  set -e
   DIR=${1}
   if [ -f "${DIR}/build.sh" ]; then
     ./${DIR}/build.sh
   fi
   zip_file_and_push "$@"
+  set +e
 }
 
 get_base_branch_commit_from_pr_number() {
