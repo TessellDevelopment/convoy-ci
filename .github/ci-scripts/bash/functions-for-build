@@ -854,7 +854,7 @@ push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud storage cp ${SOURCE} ${DESTINATION}
+  gcloud storage cp ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
   # gcloud artifacts generic upload \
   #   --location=${TESSELL_GCP_REGION} \
   #   --project=${TESSELL_GCP_PROJECT_ID} \
@@ -1188,7 +1188,7 @@ zip_file_and_push() {
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "tessell-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://tessellgcp-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
     else
       push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
       for env in "${environments[@]}"
