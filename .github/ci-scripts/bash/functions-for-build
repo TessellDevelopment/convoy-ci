@@ -286,8 +286,8 @@ frp_build_and_push() {
 }
 
 gcp_ui_build() {
-  set -e
   install_node
+  set -e
   DIR=${1}
   BASE_DIR=$PWD
   cd ${DIR}
