@@ -1099,7 +1099,8 @@ terraform_build() {
   EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
   echo $DIRECTORIES
   counter=0  # Initialize counter
-  for DIR in $DIRECTORIES
+  IFS=' ' read -r -a DIR_ARRAY <<< "$DIRECTORIES"
+  for DIR in "${DIR_ARRAY[@]}"
   do
     if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
       counter=$((counter + 1))
