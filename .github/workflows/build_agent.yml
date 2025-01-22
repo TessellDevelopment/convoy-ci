@@ -177,24 +177,24 @@ jobs:
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-          for os in ${OS_NAMES[@]};do
-          mkdir -p $HOME/.m2
-          cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-          cat $HOME/.m2/settings.xml
-          mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-              -DgroupId=tessell.agent -DartifactId=tessell-agent-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-              -DgeneratePom=true -Dpackaging=tar \
-              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
-              -Dfile=package/tessell-agent-pkg-$os.tar -DrepositoryId=nexus
+            for os in ${OS_NAMES[@]};do
+            mkdir -p $HOME/.m2
+            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+            cat $HOME/.m2/settings.xml
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+                -DgroupId=tessell.agent -DartifactId=tessell-agent-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=package/tessell-agent-pkg-$os.tar -DrepositoryId=nexus
 
-          mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-              -DgroupId=tessell.agent -DartifactId=tessell-upgrader-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-              -DgeneratePom=true -Dpackaging=tar \
-              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
-              -Dfile=package/tessell-upgrader-pkg-$os.tar -DrepositoryId=nexus
-          done
+            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+                -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+                -DgroupId=tessell.agent -DartifactId=tessell-upgrader-pkg-$os -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+                -DgeneratePom=true -Dpackaging=tar \
+                -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+                -Dfile=package/tessell-upgrader-pkg-$os.tar -DrepositoryId=nexus
+            done
 
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -203,7 +203,7 @@ jobs:
           for os in ${OS_NAMES[@]};do
             aws s3 cp package/tessell-agent-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
             aws s3 cp package/tessell-upgrader-pkg-$os.tar s3://tesselltools/terls/tessell/agent/$VERSION/
-          done
+          done  
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -218,7 +218,7 @@ jobs:
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -226,14 +226,16 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
+        
 
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()
+    if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
+      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -277,10 +279,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-
+          
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-
+          
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -304,7 +306,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-
+      
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -325,9 +327,9 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
@@ -335,7 +337,9 @@ jobs:
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
+
+            

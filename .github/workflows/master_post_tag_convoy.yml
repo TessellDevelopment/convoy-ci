@@ -4,16 +4,17 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: "Tag created during create-tag"
+        description: 'Tag created during create-tag'
         required: true
         type: string
       uses_custom_version:
-        description: "Key for using version as tag"
+        description: 'Key for using version as tag'
         required: true
         type: string
 
 jobs:
-  push-commit-details-to-convoy:
+  
+  push-commit-details-to-convoy: 
     runs-on: non-build
     env:
       TAG: "${{inputs.tag}}"
@@ -40,7 +41,7 @@ jobs:
           USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
         run: |
           python3 - <<EOF
-
+          
           import yaml
           import requests
           import os
@@ -115,7 +116,8 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
+          

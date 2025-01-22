@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-
+          
       - name: Install AWS CLI
         run: |
           curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
@@ -55,7 +55,7 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
           aws configure set region ap-south-1
 
-      - name: create tar file
+      - name: create tar file 
         run: |
           cd tessell;
           for OS in ${OS_NAMES[@]} ;do
@@ -64,7 +64,7 @@ jobs:
            done
           done
           ls -l
-
+          
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
@@ -78,7 +78,7 @@ jobs:
             else{
                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-
+            
       - name: Get tags
         uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -97,7 +97,8 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-
+             
+            
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
@@ -159,7 +160,7 @@ jobs:
             }
             core.setOutput('tag_ref', latest_tag)
 
-      - name: steps to upload tar files to nexus
+      - name: steps to upload tar files to nexus 
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
           for OS in ${OS_NAMES[@]} ;do
@@ -188,7 +189,7 @@ jobs:
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -196,14 +197,15 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
+  
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()
+    if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
+      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -247,10 +249,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-
+          
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-
+          
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -274,7 +276,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-
+      
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -295,9 +297,9 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
@@ -305,7 +307,7 @@ jobs:
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}

@@ -144,10 +144,10 @@ jobs:
           aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{ vars.TESSELL_DEV_ECR }}
 
       - name: Login to Docker
-        run: |
-          docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
-          docker system prune --force
-
+        run : |
+           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+           docker system prune --force
+      
       - name: Setup Docker builder
         run: |
           set +e
@@ -158,48 +158,48 @@ jobs:
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         shell: bash
         run: |
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+            while IFS=$'\t' read -r image function file _; do
+              if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+                echo "Building $image Image"
+                docker buildx build -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image --platform=linux/amd64,linux/arm64 .
+              fi
+            done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
         run: |
-          while IFS=$'\t' read -r image function file _; do
-            if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
-              echo "Building $image Image"
-              docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
-              docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
-            fi
-          done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
+            while IFS=$'\t' read -r image function file _; do
+              if [[ "$function" == "dockerBuild" && "$file" != "null" ]]; then
+                echo "Building $image Image"
+                docker buildx build --push -f $file --no-cache -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} --platform=linux/amd64,linux/arm64 .
+                docker build --push -f $file --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}} .
+              fi
+            done < <(yq e '.generates.dockerImages[] | [.name, .buildFunction, .dockerfile] | @tsv' convoy.yaml)
 
-          while IFS=$'\t' read -r image version _; do
-            echo $image
-            echo $version
-            docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
-            docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-            docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
-            docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
-          done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
-
+            while IFS=$'\t' read -r image version _; do
+              echo $image
+              echo $version
+              docker pull ${{env.DOCKERHUB_ORG}}/$image:$version
+              docker tag ${{env.DOCKERHUB_ORG}}/$image:$version ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              docker push ${{vars.TESSELL_DEV_ECR}}/$image:${{env.TAG}}
+              docker buildx imagetools create -t ${{env.DOCKERHUB_ORG}}/$image:${{env.TAG}} ${{env.DOCKERHUB_ORG}}/$image:$version
+            done < <(yq e '.consumes.dockerImages[] | [.name, .version] | @tsv' convoy.yaml)
+  
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -207,7 +207,8 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
+  
+       
   build-plugin:
     runs-on: self-hosted
     needs: find-latest-tag
@@ -231,7 +232,7 @@ jobs:
           chmod +x install-aws.sh
           sudo ./install-aws.sh "v2" "amd64"
           rm install-aws.sh
-
+    
       - run: aws --version
         shell: bash
 
@@ -250,16 +251,16 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
+      
       - name: Extract version
         id: extract-version
-        run: |
+        run: | 
           AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
           TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
           echo "AGENT_VERSION=$AGENT_VERSION" >> $GITHUB_ENV
           echo "TASKHANDLER_VERSION=$TASKHANDLER_VERSION" >> $GITHUB_ENV
           docker system prune --force
-
+      
       - name: Build image
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
@@ -272,7 +273,7 @@ jobs:
                       --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                       --build-arg NEXUS_PROTOCOL=${{ vars.NEXUS_PROTOCOL_LOCAL }} \
                       --build-arg NEXUS_SERVER_ENDPOINT=${{ vars.NEXUS_SERVER_ENDPOINT_LOCAL }} .
-
+          
       - name: Build and push to tessellProd
         if: ${{ (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main')}}
         shell: bash
@@ -294,16 +295,16 @@ jobs:
         uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -311,14 +312,16 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
+  
+    
   post-build-status-to-convoy:
     runs-on: non-build
-    needs: [build-plugin, build-arm-images]
-    if: always()
+    needs: [build-plugin,build-arm-images]
+    if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
+      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -362,10 +365,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-
+          
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-
+          
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -389,7 +392,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-
+      
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -410,17 +413,17 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
-    needs: [build-plugin, build-arm-images]
+    needs: [build-plugin,build-arm-images]
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}

@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       label:
-        description: "Release label"
+        description: 'Release label'
         required: true
         type: string
     outputs:
@@ -16,6 +16,7 @@ on:
         value: ${{ jobs.create-tag-on-merge.outputs.uses_custom_version }}
 
 jobs:
+
   create-tag-on-merge:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     runs-on: non-build
@@ -135,7 +136,7 @@ jobs:
                 new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
                 
               }
-
+            
               // head of the branch needs to be tagged
               sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
 
@@ -165,7 +166,7 @@ jobs:
               console.log('Ref updated.');
             }
             core.setOutput('tag_ref', new_tag) 
-            core.setOutput('uses_custom_version', uses_custom_version)
+            core.setOutput('uses_custom_version', uses_custom_version)  
 
       - name: Tag Output
         id: tag_output
@@ -221,12 +222,12 @@ jobs:
           else
               echo "TAG and LABEL are on different release label. Please check git tag and API response."
               exit 1
-          fi
+          fi   
 
       - name: Slack Notification
         if: failure()
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}

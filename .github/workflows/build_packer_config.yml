@@ -221,7 +221,7 @@ jobs:
           export CURRENT_VERSION_TAG="${{ steps.latest_tag.outputs.tag_ref }}"
           echo $CURRENT_VERSION_TAG
           mkdir -p ~/.packer.d/plugins
-
+          
           validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${{ github.head_ref }} --pipeline_run
 
       - name: Dry Run Input-config

@@ -22,7 +22,7 @@ jobs:
       tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
       uses_custom_version_output: ${{ steps.tag_output.outputs.uses_custom_version }}
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4.1.1
@@ -145,7 +145,7 @@ jobs:
             });
             console.log('Ref updated.');
             core.setOutput('tag_ref', new_tag) 
-            core.setOutput('uses_custom_version', uses_custom_version)
+            core.setOutput('uses_custom_version', uses_custom_version)  
 
       - name: Tag Output
         id: tag_output
@@ -201,14 +201,14 @@ jobs:
           else
               echo "TAG and LABEL are on different release label. Please check git tag and API response."
               exit 1
-          fi
+          fi   
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+           status: ${{ job.status }}
+           steps: ${{ toJson(steps) }}
+           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
         if: failure()
 
       - name: Get PR-Author,subject & body to send email
@@ -216,7 +216,7 @@ jobs:
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -224,7 +224,7 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
+          
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: create-tag-on-merge
@@ -235,7 +235,7 @@ jobs:
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
 
-  push-commit-details-to-convoy:
+  push-commit-details-to-convoy: 
     runs-on: non-build
     needs: create-tag-on-merge
     env:
@@ -263,7 +263,7 @@ jobs:
           USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
         run: |
           python3 - <<EOF
-
+          
           import yaml
           import requests
           import os
@@ -314,7 +314,7 @@ jobs:
                   element["version"] = module_data.get('version')
                   artifacts.append(element)
             return artifacts
-
+          
           def get_artifacts(generates, version):
               artifacts=[]
               for artifact_type, artifact in generates.items():
@@ -339,7 +339,7 @@ jobs:
                       print("Extension Details not present")
                     artifacts.append(element)
               return artifacts
-
+          
           def get_artifact_metadata(yaml_data, type):
             artifactMetadata = {"type": type}
             
@@ -461,7 +461,7 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()

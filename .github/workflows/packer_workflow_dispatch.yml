@@ -48,10 +48,10 @@ jobs:
       - name: Set Python version
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
-
+          python-version: '3.10'
+      
       - name: Setup minio
-        run: |
+        run: |    
           wget https://dl.min.io/client/mc/release/linux-amd64/mc
           sudo mv ./mc /usr/local/bin/mc
           chmod +x /usr/local/bin/mc
@@ -77,13 +77,13 @@ jobs:
           echo "$GITHUB_CONTEXT"
       - name: Get branch name
         shell: bash
-        run: |
+        run: | 
           # SOURCE_BRANCH (PR_SOURCE_BRANCH) is "Use workflow from" in "Run Workflow".
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo $pull_request_number
-
+      
       - name: Get Software Image release
-        if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}
+        if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}  
         shell: bash
         run: |
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
@@ -120,7 +120,7 @@ jobs:
           echo "DEV_BUILD_VERSION=${version}" >> $GITHUB_ENV
 
       - name: Set Label
-        # We do not want this workflow to run when SOURCE_BRANCH (PR_SOURCE_BRANCH) is main or "rel-*" or workflowType is "build.".
+      # We do not want this workflow to run when SOURCE_BRANCH (PR_SOURCE_BRANCH) is main or "rel-*" or workflowType is "build.".
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         shell: bash
         run: |
@@ -149,14 +149,14 @@ jobs:
             LABEL=${{ env.SOURCE_BRANCH }}
           fi
           echo "LABEL=$LABEL" >> $GITHUB_ENV
-
+          
       - name: Get arg for Cloud build type
         shell: bash
         run: |
           echo "CLOUD_BUILD_TYPE_ARG=$(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)" >> $GITHUB_ENV
 
       - name: visible
-        # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
         run: |
           echo BASE_BRANCH= ${{ env.BASE_BRANCH }}
           echo SOURCE_BRANCH= ${{ env.SOURCE_BRANCH }}
@@ -176,6 +176,7 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 -sSL -X GET -G \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json -o software_image_manifest.json
+
 
       - name: Set Pull repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -213,7 +214,7 @@ jobs:
           pip3 install pyopenssl
           pip3 install pyopenssl --upgrade
           pip3 install --force-reinstall setuptools==45.2.0
-
+          
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
@@ -233,14 +234,14 @@ jobs:
           share_aws_artifacts -i $PWD/image_manifest_local.json
 
       - name: Push delta image to Nexus
-        # we do not want to push when the dev starts this workflow from "main" or "rel-*" branches. (the "Use workflow from").
-        # and the label which he/she is comparing to should start with "rel-" and workflow type should be "build" (and not dry_run)
+      # we do not want to push when the dev starts this workflow from "main" or "rel-*" branches. (the "Use workflow from").
+      # and the label which he/she is comparing to should start with "rel-" and workflow type should be "build" (and not dry_run)
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && startsWith(env.LABEL ,'rel-') && inputs.workflowType == 'build' }}
         run: |
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file ./common_manifest.json \
                 ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{ env.LABEL }}/delta-image-manifest/workflow_dispatch/${{ env.SOURCE_BRANCH }}/delta-image-manifest-${{ github.run_id }}.json
-
+      
       # Below part will use the delta generated above and a base software image to generate final soft-image-manifest.
 
       - name: Generate seed data
@@ -250,7 +251,7 @@ jobs:
           export WORKDIR=`pwd`
           cp ./common_manifest.json ./combined_delta_cloud_image_manifest.json
           get_cloud_image_manifest_for_seed
-
+      
       - name: Generate final software manifest.
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
@@ -288,5 +289,5 @@ jobs:
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file $src_file \
                 "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/$dest_path"
-
+          
           push_to_minio $src_file $dest_path
