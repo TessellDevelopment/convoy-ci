@@ -1097,6 +1097,7 @@ terraform_build() {
   mkdir -p $BUILD_DIR
   DIRECTORIES=$(modifiedDir)
   EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
+  echo $DIRECTORIES
   for DIR in $DIRECTORIES
   do
     if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
