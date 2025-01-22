@@ -1127,7 +1127,7 @@ ui_build_and_push() {
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
   set -e
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${VERSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
