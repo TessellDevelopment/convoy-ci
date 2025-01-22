@@ -96,12 +96,12 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-gcpUIBuild() {
-  gcp_ui_build "$@"
+yarnBuild() {
+  yarn_build "$@"
 }
 
-gcpUIBuildAndPush() {
-  gcp_ui_build_and_push "$@"
+yarnBuildAndPush() {
+  yarn_build_and_push "$@"
 }
 
 generateChecksum() {

@@ -270,7 +270,7 @@ frp_build_and_push() {
   set +e
 }
 
-gcp_ui_build() {
+yarn_build() {
   install_node
   set -e
   DIR=${1}
@@ -282,7 +282,7 @@ gcp_ui_build() {
   set +e
 }
 
-gcp_ui_build_and_push() {
+yarn_build_and_push() {
   set -e
   DIR=${1}
   if [ -f "${DIR}/build.sh" ]; then
