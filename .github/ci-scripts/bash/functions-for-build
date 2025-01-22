@@ -551,7 +551,6 @@ install_go_dependencies() {
 }
 
 install_node() {
-  echo "4heelo world"
   export NVM_DIR="$HOME/.nvm"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
   [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
@@ -863,13 +862,6 @@ push_to_gcloud() {
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
   gcloud storage cp ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
-  # gcloud artifacts generic upload \
-  #   --location=${TESSELL_GCP_REGION} \
-  #   --project=${TESSELL_GCP_PROJECT_ID} \
-  #   --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
-  #   --package=${ARTIFACT} \
-  #   --version=${LABEL} --source=${SOURCE} \
-  #   --destination-path=${DESTINATION}
 }
 
 push_to_minio() {
