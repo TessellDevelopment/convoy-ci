@@ -1102,7 +1102,7 @@ terraform_build() {
   for DIR in $DIRECTORIES
   do
     if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
-      ((counter++))  # Increment counter
+      counter=$((counter + 1))
       echo "Loop iteration: $counter"
       echo "building  ${DIR}"
       ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
