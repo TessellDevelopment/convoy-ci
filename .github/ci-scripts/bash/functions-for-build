@@ -839,13 +839,7 @@ push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud artifacts generic upload \
-    --location=${TESSELL_GCP_REGION} \
-    --project=${TESSELL_GCP_PROJECT_ID} \
-    --repository=${TESSELLGCP_ARTIFACT_REGISTRY} \
-    --package=${ARTIFACT} \
-    --version=${LABEL} --source=${SOURCE} \
-    --destination-path=${DESTINATION}
+  gcloud storage cp ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
 }
 
 push_to_minio() {
@@ -1142,6 +1136,28 @@ validate_inputs() {
   done
 }
 
+yarn_build() {
+  install_node
+  set -e
+  DIR=${1}
+  BASE_DIR=$PWD
+  cd ${DIR}
+  yarn install
+  yarn build
+  cd ${BASE_DIR}
+  set +e
+}
+
+yarn_build_and_push() {
+  set -e
+  DIR=${1}
+  if [ -f "${DIR}/build.sh" ]; then
+    ./${DIR}/build.sh
+  fi
+  zip_file_and_push "$@"
+  set +e
+}
+
 zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
@@ -1153,7 +1169,7 @@ zip_file() {
   DIR=${1}
   BASE_DIR=$PWD
   cd ${DIR}
-  zip -r ${BASE_DIR}/${DIR}.zip ./*
+  zip -r ${BASE_DIR}/${DIR}.zip ./
   cd ${BASE_DIR}
   set +e  
 }
@@ -1165,7 +1181,7 @@ zip_file_and_push() {
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "${LATEST_TAG}"
+      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
       generate_checksum "${ARTIFACT}.${EXTENSION}"
     else
       push_release_manifest_artifacts

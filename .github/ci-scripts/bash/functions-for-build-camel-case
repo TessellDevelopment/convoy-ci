@@ -308,6 +308,14 @@ validateInputs() {
   validate_inputs "$@"
 }
 
+yarnBuild() {
+  yarn_build "$@"
+}
+
+yarnBuildAndPush() {
+  yarn_build_and_push "$@"
+}
+
 zipDirectory() {
   zip_directory "$@"
 }
