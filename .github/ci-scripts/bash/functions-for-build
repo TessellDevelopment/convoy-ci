@@ -1117,7 +1117,7 @@ ui_build() {
 }
 
 ui_build_and_push() {
-  set -e
+  set -ex
   ARTIFACT="${1}"
   EXTENSION="${2}"
   TAG=${LATEST_TAG}
