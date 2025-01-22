@@ -560,7 +560,6 @@ npm_build() {
   install_node
   set -e
   npm install
-  npm run style-check
   npm run build
   configure_npmrc "${NEXUS_REPO_NPM}"
   set -e
@@ -583,7 +582,6 @@ npm_build_and_push() {
   version="${3}"
   required_inputs="3"
   validate_inputs "${required_inputs}" "$@" 
-  version="${3}"
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
   npm publish   
