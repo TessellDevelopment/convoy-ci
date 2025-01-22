@@ -1121,9 +1121,6 @@ ui_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   TAG=${LATEST_TAG}
-  if [[ "${VERSION}" != "null" ]]; then
-    TAG=${VERSION}
-  fi
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
   set -ex
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
