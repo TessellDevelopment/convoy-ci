@@ -48,6 +48,10 @@ createTFBackend() {
   create_tf_backend "$@"
 }
 
+configureGoVersion() {
+  configure_go_version "$@"
+}
+
 configureNpmrc() {
   configure_npmrc "$@"
 }
@@ -92,22 +96,6 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-gradlewBuild() {
-  gradlew_build "$@"
-}
-
-gradlewBuildAndPush() {
-  gradlew_build_and_push "$@"
-}
-
-gradlewUIBuild() {
-  gradlew_ui_build "$@"
-}
-
-gradlewUIBuildAndPush() {
-  gradlew_ui_build_and_push "$@"
-}
-
 generateChecksum() {
   generate_checksum "$@"
 }
@@ -120,8 +108,32 @@ goDockerBuildAndPush() {
   go_docker_build_and_push "$@"
 }
 
+goLibraryBuild() {
+  go_library_build "$@"
+}
+
+goLibraryBuildAndPush() {
+  go_library_build_and_push "$@"
+}
+
+gradlewBuild() {
+  gradlew_build "$@"
+}
+
+gradlewBuildAndPush() {
+  gradlew_build_and_push "$@"
+}
+
 gradlewDockerTag() {
   gradlew_docker_tag "$@"
+}
+
+gradlewUIBuild() {
+  gradlew_ui_build "$@"
+}
+
+gradlewUIBuildAndPush() {
+  gradlew_ui_build_and_push "$@"
 }
 
 imageScan(){
@@ -204,6 +216,14 @@ parseAndPushCoverageReportJava() {
   parse_and_push_coverage_report_java "$@"
 }
 
+pushReleaseManifestArtifacts(){
+  push_release_manifest_artifacts "$@"
+}
+
+pushTerraformModules() {
+ push_terraform_modules "$@"
+}
+
 pushToMinio() {
   push_to_minio "$@"
 }
@@ -248,6 +268,14 @@ softwareDefBuildAndPush() {
   software_def_build_and_push "$@"
 }
 
+tailscaleBuild() {
+  tailscale_build "$@"
+}
+
+tailscaleBuildAndPush() {
+  tailscale_build_and_push "$@"
+}
+
 terraformApply() {
   terraform_apply "$@"
 }
@@ -286,6 +314,14 @@ vssTarBuildAndPush() {
 
 validateInputs() {
   validate_inputs "$@"
+}
+
+yarnBuild() {
+  yarn_build "$@"
+}
+
+yarnBuildAndPush() {
+  yarn_build_and_push "$@"
 }
 
 zipDirectory() {

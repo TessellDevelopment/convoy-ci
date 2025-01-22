@@ -37,42 +37,48 @@ jobs:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
 
-  check-commits:
-    if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
-    runs-on: non-build
-    needs: build
-    env:
-      REPO: ${{github.repository}}
-      PR_NUMBER: ${{github.event.number}}
-      GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
-    steps:  
-      - uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
+  # This code in not serving any purpose now other than being a false positive since always() has been added in both check-commits and auto-merge
+    # 1. When DC PR is opened (Have single commit) even if dev-check or build fails since check-commits have always() it'll run and trigger auto merge
+    # 2. WHen DC PR has multiple commits even if check-commits fails since auto-merge has always() it'll still trigger auto-merge when though multiple commits are present
+    # 3. So everything needs to handled by having build and check-approval as required so even if auto-merge is enabled it's not merged without those passing
+    # 4. Always is needed to merge DC in case of no build repos
 
-      - name: Check commits
-        id: get-pr-commits
-        run: |
-          PR_COMMITS=$(curl -L \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
-          echo "Number of commits in PR: $PR_COMMITS"
-          echo "::set-output name=pr_commits::$PR_COMMITS"
+  # check-commits:
+  #   if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
+  #   runs-on: non-build
+  #   needs: build
+  #   env:
+  #     REPO: ${{github.repository}}
+  #     PR_NUMBER: ${{github.event.number}}
+  #     GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+  #   steps:  
+  #     - uses: actions/checkout@v4.1.1
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Check Number of Commits
-        run: |
-          PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
-          if [ "$PR_COMMITS" -eq 1 ]; then
-            echo "One Commit present in DC. Auto merge."
-          else
-            echo "More than one commit present in DC, need approval."
-            exit 1
-          fi
+  #     - name: Check commits
+  #       id: get-pr-commits
+  #       run: |
+  #         PR_COMMITS=$(curl -L \
+  #           -H "Accept: application/vnd.github+json" \
+  #           -H "Authorization: Bearer ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}" \
+  #           -H "X-GitHub-Api-Version: 2022-11-28" \
+  #           ${{vars.GH_API_URL}}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits| jq -r '. | length')
+  #         echo "Number of commits in PR: $PR_COMMITS"
+  #         echo "::set-output name=pr_commits::$PR_COMMITS"
+
+  #     - name: Check Number of Commits
+  #       run: |
+  #         PR_COMMITS=${{ steps.get-pr-commits.outputs.pr_commits }}
+  #         if [ "$PR_COMMITS" -eq 1 ]; then
+  #           echo "One Commit present in DC. Auto merge."
+  #         else
+  #           echo "More than one commit present in DC, need approval."
+  #           exit 1
+  #         fi
     
   auto-merge:
-    needs: check-commits
+    needs: build
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
     secrets: inherit 

@@ -191,3 +191,30 @@ jobs:
               console.error(e);
               process.exit(1);
             }
+
+      - name: Check version in helm-svc-defns
+        if: endsWith(github.repository, '-helm-svc-defns')
+        env:
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          PR_NUMBER: "${{ github.event.pull_request.number }}"
+        run: |
+          CHART_PATH=$(yq eval '.. | select(has("chartPath")) | .chartPath' convoy.yaml)
+          VERSION=$(yq e '.version' "${CHART_PATH}")
+          PREVIOUS_VERSION=$(git show origin/${BASE_BRANCH}:"${CHART_PATH}" | yq e '.version' -)
+
+          PREVIOUS_BASE=${PREVIOUS_VERSION%-*}
+          PREVIOUS_MINOR=${PREVIOUS_BASE##*.}
+          NEW_MINOR=$((PREVIOUS_MINOR + 1))
+
+          if [[ "${BASE_BRANCH}" == rel-* ]]; then
+            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}-${BASE_BRANCH}"
+          else
+            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}"
+          fi
+
+          if [[ "${VERSION}" != "${EXPECTED_VERSION}" ]]; then
+            echo "Error: Version is invalid. Expected: ${EXPECTED_VERSION}, Found: ${VERSION}"
+            gh pr comment "${PR_NUMBER}" --body "Expected version: \`${EXPECTED_VERSION}\`, but found: \`${VERSION}\`. Please update the version correctly."
+            exit 1
+          fi
+          echo "Version validation passed."

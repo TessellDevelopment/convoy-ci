@@ -24,14 +24,13 @@ on:
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-20.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-21.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd-go-22.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
       BRANCH_COVERAGE:
         description: 'Branch coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-20.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-21.outputs.BRANCH_COVERAGE) || (jobs.build-amd-go-22.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-20.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-21.outputs.STATEMENT_COVERAGE) || (jobs.build-amd-go-22.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
-
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
 jobs:
 
   build-ui:
@@ -47,6 +46,10 @@ jobs:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
+      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
+      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -75,7 +78,17 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
+      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
+      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
+      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_UI_ENV_SECRET: ${{secrets.TESSELL_UI_ENV_SECRET}}
     steps:
       - name: Set Repositories for Dev Build
@@ -104,12 +117,38 @@ jobs:
           git pull
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-      
+
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}  
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build
         id: build
@@ -179,6 +218,10 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
+      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
+      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
+      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CI_BRANCH: main
@@ -210,6 +253,10 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
+      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
+      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
+      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
       - name: Set Repositories for Dev Build
@@ -372,19 +419,11 @@ jobs:
             awsConfigureProdAssets
             aws s3 cp $FILE_PATH_LINUX s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
             aws s3 cp $FILE_PATH_WINDOWS s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "$FILE_PATH_LINUX" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-              aws s3 cp "$FILE_PATH_WINDOWS" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-              pushToNexus $FILE_PATH_LINUX "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-              pushToNexus $FILE_PATH_WINDOWS "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "$FILE_PATH_LINUX" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-linux/filebeat-linux-${LATEST_TAG}.tar.gz"
-                pushToMinio "$FILE_PATH_WINDOWS" "minio-ci/tessell-artifacts-$env/${LABEL}/filebeat-windows/filebeat-windows-${LATEST_TAG}.tar.gz"
-              done
-              generateChecksum "filebeat-linux.tar.gz" 
-              generateChecksum "filebeat-windows.tar.gz"
-            fi
+            EXTENSION="tar.gz"
+            ARTIFACT="filebeat-linux"
+            push_release_manifest_artifacts "filebeat-linux.tar.gz" "$FILE_PATH_LINUX"
+            ARTIFACT="filebeat-windows"
+            push_release_manifest_artifacts "filebeat-windows.tar.gz" "$FILE_PATH_WINDOWS"
             set +e
           }
           elasticTarBuild() {
@@ -474,556 +513,8 @@ jobs:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
-  build-amd-go-20:
-    if: ${{ inputs.type == 'amd-go-20' }}
-    runs-on: amd-go-20
-    outputs:
-      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
-      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
-      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-    env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
-    steps:
-    
-      - name: Set Repositories for Dev Build
-        if: ${{ inputs.dev_build }}
-        run: |
-          echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git checkout main
-          git pull
-          git checkout ${{env.CI_BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-
-      - name: Check go Config
-        run: |
-          go version
-          echo $GOPATH
-          echo $GOROOT
-          echo $PATH
-          go env
-      
-      - name: Build
-        id: build
-        shell: bash
-        run: |
-          goLibraryBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            NAME=$(echo "$ARTIFACT" | awk -F '-linux' '{print $1}')
-            if [ "$NAME" == "$ARTIFACT" ]; then
-                NAME=$(echo "$ARTIFACT" | awk -F '-windows' '{print $1}')
-                OS="windows"
-            else
-                OS="linux"
-            fi
-            ENGINE=$(echo "$ARTIFACT" | awk -F "$NAME-$OS" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
-            echo "Name: $NAME, OS: $OS, Engine: $ENGINE"
-            if [[ "$ENGINE" == "null" || -z "$ENGINE" ]]; then
-              make service os=$OS
-            else
-              make service os=$OS engine=$ENGINE
-            fi
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
-            awsConfigureProdAssets
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-            fi
-            set +e
-          }
-          build() {
-            type="$1"
-            check=$(grep "$type" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              return
-            fi
-            version=$(yq '.version' convoy.yaml)
-            export PATH=${PATH}:$GOPATH/bin
-            echo $PATH
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
-            lineNumber=1
-            while :; do
-              echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
-                break
-              fi
-              read -r name buildFunction ext file filePath baseImage <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              echo "filePath: $filePath"
-              echo "baseImage: $baseImage"
-              "${buildFunction}AndPush" $name $ext $version $file $filePath $baseImage
-              echo "$type $name done"
-              echo ------------------------------
-              lineNumber=$((lineNumber+1))
-            done
-            rm artifacts.txt
-          }
-          set +e
-          source ./ci-scripts/bash/functions-for-build
-          ARTIFACT_CHECKSUMS=""
-          BRANCH_COVERAGE=""
-          STATEMENT_COVERAGE=""
-          build "artifacts"
-          build "dockerImages"
-          build "helmCharts"
-          parseAndPushCoverageReport
-          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
-          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
-          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          sudo rm -rf target
-          helm repo remove nexus-prod
-          docker container prune --force
-          docker volume prune --force
-
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-   
-  build-amd-go-21:
-    if: ${{ inputs.type == 'amd-go-21' }}
-    runs-on: amd-go-21
-    outputs:
-      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
-      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
-      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-    env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
-    steps:
-
-      - name: Set Repositories for Dev Build
-        if: ${{ inputs.dev_build }}
-        run: |
-          echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git checkout main
-          git pull
-          git checkout ${{env.CI_BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-
-      - name: Login to docker
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}   
-
-      - name: Check go Config
-        run: |
-          go version
-          echo $GOPATH
-          echo $GOROOT
-          echo $PATH
-          go env
-          
-      - name: Build
-        id: build
-        shell: bash
-        run: |
-          goLibraryBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            EXTENSION="$2"
-            requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
-            NAME=$(echo "$ARTIFACT" | awk -F '-linux' '{print $1}')
-            if [ "$NAME" == "$ARTIFACT" ]; then
-                NAME=$(echo "$ARTIFACT" | awk -F '-windows' '{print $1}')
-                OS="windows"
-            else
-                OS="linux"
-            fi
-            ENGINE=$(echo "$ARTIFACT" | awk -F "$NAME-$OS" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
-            echo "Name: $NAME, OS: $OS, Engine: $ENGINE"
-            if [[ "$ENGINE" == "null" || -z "$ENGINE" ]]; then
-              make service os=$OS
-            else
-              make service os=$OS engine=$ENGINE
-            fi
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "$ARTIFACT.$EXTENSION" "tessell.$NAME" "${LATEST_TAG}"
-            awsConfigureProdAssets
-            aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/$NAME/${LATEST_TAG}/
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "$ARTIFACT.$EXTENSION" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-            fi
-            set +e
-          }
-          tailscaleBuildAndPush() {
-            set -e
-            export GOPROXY=direct
-            export GOSUMDB='sum.golang.org'
-            go env
-            go install tailscale.com/cmd/gitops-pusher@latest
-            export TS_API_KEY=${{ secrets.TS_API_KEY }}
-            export TS_TAILNET=${{ secrets.TS_TAILNET }}
-            gitops-pusher --policy-file ./policy.hujson apply
-            set +e
-          }
-          build() {
-            type="$1"
-            check=$(grep "$type" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              return
-            fi
-            version=$(yq '.version' convoy.yaml)
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
-            lineNumber=1
-            while :; do
-              echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
-                break
-              fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
-              echo "$type $name done"
-              echo ------------------------------
-              lineNumber=$((lineNumber+1))
-            done
-            rm artifacts.txt
-          }
-          set +e
-          source ./ci-scripts/bash/functions-for-build
-          ARTIFACT_CHECKSUMS=""
-          BRANCH_COVERAGE=""
-          STATEMENT_COVERAGE=""
-          build "artifacts"
-          build "dockerImages"
-          build "helmCharts"
-          parseAndPushCoverageReport
-          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
-          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
-          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          sudo rm -rf target
-          helm repo remove nexus-prod
-          docker container prune --force
-          docker volume prune --force
-
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-
-  build-amd-go-22:
-    if: ${{ inputs.type == 'amd-go-22' }}
-    runs-on: amd-go-22
-    outputs:
-      ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
-      BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
-      STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-    env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
-      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
-      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
-      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
-      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
-      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
-    steps:
-
-      - name: Set Repositories for Dev Build
-        if: ${{ inputs.dev_build }}
-        run: |
-          echo "DOCKERHUB_ORG=tesselldev" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_M2=tessell-repos-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_NPM=tessell-repos-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
-          echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git checkout main
-          git pull
-          git checkout ${{env.CI_BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-
-      - name: Set Application Name
-        run: |
-          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
-          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
-            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
-          fi
-
-      - name: Login to docker
-        if: ${{ env.APP_GROUP != env.TESSELL_GCP_APP_NAME }}
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Login gcloud
-        id: auth
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
-          token_format: access_token
-
-      - name: Login to Artifact Registry
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: docker/login-action@v1
-        with:
-          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
-
-      - name: Check go Config
-        run: |
-          go version
-          echo $GOPATH
-          echo $GOROOT
-          echo $PATH
-          go env
-          
-      - name: Build
-        id: build
-        shell: bash
-        run: |
-          build() {
-            type="$1"
-            check=$(grep "$type" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              return
-            fi
-            version=$(yq '.version' convoy.yaml)
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
-            lineNumber=1
-            while :; do
-              echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
-                break
-              fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
-              echo "$type $name done"
-              echo ------------------------------
-              lineNumber=$((lineNumber+1))
-            done
-            rm artifacts.txt
-          }
-          set +e
-          source ./ci-scripts/bash/functions-for-build
-          ARTIFACT_CHECKSUMS=""
-          BRANCH_COVERAGE=""
-          STATEMENT_COVERAGE=""
-          build "artifacts"
-          build "dockerImages"
-          parseAndPushCoverageReport
-          echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
-          echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
-          echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
-
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          sudo rm -rf target
-          helm repo remove nexus-prod
-          docker container prune --force
-          docker volume prune --force
-
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-
   build-amd:
-    if: ${{ inputs.type == 'amd' }}
+    if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
     runs-on: self-hosted
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
@@ -1037,6 +528,10 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
+      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
+      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
+      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: main
@@ -1077,7 +572,23 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
+      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
+      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
+      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
       TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_ARTIFACTS_TF_DEV_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
+      TESSELL_ARTIFACTS_TF_QA_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
+      TESSELL_ARTIFACTS_TF_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
+      TESSELL_ARTIFACTS_TF_PROD_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TS_API_KEY: ${{ secrets.TS_API_KEY }}
+      TS_TAILNET: ${{ secrets.TS_TAILNET }}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -1106,6 +617,15 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Check specific file changes
         id: changed-files
         uses: tj-actions/changed-files@v42.0.2
@@ -1124,7 +644,24 @@ jobs:
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}   
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push
         id: build
@@ -1151,15 +688,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/agent/${LATEST_TAG}/"
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              pushToNexus "package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-            fi
+            push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
             set +e
           }
           awsConfigureTessellArtifacts() {
@@ -1202,21 +731,13 @@ jobs:
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
             installPythonDependencies $ARTIFACT
-            awsConfigureProdAssets
             if [ -f ./$ARTIFACT/requirements.txt ]; then python3 -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple; fi
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
+            awsConfigureProdAssets
             aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/plugins/${LATEST_TAG}/"
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-            fi
+            push_release_manifest_artifacts
             set +e
           }
           functionBuildAndPush() {
@@ -1225,7 +746,6 @@ jobs:
             EXTENSION="$2"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            awsConfigureProdAssets
             changed_dir=false
             if [ ! -f "Makefile" ]; then
               cd tessell; 
@@ -1234,19 +754,12 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
+            awsConfigureProdAssets
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
             aws s3 cp "$ARTIFACT.tar" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/functions/${LATEST_TAG}/"
-            if ! ${DEV_BUILD}; then
-              aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              pushToNexus "$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-              if $changed_dir; then
-                cd ..;
-              fi
+            push_release_manifest_artifacts
+            if $changed_dir; then
+              cd ..;
             fi
             set +e
           }
@@ -1362,15 +875,7 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
             aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/pushprox/$VERSION/
-            if ! ${DEV_BUILD}; then
-              aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION
-              pushToNexus "client-package/$ARTIFACT.$EXTENSION" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "client-package/$ARTIFACT.$EXTENSION" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum "$ARTIFACT.$EXTENSION"
-            fi
+            push_release_manifest_artifacts "${ARTIFACT}.${EXTENSION}" "client-package/${ARTIFACT}.${EXTENSION}"
             set +e
           }
           makeImageAndPush() {
@@ -1406,18 +911,7 @@ jobs:
             else
               ~/opa build policies --output bundles/${file_name}
             fi
-            awsConfigureProdAssets
-            aws s3 cp "bundles/${file_name}" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-            if ! ${DEV_BUILD}; then
-              awsConfigureTessellArtifacts
-              aws s3 cp "bundles/${file_name}" "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              pushToNexus "./bundles/${file_name}" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              for env in "${environments[@]}"
-              do
-                pushToMinio "bundles/${file_name}" "minio-ci/tessell-artifacts-$env/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXTENSION"
-              done
-              generateChecksum ${file_name}
-            fi
+            push_release_manifest_artifacts ${file_name} "bundles/${file_name}"
             set +e
           }
           pythonApiClientBuildAndPush() {
@@ -1461,6 +955,9 @@ jobs:
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
             MODIFIED_DIRECTORIES=$(modifiedDir)
+            if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
+              MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
+            fi
             if [[ ${BASE_BRANCH} == 'main' ]]; then
               manifestLabel="latest-main"
             else 
@@ -1488,6 +985,7 @@ jobs:
             done
             for DIR in $MODIFIED_DIRECTORIES
             do
+              DIR=${DIR%/}
               if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
                 ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
@@ -1508,18 +1006,7 @@ jobs:
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
-                mvnDeploy "$DIR" "zip" "$ARTIFACT_FILE" "tessell.terraform_modules" "$VERSION"
-                awsConfigureDevqaInfra
-                aws s3 cp "$ARTIFACT_FILE" "s3://tessell-terraform-modules-terls/$DIR/$VERSION/"
-                pushToNexus "$ARTIFACT_FILE" "${{env.NEXUS_ARTIFACT_REPO}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_DEV}} ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_QA}} ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_STAGE}} ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                configureAndPushAWS ${{vars.AWS_ACCOUNT_TESSELL_PROD}} ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}} "$ARTIFACT_FILE" "s3://${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                for env in "${environments[@]}"
-                do
-                  pushToMinio "$ARTIFACT_FILE" "minio-ci/tessell-artifacts-$env/${LABEL}/$DIR/$DIR-$VERSION.zip"
-                done
+                pushTerraformModules
               fi
             done
             ls -lrta $BUILD_DIR
@@ -1565,6 +1052,7 @@ jobs:
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
+          configureGoVersion
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
@@ -1633,10 +1121,16 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELLOPS_ARTIFACTS_DEV_S3: ${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps: 
 
       - name: Set Repositories for Dev Build
@@ -1656,6 +1150,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+            export DOCKERHUB_ORG=$TESSELL_GCP_REGION-docker.pkg.dev/$TESSELL_GCP_PROJECT_ID/$TESSELL_GCP_DOCKERHUB_ORG
+            echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
+          fi
+
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
@@ -1669,6 +1172,23 @@ jobs:
       - name: Login to Docker
         run : |
           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Login to Artifact Registry
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push OPS
         id: build
