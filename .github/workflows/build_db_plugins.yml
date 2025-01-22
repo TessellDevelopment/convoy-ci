@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       plugin_base_dir:
-        description: 'plugin directory'
+        description: "plugin directory"
         required: true
         type: string
   # Allows you to run this workflow manually from the Actions tab
@@ -30,11 +30,10 @@ jobs:
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
-
 
       - name: Get branch name
         shell: bash
@@ -64,7 +63,7 @@ jobs:
         if: ${{ inputs.plugin_base_dir }}
         run: |
           if [ -f ./${{ inputs.plugin_base_dir }}/requirements.txt ]; then python3 -m pip install -r ./${{ inputs.plugin_base_dir }}/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}; fi
-       
+
       - name: Install AWS CLI
         run: |
           curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh && \
@@ -80,7 +79,7 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.PROD_ASSET_ACCESS_KEY }}
           aws configure set aws_secret_access_key ${{ secrets.PROD_ASSET_SECRET_KEY }}
           aws configure set region ap-south-1
-  
+
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -108,7 +107,7 @@ jobs:
             -Pnexus_push_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
-            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}" 
+            -Pnexus_push_repo_m2="${{ env.NEXUS_PUSH_REPOS_M2 }}"
 
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -153,15 +152,13 @@ jobs:
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
 
-
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()  
+    if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -205,10 +202,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-          
+
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-          
+
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -232,7 +229,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-      
+
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -250,13 +247,13 @@ jobs:
           print("POST request Complete")
           EOF
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-        if: failure()
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   with:
+      #       status: ${{ job.status }}
+      #       steps: ${{ toJson(steps) }}
+      #       channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+      #   if: failure()
 
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
