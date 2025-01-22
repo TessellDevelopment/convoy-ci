@@ -821,18 +821,22 @@ push_release_manifest_artifacts() {
 }
 
 push_terraform_modules() {
-  mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
-  push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  aws_configure_devqa_infra
-  aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
-  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  for ENV in "${environments[@]}"
-  do
-    push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-  done
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "$ARTIFACT_FILE" "gs://tessellgcp-artifacts/${LABEL}/$DIR/$DIR-$VERSION.zip"
+  else
+    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
+    push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    aws_configure_devqa_infra
+    aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    for ENV in "${environments[@]}"
+    do
+      push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    done
+  fi
 }
 
 push_to_gcloud() {
