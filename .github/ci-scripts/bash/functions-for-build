@@ -987,6 +987,7 @@ ui_build_and_push() {
   set -e
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${VERSION}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
 
