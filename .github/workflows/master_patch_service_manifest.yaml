@@ -2,20 +2,18 @@
 name: Service Manifest PATCH API to Convoy
 on:
   workflow_call:
-    
+
 jobs:
-  
   patch-service-manifest-to-convoy:
     runs-on: non-build
-    env: 
+    env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
     steps:
-
       - name: PATCH API to Convoy
         run: |
           set -e
-          RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/service-manifest" \
+          RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/service-manifest" \
             --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}" \
             --data '')
           echo "$RESPONSE"
@@ -24,12 +22,11 @@ jobs:
           else
             exit 1
           fi
-          
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
-          

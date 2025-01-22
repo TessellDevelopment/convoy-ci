@@ -6,10 +6,10 @@ on:
   workflow_call:
     inputs:
       java_17:
-        description: 'Making runner to run this workflow on java-17'
+        description: "Making runner to run this workflow on java-17"
         required: false
         type: string
-        default: 'false'
+        default: "false"
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -41,16 +41,16 @@ jobs:
         shell: bash
         run: |
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
-          
+
       - name: Set java home for java_17
-        if:  ${{ inputs.java_17 == 'true' }} 
+        if: ${{ inputs.java_17 == 'true' }}
         shell: bash
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
           echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
-          
-      - name: check whether java varibale 
-        if:  ${{ inputs.java_17 == 'true' }} 
+
+      - name: check whether java varibale
+        if: ${{ inputs.java_17 == 'true' }}
         shell: bash
         run: |
           echo $JAVA_HOME
@@ -81,16 +81,16 @@ jobs:
         uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
+
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -98,16 +98,14 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-  
-          
+
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()  
+    if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -126,7 +124,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -151,10 +149,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-          
+
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-          
+
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -178,7 +176,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-      
+
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -199,9 +197,9 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
@@ -209,9 +207,7 @@ jobs:
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
+      body: ${{ needs.build.outputs.mail_body_output }}
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            
