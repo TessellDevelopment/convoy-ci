@@ -135,39 +135,6 @@ convoy_codegen_build_and_push() {
   set +e
 }
 
-ui_build() {
-  install_node
-  set -e
-  ARTIFACT="${1}"
-  EXTENSION="${2}"
-  VERSION="${3}"
-  npm install
-  npm run style-check
-  npm run build
-  cd build
-  zip -r ../${ARTIFACT}.${EXTENSION}  *
-  cd ..
-  ls -lrta ${ARTIFACT}.${EXTENSION}
-  set +e
-}
-
-ui_build_and_push() {
-  set -e
-  ARTIFACT="${1}"
-  EXTENSION="${2}"
-  TAG=${LATEST_TAG}
-  if [[ "${VERSION}" != "null" ]]; then
-    TAG=${VERSION}
-  fi
-  ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
-  set -e
-  ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${VERSION}"
-  set +e
-}
-
-
-
 convoy_go_library_build() {
   set -e
   go build ./...
@@ -996,6 +963,37 @@ tsm_zip_build_and_push() {
   required_inputs="1 2 3"
   validate_inputs "${required_inputs}" "$@" 
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "tessell.tsm.infra" "${VERSION}"
+  set +e
+}
+
+ui_build() {
+  install_node
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  npm install
+  npm run style-check
+  npm run build
+  cd build
+  zip -r ../${ARTIFACT}.${EXTENSION}  *
+  cd ..
+  ls -lrta ${ARTIFACT}.${EXTENSION}
+  set +e
+}
+
+ui_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  TAG=${LATEST_TAG}
+  if [[ "${VERSION}" != "null" ]]; then
+    TAG=${VERSION}
+  fi
+  ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
+  set -e
+  ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${VERSION}"
   set +e
 }
 
