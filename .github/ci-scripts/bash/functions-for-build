@@ -1098,9 +1098,12 @@ terraform_build() {
   DIRECTORIES=$(modifiedDir)
   EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
   echo $DIRECTORIES
+  counter=0  # Initialize counter
   for DIR in $DIRECTORIES
   do
     if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then 
+      ((counter++))  # Increment counter
+      echo "Loop iteration: $counter"
       echo "building  ${DIR}"
       ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
       cd $BASE_DIR/$DIR
