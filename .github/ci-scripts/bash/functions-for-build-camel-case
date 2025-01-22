@@ -284,6 +284,10 @@ terraformApplyAndPush() {
   terraform_apply_and_push "$@"
 }
 
+terraformBuildAndPush() {
+  terraform_build_and_push "$@"
+}
+
 terraformZipBuild() {
   terraform_zip_build "$@"
 }
