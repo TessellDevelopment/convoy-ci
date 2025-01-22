@@ -96,14 +96,6 @@ frpBuildAndPush() {
   frp_build_and_push "$@"
 }
 
-yarnBuild() {
-  yarn_build "$@"
-}
-
-yarnBuildAndPush() {
-  yarn_build_and_push "$@"
-}
-
 generateChecksum() {
   generate_checksum "$@"
 }
@@ -314,6 +306,14 @@ vssTarBuildAndPush() {
 
 validateInputs() {
   validate_inputs "$@"
+}
+
+yarnBuild() {
+  yarn_build "$@"
+}
+
+yarnBuildAndPush() {
+  yarn_build_and_push "$@"
 }
 
 zipDirectory() {
