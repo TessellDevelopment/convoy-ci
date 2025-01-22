@@ -44,13 +44,13 @@ jobs:
         run: |
           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
           go install golang.org/x/tools/cmd/goimports@latest
-
+          
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
+          password: ${{ secrets.DOCKER_PASSWORD }}    
+     
       - name: Make clients
         run: |
           echo "Building the service"
@@ -62,7 +62,7 @@ jobs:
           else
             ./setup -g -i
           fi
-
+          
       - name: tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
@@ -82,9 +82,9 @@ jobs:
       - uses: actions/upload-artifact@v4.3.1
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         with:
-          name: image-scan-report
-          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-
+            name: image-scan-report
+            path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+            
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
@@ -185,7 +185,8 @@ jobs:
         run: |
           echo "DOCKERHUB_ORG_DEV=${{env.DOCKERHUB_ORG}}" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-
+          
+          
       - name: Docker Image tag and check for flyway
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -199,7 +200,8 @@ jobs:
           else
             echo "The 'flyway' directory does not exists in this repository."
           fi
-
+      
+      
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
@@ -208,7 +210,8 @@ jobs:
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-
+      
+          
       - name: sign and push flyway image to docker hub
         if: ${{ env.FLYWAY_PUSH_OUTPUT == 'success' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
@@ -217,6 +220,7 @@ jobs:
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
+            
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -231,7 +235,7 @@ jobs:
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
-
+ 
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -239,14 +243,16 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-
+  
+          
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()
+    if: always()  
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
+      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -290,10 +296,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-
+          
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-
+          
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -317,7 +323,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-
+      
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -335,20 +341,20 @@ jobs:
           print("POST request Complete")
           EOF
 
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   with:
-      #       status: ${{ job.status }}
-      #       steps: ${{ toJson(steps) }}
-      #       channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-      #   if: failure()
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+            status: ${{ job.status }}
+            steps: ${{ toJson(steps) }}
+            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
 
   send-mail:
     uses: ./.github/workflows/email_dc.yaml
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }}
+      body: ${{ needs.build.outputs.mail_body_output }} 
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
