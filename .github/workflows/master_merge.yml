@@ -2,12 +2,11 @@
 name: Master CI Merge Workflows
 on:
   workflow_call:
-    
-jobs:
 
+jobs:
   check-label-cut-status:
     runs-on: self-hosted
-    env: 
+    env:
       REDIS_HOSTNAME: ${{ vars.REDIS_HOSTNAME }}
       REDIS_PASSOWRD: ${{ secrets.REDIS_PASSWORD }}
     steps:
@@ -19,7 +18,7 @@ jobs:
             echo "Label cut is IN_PROGRESS. Exiting the merge workflow. Please retry once label cut is complete."
             exit 1
           fi
-      
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -30,7 +29,7 @@ jobs:
 
   file-check:
     needs: check-label-cut-status
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
 
   runner-check:
@@ -43,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
       - name: Get Label
         id: get-label
         shell: bash
@@ -51,7 +50,7 @@ jobs:
           if [ -f convoy.yaml ]; then
             if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
               APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
               RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
               echo "$RESPONSE"
               LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
@@ -68,24 +67,24 @@ jobs:
             fi
            else
             echo "convoy.yaml not found"
-           fi 
-          
+           fi
+
       - name: Determine runner type from Convoy
         id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
-  
+
   create-tag:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
     with:
       label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
@@ -93,13 +92,13 @@ jobs:
 
   find-latest-tag:
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
 
   build:
-    needs: [runner-check,find-latest-tag]
+    needs: [runner-check, find-latest-tag]
     if: needs.file-check.outputs.github-changes == 'false'
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
@@ -108,8 +107,8 @@ jobs:
 
   post-build-to-convoy:
     if: always()
-    needs: [file-check,find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
+    needs: [file-check, find-latest-tag, build, runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
     with:
       ARTIFACT_GENERATED: ${{ needs.file-check.outputs.github-changes == 'false' }}
@@ -118,11 +117,11 @@ jobs:
       LABEL: ${{needs.runner-check.outputs.label}}
 
   post-coverage-to-convoy:
-    needs: [find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
+    needs: [find-latest-tag, build, runner-check]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
     with:
-      BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      BRANCH_COVERAGE: ${{needs.build.outputs.BRANCH_COVERAGE}}
       LABEL: ${{needs.runner-check.outputs.label}}
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
       TAG: ${{needs.find-latest-tag.outputs.tag}}
@@ -130,11 +129,11 @@ jobs:
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
     needs: build
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
 
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit

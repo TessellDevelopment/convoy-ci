@@ -4,22 +4,20 @@ on:
   workflow_call:
 
 jobs:
-
   dev-checks:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
 
   version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit
 
   runner-check:
     runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
-    needs: [dev-checks,version-check]
+    needs: [dev-checks, version-check]
     steps:
-
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
@@ -32,16 +30,16 @@ jobs:
 
   build:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     with:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
 
   # This code in not serving any purpose now other than being a false positive since always() has been added in both check-commits and auto-merge
-    # 1. When DC PR is opened (Have single commit) even if dev-check or build fails since check-commits have always() it'll run and trigger auto merge
-    # 2. WHen DC PR has multiple commits even if check-commits fails since auto-merge has always() it'll still trigger auto-merge when though multiple commits are present
-    # 3. So everything needs to handled by having build and check-approval as required so even if auto-merge is enabled it's not merged without those passing
-    # 4. Always is needed to merge DC in case of no build repos
+  # 1. When DC PR is opened (Have single commit) even if dev-check or build fails since check-commits have always() it'll run and trigger auto merge
+  # 2. WHen DC PR has multiple commits even if check-commits fails since auto-merge has always() it'll still trigger auto-merge when though multiple commits are present
+  # 3. So everything needs to handled by having build and check-approval as required so even if auto-merge is enabled it's not merged without those passing
+  # 4. Always is needed to merge DC in case of no build repos
 
   # check-commits:
   #   if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
@@ -51,7 +49,7 @@ jobs:
   #     REPO: ${{github.repository}}
   #     PR_NUMBER: ${{github.event.number}}
   #     GITHUB_TOKEN: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
-  #   steps:  
+  #   steps:
   #     - uses: actions/checkout@v4.1.1
   #       with:
   #         fetch-depth: 0
@@ -76,15 +74,15 @@ jobs:
   #           echo "More than one commit present in DC, need approval."
   #           exit 1
   #         fi
-    
+
   auto-merge:
     needs: build
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
-    secrets: inherit 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-2939_gcp_tf_chnages_testing
+    secrets: inherit
 
   send-mail:
     needs: auto-merge
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-2939_gcp_tf_chnages_testing
     secrets: inherit

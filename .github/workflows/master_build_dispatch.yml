@@ -1,77 +1,77 @@
 ---
-  name: Master CI Build Dispatch Workflows
-  on:
-    workflow_call:
- 
-  jobs:
-    build-file:
-      runs-on: non-build
-      outputs:
-        type: ${{steps.build-type.outputs.type}}
-        label: ${{steps.get-label.outputs.label}}
-        dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4.1.1
-          with:
-            fetch-depth: 0
+name: Master CI Build Dispatch Workflows
+on:
+  workflow_call:
 
-        - name: Get Label
-          id: get-label
-          shell: bash
-          run: |
-            if [ -f convoy.yaml ]; then
-              if [[ "${{ github.ref_name}}" == "main" ]]; then
-                APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-                URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-                RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
-                echo "$RESPONSE"
-                LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-                echo "$LABEL"
-                if [[ $LABEL == rel-* ]]; then
-                  echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
-                else
-                  echo "Response: $LABEL"
-                  echo "Label does not start with 'rel'. Check response."
-                  exit 1 
-                fi
+jobs:
+  build-file:
+    runs-on: non-build
+    outputs:
+      type: ${{steps.build-type.outputs.type}}
+      label: ${{steps.get-label.outputs.label}}
+      dev_build: ${{steps.dev-dispatch.outputs.dev_build}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Get Label
+        id: get-label
+        shell: bash
+        run: |
+          if [ -f convoy.yaml ]; then
+            if [[ "${{ github.ref_name}}" == "main" ]]; then
+              APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+              URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
+              echo "$RESPONSE"
+              LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
+              echo "$LABEL"
+              if [[ $LABEL == rel-* ]]; then
+                echo "LABEL=$LABEL" >> $GITHUB_OUTPUT
               else
-                echo "LABEL=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+                echo "Response: $LABEL"
+                echo "Label does not start with 'rel'. Check response."
+                exit 1 
               fi
             else
-              echo "convoy.yaml not found"
-            fi 
-          
-        - name: Determine build type from Convoy
-          id: build-type
-          run: |
-            runner=$(yq '.runner' convoy.yaml)
-            echo "type=$runner" >> $GITHUB_OUTPUT
-
-        - name: Determine dev workflow dispatch
-          id: dev-dispatch
-          run: |
-            if [[ "${{ github.ref_name}}" == "main" || "${{ github.ref_name}}" == rel-* ]]; then
-              echo "Not a developer build. Finding latest git tag and running dispatch build."
-              echo "dev_build=false" >> $GITHUB_OUTPUT
-            else
-              echo "Dev branch detected. Constructing dev branch tag and running dispatch build."
-              echo "dev_build=true" >> $GITHUB_OUTPUT
+              echo "LABEL=${{ github.ref_name }}" >> $GITHUB_OUTPUT
             fi
-  
-    find-latest-tag:
-      needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
-      secrets: inherit
-      with:
-        dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
-  
-    build:
-      needs: [build-file,find-latest-tag]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
-      secrets: inherit
-      with:
-        type: ${{needs.build-file.outputs.type}}
-        tag: ${{needs.find-latest-tag.outputs.tag}}
-        label: ${{needs.build-file.outputs.label}}
-        dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
+          else
+            echo "convoy.yaml not found"
+          fi
+
+      - name: Determine build type from Convoy
+        id: build-type
+        run: |
+          runner=$(yq '.runner' convoy.yaml)
+          echo "type=$runner" >> $GITHUB_OUTPUT
+
+      - name: Determine dev workflow dispatch
+        id: dev-dispatch
+        run: |
+          if [[ "${{ github.ref_name}}" == "main" || "${{ github.ref_name}}" == rel-* ]]; then
+            echo "Not a developer build. Finding latest git tag and running dispatch build."
+            echo "dev_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "Dev branch detected. Constructing dev branch tag and running dispatch build."
+            echo "dev_build=true" >> $GITHUB_OUTPUT
+          fi
+
+  find-latest-tag:
+    needs: [build-file]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-2939_gcp_tf_chnages_testing
+    secrets: inherit
+    with:
+      dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
+
+  build:
+    needs: [build-file, find-latest-tag]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-2939_gcp_tf_chnages_testing
+    secrets: inherit
+    with:
+      type: ${{needs.build-file.outputs.type}}
+      tag: ${{needs.find-latest-tag.outputs.tag}}
+      label: ${{needs.build-file.outputs.label}}
+      dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}

@@ -6,11 +6,11 @@ on:
   workflow_call:
     inputs:
       java_17:
-        description: 'Making runner to run this workflow on java-17'
+        description: "Making runner to run this workflow on java-17"
         required: false
         type: string
-        default: 'false'
-        
+        default: "false"
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -42,16 +42,16 @@ jobs:
         run: |
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-component" >> $GITHUB_ENV
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-          
+
       - name: Set java home for java_17
-        if:  ${{ inputs.java_17 == 'true' }} 
+        if: ${{ inputs.java_17 == 'true' }}
         shell: bash
         run: |
           echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
           echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
-          
-      - name: check whether java varibale 
-        if:  ${{ inputs.java_17 == 'true' }} 
+
+      - name: check whether java varibale
+        if: ${{ inputs.java_17 == 'true' }}
         shell: bash
         run: |
           echo $JAVA_HOME
@@ -63,7 +63,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Build with Gradle
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
@@ -80,7 +80,7 @@ jobs:
             -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}" \
             -Pnexus_pull_repo_m2="${{ env.NEXUS_PULL_REPOS_M2 }}" \
             -Pdockerhub_org="${{ env.DOCKERHUB_ORG }}"
-            
+
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
@@ -94,7 +94,7 @@ jobs:
             else{
                core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-            
+
       - name: Get tags
         uses: nick-fields/retry@v2.8.1
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -113,8 +113,7 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-        
-            
+
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
         id: latest_tag
@@ -175,31 +174,29 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-            
+
       - name: tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
           docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest ${{ env.DOCKER_IMAGE_NAME }}:scan
-
 
       - name: Docker image scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         id: docker-image-scan
         uses: azure/container-scan@v0.1
         with:
-           severity-threshold: CRITICAL
-           image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
-           username: ${{ secrets.DOCKER_USERNAME }}
-           password: ${{ secrets.DOCKER_PASSWORD }}   
-           
-      - name: upload image scan report 
+          severity-threshold: CRITICAL
+          image-name: ${{ env.DOCKER_IMAGE_NAME }}:scan
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: upload image scan report
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         uses: actions/upload-artifact@v4.3.1
         with:
-           name: image-scan-report
-           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-           
-     
+          name: image-scan-report
+          path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
+
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
@@ -207,23 +204,22 @@ jobs:
           image-ref: "${{ env.DOCKERHUB_ORG }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}"
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
-          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}  
-          
+          private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: ${{ failure() && (startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main') }}
         with:
-           status: ${{ job.status }}
-           steps: ${{ toJson(steps) }}
-           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
 
       - name: Get PR-Author,subject & body to send email
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
+
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -231,16 +227,14 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-  
-          
+
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()  
+    if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -259,7 +253,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -284,10 +278,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-          
+
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-          
+
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -311,7 +305,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-      
+
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -332,9 +326,9 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
@@ -342,9 +336,7 @@ jobs:
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
+      body: ${{ needs.build.outputs.mail_body_output }}
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            

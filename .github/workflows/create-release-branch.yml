@@ -1,6 +1,6 @@
 ---
 name: Create Tessell Release Branch
-on: 
+on:
   workflow_dispatch:
     inputs:
       organisation:
@@ -37,7 +37,7 @@ jobs:
     runs-on: self-hosted
     env:
       DEFAULT_ORGANISATION: TessellDevelopment
-      DEFAULT_BRANCH: main
+      DEFAULT_BRANCH: TDEVOPS-2939_gcp_tf_chnages_testing
     name: Build Repository
     needs: find_repos_to_build
     strategy:

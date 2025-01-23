@@ -37,7 +37,7 @@ jobs:
           if [[ "${{env.SOURCE_BRANCH}}" == "main" ]]; then
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
             echo "$RESPONSE"
@@ -175,7 +175,7 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-      
+
       - name: Validate Label
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
@@ -186,22 +186,22 @@ jobs:
           else
               echo "TAG and LABEL are on different release label. Please check git tag and API response."
               exit 1
-          fi   
+          fi
 
       - name: Build Package
         run: |
-            opa build policies --output bundles/opa-policies.tar.gz
+          opa build policies --output bundles/opa-policies.tar.gz
 
       - name: Push to repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-            mkdir -p $HOME/.m2
-            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-            cat $HOME/.m2/settings.xml
+          mkdir -p $HOME/.m2
+          cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+          cat $HOME/.m2/settings.xml
 
-            curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
-                  --upload-file ./bundles/opa-policies.tar.gz \
-                  ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/opa-policies/opa-policies-${{ steps.latest_tag.outputs.tag_ref }}.tar.gz
+          curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
+                --upload-file ./bundles/opa-policies.tar.gz \
+                ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_ARTIFACT_REPO}/${{env.LABEL}}/opa-policies/opa-policies-${{ steps.latest_tag.outputs.tag_ref }}.tar.gz
 
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -222,7 +222,7 @@ jobs:
         run: |
           echo "MAILID=$(git log -1 '${{ github.event.pull_request.head.sha }}' --pretty=format:'%ae')" >> $GITHUB_ENV
           echo "BODY=JOB_STATUS : ${{ job.status }} %0A WORKFLOW : ${{ github.workflow }} %0A EVENT : ${{ github.event_name }} %0A BRANCH : ${{ env.SOURCE_BRANCH }} %0A COMMIT_ID : ${{ github.sha }} %0A REPO : ${{ github.repository }}" >> $GITHUB_ENV
- 
+
       - name: sending output
         if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
         id: mail_info
@@ -230,16 +230,14 @@ jobs:
           echo "mail_id=${{ env.MAILID }}" >> $GITHUB_OUTPUT
           echo "mail_subject=***${{ job.status }}*** || ${{ github.workflow }}  ||  ${{ github.repository }} " >> $GITHUB_OUTPUT
           echo "mail_body=${{ env.BODY }}" >> $GITHUB_OUTPUT
-        
 
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()  
+    if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -258,7 +256,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -283,10 +281,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-          
+
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-          
+
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -310,7 +308,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-      
+
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -331,9 +329,9 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
 
   send-mail:
@@ -341,9 +339,7 @@ jobs:
     needs: build
     with:
       subject: ${{ needs.build.outputs.mail_subject_output }}
-      body: ${{ needs.build.outputs.mail_body_output }} 
+      body: ${{ needs.build.outputs.mail_body_output }}
       to: ${{ needs.build.outputs.mail_id_output }}
     secrets: inherit
     if: ${{ failure() && contains(github.event.pull_request.head.ref, 'double_commit') }}
-
-            

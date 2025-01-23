@@ -41,23 +41,23 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
       - name: Setup Go
         uses: actions/setup-go@v2
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          java-version: "17"
+          distribution: "adopt"
 
       - name: Install dependencies
         run: |
-           git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-           go version
-           go install golang.org/x/tools/cmd/goimports@latest
-           which go
-          
+          git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          go version
+          go install golang.org/x/tools/cmd/goimports@latest
+          which go
+
       - name: Install Mage
         run: |
           git clone https://github.com/magefile/mage
@@ -88,23 +88,22 @@ jobs:
           cd filebeat
           mage package
           cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
-          
+
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3.0.0
-          
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}    
-          
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: docker build
         run: |
           cd filebeat
-          docker build -t  ${{ env.IMAGE_NAME }}  .   
-          
+          docker build -t  ${{ env.IMAGE_NAME }}  .
+
       - name: getting commit id for workflow_dispatch
         uses: actions/github-script@v7.0.1
         id: find_commit
@@ -118,7 +117,7 @@ jobs:
             else{
                 core.setOutput('commit_id', "${{ github.event.after }}" )
             }
-              
+
       - name: Get tags
         uses: nick-fields/retry@v3.0.0
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -137,7 +136,6 @@ jobs:
             echo "Tag is present: $latest_tags"       
             for tag in $latest_tags; do tag_arr+=($tag); done
             echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
-      
 
       - name: Find latest tag
         uses: actions/github-script@v7.0.1
@@ -199,8 +197,7 @@ jobs:
               process.exit(1);
             }
             core.setOutput('tag_ref', latest_tag)
-            
-            
+
       - name: creating tar files
         run: |
           PACKAGES_DIR=./filebeat/build/distributions/
@@ -216,26 +213,26 @@ jobs:
           pushd $PACKAGES_DIR
           tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
           popd
-          
+
       - name: steps to upload tar files to nexus
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         run: |
-            mkdir -p $HOME/.m2
-            cp .github/scripts/settings.xml $HOME/.m2/settings.xml
-            cat $HOME/.m2/settings.xml
-            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-              -DgroupId=tessell.filebeat -DartifactId=filebeat-linux -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-              -DgeneratePom=true -Dpackaging=tar.gz \
-              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
-              -Dfile=./filebeat/build/distributions/filebeat-linux.tar.gz -DrepositoryId=nexus
-            cat $HOME/.m2/settings.xml
-            mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
-              -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
-              -DgroupId=tessell.filebeat -DartifactId=filebeat-windows -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
-              -DgeneratePom=true -Dpackaging=tar.gz \
-              -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
-              -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
+          mkdir -p $HOME/.m2
+          cp .github/scripts/settings.xml $HOME/.m2/settings.xml
+          cat $HOME/.m2/settings.xml
+          mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+            -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+            -DgroupId=tessell.filebeat -DartifactId=filebeat-linux -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+            -DgeneratePom=true -Dpackaging=tar.gz \
+            -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+            -Dfile=./filebeat/build/distributions/filebeat-linux.tar.gz -DrepositoryId=nexus
+          cat $HOME/.m2/settings.xml
+          mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_M2} \
+            -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
+            -DgroupId=tessell.filebeat -DartifactId=filebeat-windows -Dversion=${{ steps.latest_tag.outputs.tag_ref }} \
+            -DgeneratePom=true -Dpackaging=tar.gz \
+            -Durl=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2} \
+            -Dfile=./filebeat/build/distributions/filebeat-windows.tar.gz -DrepositoryId=nexus
 
       - name: Upload tar file to S3 Bucket
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
@@ -244,24 +241,22 @@ jobs:
           aws s3 cp ./filebeat/build/distributions/filebeat-windows.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
           aws s3 cp ./filebeat/build/distributions/filebeat-linux.tar.gz s3://tesselltools/terls/tessell/filebeat/$VERSION/
 
-            
       - name: Set Push repository
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
           echo "DOCKERHUB_ORG=tessellprod" >> $GITHUB_ENV
-              
+
       - name: tagging docker image with scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
         run: |
-           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
-      
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:scan
+
       - name: tagging the latest tag
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         shell: bash
         run: |
-           docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
-              
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{env.DOCKERHUB_ORG}}/${{ env.IMAGE_NAME }}:${{ steps.latest_tag.outputs.tag_ref }}
 
       - name: Docker image scan
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' }}
@@ -279,8 +274,7 @@ jobs:
         with:
           name: image-scan-report
           path: ${{ steps.docker-image-scan.outputs.scan-report-path }}
-          
-          
+
       - name: Sign and push docker image
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         uses: sudo-bot/action-docker-sign@cc41a5b5c636e623b6a1ec8ba4b6eb2fd6369c7a
@@ -289,7 +283,6 @@ jobs:
           private-key-id: ${{ secrets.DCT_PRIVATE_KEY_ID }}
           private-key: ${{ secrets.DCT_PRIVATE_KEY }}
           private-key-passphrase: ${{ secrets.DCT_PRIVATE_KEY_PASSPHRASE }}
-
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
@@ -302,11 +295,10 @@ jobs:
   post-build-status-to-convoy:
     runs-on: non-build
     needs: build
-    if: always()  
+    if: always()
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     steps:
-      
       - uses: actions/checkout@v4.1.1
         name: Checkout repos
         with:
@@ -325,7 +317,7 @@ jobs:
       - name: POST API to Convoy
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.repository}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -350,10 +342,10 @@ jobs:
 
           if not(bool(BASE_BRANCH)):
             BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
-          
+
           OWNER = REPO.split("/")
           REPO = OWNER[1]
-          
+
           if STATUS == 'SUCCESS':
             STATUS = 'SUCCESSFUL'
           if STATUS == 'FAILURE':
@@ -377,7 +369,7 @@ jobs:
 
           max_retries = 3
           retry_delay = 20 
-      
+
           for _ in range(max_retries):
               response = requests.post(API_URL, json=payload, headers=headers)
               if response.status_code == 200:
@@ -398,7 +390,7 @@ jobs:
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
-            status: ${{ job.status }}
-            steps: ${{ toJson(steps) }}
-            channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
