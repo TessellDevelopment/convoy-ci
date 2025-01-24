@@ -601,6 +601,7 @@ jobs:
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
+          echo "GITHUB_REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -672,6 +673,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           set +e
+          echo "GITHUB REPO NAME"
+          echo ${GITHUB_REPO_NAME}
           source ./ci-scripts/bash/functions-for-build
           sonar_scan
 
