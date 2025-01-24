@@ -59,8 +59,8 @@ jobs:
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}

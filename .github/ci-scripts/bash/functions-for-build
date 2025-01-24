@@ -1035,7 +1035,7 @@ sonar_scan() {
     SONAR_HOME=./sonar-scanner-${SONAR_CLI_VERSION}-linux-x64
     # PATH=${SONAR_HOME}/bin:${PATH}
     $SONAR_HOME/bin/sonar-scanner \
-        -Dsonar.projectKey=TessellDevelopment:${REPOSITORY} \
+        -Dsonar.projectKey=TessellDevelopment:${REPO} \
         -Dsonar.sources=. \
         -Dsonar.host.url=${SONAR_HOST_URL} \
         -Dsonar.login=${SONAR_TOKEN} \
