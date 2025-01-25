@@ -1105,6 +1105,7 @@ tsm_zip_build_and_push() {
 }
 
 ui_build() {
+  set +e
   install_node
   set -e
   ARTIFACT="${1}"
