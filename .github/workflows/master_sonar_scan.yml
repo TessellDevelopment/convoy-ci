@@ -7,22 +7,26 @@ jobs:
     if: github.ref_name == 'main' ||  github.event.pull_request.base.ref == 'main' || github.ref_name == 'TDEVOPS-3001' ||  github.event.pull_request.base.ref == 'TDEVOPS-3001'
     runs-on: non-build
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
-      LABEL: ${{inputs.label}}
-    outputs:
-      tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
-      uses_custom_version: ${{ steps.tag_output.outputs.uses_custom_version }}
+      CI_BRANCH: TDEVOPS-3001
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
 
+      - name: Setup CI Scripts
+        run: |
+          git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/TessellDevelopment/convoy-ci.git
+          cd convoy-ci
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ..
+          cp -r ./convoy-ci/.github/ci-scripts ./ci-scripts
+
       - name: Sonar Scan
         id: sonar
         shell: bash
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           set +e
           source ./ci-scripts/bash/functions-for-build
