@@ -557,15 +557,6 @@ install_python_dependencies() {
   fi
 }
 
-install_sonar_scanner() {
-    SONAR_CLI_VERSION=6.2.1.4610
-    curl -o sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip
-    unzip sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip
-    SONAR_HOME=./sonar-scanner-${SONAR_CLI_VERSION}-linux-x64
-    export PATH=${SONAR_HOME}/bin:${PATH}
-    sonar-scanner --version
-}
-
 is_go_version_installed() {
   local required_version=${1}
   installed_versions=$(gvm list)
@@ -1038,13 +1029,6 @@ software_def_build_and_push() {
 }
 
 sonar_scan() {
-    install_sonar_scanner
-    # SONAR_CLI_VERSION=6.2.1.4610
-    # curl -o sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip
-    # unzip sonar-scanner-cli-${SONAR_CLI_VERSION}-linux-x64.zip
-    # SONAR_HOME=./sonar-scanner-${SONAR_CLI_VERSION}-linux-x64
-    # # PATH=${SONAR_HOME}/bin:${PATH}
-    # $SONAR_HOME/bin/
     sonar-scanner \
         -Dsonar.projectKey=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REPO_NAME} \
         -Dsonar.sources=. \

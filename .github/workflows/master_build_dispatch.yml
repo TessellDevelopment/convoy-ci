@@ -65,7 +65,6 @@
       secrets: inherit
       with:
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
-    
           
     sonar-scan:
       needs: [build-file]

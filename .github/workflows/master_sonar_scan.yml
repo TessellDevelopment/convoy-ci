@@ -29,13 +29,12 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
-          
+
       - name: Sonar Scan
         id: sonar
         shell: bash
         run: |
           set +e
           source ./ci-scripts/bash/functions-for-build
-          install_sonar_scanner
           sonar_scan
           exit 1
