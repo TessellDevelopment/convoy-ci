@@ -15,6 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set Environment
+        run: |
+          echo "GITHUB_REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
+
       - name: Setup CI Scripts
         run: |
           git clone https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/TessellDevelopment/convoy-ci.git
