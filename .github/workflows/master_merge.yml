@@ -33,6 +33,11 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-2939_gcp_ui_changes
     secrets: inherit
 
+  sonar-scan:
+      needs: check-label-cut-status
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
+      secrets: inherit
+  
   runner-check:
     runs-on: non-build
     needs: file-check

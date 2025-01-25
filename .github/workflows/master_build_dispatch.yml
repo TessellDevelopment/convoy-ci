@@ -65,6 +65,11 @@
       secrets: inherit
       with:
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
+          
+    sonar-scan:
+      needs: [build-file]
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
+      secrets: inherit
   
     build:
       needs: [build-file,find-latest-tag]

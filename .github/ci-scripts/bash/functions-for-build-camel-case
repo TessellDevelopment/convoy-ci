@@ -224,6 +224,14 @@ parseAndPushCoverageReportJava() {
   parse_and_push_coverage_report_java "$@"
 }
 
+pushReleaseManifestArtifacts(){
+  push_release_manifest_artifacts "$@"
+}
+
+pushTerraformModules() {
+ push_terraform_modules "$@"
+}
+
 pushToMinio() {
   push_to_minio "$@"
 }
@@ -314,6 +322,14 @@ vssTarBuildAndPush() {
 
 validateInputs() {
   validate_inputs "$@"
+}
+
+yarnBuild() {
+  yarn_build "$@"
+}
+
+yarnBuildAndPush() {
+  yarn_build_and_push "$@"
 }
 
 zipDirectory() {
