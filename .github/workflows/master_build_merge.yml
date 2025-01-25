@@ -1051,7 +1051,6 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
-          sonar_scan
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
