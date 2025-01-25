@@ -1,0 +1,31 @@
+---
+name: Create tag on release branch
+on:
+  workflow_call:
+jobs:
+  sonar-scan:
+    if: github.ref_name == 'main' ||  github.event.pull_request.base.ref == 'main'
+    runs-on: non-build
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      LABEL: ${{inputs.label}}
+    outputs:
+      tag_ref_output: ${{ steps.tag_output.outputs.tag_ref }}
+      uses_custom_version: ${{ steps.tag_output.outputs.uses_custom_version }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Sonar Scan
+        id: sonar
+        shell: bash
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set +e
+          source ./ci-scripts/bash/functions-for-build
+          install_sonar_scanner
+          sonar_scan
+          exit 1
