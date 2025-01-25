@@ -1036,6 +1036,7 @@ sonar_scan() {
         -Dsonar.login=${SONAR_TOKEN} \
         -Dsonar.java.binaries=. \
         -Dsonar.python.version=3.9 \
+        -Dsonar.sourceEncoding=UTF-8 \
         -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar'
 }
 
