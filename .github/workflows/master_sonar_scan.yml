@@ -38,3 +38,4 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           sonar_scan
           exit 1
+          echo "Sonar scan completed."
