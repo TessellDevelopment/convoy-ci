@@ -1028,6 +1028,18 @@ software_def_build_and_push() {
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
 }
 
+sonar_scan() {
+    sonar-scanner \
+        -Dsonar.projectKey=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REPO_NAME} \
+        -Dsonar.sources=. \
+        -Dsonar.host.url=${SONAR_HOST_URL} \
+        -Dsonar.login=${SONAR_TOKEN} \
+        -Dsonar.java.binaries=. \
+        -Dsonar.python.version=3.9 \
+        -Dsonar.sourceEncoding=UTF-8 \
+        -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar'
+}
+
 tailscale_build() {
   set -e
   export GOPROXY=direct
