@@ -1122,16 +1122,16 @@ ui_build() {
 }
 
 ui_build_and_push() {
-  set -ex
+  set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
   TAG=${LATEST_TAG}
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
-  set -ex
+  set -e
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
-  set +ex
+  set +e
 }
 
 vss_tar_build() {
