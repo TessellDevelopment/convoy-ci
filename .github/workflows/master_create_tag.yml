@@ -61,7 +61,6 @@ jobs:
             const data = yaml.load(content);
             var language = data.language
             var version = data.version
-            var enableVersionPrefix = data.enableVersionPrefix || false;
             var uses_custom_version = "false"
 
             if ("${{env.TAG_EXISTS}}" === 'true'){
@@ -136,11 +135,6 @@ jobs:
                 // increase the minor version linearly to get the new tag
                 tag_parts = latest_tag.split('.')
                 new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-
-                // Add version prefix if enableVersionPrefix is true and uses_custom_version is false
-                if (enableVersionPrefix) {
-                  new_tag = `v${new_tag}`;
-                }
               }
               sha_to_tag = "${{ github.event.pull_request.merge_commit_sha }}"
 
