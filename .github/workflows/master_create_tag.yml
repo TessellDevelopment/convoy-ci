@@ -138,7 +138,7 @@ jobs:
                 new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
 
                 // Add version prefix if enableVersionPrefix is true and uses_custom_version is false
-                if (!uses_custom_version && enableVersionPrefix) {
+                if (enableVersionPrefix) {
                   new_tag = `v${new_tag}`;
                 }
               }
