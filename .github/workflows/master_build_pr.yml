@@ -679,11 +679,12 @@ jobs:
                   urls=$(yq eval -o=json '.externalUrls' convoy.yaml | jq -c '.[]')
                   for entry in ${urls}; do
                     url=$(echo "${entry}" | jq -r '.url')
-                    path=$(echo "${entry}" | jq -r '.path')
-                    echo "Processing URL: ${url}"
-                    echo "Target path: ${path}"
+                    path=$(echo "${entry}" | jq -r '.path // "."')
+                    echo "Processing URL: ${url} --- PATH: ${path}"
                     filename=$(basename "${url}")
-                    mkdir -p "${path}"
+                    if [ "${path}" != "." ]; then
+                        mkdir -p "${path}"
+                    fi
                     wget -q "${url}" -O "${filename}"
                     unzip -o "${filename}" -d "${path}"
                     rm "${filename}"
