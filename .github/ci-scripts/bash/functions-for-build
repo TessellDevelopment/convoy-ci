@@ -1116,6 +1116,36 @@ tsm_zip_build_and_push() {
   set +e
 }
 
+ui_build() {
+  set +e
+  install_node
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  npm install
+  npm run style-check
+  npm run build
+  cd build
+  zip -r ../${ARTIFACT}.${EXTENSION}  *
+  cd ..
+  ls -lrta ${ARTIFACT}.${EXTENSION}
+  set +e
+}
+
+ui_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  TAG=${LATEST_TAG}
+  ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
+  set -e
+  ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  set +e
+}
+
 vss_tar_build() {
   set -e
   ARTIFACT="${1}"
