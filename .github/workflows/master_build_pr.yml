@@ -22,7 +22,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
@@ -321,7 +321,7 @@ jobs:
       GITHUB_BASE_REF: ${{ github.base_ref }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NAMESPACE: "convoy"
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -763,7 +763,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
