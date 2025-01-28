@@ -59,8 +59,8 @@ jobs:
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -601,6 +601,7 @@ jobs:
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
           echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
+          echo "GITHUB_REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -639,6 +640,7 @@ jobs:
       - name: Check All file changes
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
+      
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
