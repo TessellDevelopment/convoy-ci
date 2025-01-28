@@ -51,7 +51,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3004
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEV_BUILD: ${{inputs.dev_build}}
@@ -224,7 +224,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3004
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
@@ -534,7 +534,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3004
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEV_BUILD: ${{inputs.dev_build}}
@@ -994,15 +994,21 @@ jobs:
                 VERSION=$(yq .version convoy.yaml)
                 if yq eval '.externalUrls' convoy.yaml &> /dev/null; then
                   echo "externalUrls present in convoy.yaml. Downloading required binaries."
-                  urls=$(yq eval '.externalUrls[]' convoy.yaml)
-                  for url in ${urls}; do
+                  urls=$(yq eval -o=json '.externalUrls' convoy.yaml | jq -c '.[]')
+                  for entry in ${urls}; do
+                    url=$(echo "${entry}" | jq -r '.url')
+                    path=$(echo "${entry}" | jq -r '.path')
                     echo "Processing URL: ${url}"
+                    echo "Target path: ${path}"
                     filename=$(basename "${url}")
-                    wget "${url}" 
-                    unzip "${filename}"
+                    mkdir -p "${path}"
+                    wget -q "${url}" -O "${filename}"
+                    unzip -o "${filename}" -d "${path}"
                     rm "${filename}"
-                    echo "Downloaded and extracted: ${filename}"
+                    echo "Downloaded and extracted: ${filename} to ${path}"
                   done
+                else
+                  echo "No externalUrls found in convoy.yaml. Skipping binary download."
                 fi
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 cd $BASE_DIR
@@ -1096,7 +1102,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3004
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       DEV_BUILD: ${{inputs.dev_build}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
