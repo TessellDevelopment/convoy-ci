@@ -806,13 +806,13 @@ provider_build() {
   install_go_dependencies
   GOOS=linux GOARCH=amd64 make build
   ls $GOPATH/bin
+  zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
   set +e
 }
 
 provider_build_and_push() {
   provider_build "$@"
   set -e
-  zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
   push_release_manifest_artifacts
   set +e
 }
