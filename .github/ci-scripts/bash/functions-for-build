@@ -804,7 +804,7 @@ provider_build() {
   required_inputs="1 2"
   validate_inputs "${required_inputs}" "$@" 
   install_go_dependencies
-  GOOS=linux GOARCH=amd64 make build
+  make build
   ls $GOPATH/bin
   zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
   set +e
