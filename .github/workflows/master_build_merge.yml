@@ -1006,6 +1006,7 @@ jobs:
                     wget -q "${url}" -O "${filename}"
                     unzip -o "${filename}" -d "${path}"
                     rm "${filename}"
+                    chmod -R 777 "${path}"
                     echo "Downloaded and extracted: ${filename} to ${path}"
                   done
                 else
