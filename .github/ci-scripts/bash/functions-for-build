@@ -806,9 +806,9 @@ provider_build() {
   install_go_dependencies
   rm -rf vendor
   go clean -modcache
+  go get github.com/hashicorp/go-azure-sdk@latest
   go mod tidy
   go mod vendor
-  go get github.com/hashicorp/go-azure-sdk@latest
   make build
   ls $GOPATH/bin
   zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
