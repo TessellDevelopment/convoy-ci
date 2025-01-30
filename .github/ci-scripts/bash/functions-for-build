@@ -270,7 +270,7 @@ download_binary_from_source() {
       if [[ "${extract_source}" == "true" ]]; then
         echo "Extracting ${download_path} to ${local_path}"
         unzip -o "${download_path}" -d "${local_path}"
-        chmod 644 "${local_path}"
+        chmod 777 "${local_path}"
       else
         echo "Copying ${download_path} to ${local_path}"
         cp "${download_path}" "${local_path}"
@@ -278,7 +278,7 @@ download_binary_from_source() {
         if [[ -n "${mode}" ]]; then
           chmod "${mode}" "${target_file}"
         else
-          chmod 644 "${target_file}"
+          chmod 777 "${target_file}"
         fi
       fi
       rm "${download_path}"
