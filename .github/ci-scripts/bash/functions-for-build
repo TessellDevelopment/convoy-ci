@@ -256,7 +256,7 @@ download_binary_from_source() {
       elif [[ -n "${minio_path}" ]]; then
         filename=$(basename "${minio_path}")
         echo "Downloading from MinIO: ${minio_path}"
-        mc cp "minio-ci/${minio_path}" "${download_path}"
+        mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
       else
         echo "No valid source found for entry: ${entry}"
         exit 1
