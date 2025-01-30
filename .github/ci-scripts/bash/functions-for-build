@@ -810,7 +810,7 @@ provider_build() {
   go mod vendor
   make build
   ls $GOPATH/bin
-  zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
+  zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/terraform-provider-azurerm" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
   set +e
 }
 
