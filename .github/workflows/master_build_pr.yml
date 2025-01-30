@@ -674,27 +674,7 @@ jobs:
                 ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
-                if yq eval '.externalUrls' convoy.yaml &> /dev/null; then
-                  echo "externalUrls present in convoy.yaml. Downloading required binaries."
-                  urls=$(yq eval -o=json '.externalUrls' convoy.yaml | jq -c '.[]')
-                  for entry in ${urls}; do
-                    url=$(echo "${entry}" | jq -r '.url')
-                    path=$(echo "${entry}" | jq -r '.path // "."')
-                    echo "Processing URL: ${url} --- PATH: ${path}"
-                    filename=$(basename "${url}")
-                    if [ "${path}" != "." ]; then
-                        mkdir -p "${path}"
-                    fi
-                    wget -q "${url}" -O "${filename}"
-                    unzip -o "${filename}" -d "${path}"
-                    rm "${filename}"
-                    chmod -R 777 "${path}"
-                    echo "Downloaded and extracted: ${filename} to ${path}"
-                  done
-                else
-                  echo "No externalUrls found in convoy.yaml. Skipping binary download."
-                fi
-                echo terraform_build $BASE_DIR/$DIR $ARTIFACT_FILE
+                download_binary_from_source
                 terraform_build $PWD $ARTIFACT_FILE
               fi
             done

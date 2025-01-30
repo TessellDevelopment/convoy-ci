@@ -233,6 +233,57 @@ docker_tag_and_push() {
   fi  
 }
 
+download_binary_from_source() {
+  CONFIG_FILE="convoy.yaml"
+  TMP_DIR="/tmp"
+  if yq eval '.dataSources' "${CONFIG_FILE}" &> /dev/null; then
+    echo "dataSources found in ${CONFIG_FILE}. Processing artifacts."
+    data_sources=$(yq eval -o=json '.dataSources' "${CONFIG_FILE}" | jq -c '.[]')
+    for entry in ${data_sources}; do
+
+      http_url=$(echo "${entry}" | jq -r '.source.httpPublicUrl // empty')
+      minio_path=$(echo "${entry}" | jq -r '.source.tessellArtifactsPath // empty')
+
+      local_path=$(echo "${entry}" | jq -r '.destination.localPath')
+      extract_source=$(echo "${entry}" | jq -r '.destination.extractSource')
+      mode=$(echo "${entry}" | jq -r '.destination.mode // empty')
+
+      download_path="${TMP_DIR}/${filename}"
+      if [[ -n "${http_url}" ]]; then
+        filename=$(basename "${http_url}")
+        echo "Downloading from HTTP: ${http_url}"
+        wget -q "${http_url}" -O "${download_path}"
+      elif [[ -n "${minio_path}" ]]; then
+        filename=$(basename "${minio_path}")
+        echo "Downloading from MinIO: ${minio_path}"
+        mc cp "minio-ci/${minio_path}" "${download_path}"
+      else
+        echo "No valid source found for entry: ${entry}"
+        exit 1
+      fi
+      mkdir -p "${local_path}"
+      if [[ "${extract_source}" == "true" ]]; then
+        echo "Extracting ${download_path} to ${local_path}"
+        unzip -o "${download_path}" -d "${local_path}"
+        chmod 644 "${local_path}"
+      else
+        echo "Copying ${download_path} to ${local_path}"
+        cp "${download_path}" "${local_path}"
+        target_file="${local_path}/$(basename "${download_path}")"
+        if [[ -n "${mode}" ]]; then
+          chmod "${mode}" "${target_file}"
+        else
+          chmod 644 "${target_file}"
+        fi
+      fi
+      rm "${download_path}"
+      echo "Processing complete for ${filename}"
+    done
+  else
+    echo "No dataSources found in ${CONFIG_FILE}. Skipping downloading binaries."
+  fi
+}
+
 elastic_agent_build() {
   set -e
   IMAGE="${1}"
