@@ -236,8 +236,8 @@ docker_tag_and_push() {
 download_binary_from_source() {
   CONFIG_FILE="convoy.yaml"
   TMP_DIR="/tmp"
-  if yq eval '.externalUrls' ${CONFIG_FILE} &> /dev/null; then
-    echo "Please Switch to datasources for downloading binaries in terraform module. Failing build."
+  if [[ "$(yq eval '.externalUrls' "${CONFIG_FILE}")" != "null" ]]; then
+    echo "Error: 'externalUrls' is deprecated. Please switch to 'dataSources' for downloading binaries in the Terraform module. Failing build."
     exit 1
   fi
   if yq eval '.dataSources' "${CONFIG_FILE}" &> /dev/null; then
