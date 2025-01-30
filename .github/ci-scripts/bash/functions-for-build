@@ -804,6 +804,9 @@ provider_build() {
   required_inputs="1 2"
   validate_inputs "${required_inputs}" "$@" 
   install_go_dependencies
+  go mod tidy
+  go mod vendor
+  go get github.com/hashicorp/go-azure-sdk@latest
   make build
   ls $GOPATH/bin
   zip -r "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" "$GOPATH/bin/${ARTIFACT}" && mv "$GOPATH/bin/${ARTIFACT}.${EXTENSION}" .
