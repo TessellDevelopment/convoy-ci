@@ -797,6 +797,33 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+provider_build() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  required_inputs="1 2"
+  validate_inputs "${required_inputs}" "$@" 
+  install_go_dependencies
+  rm -rf vendor
+  go clean -modcache
+  go mod tidy
+  go mod vendor
+  make build
+  ls $GOPATH/bin
+  cd $GOPATH/bin
+  zip -r ${ARTIFACT}.${EXTENSION} terraform-provider-azurerm
+  cd -
+  mv $GOPATH/bin/${ARTIFACT}.${EXTENSION} .
+  set +e
+}
+
+provider_build_and_push() {
+  provider_build "$@"
+  set -e
+  push_release_manifest_artifacts
+  set +e
+}
+
 push_release_manifest_artifacts() {
   local ARTIFACT_FILE_NAME=${1:-"${ARTIFACT}.${EXTENSION}"}
   local ARTIFACT_FILE_PATH=${2:-"${ARTIFACT}.${EXTENSION}"}

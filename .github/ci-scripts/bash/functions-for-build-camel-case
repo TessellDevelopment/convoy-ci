@@ -216,6 +216,14 @@ parseAndPushCoverageReportJava() {
   parse_and_push_coverage_report_java "$@"
 }
 
+providerBuild() {
+  provider_build "$@"
+}
+
+providerBuildAndPush() {
+  provider_build_and_push "$@"
+}
+
 pushReleaseManifestArtifacts(){
   push_release_manifest_artifacts "$@"
 }
