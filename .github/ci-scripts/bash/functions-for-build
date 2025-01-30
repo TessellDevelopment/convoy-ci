@@ -806,7 +806,6 @@ provider_build() {
   install_go_dependencies
   rm -rf vendor
   go clean -modcache
-  go get github.com/hashicorp/go-azure-sdk@latest
   go mod tidy
   go mod vendor
   make build
