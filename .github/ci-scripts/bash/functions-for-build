@@ -250,7 +250,6 @@ download_binary_from_source() {
 
       local_path=$(echo "${entry}" | jq -r '.destination.localPath')
       extract_source=$(echo "${entry}" | jq -r '.destination.extractSource')
-      mode=$(echo "${entry}" | jq -r '.destination.mode // empty')
 
       if [[ -n "${http_url}" ]]; then
         filename=$(basename "${http_url}")
@@ -270,16 +269,12 @@ download_binary_from_source() {
       if [[ "${extract_source}" == "true" ]]; then
         echo "Extracting ${download_path} to ${local_path}"
         unzip -o "${download_path}" -d "${local_path}"
-        chmod 777 "${local_path}"
       else
         echo "Copying ${download_path} to ${local_path}"
         cp "${download_path}" "${local_path}"
         target_file="${local_path}/$(basename "${download_path}")"
-        if [[ -n "${mode}" ]]; then
-          chmod "${mode}" "${target_file}"
-        else
-          chmod 777 "${target_file}"
-        fi
+        mode=$(echo "${entry}" | jq -r '.destination.mode // 644')
+        chmod "${mode}" "${target_file}"
       fi
       rm "${download_path}"
       echo "Processing complete for ${filename}"
