@@ -290,4 +290,4 @@ jobs:
                 --upload-file $src_file \
                 "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/$dest_path"
           
-          push_to_minio $src_file $dest_path
+          push_to_minio $src_file "tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json"
