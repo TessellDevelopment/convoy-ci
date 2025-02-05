@@ -613,7 +613,7 @@ mvnw_build() {
   VERSION="${3}"
   echo "./mvnw clean package -Dnative -Dquarkus.remote.container-build=true"
   echo $VERSION
-  /mvnw clean package -Dnative -Dquarkus.remote.container-build=true -Drevision=${VERSION}
+  ./mvnw clean package -Dnative -Dquarkus.remote.container-build=true -Drevision=${VERSION}
   set +e
 }
 
