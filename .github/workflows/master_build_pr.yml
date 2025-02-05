@@ -857,10 +857,10 @@ jobs:
           build "helmCharts"
           parseCoverageReport
 
-      - name: Cleanup
-        if: always()
-        run: |
-          set +e
-          sudo rm -rf target
-          docker container prune --force
-          docker volume prune --force
+      # - name: Cleanup
+      #   if: always()
+      #   run: |
+      #     set +e
+      #     sudo rm -rf target
+      #     docker container prune --force
+      #     docker volume prune --force
