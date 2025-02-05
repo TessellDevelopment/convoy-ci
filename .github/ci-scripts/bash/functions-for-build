@@ -611,13 +611,14 @@ mvn_deploy() {
  mvnw_build() {
   set -e
   echo "./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true"
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
   set +e
 }
 
 mvnw_build_and_push() {
   set -e
   ARTIFACT="${1}"
+  VERSION="${3}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
   mvnw_build
