@@ -610,6 +610,7 @@ mvn_deploy() {
 
  mvnw_build() {
   set -e
+  VERSION="${3}"
   echo "./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true"
   echo $VERSION
   ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
