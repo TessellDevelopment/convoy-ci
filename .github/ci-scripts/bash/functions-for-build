@@ -622,7 +622,9 @@ mvnw_build_and_push() {
   VERSION="${3}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  mvnw_build
+  # mvnw_build
+  echo $VERSION
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
   if [[ ${APP_GROUP} != ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
