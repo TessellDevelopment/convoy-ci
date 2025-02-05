@@ -168,6 +168,14 @@ mvnwBuildAndPush() {
   mvnw_build_and_push "$@"
 }
 
+mvnwVersionBuild() {
+  mvnw_version_build "$@"
+}
+
+mvnwVersionBuildAndPush() {
+  mvnw_version_build_and_push "$@"
+}
+
 npmBuild() {
   npm_build "$@"
 }
