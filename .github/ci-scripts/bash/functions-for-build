@@ -852,7 +852,8 @@ provider_build() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  required_inputs="1 2"
+  VERSION="${3}"
+  required_inputs="1 2 3"
   validate_inputs "${required_inputs}" "$@" 
   install_go_dependencies
   make build
@@ -867,7 +868,8 @@ provider_build() {
 provider_build_and_push() {
   provider_build "$@"
   set -e
-  push_release_manifest_artifacts
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${}/${ARTIFACT}/${ARTIFACT}-${VERSION}.${EXTENSION}"
+  push_to_minio "${ARTIFACT}.${EXTENSION}" "minio-ci/${}/${ARTIFACT}/${ARTIFACT}-${VERSION}.${EXTENSION}"
   set +e
 }
 
