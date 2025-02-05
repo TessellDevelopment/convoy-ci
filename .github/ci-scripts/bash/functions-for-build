@@ -610,8 +610,8 @@ mvn_deploy() {
 
  mvnw_build() {
   set -e
-  echo "./mvnw clean package -Dnative -DskipTests -Dquarkus.native.container-build=true"
-  ./mvnw clean package -Dnative -DskipTests -Dquarkus.native.container-build=true
+  echo "./mvnw clean package -Dnative -Dquarkus.native.container-build=true"
+  ./mvnw clean package -Dnative -Dquarkus.native.container-build=true
   set +e
 }
 
