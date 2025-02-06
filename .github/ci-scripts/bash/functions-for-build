@@ -608,54 +608,30 @@ mvn_deploy() {
       -Dfile=${FILE} -DrepositoryId=nexus
 }
 
-mvnw_version_build() {
-  set -e
-  VERSION="${3}"
-  echo "../mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision="
-  echo $VERSION
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
-  set +e
-}
-
-mvnw_version_build_and_push(){
-  set -e
-  ARTIFACT="${1}"
-  VERSION="${3}"
-  required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
-  echo $VERSION
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
-  push_to_gcloud "./target/${ARTIFACT}-${VERSION}-runner" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
-  set +e
-}
-
 mvnw_build() {
   set -e
   VERSION="${3}"
   echo "./mvnw clean package -Dnative -Dquarkus.remote.container-build=true"
   echo $VERSION
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
+  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
   set +e
 }
 
 mvnw_build_and_push() {
   set -e
   ARTIFACT="${1}"
-  VERSION="${3}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  # mvnw_build
-  echo $VERSION
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true -Drevision=${VERSION}
+  mvnw_build
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-    push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-  else  
+    push_to_gcloud "./target/${ARTIFACT}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+  else
+    aws_configure_tessellops_artifacts
     push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
-    aws_configure_tessellops_artifacts
     aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
-    generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
   fi
+  generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
   set +e
 }
 
