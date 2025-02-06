@@ -264,7 +264,6 @@ frp_build_and_push() {
   for OS in "${os_type[@]}"; do
     ARTIFACT="tessell-frpc-${OS}"
     mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/frp/${LATEST_TAG}/
     push_release_manifest_artifacts
   done
   set +e
@@ -413,7 +412,6 @@ go_library_build_and_push() {
   EXTENSION="${2}"
   aws_configure_prod_assets
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
-  aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/${NAME}/${LATEST_TAG}/
   push_release_manifest_artifacts
   set +e
 }
