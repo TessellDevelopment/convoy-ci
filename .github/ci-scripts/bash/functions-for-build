@@ -610,8 +610,6 @@ mvn_deploy() {
 
 mvnw_build() {
   set -e
-  echo "./mvnw clean package -Dnative -Dquarkus.remote.container-build=true"
-  echo $VERSION
   ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
   set +e
 }
@@ -621,7 +619,6 @@ mvnw_build_and_push() {
   ARTIFACT="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
-  echo "hello world"
   mvnw_build
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "./target/${ARTIFACT}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
