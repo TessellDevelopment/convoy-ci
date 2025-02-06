@@ -270,6 +270,14 @@ frp_build_and_push() {
   set +e
 }
 
+folder_content() {
+  ARTIFACT=${1}
+  echo $ARTIFACT
+  echo "going for sleep"
+  sleep 1000
+  
+}
+
 get_base_branch_commit_from_pr_number() {
   base_branch_commit_of_root_pr=$(curl -L \
   -H "Accept: application/vnd.github+json" \
