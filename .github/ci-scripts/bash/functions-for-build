@@ -613,7 +613,7 @@ mvnw_build() {
   ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
   set +e
 }
-  
+
 mvnw_build_and_push() {
   set -e
   ARTIFACT="${1}"
