@@ -417,8 +417,6 @@ jobs:
             mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
             mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp $FILE_PATH_LINUX s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
-            aws s3 cp $FILE_PATH_WINDOWS s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/filebeat/${LATEST_TAG}/
             EXTENSION="tar.gz"
             ARTIFACT="filebeat-linux"
             push_release_manifest_artifacts "filebeat-linux.tar.gz" "$FILE_PATH_LINUX"
@@ -689,7 +687,6 @@ jobs:
             EXTENSION="$2"
             mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp "package/$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/agent/${LATEST_TAG}/"
             push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
             set +e
           }
@@ -738,7 +735,6 @@ jobs:
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             awsConfigureProdAssets
-            aws s3 cp "$ARTIFACT.$EXTENSION" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/plugins/${LATEST_TAG}/"
             push_release_manifest_artifacts
             set +e
           }
@@ -758,7 +754,6 @@ jobs:
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             awsConfigureProdAssets
             mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
-            aws s3 cp "$ARTIFACT.tar" "s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/functions/${LATEST_TAG}/"
             push_release_manifest_artifacts
             if $changed_dir; then
               cd ..;
@@ -876,7 +871,6 @@ jobs:
             ls -lrta client-package
             mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
-            aws s3 cp client-package/$ARTIFACT.$EXTENSION s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/terls/tessell/pushprox/$VERSION/
             push_release_manifest_artifacts "${ARTIFACT}.${EXTENSION}" "client-package/${ARTIFACT}.${EXTENSION}"
             set +e
           }
