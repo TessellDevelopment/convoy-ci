@@ -259,7 +259,36 @@
               });
               console.log("No merge conflicts found"); 
               });
-              
+
+        - name: Check for new line at EOF
+          run: |
+            enable_newline=$(yq e '.enableNewLineAtEOF' convoy.yaml || echo "false")
+            enable_newline=${enable_newline:-false}
+            if [ "${enable_newline}" = "true" ]; then
+              echo "Checking changed files for missing newline at EOF..."
+              changed_files=$(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
+              missing_newline_files=()
+              for file in $changed_files; do
+                if [ -f "${file}" ]; then
+                  if [ -n "$(tail -c 1 "${file}" | tr -d '\n')" ]; then
+                    missing_newline_files+=("${file}")
+                  fi
+                fi
+              done
+              if [ ${#missing_newline_files[@]} -gt 0 ]; then
+                echo "The following files are missing a newline at EOF:"
+                for FILE in "${missing_newline_files[@]}"; do
+                  echo "${file}"
+                done
+                echo "NOTE: Do remove any white spaces present in the last line of these files."
+                exit 1
+              else
+                echo "All checked files have a newline at EOF."
+              fi
+            else
+              echo "'enableNewLineAtEOF' is set to false. Skipping newline checks."
+            fi
+
         - name: Check DB Migration Scripts
           id: check_db_migration
           uses: actions/github-script@v7.0.1
@@ -389,3 +418,4 @@
             fi
             done
               
+   
