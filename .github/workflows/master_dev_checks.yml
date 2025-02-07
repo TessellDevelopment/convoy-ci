@@ -262,29 +262,21 @@
 
         - name: Check for new line at EOF
           run: |
-            enable_newline=$(yq e '.enableNewLineAtEOF' convoy.yaml || echo "false")
-            enable_newline=${enable_newline:-false}
+            enable_newline=$(yq e '.enableNewLineAtEOF // false' convoy.yaml)
             if [ "${enable_newline}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
-              git checkout ${{github.base_ref}}
-              git pull
-              git checkout ${{github.head_ref}}
-              git pull
-              changed_files=$(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
+              git checkout ${{github.base_ref}} && git pull
+              git checkout ${{github.head_ref}} && git pull
               missing_newline_files=()
-              for file in $changed_files; do
-                if [ -f "${file}" ]; then
-                  if [ -n "$(tail -c 1 "${file}" | tr -d '\n')" ]; then
-                    missing_newline_files+=("${file}")
-                  fi
+              while IFS= read -r file; do
+                if [ -f "$file" ] && [ -n "$(tail -c 1 "$file" | tr -d '\n')" ]; then
+                  missing_newline_files+=("$file")
                 fi
-              done
+              done < <(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
               if [ ${#missing_newline_files[@]} -gt 0 ]; then
                 echo "The following files are missing a newline at EOF:"
-                for FILE in "${missing_newline_files[@]}"; do
-                  echo "${file}"
-                done
-                echo "NOTE: Do remove any white spaces present in the last line of these files."
+                printf '%s\n' "${missing_newline_files[@]}"
+                echo "NOTE: Remove any trailing whitespace in the last line of these files."
                 exit 1
               else
                 echo "All checked files have a newline at EOF."
