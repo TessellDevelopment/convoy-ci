@@ -266,6 +266,10 @@
             enable_newline=${enable_newline:-false}
             if [ "${enable_newline}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
+              git checkout ${{github.base_ref}}
+              git pull
+              git checkout ${{github.head_ref}}
+              git pull
               changed_files=$(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
               missing_newline_files=()
               for file in $changed_files; do
