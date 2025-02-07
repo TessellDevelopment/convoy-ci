@@ -304,7 +304,7 @@ upload_tessell_to_gcloud() {
   fi
 }
 
-folder_content() {
+folder_content_and_push() {
   export ARTIFACT=${1}
   echo $ARTIFACT
   check_convoy_yaml
