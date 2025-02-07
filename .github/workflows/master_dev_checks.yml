@@ -262,7 +262,7 @@
 
         - name: Check for new line at EOF
           run: |
-            enable_newline=$(yq e '.enableNewLineAtEOF // false' convoy.yaml)
+            enable_newline=$(yq e '.enforceNewLineAtEOF // false' convoy.yaml)
             if [ "${enable_newline}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
               git checkout ${{github.base_ref}} && git pull
@@ -279,10 +279,10 @@
                 echo "NOTE: Remove any trailing whitespace in the last line of these files."
                 exit 1
               else
-                echo "All checked files have a newline at EOF."
+                echo "All files modified in this PR have a newline at EOF."
               fi
             else
-              echo "'enableNewLineAtEOF' is set to false. Skipping newline checks."
+              echo "'enforceNewLineAtEOF' is set to false. Skipping newline checks."
             fi
 
         - name: Check DB Migration Scripts
