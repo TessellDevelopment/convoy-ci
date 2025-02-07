@@ -286,6 +286,9 @@ upload_tessell_to_gcloud() {
   # Base GCloud destination path
   local gcloud_base_path="gs://tessellgcp-artifacts/${release_label}/tessell-gcp-master-data/${release_version}"
   echo "Base GCloud destination path: ${gcloud_base_path}"
+  echo "recursive: ${recursive}"
+  echo "folder_path: ${folder_path}"
+  ls "${folder_path}"
   if [[ "$recursive" == "true" ]]; then
     # Upload all content recursively, maintaining structure
     # push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
