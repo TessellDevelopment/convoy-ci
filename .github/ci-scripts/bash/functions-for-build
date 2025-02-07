@@ -315,8 +315,8 @@ folder_content() {
   folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT)) | .folders' convoy.yaml)
   gcloud_base_path="gs://tessellgcp-artifacts/${RELEASE_LABEL}/tessell-gcp-master-data/${RELEASE_VERSION}"
   for folder in $(echo "$folders_json" | jq -c '.[]'); do
-    path=$(echo "$folder" | jq .path)
-    recursive=$(echo $folder | jq .recursive)
+    path=$(echo "$folder" | jq -r .path)
+    recursive=$(echo $folder | jq -r .recursive)
 
     echo "Call the upload function for each folder"
 
