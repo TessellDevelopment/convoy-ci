@@ -285,7 +285,7 @@ upload_tessell_to_gcloud() {
 
   # Base GCloud destination path
   local gcloud_base_path="gs://tessellgcp-artifacts/${release_label}/tessell-gcp-master-data/${release_version}"
-
+  echo "Base GCloud destination path: ${gcloud_base_path}"
   if [[ "$recursive" == "true" ]]; then
     # Upload all content recursively, maintaining structure
     # push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
@@ -306,18 +306,17 @@ folder_content() {
   echo $ARTIFACT
   check_convoy_yaml
 
-  echo "going for sleep"
   release_label="rel-0.1.0"
   release_version="0.1.111111"
 
   folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT)) | .folders' convoy.yaml)
   gcloud_base_path="gs://tessellgcp-artifacts/${release_label}/tessell-gcp-master-data/${release_version}"
-  echo "$folders_json" | jq -c '.[]' | while read -r folder; do
+  echo "$folders_json" | jq -c '.[]' | while read -r folders; do
     # Extract path and recursive values
     path=$(echo "$folder" | jq -r '.path')
     recursive=$(echo "$folder" | jq -r '.recursive')
 
-    # Call the upload function for each folder
+    echo "Call the upload function for each folder"
     upload_tessell_to_gcloud "$path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   done
   
