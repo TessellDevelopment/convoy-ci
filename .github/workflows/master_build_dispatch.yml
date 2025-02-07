@@ -23,7 +23,7 @@
             if [ -f convoy.yaml ]; then
               if [[ "${{ github.ref_name}}" == "main" ]]; then
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-                URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+                URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
                 RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"
                 LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
@@ -61,19 +61,19 @@
   
     find-latest-tag:
       needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
       secrets: inherit
       with:
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
           
     sonar-scan:
       needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
       secrets: inherit
   
     build:
       needs: [build-file,find-latest-tag]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
       secrets: inherit
       with:
         type: ${{needs.build-file.outputs.type}}
