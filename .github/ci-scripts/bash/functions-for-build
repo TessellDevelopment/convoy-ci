@@ -66,6 +66,13 @@ build_convoy_tessell_image_and_push() {
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
 }
 
+check_convoy_yaml() {
+  if ! [[ -f "convoy.yaml" ]]; then
+    echo "Error: File 'convoy.yaml' not found." >&2
+    return 1
+  fi
+}
+
 check_flyway() {
   if [ -d "flyway" ]; then
     echo "The 'flyway' directory exists in this repository."
@@ -270,11 +277,49 @@ frp_build_and_push() {
   set +e
 }
 
+upload_tessell_to_gcloud() {
+  local folder_path=$1
+  local recursive=$2
+  local release_label=$3
+  local release_version=$4
+
+  # Base GCloud destination path
+  local gcloud_base_path="gs://tessellgcp-artifacts/${release_label}/tessell-gcp-master-data/${release_version}"
+
+  if [[ "$recursive" == "true" ]]; then
+    # Upload all content recursively, maintaining structure
+    # push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
+    echo "${folder_path}/*" "${gcloud_base_path}/"
+  else
+    # Only upload top-level files
+    for file in "$folder_path"/*; do
+      if [[ -f $file ]]; then
+        # push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
+        echo "$file" "${gcloud_base_path}/$(basename $file)"
+      fi
+    done
+  fi
+}
+
 folder_content() {
-  ARTIFACT=${1}
+  export ARTIFACT=${1}
   echo $ARTIFACT
+  check_convoy_yaml
+
   echo "going for sleep"
-  sleep 1000
+  release_label="rel-0.1.0"
+  release_version="0.1.111111"
+
+  folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT)) | .folders' convoy.yaml)
+  gcloud_base_path="gs://tessellgcp-artifacts/${release_label}/tessell-gcp-master-data/${release_version}"
+  echo "$folders_json" | jq -c '.[]' | while read -r folder; do
+    # Extract path and recursive values
+    path=$(echo "$folder" | jq -r '.path')
+    recursive=$(echo "$folder" | jq -r '.recursive')
+
+    # Call the upload function for each folder
+    upload_tessell_to_gcloud "$path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
+  done
   
 }
 
@@ -340,10 +385,7 @@ generate_sts_session_token() {
 }
 
 get_required_go_version() {
-  if ! [[ -f "convoy.yaml" ]]; then
-    echo "Error: File 'convoy.yaml' not found." >&2
-    return 1
-  fi
+  check_convoy_yaml
   required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
   if [[ -n "${required_go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
@@ -883,7 +925,7 @@ push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud storage cp ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
+  gcloud storage cp -r ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
 }
 
 push_to_minio() {
