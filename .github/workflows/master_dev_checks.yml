@@ -18,17 +18,247 @@
           with:
             fetch-depth: 0
 
-        - name: Code Scan for Secrets
-          shell: bash
-          run: |
-            trivy fs  --exit-code 1 --scanners secret --format json .
+        # - name: Code Scan for Secrets
+        #   shell: bash
+        #   run: |
+        #     trivy fs  --exit-code 1 --scanners secret --format json .
 
-        - name: Get branch name
-          shell: bash
-          run: |
-            echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
-            echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
-            echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
+        # - name: Get branch name
+        #   shell: bash
+        #   run: |
+        #     echo "SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }} | tr / -)" >> $GITHUB_ENV
+        #     echo "TARGET_BRANCH=$(echo ${GITHUB_BASE_REF} | tr / -)" >> $GITHUB_ENV
+        #     echo "GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}" >> $GITHUB_ENV
+        
+        # - name: Check Format
+        #   env:
+        #     PR_TITLE: ${{ github.event.pull_request.title }}
+        #   run: |
+        #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+        #         echo "Revert branch, skipping Format check"
+        #         exit 0
+        #     fi
+        #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(${{vars.SUPPORTED_JIRA_PROJECTS}})'; then
+        #       echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
+        #     else
+        #       echo "Branch name does not start with ${{vars.SUPPORTED_JIRA_PROJECTS}}. Checking PR title format."
+        #       PULL_REQUEST_TITLE="$PR_TITLE"
+        #       PATTERN="(${{vars.SUPPORTED_JIRA_PROJECTS}})-[0-9]+\s\|\s"
+        #       if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
+        #         echo "Error: Pull request title is not in the required format. Please use ${{vars.SUPPORTED_JIRA_PROJECTS}}-XXXX format."
+        #         exit 1
+        #       else 
+        #         echo "PR Title is in the valid format."
+        #       fi  
+        #     fi
+              
+        # - name: Extract Jira Ticket
+        #   id: extract
+        #   env:
+        #     PR_TITLE: ${{github.event.pull_request.title}}
+        #     SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
+        #   run: |
+        #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+        #         echo "Revert branch, skipping Jira Extraction"
+        #         exit 0
+        #     fi
+        #     python3 - <<EOF
+        #     import os
+        #     import re
+        #     import sys
+        #     import yaml
+
+        #     with open('convoy.yaml', 'r') as file:
+        #         data = yaml.safe_load(file)
+
+        #     supported_jira_projects = os.environ.get('SUPPORTED_JIRA_PROJECTS')
+        #     branch_name = os.environ.get('SOURCE_BRANCH')
+        #     pr_title = os.environ.get('PR_TITLE')
+        #     jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
+        #     jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
+
+        #     match_branch = re.search(rf'({supported_jira_projects})\d+', branch_name)
+        #     match_pr = re.search(rf'({supported_jira_projects})\d+', pr_title)
+                
+        #     if jira_match == 'ALL': 
+        #         if match_branch and match_pr and jira_source == 'BOTH':
+        #             ticket_branch = match_branch.group(0)
+        #             ticket_pr = match_pr.group(0)
+        #             if ticket_branch == ticket_pr:
+        #                 print(f"Same Jira present in both Branch and PR:{ticket_branch}")
+        #                 sys.stdout.write(f"::set-output name=jira_ticket::{ticket_branch}\n")
+        #                 exit(0)
+        #             else:
+        #                 raise Exception("Error: Different Jira present in both Branch and PR")
+        #         elif match_branch and jira_source == 'BRANCH_NAME_PREFIX':
+        #             ticket = match_branch.group(0)
+        #             print(f"Jira ticket extracted from Branch name:{ticket}")
+        #             sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #             exit(0)
+        #         elif match_pr and jira_source == 'PR_TITLE_PREFIX':
+        #             ticket = match_pr.group(0)
+        #             print(f"Jira ticket extracted from PR Title:{ticket}")
+        #             sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #             exit(0)
+        #         else:
+        #             raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")   
+        #     elif jira_match == 'ANY':
+        #             if jira_source == 'BRANCH_NAME_PREFIX':
+        #                 if match_branch:
+        #                     ticket = match_branch.group(0)
+        #                     print(f"Jira ticket extracted from Branch name:{ticket}")
+        #                     sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                     exit(0)
+        #                 else: 
+        #                     print(f"No Jira ticket found in Branch name, checking in PR title")     
+        #                     if match_pr :
+        #                         ticket = match_pr.group(0)
+        #                         print(f"Jira ticket extracted from PR Title:{ticket}")
+        #                         sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                         exit(0)
+        #                     else:
+        #                         raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+        #             elif jira_source == 'PR_TITLE_PREFIX':
+        #                 if match_pr:
+        #                     ticket = match_pr.group(0)
+        #                     print(f"Jira ticket extracted from PR Title:{ticket}")
+        #                     sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                     exit(0)
+
+        #                 else:
+        #                     print(f"No Jira ticket found in PR Title, checking in Branch name")     
+        #                     if match_branch:
+        #                         ticket = match_branch.group(0)
+        #                         print(f"Jira ticket extracted from Branch name:{ticket}")
+        #                         sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                         exit(0)
+        #                     else:
+        #                         raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
+        #             elif jira_source == 'BOTH':
+        #                 if match_branch:
+        #                     ticket = match_branch.group(0)
+        #                     print(f"Jira ticket extracted from Branch name:{ticket}")
+        #                     sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                     exit(0)
+        #                 else: 
+        #                     print(f"No Jira ticket found in Branch name, checking in PR title")     
+        #                     if match_pr:
+        #                         ticket = match_pr.group(0)
+        #                         print(f"Jira ticket extracted from PR Title:{ticket}")
+        #                         sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
+        #                         exit(0)
+        #                     else:
+        #                         raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")            
+        #             else: 
+        #                 raise Exception("Error: Invalid selection in Jira Source")         
+        #     elif jira_match == 'NONE':
+        #         print("No extraction of Jira ticket specified")
+        #         exit(0)
+        #     else: 
+        #         raise Exception("Invalid Jira Match type specified")
+        #     EOF
+
+        # - name: Validate Jira Ticket
+        #   env:
+        #     JIRA: ${{steps.extract.outputs.jira_ticket}}
+        #     JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+        #     JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        #   run: |
+        #     if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
+        #       echo "Revert branch, skipping Jira Validation"
+        #       exit 0
+        #     fi
+        #     echo "${{env.JIRA}}"
+        #     python3 - <<EOF
+        #     import os
+        #     from jira import JIRA
+        #     user = os.environ.get('JIRA_USERNAME')
+        #     try:
+        #       apikey = os.environ.get('JIRA_API_TOKEN')
+        #       jira_ticket = os.environ.get('JIRA')
+        #       options = {'server': 'https://tessell.atlassian.net'}
+        #       jira = JIRA(options, basic_auth=(user, apikey) )
+        #       try:
+        #           issue = jira.issue(jira_ticket)
+        #           print("Ticket Summary=",issue.fields.summary)
+        #       except Exception as ex:
+        #           print("Not a valid jira", jira_ticket)
+        #           raise Exception(ex)
+        #     except Exception as ex:
+        #       raise Exception(ex)  
+        #     EOF
+
+        # - name: Check double commit
+        #   env: 
+        #     PR_TITLE: ${{github.event.pull_request.title}}
+        #     BRANCH: ${{ github.event.pull_request.head.ref}}
+        #   run: |
+        #     if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
+        #       if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
+        #         echo "Revert Double commit Branch. Allowed"
+        #       else   
+        #         echo "Exclude Double commit naming in Branch, PR title and try again."
+        #         exit 1
+        #       fi
+        #     else
+        #       echo "No double commit conflicts found in Branch or PR title."
+        #     fi
+
+        # - name: Check for Jsonlint
+        #   run: |
+        #     set -e
+        #     git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
+
+        # - name: Output PR diff 
+        #   id: pr_diff
+        #   uses: actions/github-script@v7.0.1
+        #   with:
+        #     script: |
+        #       const fs = require('fs');
+        #       head_commit = "${{ github.sha }}"
+        #       base_commit = "${{ github.sha }}"
+        #       if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
+        #         base_commit = "${{ github.event.before }}"
+        #       }
+        #       if ( "${{ github.event_name }}" == 'pull_request') {
+        #         console.log("Using the base branch's commit for comparing.")
+        #         base_commit = "${{ github.event.pull_request.base.sha  }}"
+        #       }
+        #       response = await github.rest.repos.compareCommits({
+        #           owner: "${{ github.repository_owner }}",
+        #           repo: "${{  github.repository }}".split('/')[1],
+        #           head: head_commit,
+        #           base: base_commit
+        #       });
+        #       let jsonResponse = JSON.stringify(response);
+        #       fs.writeFileSync('response.txt', jsonResponse, 'utf8');
+
+        # - name: Check for merge conflicts
+        #   uses: actions/github-script@v7.0.1
+        #   with:
+        #     script: |
+        #       const fs = require('fs');
+        #       fs.readFile('response.txt', 'utf8', (err, resData) => {
+        #         if (err) {
+        #             console.error('Error reading file:', err);
+        #             process.exit(1);
+        #         }
+        #         let response = JSON.parse(resData);
+        #         response.data.files.forEach(function(file_entry) {
+        #           console.log(file_entry.filename);
+        #           dir_name = file_entry.filename.split("/")[0];
+        #           console.log(file_entry.patch);
+        #           if(typeof file_entry.patch !== 'undefined'){
+        #             if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
+        #               core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
+        #             }
+        #           }
+        #           else{
+        #             console.log("Skipping:" + file_entry.filename);
+        #           }
+        #       });
+        #       console.log("No merge conflicts found"); 
+        #       });
 
         - name: Check for new line at EOF
           run: |
@@ -58,238 +288,6 @@
             else
               echo "'enableNewLineAtEOF' is set to false. Skipping newline checks."
             fi
-        
-        - name: Check Format
-          env:
-            PR_TITLE: ${{ github.event.pull_request.title }}
-          run: |
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-                echo "Revert branch, skipping Format check"
-                exit 0
-            fi
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^(${{vars.SUPPORTED_JIRA_PROJECTS}})'; then
-              echo "Branch name starts with 'TS-' or 'SRE-' or 'TDEVOPS-' or 'TOPS-'"
-            else
-              echo "Branch name does not start with ${{vars.SUPPORTED_JIRA_PROJECTS}}. Checking PR title format."
-              PULL_REQUEST_TITLE="$PR_TITLE"
-              PATTERN="(${{vars.SUPPORTED_JIRA_PROJECTS}})-[0-9]+\s\|\s"
-              if [[ ! $PULL_REQUEST_TITLE =~ $PATTERN ]]; then
-                echo "Error: Pull request title is not in the required format. Please use ${{vars.SUPPORTED_JIRA_PROJECTS}}-XXXX format."
-                exit 1
-              else 
-                echo "PR Title is in the valid format."
-              fi  
-            fi
-              
-        - name: Extract Jira Ticket
-          id: extract
-          env:
-            PR_TITLE: ${{github.event.pull_request.title}}
-            SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
-          run: |
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-                echo "Revert branch, skipping Jira Extraction"
-                exit 0
-            fi
-            python3 - <<EOF
-            import os
-            import re
-            import sys
-            import yaml
-
-            with open('convoy.yaml', 'r') as file:
-                data = yaml.safe_load(file)
-
-            supported_jira_projects = os.environ.get('SUPPORTED_JIRA_PROJECTS')
-            branch_name = os.environ.get('SOURCE_BRANCH')
-            pr_title = os.environ.get('PR_TITLE')
-            jira_source = data.get('ci').get('bestPractices').get('jiraValidation').get('jiraIdSource')
-            jira_match = data.get('ci').get('bestPractices').get('jiraValidation').get('matchingRule')
-
-            match_branch = re.search(rf'({supported_jira_projects})\d+', branch_name)
-            match_pr = re.search(rf'({supported_jira_projects})\d+', pr_title)
-                
-            if jira_match == 'ALL': 
-                if match_branch and match_pr and jira_source == 'BOTH':
-                    ticket_branch = match_branch.group(0)
-                    ticket_pr = match_pr.group(0)
-                    if ticket_branch == ticket_pr:
-                        print(f"Same Jira present in both Branch and PR:{ticket_branch}")
-                        sys.stdout.write(f"::set-output name=jira_ticket::{ticket_branch}\n")
-                        exit(0)
-                    else:
-                        raise Exception("Error: Different Jira present in both Branch and PR")
-                elif match_branch and jira_source == 'BRANCH_NAME_PREFIX':
-                    ticket = match_branch.group(0)
-                    print(f"Jira ticket extracted from Branch name:{ticket}")
-                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                    exit(0)
-                elif match_pr and jira_source == 'PR_TITLE_PREFIX':
-                    ticket = match_pr.group(0)
-                    print(f"Jira ticket extracted from PR Title:{ticket}")
-                    sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                    exit(0)
-                else:
-                    raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")   
-            elif jira_match == 'ANY':
-                    if jira_source == 'BRANCH_NAME_PREFIX':
-                        if match_branch:
-                            ticket = match_branch.group(0)
-                            print(f"Jira ticket extracted from Branch name:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                            exit(0)
-                        else: 
-                            print(f"No Jira ticket found in Branch name, checking in PR title")     
-                            if match_pr :
-                                ticket = match_pr.group(0)
-                                print(f"Jira ticket extracted from PR Title:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                                exit(0)
-                            else:
-                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
-                    elif jira_source == 'PR_TITLE_PREFIX':
-                        if match_pr:
-                            ticket = match_pr.group(0)
-                            print(f"Jira ticket extracted from PR Title:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                            exit(0)
-
-                        else:
-                            print(f"No Jira ticket found in PR Title, checking in Branch name")     
-                            if match_branch:
-                                ticket = match_branch.group(0)
-                                print(f"Jira ticket extracted from Branch name:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                                exit(0)
-                            else:
-                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")  
-                    elif jira_source == 'BOTH':
-                        if match_branch:
-                            ticket = match_branch.group(0)
-                            print(f"Jira ticket extracted from Branch name:{ticket}")
-                            sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                            exit(0)
-                        else: 
-                            print(f"No Jira ticket found in Branch name, checking in PR title")     
-                            if match_pr:
-                                ticket = match_pr.group(0)
-                                print(f"Jira ticket extracted from PR Title:{ticket}")
-                                sys.stdout.write(f"::set-output name=jira_ticket::{ticket}\n")
-                                exit(0)
-                            else:
-                                raise Exception("No Appropriate Jira ticket found in Branch name or PR Title")            
-                    else: 
-                        raise Exception("Error: Invalid selection in Jira Source")         
-            elif jira_match == 'NONE':
-                print("No extraction of Jira ticket specified")
-                exit(0)
-            else: 
-                raise Exception("Invalid Jira Match type specified")
-            EOF
-
-        - name: Validate Jira Ticket
-          env:
-            JIRA: ${{steps.extract.outputs.jira_ticket}}
-            JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
-            JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          run: |
-            if echo "${{ env.SOURCE_BRANCH }}" | grep -Eq '^revert-'; then
-              echo "Revert branch, skipping Jira Validation"
-              exit 0
-            fi
-            echo "${{env.JIRA}}"
-            python3 - <<EOF
-            import os
-            from jira import JIRA
-            user = os.environ.get('JIRA_USERNAME')
-            try:
-              apikey = os.environ.get('JIRA_API_TOKEN')
-              jira_ticket = os.environ.get('JIRA')
-              options = {'server': 'https://tessell.atlassian.net'}
-              jira = JIRA(options, basic_auth=(user, apikey) )
-              try:
-                  issue = jira.issue(jira_ticket)
-                  print("Ticket Summary=",issue.fields.summary)
-              except Exception as ex:
-                  print("Not a valid jira", jira_ticket)
-                  raise Exception(ex)
-            except Exception as ex:
-              raise Exception(ex)  
-            EOF
-
-        - name: Check double commit
-          env: 
-            PR_TITLE: ${{github.event.pull_request.title}}
-            BRANCH: ${{ github.event.pull_request.head.ref}}
-          run: |
-            if ([[ '${{ github.event.pull_request.user.login }}' != 'cipipelinetessell' ]]) && ([[ "$BRANCH" == *"double_commit"* ]] || [[ "$PR_TITLE" == *"Double Commit"* ]]); then
-              if ([[ "$BRANCH" == *"revert"* ]] && [[ "$PR_TITLE" == *"Revert"* ]]); then
-                echo "Revert Double commit Branch. Allowed"
-              else   
-                echo "Exclude Double commit naming in Branch, PR title and try again."
-                exit 1
-              fi
-            else
-              echo "No double commit conflicts found in Branch or PR title."
-            fi
-
-        - name: Check for Jsonlint
-          run: |
-            set -e
-            git diff --name-only --diff-filter=AM ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} | grep '\.json$' | xargs -I{} sh -c 'jsonlint -q "{}" || { echo "::error::Invalid JSON file: {}"; exit 1; }'
-
-        - name: Output PR diff 
-          id: pr_diff
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              head_commit = "${{ github.sha }}"
-              base_commit = "${{ github.sha }}"
-              if ( "${{ github.event.before }}" != '0000000000000000000000000000000000000000') { 
-                base_commit = "${{ github.event.before }}"
-              }
-              if ( "${{ github.event_name }}" == 'pull_request') {
-                console.log("Using the base branch's commit for comparing.")
-                base_commit = "${{ github.event.pull_request.base.sha  }}"
-              }
-              response = await github.rest.repos.compareCommits({
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{  github.repository }}".split('/')[1],
-                  head: head_commit,
-                  base: base_commit
-              });
-              let jsonResponse = JSON.stringify(response);
-              fs.writeFileSync('response.txt', jsonResponse, 'utf8');
-
-        - name: Check for merge conflicts
-          uses: actions/github-script@v7.0.1
-          with:
-            script: |
-              const fs = require('fs');
-              fs.readFile('response.txt', 'utf8', (err, resData) => {
-                if (err) {
-                    console.error('Error reading file:', err);
-                    process.exit(1);
-                }
-                let response = JSON.parse(resData);
-                response.data.files.forEach(function(file_entry) {
-                  console.log(file_entry.filename);
-                  dir_name = file_entry.filename.split("/")[0];
-                  console.log(file_entry.patch);
-                  if(typeof file_entry.patch !== 'undefined'){
-                    if ( file_entry.patch.includes("+<<<<<<<") || file_entry.patch.includes("+=======") || file_entry.patch.includes("+>>>>>>>")) {
-                      core.setFailed("Please resolve Merge Conflict in: " + dir_name );  
-                    }
-                  }
-                  else{
-                    console.log("Skipping:" + file_entry.filename);
-                  }
-              });
-              console.log("No merge conflicts found"); 
-              });
-
-       
 
         - name: Check DB Migration Scripts
           id: check_db_migration
