@@ -291,13 +291,13 @@ upload_tessell_to_gcloud() {
   ls "${folder_path}"
   if [[ "$recursive" == "true" ]]; then
     # Upload all content recursively, maintaining structure
-    # push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
+    push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
     echo "${folder_path}/*" "${gcloud_base_path}/"
   else
     # Only upload top-level files
     for file in "$folder_path"/*; do
       if [[ -f $file ]]; then
-        # push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
+        push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
         echo "$file" "${gcloud_base_path}/$(basename $file)"
       fi
     done
