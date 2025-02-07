@@ -236,7 +236,7 @@ docker_tag_and_push() {
 download_binary_from_source() {
   CONFIG_FILE="convoy.yaml"
   TMP_DIR="/tmp"
-  if [[ "$(yq eval '.externalUrls' "${CONFIG_FILE}")" != "null" ]]; then
+  if [[ "$(yq '.externalUrls' "${CONFIG_FILE}")" != "null" ]]; then
     echo "Error: 'externalUrls' is deprecated. Please switch to 'dataSources' for downloading binaries in the Terraform module. Failing build."
     exit 1
   fi
@@ -251,14 +251,13 @@ download_binary_from_source() {
       local_path=$(echo "${entry}" | jq -r '.destination.localPath')
       extract_source=$(echo "${entry}" | jq -r '.destination.extractSource')
 
+      filename=$(basename "${http_url:-${minio_path}}")
+      download_path="${TMP_DIR}/${filename}"
+
       if [[ -n "${http_url}" ]]; then
-        filename=$(basename "${http_url}")
-        download_path="${TMP_DIR}/${filename}"
         echo "Downloading from HTTP: ${http_url}"
         wget -q "${http_url}" -O "${download_path}"
       elif [[ -n "${minio_path}" ]]; then
-        filename=$(basename "${minio_path}")
-        download_path="${TMP_DIR}/${filename}"
         echo "Downloading from MinIO: ${minio_path}"
         mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
       else
@@ -280,7 +279,7 @@ download_binary_from_source() {
       echo "Processing complete for ${filename}"
     done
   else
-    echo "No dataSources found in ${CONFIG_FILE}. Skipping downloading binaries."
+    echo "No dataSources defined in ${CONFIG_FILE}. Moving on..."
   fi
 }
 
