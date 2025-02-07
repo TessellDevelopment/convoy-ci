@@ -18,30 +18,6 @@
           with:
             fetch-depth: 0
 
-        - name: Create tag and update ref
-          uses: actions/github-script@v7.0.1
-          id: create_tag
-          with:
-            github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
-            script: |
-              const fs = require('fs');
-              const yaml = require('js-yaml');
-              const content = fs.readFileSync('./convoy.yaml', 'utf8');
-              const data = yaml.load(content);
-              var language = data.language
-              var version = data.version
-              var uses_custom_version = "false"
-              if (language === 'helm'){
-                const path = data.generates?.helmCharts?.[0]?.chartPath || data.chartPath;
-                console.log(path)
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                new_tag = dataHelm.version
-                uses_custom_version = "true"
-                console.log(dataHelm)
-                console.log(new_tag)
-              } 
-
         - name: Code Scan for Secrets
           shell: bash
           run: |
