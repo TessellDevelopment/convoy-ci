@@ -233,6 +233,61 @@ docker_tag_and_push() {
   fi  
 }
 
+download_binary_from_source() {
+  CONFIG_FILE="convoy.yaml"
+  TMP_DIR="/tmp"
+  if [[ "$(yq '.externalUrls' "${CONFIG_FILE}")" != "null" ]]; then
+    echo "Error: 'externalUrls' is deprecated. Please switch to 'dataSources' for downloading binaries in the Terraform module. Failing build."
+    exit 1
+  fi
+  if yq eval '.dataSources' "${CONFIG_FILE}" &> /dev/null; then
+    echo "dataSources found in ${CONFIG_FILE}. Processing artifacts."
+    data_sources=$(yq eval -o=json '.dataSources' "${CONFIG_FILE}" | jq -c '.[]')
+    for entry in ${data_sources}; do
+
+      http_url=$(echo "${entry}" | jq -r '.source.httpPublicUrl // empty')
+      minio_path=$(echo "${entry}" | jq -r '.source.tessellArtifactsPath // empty')
+
+      local_path=$(echo "${entry}" | jq -r '.destination.localPath')
+      extract_source=$(echo "${entry}" | jq -r '.destination.extractSource')
+
+      filename=$(basename "${http_url:-${minio_path}}")
+      download_path="${TMP_DIR}/${filename}"
+
+      if [[ -n "${http_url}" ]]; then
+        echo "Downloading from HTTP: ${http_url}"
+        wget -q "${http_url}" -O "${download_path}"
+      elif [[ -n "${minio_path}" ]]; then
+        echo "Downloading from MinIO: ${minio_path}"
+        mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
+      else
+        echo "No valid source found for entry: ${entry}"
+        exit 1
+      fi
+      if [[ "${extract_source}" == "true" ]]; then
+        mkdir -p "${local_path}"
+        echo "Extracting ${download_path} to ${local_path}"
+        case "${download_path}" in
+          *.zip) unzip -o "${download_path}" -d "${local_path}" ;;
+          *.tar) tar -xf "${download_path}" -C "${local_path}" ;;
+          *.tar.gz|*.tgz) tar -xzf "${download_path}" -C "${local_path}" ;;
+          *) echo "Unsupported archive format: ${download_path}"; exit 1 ;;
+        esac
+      else
+        mkdir -p $(dirname "${local_path}")
+        echo "Copying ${download_path} to ${local_path}"
+        cp "${download_path}" "${local_path}"
+        mode=$(echo "${entry}" | jq -r '.destination.mode // 644')
+        chmod "${mode}" "${local_path}"
+      fi
+      rm "${download_path}"
+      echo "Processing complete for ${filename}"
+    done
+  else
+    echo "No dataSources defined in ${CONFIG_FILE}. Moving on..."
+  fi
+}
+
 elastic_agent_build() {
   set -e
   IMAGE="${1}"
@@ -807,10 +862,6 @@ provider_build() {
   required_inputs="1 2"
   validate_inputs "${required_inputs}" "$@" 
   install_go_dependencies
-  rm -rf vendor
-  go clean -modcache
-  go mod tidy
-  go mod vendor
   make build
   ls $GOPATH/bin
   cd $GOPATH/bin
