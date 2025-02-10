@@ -318,8 +318,9 @@ folder_content_and_push() {
   folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT)) | .folders' convoy.yaml)
   gcloud_base_path="gs://tessellgcp-artifacts/${RELEASE_LABEL}/tessell-gcp-master-data/${RELEASE_VERSION}"
   # for folder in $(echo "$folders_json" | jq -c '.[]'); do
-  dir_path=$(echo "$folder" | jq -r .folderPath)
-  recursive=$(echo $folder | jq -r .recursive)
+
+  dir_path=$(echo "$folders_json" | jq -r .folderPath)
+  recursive=$(echo $folders_json | jq -r .recursive)
   upload_tessell_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum uploaded_files.zip
   # done
