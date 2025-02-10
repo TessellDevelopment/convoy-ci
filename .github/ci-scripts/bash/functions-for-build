@@ -315,7 +315,7 @@ folder_content_and_push() {
   RELEASE_LABEL="rel-0.1.0"
   RELEASE_VERSION="0.1.111111"
 
-  folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT)) | .folders' convoy.yaml)
+  folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
   gcloud_base_path="gs://tessellgcp-artifacts/${RELEASE_LABEL}/tessell-gcp-master-data/${RELEASE_VERSION}"
   # for folder in $(echo "$folders_json" | jq -c '.[]'); do
 
