@@ -1246,7 +1246,7 @@ upload_folder_to_gcloud() {
   local recursive=$2
   local uploaded_files=""
 
-  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/$ARTIFACT/${LATEST_TAG}"
+  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/${ARTIFACT}/${LATEST_TAG}"
   if [[ "$recursive" == "true" ]]; then
     push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
   else
@@ -1260,9 +1260,9 @@ upload_folder_to_gcloud() {
   if [[ -n $uploaded_files ]]; then
     zip $ARTIFACT.zip $uploaded_files
   else
-    zip -r $ARTIFACT.zip $folder_path
+    zip -r ${ARTIFACT}.zip $folder_path
   fi
-  push_to_gcloud "$ARTIFACT.zip" "${gcloud_base_path}/$ARTIFACT.zip"
+  push_to_gcloud "${ARTIFACT}.zip" "${gcloud_base_path}/${ARTIFACT}.zip"
 }
 
 vss_tar_build() {
