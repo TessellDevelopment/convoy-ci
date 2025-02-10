@@ -70,7 +70,7 @@ jobs:
               console.log("Skipping New tag creation")
             } else {
               if (language === 'helm'){
-                const path = data.generates.helmCharts[0].chartPath
+                const path = data.generates?.helmCharts?.[0]?.chartPath || data.chartYamlFilePath;
                 const contentHelm = fs.readFileSync(path, 'utf8');
                 const dataHelm = yaml.load(contentHelm);
                 new_tag = dataHelm.version
