@@ -581,6 +581,11 @@ jobs:
             directories=$(echo $directories | tr '\n' ' ')
             echo "$directories"
           }
+          mvnwBuild() {
+            set -e
+            ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
+            set +e
+          }
           opaBuild() {
             set -e
             ARTIFACT="$1"
