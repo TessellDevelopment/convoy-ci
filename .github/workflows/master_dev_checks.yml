@@ -262,8 +262,8 @@
 
         - name: Check for new line at EOF
           run: |
-            enable_newline=$(yq e '.enforceNewLineAtEOF // false' convoy.yaml)
-            if [ "${enable_newline}" = "true" ]; then
+            enforce_newline_at_eof=$(yq e '.enforceNewLineAtEOF // false' convoy.yaml)
+            if [ "${enforce_newline_at_eof}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
               git checkout ${{github.base_ref}} && git pull
               git checkout ${{github.head_ref}} && git pull
