@@ -277,9 +277,8 @@ download_binary_from_source() {
         mkdir -p $(dirname "${local_path}")
         echo "Copying ${download_path} to ${local_path}"
         cp "${download_path}" "${local_path}"
-        target_file="${local_path}"
         mode=$(echo "${entry}" | jq -r '.destination.mode // 644')
-        chmod "${mode}" "${target_file}"
+        chmod "${mode}" "${local_path}"
       fi
       rm "${download_path}"
       echo "Processing complete for ${filename}"
