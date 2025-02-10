@@ -1246,7 +1246,7 @@ upload_folder_to_gcloud() {
   local recursive=$2
   local uploaded_files=""
 
-  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/tessell-gcp-master-data/${LATEST_TAG}"
+  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/$ARTIFACT/${LATEST_TAG}"
   if [[ "$recursive" == "true" ]]; then
     push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
   else
