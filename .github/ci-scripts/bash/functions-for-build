@@ -281,72 +281,33 @@ upload_tessell_to_gcloud() {
   local recursive=$2
   local uploaded_files=""
 
-  # Base GCloud destination path
-  echo "recursive $recursive"
-  echo "folder_path $folder_path"
   local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/tessell-gcp-master-data/${LATEST_TAG}"
   if [[ "$recursive" == "true" ]]; then
-    # Upload all content recursively, maintaining structure
-    echo "${folder_path}/*" "${gcloud_base_path}/"
     push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
   else
-    # Only upload top-level files
     for file in "$folder_path"/*; do
       if [[ -f $file ]]; then
         push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
-        echo "$file" "${gcloud_base_path}/$(basename $file)"
         uploaded_files="$uploaded_files $file"
       fi
     done
   fi
   if [[ -n $uploaded_files ]]; then
-    echo "Uploaded files $uploaded_files"
     zip $ARTIFACT.zip $uploaded_files
-    echo "Files have been zipped into $ARTIFACT.zip"
   else
-    echo "Uploaded files $folder_path"
     zip -r $ARTIFACT.zip $folder_path
-    echo "Zipped entire folder $folder_path."
   fi
   push_to_gcloud "$ARTIFACT.zip" "${gcloud_base_path}/$ARTIFACT.zip"
 }
 
 folder_content_and_push() {
   export ARTIFACT=${1}
-  echo $ARTIFACT
   check_convoy_yaml
-
-  RELEASE_LABEL="rel-0.1.0"
-  RELEASE_VERSION="0.1.111111"
-
-  folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
-  gcloud_base_path="gs://tessellgcp-artifacts/${RELEASE_LABEL}/tessell-gcp-master-data/${RELEASE_VERSION}"
-  # for folder in $(echo "$folders_json" | jq -c '.[]'); do
-
-  dir_path=$(echo "$folders_json" | jq -r .folderPath)
-  recursive=$(echo $folders_json | jq -r .recursive)
-  upload_tessell_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
+  artifact_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
+  folder_path=$(echo "$artifact_json" | jq -r .folderPath)
+  recursive=$(echo $artifact_json | jq -r .recursive)
+  upload_tessell_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum $ARTIFACT.zip
-  # done
-}
-
-folder_content() {
-  export ARTIFACT=${1}
-  echo $ARTIFACT
-  check_convoy_yaml
-
-  RELEASE_LABEL="rel-0.1.0"
-  RELEASE_VERSION="0.1.111111"
-
-  folders_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
-  gcloud_base_path="gs://tessellgcp-artifacts/${RELEASE_LABEL}/tessell-gcp-master-data/${RELEASE_VERSION}"
-  # for folder in $(echo "$folders_json" | jq -c '.[]'); do
-
-  dir_path=$(echo "$folders_json" | jq -r .folderPath)
-  recursive=$(echo $folders_json | jq -r .recursive)
-  upload_tessell_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
-  generate_checksum uploaded_files.zip
-  # done
 }
 
 get_base_branch_commit_from_pr_number() {
