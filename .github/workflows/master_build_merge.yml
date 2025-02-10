@@ -1059,22 +1059,22 @@ jobs:
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
-      # - name: Cleanup
-      #   if: always()
-      #   run: |
-      #     set +e
-      #     sudo rm -rf target
-      #     helm repo remove nexus-prod
-      #     docker container prune --force
-      #     docker volume prune --force
+      - name: Cleanup
+        if: always()
+        run: |
+          set +e
+          sudo rm -rf target
+          helm repo remove nexus-prod
+          docker container prune --force
+          docker volume prune --force
                   
-      # - name: Slack Notification
-      #   uses: act10ns/slack@v2.0.0
-      #   if: failure()
-      #   with:
-      #     status: ${{ job.status }}
-      #     steps: ${{ toJson(steps) }}
-      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
       
   build-arm:
     if: ${{ inputs.type == 'arm' }}
