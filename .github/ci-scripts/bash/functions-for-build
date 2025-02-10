@@ -301,14 +301,14 @@ upload_tessell_to_gcloud() {
   fi
   if [[ -n $uploaded_files ]]; then
     echo "Uploaded files $uploaded_files"
-    zip uploaded_files.zip $uploaded_files
-    echo "Files have been zipped into uploaded_files.zip"
+    zip $ARTIFACT.zip $uploaded_files
+    echo "Files have been zipped into $ARTIFACT.zip"
   else
     echo "Uploaded files $folder_path"
-    zip -r uploaded_files.zip $folder_path
+    zip -r $ARTIFACT.zip $folder_path
     echo "Zipped entire folder $folder_path."
   fi
-  # push_to_gcloud "uploaded_files.zip" "${gcloud_base_path}/uploaded_files.zip"
+  # push_to_gcloud "$ARTIFACT.zip" "${gcloud_base_path}/$ARTIFACT.zip"
 }
 
 folder_content_and_push() {
@@ -326,7 +326,7 @@ folder_content_and_push() {
   dir_path=$(echo "$folders_json" | jq -r .folderPath)
   recursive=$(echo $folders_json | jq -r .recursive)
   upload_tessell_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
-  generate_checksum uploaded_files.zip
+  generate_checksum $ARTIFACT.zip
   # done
 }
 
