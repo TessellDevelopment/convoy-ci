@@ -61,19 +61,19 @@
   
     find-latest-tag:
       needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
       secrets: inherit
       with:
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
           
     sonar-scan:
       needs: [build-file]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
       secrets: inherit
   
     build:
       needs: [build-file,find-latest-tag]
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3004
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
       secrets: inherit
       with:
         type: ${{needs.build-file.outputs.type}}
