@@ -986,18 +986,7 @@ jobs:
                 ARTIFACT_FILE=${DIR}.zip
                 cd $BASE_DIR/$DIR
                 VERSION=$(yq .version convoy.yaml)
-                if yq eval '.externalUrls' convoy.yaml &> /dev/null; then
-                  echo "externalUrls present in convoy.yaml. Downloading required binaries."
-                  urls=$(yq eval '.externalUrls[]' convoy.yaml)
-                  for url in ${urls}; do
-                    echo "Processing URL: ${url}"
-                    filename=$(basename "${url}")
-                    wget "${url}" 
-                    unzip "${filename}"
-                    rm "${filename}"
-                    echo "Downloaded and extracted: ${filename}"
-                  done
-                fi
+                download_binary_from_source
                 terraform_build $PWD $BUILD_DIR/$ARTIFACT_FILE
                 cd $BASE_DIR
                 generateChecksum "$ARTIFACT_FILE"

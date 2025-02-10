@@ -76,6 +76,10 @@ dockerBuild() {
   docker_build "$@"
 }
 
+downloadBinaryFromSource() {
+  download_binary_from_source "$@"
+}
+
 dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
