@@ -298,6 +298,7 @@ upload_tessell_to_gcloud() {
         uploaded_files="$uploaded_files $file"
       fi
     done
+  fi
     if [[ -n $uploaded_files ]]; then
       echo "Uploaded files $uploaded_files"
       zip uploaded_files.zip $uploaded_files
@@ -308,7 +309,6 @@ upload_tessell_to_gcloud() {
       echo "Zipped entire folder $folder_path."
     fi
     # push_to_gcloud "uploaded_files.zip" "${gcloud_base_path}/uploaded_files.zip"
-  fi
 }
 
 folder_content_and_push() {
