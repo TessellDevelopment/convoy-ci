@@ -331,7 +331,6 @@ frp_build_and_push() {
   set +e
 }
 
-
 folder_content_and_push() {
   export ARTIFACT=${1}
   check_convoy_yaml
