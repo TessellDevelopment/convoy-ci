@@ -299,16 +299,16 @@ upload_tessell_to_gcloud() {
       fi
     done
   fi
-    if [[ -n $uploaded_files ]]; then
-      echo "Uploaded files $uploaded_files"
-      zip uploaded_files.zip $uploaded_files
-      echo "Files have been zipped into uploaded_files.zip"
-    else
-      echo "Uploaded files $folder_path"
-      zip -r uploaded_files.zip $folder_path
-      echo "Zipped entire folder $folder_path."
-    fi
-    # push_to_gcloud "uploaded_files.zip" "${gcloud_base_path}/uploaded_files.zip"
+  if [[ -n $uploaded_files ]]; then
+    echo "Uploaded files $uploaded_files"
+    zip uploaded_files.zip $uploaded_files
+    echo "Files have been zipped into uploaded_files.zip"
+  else
+    echo "Uploaded files $folder_path"
+    zip -r uploaded_files.zip $folder_path
+    echo "Zipped entire folder $folder_path."
+  fi
+  # push_to_gcloud "uploaded_files.zip" "${gcloud_base_path}/uploaded_files.zip"
 }
 
 folder_content_and_push() {
