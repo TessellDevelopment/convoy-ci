@@ -331,29 +331,6 @@ frp_build_and_push() {
   set +e
 }
 
-upload_tessell_to_gcloud() {
-  local folder_path=$1
-  local recursive=$2
-  local uploaded_files=""
-
-  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/tessell-gcp-master-data/${LATEST_TAG}"
-  if [[ "$recursive" == "true" ]]; then
-    push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
-  else
-    for file in "$folder_path"/*; do
-      if [[ -f $file ]]; then
-        push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
-        uploaded_files="$uploaded_files $file"
-      fi
-    done
-  fi
-  if [[ -n $uploaded_files ]]; then
-    zip $ARTIFACT.zip $uploaded_files
-  else
-    zip -r $ARTIFACT.zip $folder_path
-  fi
-  push_to_gcloud "$ARTIFACT.zip" "${gcloud_base_path}/$ARTIFACT.zip"
-}
 
 folder_content_and_push() {
   export ARTIFACT=${1}
@@ -361,7 +338,7 @@ folder_content_and_push() {
   local artifact_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
   local folder_path=$(echo "$artifact_json" | jq -r .folderPath)
   local recursive=$(echo $artifact_json | jq -r .recursive)
-  upload_tessell_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
+  upload_folder_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum $ARTIFACT.zip
 }
 
@@ -1263,6 +1240,30 @@ ui_build_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
+}
+
+upload_folder_to_gcloud() {
+  local folder_path=$1
+  local recursive=$2
+  local uploaded_files=""
+
+  local gcloud_base_path="gs://tessellgcp-artifacts/${LABEL}/tessell-gcp-master-data/${LATEST_TAG}"
+  if [[ "$recursive" == "true" ]]; then
+    push_to_gcloud "${folder_path}/*" "${gcloud_base_path}/"
+  else
+    for file in "$folder_path"/*; do
+      if [[ -f $file ]]; then
+        push_to_gcloud "$file" "${gcloud_base_path}/$(basename $file)"
+        uploaded_files="$uploaded_files $file"
+      fi
+    done
+  fi
+  if [[ -n $uploaded_files ]]; then
+    zip $ARTIFACT.zip $uploaded_files
+  else
+    zip -r $ARTIFACT.zip $folder_path
+  fi
+  push_to_gcloud "$ARTIFACT.zip" "${gcloud_base_path}/$ARTIFACT.zip"
 }
 
 vss_tar_build() {
