@@ -251,7 +251,7 @@ download_binary_from_source() {
       local_path=$(echo "${entry}" | jq -r '.destination.localPath')
       extract_source=$(echo "${entry}" | jq -r '.destination.extractSource')
 
-      filename=$(basename "${http_url:-${minio_path}}")
+      filename=$(basename "${local_path}")
       download_path="${TMP_DIR}/${filename}"
 
       if [[ -n "${http_url}" ]]; then
@@ -267,7 +267,12 @@ download_binary_from_source() {
       mkdir -p "${local_path}"
       if [[ "${extract_source}" == "true" ]]; then
         echo "Extracting ${download_path} to ${local_path}"
-        unzip -o "${download_path}" -d "${local_path}"
+        case "${download_path}" in
+          *.zip) unzip -o "${download_path}" -d "${local_path}" ;;
+          *.tar) tar -xf "${download_path}" -C "${local_path}" ;;
+          *.tar.gz|*.tgz) tar -xzf "${download_path}" -C "${local_path}" ;;
+          *) echo "Unsupported archive format: ${download_path}"; exit 1 ;;
+        esac
       else
         echo "Copying ${download_path} to ${local_path}"
         cp "${download_path}" "${local_path}"
