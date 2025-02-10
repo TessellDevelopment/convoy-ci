@@ -358,9 +358,9 @@ upload_tessell_to_gcloud() {
 folder_content_and_push() {
   export ARTIFACT=${1}
   check_convoy_yaml
-  artifact_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
-  folder_path=$(echo "$artifact_json" | jq -r .folderPath)
-  recursive=$(echo $artifact_json | jq -r .recursive)
+  local artifact_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
+  local folder_path=$(echo "$artifact_json" | jq -r .folderPath)
+  local recursive=$(echo $artifact_json | jq -r .recursive)
   upload_tessell_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum $ARTIFACT.zip
 }
