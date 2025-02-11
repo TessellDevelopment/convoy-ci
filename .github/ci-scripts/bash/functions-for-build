@@ -370,7 +370,7 @@ folder_content() {
 
   dir_path=$(echo "$folders_json" | jq -r .folderPath)
   recursive=$(echo $folders_json | jq -r .recursive)
-  upload_tessell_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
+  upload_folder_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum uploaded_files.zip
   # done
 }
