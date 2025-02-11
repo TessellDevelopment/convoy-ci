@@ -327,12 +327,12 @@ upload_folder_to_gcloud() {
   fi
 
   # Push files or folder to GCloud
-  # push_to_gcloud "${folder_path}/*" "${artifact_base_path}/"
+  push_to_gcloud "${folder_path}/*" "${artifact_base_path}/"
   echo "Pushing to GCloud ${folder_path}/* ${artifact_base_path}/"
 
   # Zip and upload
   zip -r "${ARTIFACT}.zip" "$folder_path"
-  # push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
+  push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
   echo "push zip to gcloud ${ARTIFACT}.zip ${artifact_base_path}/${ARTIFACT}.zip"
 
   # Cleanup temporary directory
