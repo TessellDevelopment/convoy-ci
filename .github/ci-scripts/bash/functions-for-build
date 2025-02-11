@@ -373,7 +373,7 @@ folder_content() {
   dir_path=$(echo "$folders_json" | jq -r .folderPath)
   recursive=$(echo $folders_json | jq -r .recursive)
   upload_folder_to_gcloud "$dir_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
-  generate_checksum uploaded_files.zip
+  generate_checksum $ARTIFACT.zip
   # done
 }
 
@@ -418,7 +418,7 @@ generate_checksum() {
     BUILD_FILE=${ARTIFACT}
   fi
   file_path=$(find . -type f -name "${BUILD_FILE}" 2>/dev/null | head -n 1)
-  echo "file path is $file_path"
+  echo "file path is this $file_path"
   if [[ -z "${file_path}" ]]; then
     echo "File not found!"
     return 1
