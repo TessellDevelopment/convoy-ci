@@ -125,11 +125,11 @@ jobs:
                       data = yaml.safe_load(chart_yaml_content)
                     element["version"] = data.get('version')
                   try:
-                    element["extension"] = object.get('extension', "")
+                    element["extension"] = f".{object['extension']}" if 'extension' in object and object['extension'] else ""
                   except:
                     print("Extension Details not present")
                   if artifact_type == 'artifacts':
-                    element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{element['extension']}"
+                    element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
                   artifacts.append(element)
               if len(artifacts) == 0: 
                 return
