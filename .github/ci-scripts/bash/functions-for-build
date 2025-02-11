@@ -66,6 +66,13 @@ build_convoy_tessell_image_and_push() {
   docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
 }
 
+check_convoy_yaml() {
+  if ! [[ -f "convoy.yaml" ]]; then
+    echo "Error: File 'convoy.yaml' not found." >&2
+    return 1
+  fi
+}
+
 check_flyway() {
   if [ -d "flyway" ]; then
     echo "The 'flyway' directory exists in this repository."
@@ -324,6 +331,16 @@ frp_build_and_push() {
   set +e
 }
 
+folder_content_and_push() {
+  export ARTIFACT=${1}
+  check_convoy_yaml
+  local artifact_json=$(yq -o=json '.generates.artifacts[] | select(.name == env(ARTIFACT))' convoy.yaml)
+  local folder_path=$(echo "$artifact_json" | jq -r .folderPath)
+  local recursive=$(echo $artifact_json | jq -r .recursive)
+  upload_folder_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
+  generate_checksum $ARTIFACT.zip
+}
+
 get_base_branch_commit_from_pr_number() {
   base_branch_commit_of_root_pr=$(curl -L \
   -H "Accept: application/vnd.github+json" \
@@ -386,10 +403,7 @@ generate_sts_session_token() {
 }
 
 get_required_go_version() {
-  if ! [[ -f "convoy.yaml" ]]; then
-    echo "Error: File 'convoy.yaml' not found." >&2
-    return 1
-  fi
+  check_convoy_yaml
   required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
   if [[ -n "${required_go_version}" ]]; then
     echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
@@ -924,7 +938,7 @@ push_to_gcloud() {
   SOURCE="${1}"
   DESTINATION="${2}"
   gcloud auth activate-service-account --key-file=${GOOGLE_GHA_CREDS_PATH}
-  gcloud storage cp ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
+  gcloud storage cp -r ${SOURCE} ${DESTINATION} --project=${TESSELL_GCP_PROJECT_ID}
 }
 
 push_to_minio() {
@@ -1225,6 +1239,27 @@ ui_build_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
+}
+
+upload_folder_to_gcloud() {
+  local folder_path=$1
+  local recursive=$2
+  local temp_dir=""
+  local artifact_base_path="gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${LATEST_TAG}"
+
+  if [[ "$recursive" != "true" ]]; then
+    temp_dir=$(mktemp -d)
+    for file in "$folder_path"/*; do
+      [[ -f $file ]] && cp "$file" "$temp_dir/"
+    done
+    folder_path=$temp_dir
+  fi
+  push_to_gcloud "${folder_path}/*" "${artifact_base_path}/"
+
+  zip -r "${ARTIFACT}.zip" "$folder_path"
+  push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
+
+  [[ -n $temp_dir ]] && rm -rf "$temp_dir"
 }
 
 vss_tar_build() {

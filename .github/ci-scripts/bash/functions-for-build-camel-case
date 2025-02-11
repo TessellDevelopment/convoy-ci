@@ -92,6 +92,10 @@ elasticAgentBuildAndPush() {
   elastic_agent_build_and_push "$@"
 }
 
+folderContentAndPush() {
+  folder_content_and_push "$@"
+}
+
 frpBuild() {
   frp_build "$@"
 }
