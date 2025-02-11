@@ -1244,25 +1244,22 @@ ui_build_and_push() {
 upload_folder_to_gcloud() {
   local folder_path=$1
   local recursive=$2
-  local uploaded_files=""
-
+  local temp_dir=""
   local artifact_base_path="gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${LATEST_TAG}"
-  if [[ "$recursive" == "true" ]]; then
-    push_to_gcloud "${folder_path}/*" "${artifact_base_path}/"
-  else
+
+  if [[ "$recursive" != "true" ]]; then
+    temp_dir=$(mktemp -d)
     for file in "$folder_path"/*; do
-      if [[ -f $file ]]; then
-        push_to_gcloud "$file" "${artifact_base_path}/$(basename $file)"
-        uploaded_files="$uploaded_files $file"
-      fi
+      [[ -f $file ]] && cp "$file" "$temp_dir/"
     done
+    folder_path=$temp_dir
   fi
-  if [[ -n $uploaded_files ]]; then
-    zip $ARTIFACT.zip $uploaded_files
-  else
-    zip -r ${ARTIFACT}.zip $folder_path
-  fi
+  push_to_gcloud "${folder_path}/*" "${artifact_base_path}/"
+
+  zip -r "${ARTIFACT}.zip" "$folder_path"
   push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
+
+  [[ -n $temp_dir ]] && rm -rf "$temp_dir"
 }
 
 vss_tar_build() {
