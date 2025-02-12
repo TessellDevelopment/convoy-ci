@@ -50,8 +50,6 @@ jobs:
           fi
 
       - name: Create tag and update ref
-        env:
-          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
         uses: actions/github-script@v7.0.1
         id: create_tag
         with:
@@ -61,7 +59,6 @@ jobs:
             const yaml = require('js-yaml');
             const content = fs.readFileSync('./convoy.yaml', 'utf8');
             const data = yaml.load(content);
-            const base_branch = process.env.BASE_BRANCH;
             var language = data.language
             var version = data.version
             var uses_custom_version = "false"
@@ -153,8 +150,8 @@ jobs:
                   previous_minor = parseInt(previous_base.split('.').pop(), 10);
                   new_minor = previous_minor + 1;
                   
-                  if (base_branch.startsWith('rel-')) {
-                      new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}-${base_branch}`;
+                  if (${{ github.event.pull_request.base.ref }}.startsWith('rel-')) {
+                      new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}-${{ github.event.pull_request.base.ref }}`;
                   } else {
                       new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}`;
                   }
