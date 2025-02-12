@@ -800,7 +800,8 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             cd scripts
             if ${DEV_BUILD}; then
-              ./package-and-push -f -n $CHART_NAME -v ${LATEST_TAG}
+              CUSTOM_JIRA_VERSION=${LATEST_TAG}
+              ./package-and-push -f -n $CHART_NAME -v ${CUSTOM_JIRA_VERSION}
             else
               ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
@@ -815,7 +816,8 @@ jobs:
               cloneHelmTemplate
               echo "Running package and push"
               if ${DEV_BUILD}; then
-                ./package-and-push -f -n $CHART_NAME -v ${LATEST_TAG}
+                CUSTOM_JIRA_VERSION=${LATEST_TAG}
+                ./package-and-push -f -n $CHART_NAME -v ${CUSTOM_JIRA_VERSION}
               else
                 ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
               fi

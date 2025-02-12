@@ -149,14 +149,13 @@ jobs:
                 process.exit(1);
               }
               if (language === 'helm'){
-                previous_base = latest_tag.split('-')[0];
-                previous_minor = parseInt(previous_base.split('.').pop(), 10);
-                new_minor = previous_minor + 1;
+                previous_version = latest_tag.split('-')[0];
+                previous_patch_version = parseInt(previous_version.split('.').pop(), 10);
+                new_patch_version = previous_patch_version + 1;
                 
+                new_tag = `${previous_version.split('.').slice(0, -1).join('.')}.${new_patch_version}`;
                 if (base_branch.startsWith('rel-')) {
-                    new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}-${base_branch}`;
-                } else {
-                    new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}`;
+                    new_tag = `${new_tag}-${base_branch}`;
                 }
               }
               else{
