@@ -30,12 +30,12 @@ jobs:
 
   file-check:
     needs: check-label-cut-status
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
   sonar-scan:
       needs: check-label-cut-status
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@TDEVOPS-3042
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
       secrets: inherit
   
   runner-check:
@@ -56,7 +56,7 @@ jobs:
           if [ -f convoy.yaml ]; then
             if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
               APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-              URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+              URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
               RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
               echo "$RESPONSE"
               LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
@@ -83,14 +83,14 @@ jobs:
   
   create-tag:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
     secrets: inherit
     with:
       label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@main
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
@@ -98,13 +98,13 @@ jobs:
 
   find-latest-tag:
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_find_latest_tag.yml@main
     secrets: inherit
 
   build:
     needs: [runner-check,find-latest-tag]
     if: needs.file-check.outputs.github-changes == 'false'
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
@@ -114,7 +114,7 @@ jobs:
   post-build-to-convoy:
     if: always()
     needs: [file-check,find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
     with:
       ARTIFACT_GENERATED: ${{ needs.file-check.outputs.github-changes == 'false' }}
@@ -124,7 +124,7 @@ jobs:
 
   post-coverage-to-convoy:
     needs: [find-latest-tag,build,runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
     with:
       BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
@@ -135,11 +135,11 @@ jobs:
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
     needs: build
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3042
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
     secrets: inherit
 
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-3042 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main 
     secrets: inherit
