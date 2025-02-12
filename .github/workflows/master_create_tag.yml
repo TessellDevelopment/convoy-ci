@@ -62,29 +62,46 @@ jobs:
             var language = data.language
             var version = data.version
             var uses_custom_version = "false"
+            var base_branch = "${{ github.event.pull_request.base.ref }}"
+            if (language === 'helm' || version !== undefined){
+              uses_custom_version = "true"
+            }
             if ("${{env.TAG_EXISTS}}" === 'true'){
               new_tag = "${{env.CURRENT_TAG}}"
-              if (language === 'helm' || version !== undefined){
-                uses_custom_version = "true"
-              } 
               console.log("Skipping New tag creation")
-            } else {
-              if (language === 'helm'){
-                const path = data.generates?.helmCharts?.[0]?.chartPath || data.chartYamlFilePath;
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                new_tag = dataHelm.version
-                uses_custom_version = "true"
-              } else{
-                if (version !== undefined ){
-                  uses_custom_version = "true"
+            } 
+            else {
+              latest_tag = '0.0.0'
+              // process multiple tags if any
+              tags = "${{ env.TAGS }}".split(' ')
+              if (tags.length == 1) {
+                latest_tag = tags[0]
+              } 
+              else {
+                if (language === 'helm'){
+                  for (i in tags) {
+                    tag = tags[i]
+                    console.log("Checking tag " + tag)
+                    if (latest_tag == '0.0.0') {
+                      latest_tag = tag
+                      continue
+                    }
+                    latest_parts = latest_tag.split(".")
+                    tag_parts = tag.split(".")
+                    for (i = 0; i < tag_parts.length; i++) {
+                      if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                        console.log("Skipping " + tag)
+                        break
+                      }
+                      if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                        latest_tag = tag
+                        console.log("Setting " + latest_tag)
+                        break
+                      }
+                    }
+                  }
                 }
-                latest_tag = '0.0.0'
-                // process multiple tags if any
-                tags = "${{ env.TAGS }}".split(' ')
-                if (tags.length == 1) {
-                  latest_tag = tags[0]
-                } else {
+                else{
                   if ("${{ github.event.pull_request.base.ref }}" == "main") {
                     for (i in tags) {
                       tag = tags[i]
@@ -123,18 +140,28 @@ jobs:
                     }
                   }
                 }
-                console.log("Latest tag: " + latest_tag)
+              }
+              console.log("Latest tag: " + latest_tag)
 
-                // check if we have
-                if ( latest_tag == '' || latest_tag === undefined) {
-                  console.log("Couldn't determine the latest tag, exiting. Retry manually..")
-                  process.exit(1);
+              // check if we have
+              if ( latest_tag == '' || latest_tag === undefined) {
+                console.log("Couldn't determine the latest tag, exiting. Retry manually..")
+                process.exit(1);
+              }
+              if (language === 'helm'){
+                previous_version = latest_tag.split('-')[0];
+                previous_patch_version = parseInt(previous_version.split('.').pop(), 10);
+                new_patch_version = previous_patch_version + 1;
+                
+                new_tag = `${previous_version.split('.').slice(0, -1).join('.')}.${new_patch_version}`;
+                if (base_branch.startsWith('rel-')) {
+                    new_tag = `${new_tag}-${base_branch}`;
                 }
-
+              }
+              else{
                 // increase the minor version lineraly to get the new tag
                 tag_parts = latest_tag.split('.')
                 new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-                
               }
             
               // head of the branch needs to be tagged
