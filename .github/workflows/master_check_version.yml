@@ -26,9 +26,6 @@ jobs:
               if grep -q 'terraform' convoy.yaml; then
                 echo "Tf-module repository running version check"
                 echo "check=true" >> $GITHUB_OUTPUT
-              elif grep -q 'helm' convoy.yaml; then
-                echo "Helm repository running version check"
-                echo "check=true" >> $GITHUB_OUTPUT
               else
                 echo "Version not found in convoy.yaml"
                 echo "check=false" >> $GITHUB_OUTPUT
@@ -49,13 +46,6 @@ jobs:
         with:
           fetch-depth: 0 
         
-      - name: Changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
-        with:
-          files: |
-            services/**
-
       - name: Check All file changes
         id: changed-files-all
         uses: tj-actions/changed-files@v42.0.2
@@ -150,21 +140,6 @@ jobs:
                 }
                 process.exit(0);
               }
-              else if(language === 'helm'){
-                const buildFunction = data.generates.helmCharts[0].buildFunction
-                if (buildFunction === 'helm-template' && '${{steps.changed-files.outputs.any_modified}}' === 'false'){
-                  console.log("No change in services/**.Skipping version checks")
-                  process.exit(0);
-                }
-                else{
-                  const path = data.generates.helmCharts[0].chartPath
-                  const contentHelm = fs.readFileSync(path, 'utf8');
-                  const dataHelm = yaml.load(contentHelm);
-                  version = dataHelm.version
-                  exporter = data.generates.helmCharts[0].name
-                  nexusRepo = '${{vars.NEXUS_PUSH_REPOS_HELM}}'
-                }
-              }
               else if(language === 'python'){
                 version = data.version
                 exporter = data.generates.artifacts[0].name
@@ -191,30 +166,3 @@ jobs:
               console.error(e);
               process.exit(1);
             }
-
-      - name: Check version in helm-svc-defns
-        if: endsWith(github.repository, '-helm-svc-defns')
-        env:
-          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          PR_NUMBER: "${{ github.event.pull_request.number }}"
-        run: |
-          CHART_PATH=$(yq eval '.. | select(has("chartPath")) | .chartPath' convoy.yaml)
-          VERSION=$(yq e '.version' "${CHART_PATH}")
-          PREVIOUS_VERSION=$(git show origin/${BASE_BRANCH}:"${CHART_PATH}" | yq e '.version' -)
-
-          PREVIOUS_BASE=${PREVIOUS_VERSION%-*}
-          PREVIOUS_MINOR=${PREVIOUS_BASE##*.}
-          NEW_MINOR=$((PREVIOUS_MINOR + 1))
-
-          if [[ "${BASE_BRANCH}" == rel-* ]]; then
-            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}-${BASE_BRANCH}"
-          else
-            EXPECTED_VERSION="${PREVIOUS_BASE%.*}.${NEW_MINOR}"
-          fi
-
-          if [[ "${VERSION}" != "${EXPECTED_VERSION}" ]]; then
-            echo "Error: Version is invalid. Expected: ${EXPECTED_VERSION}, Found: ${VERSION}"
-            gh pr comment "${PR_NUMBER}" --body "Expected version: \`${EXPECTED_VERSION}\`, but found: \`${VERSION}\`. Please update the version correctly."
-            exit 1
-          fi
-          echo "Version validation passed."

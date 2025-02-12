@@ -802,7 +802,7 @@ jobs:
             if ${DEV_BUILD}; then
               ./package-and-push -f -n $CHART_NAME -v ${LATEST_TAG}
             else
-              ./package-and-push --prod -n $CHART_NAME
+              ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
             cd ..
             set +e
@@ -817,7 +817,7 @@ jobs:
               if ${DEV_BUILD}; then
                 ./package-and-push -f -n $CHART_NAME -v ${LATEST_TAG}
               else
-                ./package-and-push --prod -n $CHART_NAME
+                ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
               fi
               cd $GITHUB_WORKSPACE
               set +e

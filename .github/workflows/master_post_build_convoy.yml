@@ -119,11 +119,6 @@ jobs:
                   element["releaseManifestKey"] = object["releaseManifestKey"]
                   element["name"] = object["name"]
                   element["version"] = version
-                  if artifact_type == 'helmCharts':
-                    chart_path = object["chartPath"]
-                    with open(chart_path, 'r') as chart_yaml_content:
-                      data = yaml.safe_load(chart_yaml_content)
-                    element["version"] = data.get('version')
                   try:
                     element["extension"] = f".{object['extension']}" if 'extension' in object and object['extension'] else ""
                   except:

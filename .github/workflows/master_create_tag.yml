@@ -50,6 +50,8 @@ jobs:
           fi
 
       - name: Create tag and update ref
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
         uses: actions/github-script@v7.0.1
         id: create_tag
         with:
@@ -59,65 +61,82 @@ jobs:
             const yaml = require('js-yaml');
             const content = fs.readFileSync('./convoy.yaml', 'utf8');
             const data = yaml.load(content);
+            const base_branch = process.env.BASE_BRANCH;
             var language = data.language
             var version = data.version
             var uses_custom_version = "false"
+            let new_tag;
+            if (language === 'helm' || version !== undefined){
+                uses_custom_version = "true"
+            }
             if ("${{env.TAG_EXISTS}}" === 'true'){
               new_tag = "${{env.CURRENT_TAG}}"
-              if (language === 'helm' || version !== undefined){
-                uses_custom_version = "true"
-              } 
               console.log("Skipping New tag creation")
             } else {
-              if (language === 'helm'){
-                const path = data.generates?.helmCharts?.[0]?.chartPath || data.chartYamlFilePath;
-                const contentHelm = fs.readFileSync(path, 'utf8');
-                const dataHelm = yaml.load(contentHelm);
-                new_tag = dataHelm.version
-                uses_custom_version = "true"
-              } else{
-                if (version !== undefined ){
-                  uses_custom_version = "true"
-                }
                 latest_tag = '0.0.0'
                 // process multiple tags if any
                 tags = "${{ env.TAGS }}".split(' ')
                 if (tags.length == 1) {
                   latest_tag = tags[0]
                 } else {
-                  if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                  if (language === 'helm'){
                     for (i in tags) {
                       tag = tags[i]
                       console.log("Checking tag " + tag)
-                      if (latest_tag == null) {
+                      if (latest_tag == '0.0.0') {
                         latest_tag = tag
                         continue
                       }
                       latest_parts = latest_tag.split(".")
                       tag_parts = tag.split(".")
                       for (i = 0; i < tag_parts.length; i++) {
-                        if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                        if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
                           console.log("Skipping " + tag)
                           break
                         }
-                        if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                        if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
                           latest_tag = tag
                           console.log("Setting " + latest_tag)
                           break
                         }
                       }
                     }
-                  } else {
-                    tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
-                    latest_tag = tag_base.join(".") + ".0"
-                    for (i in tags) {
-                      tag = tags[i]
-                      console.log("branch - Checking tag " + tag)
-                      tag_parts = tag.split(".")
-                      if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
-                        latest_parts = latest_tag.split(".")
-                        if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                  }
+                  else{
+                    if ("${{ github.event.pull_request.base.ref }}" == "main") {
+                      for (i in tags) {
+                        tag = tags[i]
+                        console.log("Checking tag " + tag)
+                        if (latest_tag == null) {
                           latest_tag = tag
+                          continue
+                        }
+                        latest_parts = latest_tag.split(".")
+                        tag_parts = tag.split(".")
+                        for (i = 0; i < tag_parts.length; i++) {
+                          if (parseInt(tag_parts[i]) < parseInt(latest_parts[i])) {
+                            console.log("Skipping " + tag)
+                            break
+                          }
+                          if (parseInt(tag_parts[i]) > parseInt(latest_parts[i])) {
+                            latest_tag = tag
+                            console.log("Setting " + latest_tag)
+                            break
+                          }
+                        }
+                      }
+                    } else {
+                      tag_base = "${{ github.event.pull_request.base.ref }}".substring(4).split(".").slice(0,2)
+                      latest_tag = tag_base.join(".") + ".0"
+                      for (i in tags) {
+                        tag = tags[i]
+                        console.log("branch - Checking tag " + tag)
+                        tag_parts = tag.split(".")
+                        if (tag_base[0] == tag_parts[0] && tag_base[1] == tag_parts[1]) {
+                          latest_parts = latest_tag.split(".")
+                          if (parseInt(latest_parts[2]) < parseInt(tag_parts[2])) {
+                            latest_tag = tag
+                          }
                         }
                       }
                     }
@@ -130,11 +149,22 @@ jobs:
                   console.log("Couldn't determine the latest tag, exiting. Retry manually..")
                   process.exit(1);
                 }
-
-                // increase the minor version lineraly to get the new tag
-                tag_parts = latest_tag.split('.')
-                new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
-                
+                if (language === 'helm'){
+                  previous_base = latest_tag.split('-')[0];
+                  previous_minor = parseInt(previous_base.split('.').pop(), 10);
+                  new_minor = previous_minor + 1;
+                  
+                  if (base_branch.startsWith('rel-')) {
+                      new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}-${base_branch}`;
+                  } else {
+                      new_tag = `${previous_base.split('.').slice(0, -1).join('.')}.${new_minor}`;
+                  }
+                }
+                else{
+                  // increase the minor version lineraly to get the new tag
+                  tag_parts = latest_tag.split('.')
+                  new_tag = [tag_parts[0], tag_parts[1], parseInt(tag_parts[2]) + 1].join('.')
+                }
               }
             
               // head of the branch needs to be tagged
