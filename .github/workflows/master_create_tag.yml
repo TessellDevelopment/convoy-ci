@@ -34,7 +34,7 @@ jobs:
       - name: Find latest tag
         id: latest_tag
         run: |
-          latest_tags+=("$(git tag --points-at '${{ github.event.pull_request.base.sha }}')")
+          latest_tags+=("$(git tag --points-at ${{ github.event.pull_request.base.sha }})")
           for tag in $latest_tags; do tag_arr+=($tag); done
           echo "TAGS=${tag_arr[@]}" >> $GITHUB_ENV
 
