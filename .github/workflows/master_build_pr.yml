@@ -513,7 +513,7 @@ jobs:
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             cd scripts
-            ./package-and-push --no-push -n $CHART_NAME -v "0.0.0-${BRANCH_NAME}"
+            ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
             cd ..
             set +e
           }
@@ -524,7 +524,7 @@ jobs:
               validateInputs "$requiredInputs" "$@" 
               cloneHelmTemplate
               echo "Running package and push"
-              ./package-and-push --no-push -n $CHART_NAME -v "0.0.0-${BRANCH_NAME}"
+              ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
               cd $GITHUB_WORKSPACE
               set +e
             fi
