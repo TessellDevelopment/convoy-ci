@@ -138,6 +138,12 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
+  deploy-tenant:
+    if: startsWith(github.event.pull_request.base.ref, 'main')
+    needs: build
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
+    secrets: inherit
+
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
