@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy-tenant:
-    runs-on: non-build
+    runs-on: self-hosted
     env:
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
@@ -33,5 +33,7 @@ jobs:
       - name: Upgrade GCP env
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         run: |
-          echo "service account is $TESSELL_GCP_APP_NAME"
+          echo "service account is $TESSELL_GCP_SERVICE_ACCOUNT_NAME"
           echo "project is $TESSELL_GCP_PROJECT_ID"
+          ID_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=$TESSELL_GCP_SERVICE_ACCOUNT_NAME@$TESSELL_GCP_PROJECT_ID.iam.gserviceaccount.com)
+          echo $ID_TOKEN
