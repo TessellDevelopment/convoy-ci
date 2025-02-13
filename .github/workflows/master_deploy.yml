@@ -35,5 +35,8 @@ jobs:
         run: |
           echo "service account is $TESSELL_GCP_SERVICE_ACCOUNT_NAME"
           echo "project is $TESSELL_GCP_PROJECT_ID"
-          ID_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=$TESSELL_GCP_SERVICE_ACCOUNT_NAME@$TESSELL_GCP_PROJECT_ID.iam.gserviceaccount.com)
-          echo $ID_TOKEN
+          # ID_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=$TESSELL_GCP_SERVICE_ACCOUNT_NAME@$TESSELL_GCP_PROJECT_ID.iam.gserviceaccount.com)
+          # echo $ID_TOKEN
+          deploy_command=$(yq '.cd.exec' convoy.yaml)
+          echo $deploy_command
+          $deploy_command
