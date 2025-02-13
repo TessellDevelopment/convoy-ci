@@ -83,6 +83,11 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-3037_master_data2
     secrets: inherit 
 
+  deploy-tenant:
+    if: startsWith(github.event.pull_request.base.ref, 'main')
+    needs: build
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
+
   send-mail:
     needs: auto-merge
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
