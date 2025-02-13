@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  auto-merge:
+  deploy-tenant:
     runs-on: non-build
     env:
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}

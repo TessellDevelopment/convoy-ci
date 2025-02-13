@@ -87,6 +87,7 @@ jobs:
     if: startsWith(github.event.pull_request.base.ref, 'main')
     needs: build
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
+    secrets: inherit
 
   send-mail:
     needs: auto-merge
