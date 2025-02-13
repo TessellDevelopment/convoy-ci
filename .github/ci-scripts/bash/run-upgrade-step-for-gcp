@@ -5,13 +5,14 @@ if [ -z "$1" ]; then
 fi
 
 UPGRADE_STEP=${1}
-ID_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=$TESSELL_GCP_SERVICE_ACCOUNT_NAME@$TESSELL_GCP_PROJECT_ID.iam.gserviceaccount.com)
+IDENTITY_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=$TESSELL_GCP_SERVICE_ACCOUNT_NAME@$TESSELL_GCP_PROJECT_ID.iam.gserviceaccount.com)
 
-curl --location 'https://tenant-deployment-service-14904309605.asia-south1.run.app/deploy-upgrade-workflow' \
+curl --location "https://tenant-deployment-service-14904309605.asia-south1.run.app/deploy-upgrade-workflow" \
 --header "Content-Type: application/json" \
 --header "Authorization: Bearer $IDENTITY_TOKEN" \
---data "{
+--data '{
     "releaseLabel": "rel-0.3.0",
     "tenantName": "devtest02",
-    "upgradeStep":"${UPGRADE_STEP}"
-}"
+    "upgradeStep": "'"$UPGRADE_STEP"'",
+    "cpProjectId": "p-dev-devtest02"
+}'
