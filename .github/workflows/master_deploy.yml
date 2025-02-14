@@ -7,10 +7,10 @@ jobs:
   deploy-tenant:
     runs-on: self-hosted
     env:
-      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
-      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
-      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
 
     steps:
       - name: Set Application Name
@@ -31,5 +31,5 @@ jobs:
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         run: |
           deploy_command=$(yq '.cd.exec' convoy.yaml)
-          echo $deploy_command
-          $deploy_command
+          echo ${deploy_command}
+          ${deploy_command}
