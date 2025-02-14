@@ -39,7 +39,7 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Check specific file changes
-        if: endsWith(github.event.pull_request.base.repo.name, 'repo-b')
+        if: endsWith(github.event.pull_request.base.repo.name, 'helm-svc-defns')
         id: helm-files
         uses: tj-actions/changed-files@v42.0.2
         with:
@@ -54,8 +54,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
@@ -194,7 +194,7 @@ jobs:
               STATUS = 'FAILED'
               ARTIFACT_GENERATED = "false"
 
-            if REPO.endswith("repo-b") and HELM_CHART_FILES_MODIFIED == 'false':
+            if REPO.endswith("helm-svc-defns") and HELM_CHART_FILES_MODIFIED == 'false':
               ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
