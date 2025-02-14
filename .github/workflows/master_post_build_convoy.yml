@@ -192,7 +192,7 @@ jobs:
               STATUS = 'FAILED'
               ARTIFACT_GENERATED = "false"
 
-            if REPO.endswith("helm-svc-defns") and CHANGED_FILES_ANY_MODIFIED == 'false':
+            if REPO.endswith("repo-b") and CHANGED_FILES_ANY_MODIFIED == 'false':
               ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
