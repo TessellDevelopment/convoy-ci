@@ -2,12 +2,11 @@
 name: Master CI Merge Workflows
 on:
   workflow_call:
-    
-jobs:
 
+jobs:
   check-label-cut-status:
     runs-on: self-hosted
-    env: 
+    env:
       REDIS_HOSTNAME: ${{ vars.REDIS_HOSTNAME }}
       REDIS_PASSOWRD: ${{ secrets.REDIS_PASSWORD }}
     steps:
@@ -19,7 +18,7 @@ jobs:
             echo "Label cut is IN_PROGRESS. Exiting the merge workflow. Please retry once label cut is complete."
             exit 1
           fi
-      
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -34,10 +33,10 @@ jobs:
     secrets: inherit
 
   sonar-scan:
-      needs: check-label-cut-status
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
-      secrets: inherit
-  
+    needs: check-label-cut-status
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
+    secrets: inherit
+
   runner-check:
     runs-on: non-build
     needs: file-check
@@ -48,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
       - name: Get Label
         id: get-label
         shell: bash
@@ -73,14 +72,14 @@ jobs:
             fi
            else
             echo "convoy.yaml not found"
-           fi 
-          
+           fi
+
       - name: Determine runner type from Convoy
         id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
-  
+
   create-tag:
     needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
@@ -97,7 +96,7 @@ jobs:
       uses_custom_version: ${{needs.create-tag.outputs.uses_custom_version}}
 
   build:
-    needs: [runner-check,create-tag]
+    needs: [runner-check, create-tag]
     if: needs.file-check.outputs.github-changes == 'false'
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
@@ -108,7 +107,7 @@ jobs:
 
   post-build-to-convoy:
     if: always()
-    needs: [file-check,create-tag,build,runner-check]
+    needs: [file-check, create-tag, build, runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
     with:
@@ -118,11 +117,11 @@ jobs:
       LABEL: ${{needs.runner-check.outputs.label}}
 
   post-coverage-to-convoy:
-    needs: [create-tag,build,runner-check]
+    needs: [create-tag, build, runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
     with:
-      BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      BRANCH_COVERAGE: ${{needs.build.outputs.BRANCH_COVERAGE}}
       LABEL: ${{needs.runner-check.outputs.label}}
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
       TAG: ${{needs.create-tag.outputs.tag}}
@@ -133,14 +132,14 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
     secrets: inherit
 
-  deploy-tenant:
+  exec-deployment-script:
     if: startsWith(github.event.pull_request.base.ref, 'main')
-    needs: post-coverage-to-convoy
+    needs: [post-build-to-convoy, build]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main
     secrets: inherit

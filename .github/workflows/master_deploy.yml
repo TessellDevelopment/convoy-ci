@@ -1,10 +1,10 @@
 ---
-name: Tessell Pipelines Code Deploy
+name: Execute Deployment script
 on:
   workflow_call:
 
 jobs:
-  deploy-tenant:
+  exec-deploy-script:
     runs-on: self-hosted
     env:
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -27,7 +27,7 @@ jobs:
           token_format: access_token
           create_credentials_file: true
 
-      - name: Upgrade GCP env
+      - name: Execute Deployment Script
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         run: |
           deploy_command=$(yq '.cd.exec' convoy.yaml)
