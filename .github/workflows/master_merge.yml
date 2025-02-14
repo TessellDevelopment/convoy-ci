@@ -140,7 +140,7 @@ jobs:
 
   deploy-tenant:
     if: startsWith(github.event.pull_request.base.ref, 'main')
-    needs: build
+    needs: post-coverage-to-convoy
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
