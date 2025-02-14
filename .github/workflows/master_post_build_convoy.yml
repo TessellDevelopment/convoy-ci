@@ -53,8 +53,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
@@ -193,7 +193,7 @@ jobs:
               STATUS = 'FAILED'
               ARTIFACT_GENERATED = "false"
 
-            if REPO.endswith("repo-b") and CHANGED_FILES_ANY_MODIFIED == 'false':
+            if REPO.endswith("helm-svc-defns") and CHANGED_FILES_ANY_MODIFIED == 'false':
               ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
