@@ -1,0 +1,35 @@
+---
+name: Tessell Pipelines Code Deploy
+on:
+  workflow_call:
+
+jobs:
+  deploy-tenant:
+    runs-on: self-hosted
+    env:
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+
+    steps:
+      - name: Set Application Name
+        run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Upgrade GCP env
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        run: |
+          deploy_command=$(yq '.cd.exec' convoy.yaml)
+          echo $deploy_command
+          $deploy_command
