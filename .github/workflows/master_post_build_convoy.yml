@@ -173,6 +173,7 @@ jobs:
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
             ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
+            CHANGED_FILES_ANY_MODIFIED = os.environ.get('CHANGED_FILES_ANY_MODIFIED')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
