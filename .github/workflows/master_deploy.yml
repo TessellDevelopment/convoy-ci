@@ -15,7 +15,6 @@ jobs:
     steps:
       - name: Set Application Name
         run: |
-          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
 
       - name: Set Deploy Command

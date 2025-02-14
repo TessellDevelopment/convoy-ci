@@ -133,7 +133,7 @@ jobs:
     secrets: inherit
 
   exec-deployment-script:
-    if: startsWith(github.event.pull_request.base.ref, 'main')
+    if: ${{ github.event.pull_request.base.ref == 'main' }}
     needs: [post-build-to-convoy, build]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
