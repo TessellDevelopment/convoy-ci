@@ -13,6 +13,11 @@ jobs:
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
       - name: Set Application Name
         run: |
           echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
