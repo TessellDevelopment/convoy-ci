@@ -39,7 +39,8 @@ jobs:
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
       - name: Check specific file changes
-        id: changed-files
+        if: endsWith(github.event.pull_request.base.repo.name, 'helm-svc-defns')
+        id: helm-files
         uses: tj-actions/changed-files@v42.0.2
         with:
           files: |
@@ -58,7 +59,7 @@ jobs:
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
-          CHANGED_FILES_ANY_MODIFIED: ${{steps.changed-files.outputs.any_modified}}
+          HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -173,7 +174,7 @@ jobs:
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
             ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
-            CHANGED_FILES_ANY_MODIFIED = os.environ.get('CHANGED_FILES_ANY_MODIFIED')
+            HELM_CHART_FILES_MODIFIED = os.environ.get('HELM_CHART_FILES_MODIFIED')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
@@ -193,7 +194,7 @@ jobs:
               STATUS = 'FAILED'
               ARTIFACT_GENERATED = "false"
 
-            if REPO.endswith("helm-svc-defns") and CHANGED_FILES_ANY_MODIFIED == 'false':
+            if REPO.endswith("helm-svc-defns") and HELM_CHART_FILES_MODIFIED == 'false':
               ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
