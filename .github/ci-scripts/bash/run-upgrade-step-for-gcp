@@ -11,7 +11,7 @@ curl --location "https://tenant-deployment-service-14904309605.asia-south1.run.a
 --header "Content-Type: application/json" \
 --header "Authorization: Bearer ${IDENTITY_TOKEN}" \
 --data '{
-    "releaseLabel": "rel-0.3.0",
+    "releaseLabel": "'"${BASE_BRANCH}"'",
     "tenantName": "devtest02",
     "upgradeStep": "'"${UPGRADE_STEP}"'",
     "cpProjectId": "p-dev-devtest02"

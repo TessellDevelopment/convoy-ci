@@ -10,6 +10,7 @@ jobs:
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
 
     steps:
       - name: Set Application Name
