@@ -32,7 +32,7 @@ jobs:
 
   build:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-3024
     with:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit

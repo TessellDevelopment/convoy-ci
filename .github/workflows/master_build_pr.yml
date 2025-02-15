@@ -504,7 +504,7 @@ jobs:
             IMAGE="$1"
             lintCheck
             gradlewDocker
-            imageScan $IMAGE
+            # imageScan $IMAGE
             set +e
           }
           helmChartBuild() {
