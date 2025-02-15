@@ -38,6 +38,15 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
+      - name: Check specific file changes
+        if: endsWith(github.event.pull_request.base.repo.name, 'helm-svc-defns')
+        id: helm-files
+        uses: tj-actions/changed-files@v42.0.2
+        with:
+          files: |
+            Chart.yaml
+            services/**
+
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -50,6 +59,7 @@ jobs:
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
+          HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
@@ -164,6 +174,7 @@ jobs:
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
             ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
+            HELM_CHART_FILES_MODIFIED = os.environ.get('HELM_CHART_FILES_MODIFIED')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
             BASE_BRANCH = os.environ.get('BASE_BRANCH')
@@ -181,6 +192,10 @@ jobs:
               STATUS = 'SUCCESSFUL'
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
+              ARTIFACT_GENERATED = "false"
+
+            if REPO.endswith("helm-svc-defns") and HELM_CHART_FILES_MODIFIED == 'false':
+              ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
               yaml_data = yaml.safe_load(yaml_file)
@@ -215,23 +230,24 @@ jobs:
               if generates and "softwareImages" in generates:
                 payload, API_URL = get_software_def_url(payload, API_URL)
             
-            if ARTIFACT_CHECKSUMS and payload.get("artifacts"):
-              checksum_map = {}
-              parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
-              for part in parts:
-                if part:
-                  key, value = part.split(':')
-                  checksum_map[key] = value
-          
-              for artifact in payload["artifacts"]:
-                key = artifact["name"]
-                type = artifact["type"]
-                if type == "artifacts":
-                  if key in checksum_map:
-                    artifact["checksum"] = checksum_map[key]
-                  else:
-                    print(f"Checksum not found for artifact: {key}")
-                    exit(1)
+              if ARTIFACT_CHECKSUMS and payload.get("artifacts"):
+                checksum_map = {}
+                parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
+                for part in parts:
+                  if part:
+                    key, value = part.split(':')
+                    checksum_map[key] = value
+            
+                for artifact in payload["artifacts"]:
+                  key = artifact["name"]
+                  type = artifact["type"]
+                  if type == "artifacts":
+                    if key in checksum_map:
+                      artifact["checksum"] = checksum_map[key]
+                    else:
+                      print(f"Checksum not found for artifact: {key}")
+                      exit(1)
+
             print(json.dumps(payload, indent=4))
             post_request(payload)
             EOF
@@ -243,4 +259,3 @@ jobs:
             steps: ${{ toJson(steps) }}
             channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
         if: failure()
-          
