@@ -1,31 +1,27 @@
 ---
-name: Execute Deployment script
+name: Execute Deployment Script
 on:
   workflow_call:
+    inputs:
+      CD_COMMAND:
+        required: true
+        type: string
 
 jobs:
-  exec-deploy-script:
+  deploy-tenant:
     runs-on: self-hosted
     env:
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
-      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      CD_COMMAND: "${{inputs.CD_COMMAND}}"
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
       - name: Set Application Name
         run: |
+          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
-
-      - name: Set Deploy Command
-        run: |
-          DEPLOY_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
-          echo "DEPLOY_COMMAND=$DEPLOY_COMMAND" >> $GITHUB_ENV
 
       - name: Login gcloud
         id: auth
@@ -39,5 +35,5 @@ jobs:
       - name: Execute Deployment Script
         if: ${{ env.DEPLOY_COMMAND != null }}
         run: |
-          echo ${DEPLOY_COMMAND}
+          echo ${CD_COMMAND}
           ${DEPLOY_COMMAND}
