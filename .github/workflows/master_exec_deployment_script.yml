@@ -18,6 +18,12 @@ jobs:
       CD_COMMAND: "${{inputs.CD_COMMAND}}"
 
     steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
       - name: Set Application Name
         run: |
           export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
