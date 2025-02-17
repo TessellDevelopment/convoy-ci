@@ -6,7 +6,7 @@ on:
 jobs:
 
   dev-checks:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@main
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-3063
     secrets: inherit
 
   version-check:
