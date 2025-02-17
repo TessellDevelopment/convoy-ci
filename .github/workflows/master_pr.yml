@@ -17,7 +17,7 @@ jobs:
     runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
-      exec_cd: ${{ steps.check_cd.outputs.exec_cd_command }}
+      exec_cd: ${{ steps.check_cd.outputs.EXEC_CD_COMMAND }}
     needs: [dev-checks,version-check]
     steps:
 
