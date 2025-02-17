@@ -29,21 +29,21 @@ jobs:
         id: check_cd
         run: |
           CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
-          EXEC_CD_COMMAND=false
+          EXEC_CD_COMMAND="false"
 
           if [[ "$CD_COMMAND" != "null" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
               echo $branch
               if [[ "main" == "$branch" ]]; then
-                EXEC_CD_COMMAND=true
+                EXEC_CD_COMMAND="true"
                 exit 0
               fi
             done
           fi
+          echo "EXEC_CD_COMMAND value is $EXEC_CD_COMMAND"
           echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_OUTPUT
           echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_OUTPUT
-          echo $EXEC_CD_COMMAND
 
       - name: Determine build type from Convoy
         id: runner-type
