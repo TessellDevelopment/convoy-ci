@@ -519,6 +519,7 @@ jobs:
           }
           helmTemplateBuild() {
             if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+              set -e
               CHART_NAME="$1"
               requiredInputs="1"
               validateInputs "$requiredInputs" "$@" 

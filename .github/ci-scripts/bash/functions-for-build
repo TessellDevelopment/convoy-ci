@@ -247,7 +247,7 @@ download_binary_from_source() {
     echo "Error: 'externalUrls' is deprecated. Please switch to 'dataSources' for downloading binaries in the Terraform module. Failing build."
     exit 1
   fi
-  if yq eval '.dataSources' "${CONFIG_FILE}" &> /dev/null; then
+  if [[ $(yq eval 'has("dataSources")' "${CONFIG_FILE}") == "true" ]]; then
     echo "dataSources found in ${CONFIG_FILE}. Processing artifacts."
     data_sources=$(yq eval -o=json '.dataSources' "${CONFIG_FILE}" | jq -c '.[]')
     for entry in ${data_sources}; do
@@ -584,7 +584,10 @@ initialise_coverage() {
   python3 -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   python3 -m pip list | grep tessell
   echo ${source_path}
-  test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
+  test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
+  if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
+    test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
+  fi
   cp -r ${test_dir} pytest.ini ${source_path}
 }
 
