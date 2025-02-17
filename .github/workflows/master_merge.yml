@@ -44,12 +44,14 @@ jobs:
     outputs:
       type: ${{steps.runner-type.outputs.type}}
       label: ${{steps.get-label.outputs.label}}
+      exec_cd: ${{ steps.check_cd.outputs.exec_cd_command }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
       - name: Check exec-deployment-script
+        id: check_cd
         run: |
           CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
           EXEC_CD_COMMAND=false
@@ -63,7 +65,7 @@ jobs:
               fi
             done
           fi
-          echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_ENV
+          echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_OUTPUT
           echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_ENV
 
       - name: Get Label
@@ -97,7 +99,7 @@ jobs:
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
-  
+
   create-tag:
     needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-3037_master_data2
@@ -156,8 +158,8 @@ jobs:
     secrets: inherit
 
   exec-deployment-script:
-    if: ${{ env.EXEC_CD_COMMAND == true }}
-    needs: post-coverage-to-convoy
+    if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
+    needs: [runner-check, post-build-to-convoy]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
