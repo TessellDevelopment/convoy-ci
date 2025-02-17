@@ -310,6 +310,7 @@
               if [ ${#missing_separator_files[@]} -gt 0 ]; then
                 echo "The following YAML files are missing a '---' separator at the beginning:"
                 printf '%s\n' "${missing_separator_files[@]}"
+                echo "NOTE: Remove any new line at the beginning of these files."
                 exit 1
               else
                 echo "All modified YAML files have the required '---' separator."
