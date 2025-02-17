@@ -167,7 +167,6 @@ jobs:
     with:
       CD_COMMAND: ${{needs.runner-check.outputs.CD_COMMAND}}
 
-
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
