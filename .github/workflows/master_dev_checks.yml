@@ -264,7 +264,7 @@
           env:
             PR_NUMBER: "${{ github.event.pull_request.number }}"
           run: |
-            enforce_newline_at_eof=$(yq e '.ci.bestPractices.enforceNewLineAtEOF // false' convoy.yaml)
+            enforce_newline_at_eof=$(yq '.ci.bestPractices.enforceNewLineAtEOF // false' convoy.yaml)
 
             if [ "${enforce_newline_at_eof}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
@@ -296,7 +296,7 @@
           env:
             PR_NUMBER: "${{ github.event.pull_request.number }}"
           run: |
-            enforce_k8s_separator=$(yq e '.ci.bestPractices.enforceYamlSeparator // false' convoy.yaml)
+            enforce_k8s_separator=$(yq '.ci.bestPractices.enforceYamlSeparator // false' convoy.yaml)
 
             if [ "${enforce_k8s_separator}" = "true" ]; then
               echo "Checking changed YAML files for missing '---' separator at the beginning."
