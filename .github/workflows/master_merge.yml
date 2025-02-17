@@ -156,7 +156,7 @@ jobs:
     secrets: inherit
 
   exec-deployment-script:
-    if: ${{ env.EXEC_CD_COMMAND }}
+    if: ${{ env.EXEC_CD_COMMAND == true }}
     needs: post-coverage-to-convoy
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
