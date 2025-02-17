@@ -261,8 +261,10 @@
               });
 
         - name: Check for new line at EOF
+          env:
+            PR_NUMBER: "${{ github.event.pull_request.number }}"
           run: |
-            enforce_newline_at_eof=$(yq e '.enforceNewLineAtEOF // false' convoy.yaml)
+            enforce_newline_at_eof=$(yq e '.ci.bestPractices.enforceNewLineAtEOF // false' convoy.yaml)
 
             if [ "${enforce_newline_at_eof}" = "true" ]; then
               echo "Checking changed files for missing newline at EOF..."
@@ -277,9 +279,11 @@
               done < <(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
 
               if [ ${#missing_newline_files[@]} -gt 0 ]; then
-                echo "The following files are missing a newline at EOF:"
-                printf '%s\n' "${missing_newline_files[@]}"
-                echo "NOTE: Remove any trailing whitespace in the last line of these files."
+                output="The following files are missing a newline at EOF:\n"
+                output+=$(printf '%s\n' "${missing_newline_files[@]}")
+                output+="NOTE: Remove any trailing whitespace in the last line of these files."
+                echo -e "${output}"
+                gh pr comment "${PR_NUMBER}" --body "${output}"
                 exit 1
               else
                 echo "All files modified in this PR have a newline at EOF."
@@ -289,8 +293,10 @@
             fi
         
         - name: Check for YAML separators
+          env:
+            PR_NUMBER: "${{ github.event.pull_request.number }}"
           run: |
-            enforce_k8s_separator=$(yq e '.enforceK8sResourceSeparator // false' convoy.yaml)
+            enforce_k8s_separator=$(yq e '.ci.bestPractices.enforceYamlSeparator // false' convoy.yaml)
 
             if [ "${enforce_k8s_separator}" = "true" ]; then
               echo "Checking changed YAML files for missing '---' separator at the beginning."
@@ -305,18 +311,19 @@
                   fi
                 fi
               done < <(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
-
         
               if [ ${#missing_separator_files[@]} -gt 0 ]; then
-                echo "The following YAML files are missing a '---' separator at the beginning:"
-                printf '%s\n' "${missing_separator_files[@]}"
-                echo "NOTE: Remove any new line at the beginning of these files."
+                output="The following YAML files are missing a '---' separator at the beginning:\n"
+                output+=$(printf '%s\n' "${missing_separator_files[@]}")
+                output+="NOTE: Remove any new line at the beginning of these files."
+                echo -e "${output}"
+                gh pr comment "${PR_NUMBER}" --body "${output}"
                 exit 1
               else
                 echo "All modified YAML files have the required '---' separator."
               fi
             else
-              echo "'enforceK8sResourceSeparator' is set to false. Skipping YAML separator checks."
+              echo "'enforceYamlSeparator' is set to false. Skipping YAML separator checks."
             fi
 
         - name: Check DB Migration Scripts
