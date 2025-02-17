@@ -37,7 +37,6 @@ jobs:
               echo $branch
               if [[ "main" == "$branch" ]]; then
                 EXEC_CD_COMMAND="true"
-                exit 0
               fi
             done
           fi
