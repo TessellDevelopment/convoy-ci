@@ -60,7 +60,7 @@ jobs:
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
               echo $branch
-              if [[ "main" == "$branch" ]]; then
+              if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
                 exec_cd_command="true"
                 break
               fi
