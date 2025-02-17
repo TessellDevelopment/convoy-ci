@@ -586,7 +586,7 @@ initialise_coverage() {
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
-      test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
+    test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
   fi
   cp -r ${test_dir} pytest.ini ${source_path}
 }
