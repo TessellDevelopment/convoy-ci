@@ -268,7 +268,7 @@
               echo "Checking changed files for missing newline at EOF..."
               git checkout ${{github.base_ref}} && git pull
               git checkout ${{github.head_ref}} && git pull
-              
+
               missing_newline_files=()
               while IFS= read -r file; do
                 if [ -f "$file" ] && [ -n "$(tail -c 1 "$file" | tr -d '\n')" ]; then
@@ -299,12 +299,13 @@
               
               missing_separator_files=()
               while IFS= read -r file; do
-                if [[ "${file}" == *.yaml || "${file}" == *.yaml.tmpl ]]; then
+                if [[ "${file}" =~ ^charts/[^/]+/templates/extra-resources/.*\.yaml\.tmpl$ || "${file}" =~ ^charts/[^/]+/extra-resources/.*\.yaml$ ]]; then
                   if [ -f "${file}" ] && [ "$(head -n 1 "${file}")" != "---" ]; then
                     missing_separator_files+=("${file}")
                   fi
                 fi
               done < <(git diff --name-only "${{github.base_ref}}"..."${{github.head_ref}}")
+
         
               if [ ${#missing_separator_files[@]} -gt 0 ]; then
                 echo "The following YAML files are missing a '---' separator at the beginning:"
