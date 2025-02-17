@@ -283,7 +283,7 @@
                 output+=$(printf '%s\n' "${missing_newline_files[@]}")
                 output+="\nNOTE: Remove any trailing whitespace in the last line of these files."
                 echo -e "${output}"
-                gh pr comment "${PR_NUMBER}" --body "${output}"
+                gh pr comment "${PR_NUMBER}" --body "$(echo -e "${output}")"
                 exit 1
               else
                 echo "All files modified in this PR have a newline at EOF."
@@ -317,7 +317,7 @@
                 output+=$(printf '%s\n' "${missing_separator_files[@]}")
                 output+="\nNOTE: Remove any new line at the beginning of these files."
                 echo -e "${output}"
-                gh pr comment "${PR_NUMBER}" --body "${output}"
+                gh pr comment "${PR_NUMBER}" --body "$(echo -e "${output}")"
                 exit 1
               else
                 echo "All modified YAML files have the required '---' separator."
