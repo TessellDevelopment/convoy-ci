@@ -2,6 +2,10 @@
 name: Tessell Pipelines Code Deploy
 on:
   workflow_call:
+    inputs:
+      CD_COMMAND:
+        required: true
+        type: string
 
 jobs:
   deploy-tenant:
@@ -11,6 +15,7 @@ jobs:
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      CD_COMMAND: "${{inputs.CD_COMMAND}}"
 
     steps:
       - name: Set Application Name
@@ -35,5 +40,5 @@ jobs:
       - name: Execute Deployment Script
         if: ${{ env.DEPLOY_COMMAND != null }}
         run: |
-          echo ${DEPLOY_COMMAND}
+          echo ${CD_COMMAND}
           ${DEPLOY_COMMAND}
