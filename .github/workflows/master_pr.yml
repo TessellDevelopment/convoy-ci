@@ -107,7 +107,7 @@ jobs:
 
   exec-deployment-script:
     if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
-    needs: [runner-check, post-build-to-convoy]
+    needs: [runner-check, build]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_exec_deployment_script.yml@TDEVOPS-3037_master_data2
     secrets: inherit
     with:
