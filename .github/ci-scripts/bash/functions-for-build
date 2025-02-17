@@ -247,7 +247,7 @@ download_binary_from_source() {
     echo "Error: 'externalUrls' is deprecated. Please switch to 'dataSources' for downloading binaries in the Terraform module. Failing build."
     exit 1
   fi
-  if yq eval '.dataSources' "${CONFIG_FILE}" &> /dev/null; then
+  if [[ $(yq eval 'has("dataSources")' "${CONFIG_FILE}") == "true" ]]; then
     echo "dataSources found in ${CONFIG_FILE}. Processing artifacts."
     data_sources=$(yq eval -o=json '.dataSources' "${CONFIG_FILE}" | jq -c '.[]')
     for entry in ${data_sources}; do
