@@ -281,7 +281,7 @@
               if [ ${#missing_newline_files[@]} -gt 0 ]; then
                 output="The following files are missing a newline at EOF:\n"
                 output+=$(printf '%s\n' "${missing_newline_files[@]}")
-                output+="NOTE: Remove any trailing whitespace in the last line of these files."
+                output+="\nNOTE: Remove any trailing whitespace in the last line of these files."
                 echo -e "${output}"
                 gh pr comment "${PR_NUMBER}" --body "${output}"
                 exit 1
@@ -315,7 +315,7 @@
               if [ ${#missing_separator_files[@]} -gt 0 ]; then
                 output="The following YAML files are missing a '---' separator at the beginning:\n"
                 output+=$(printf '%s\n' "${missing_separator_files[@]}")
-                output+="NOTE: Remove any new line at the beginning of these files."
+                output+="\nNOTE: Remove any new line at the beginning of these files."
                 echo -e "${output}"
                 gh pr comment "${PR_NUMBER}" --body "${output}"
                 exit 1
