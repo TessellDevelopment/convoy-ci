@@ -48,6 +48,24 @@ jobs:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+      - name: Check exec-deployment-script
+        run: |
+          CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
+          EXEC_CD_COMMAND="false"
+
+          if [[ "$CD_COMMAND" != "null" ]]; then
+            BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
+            for branch in $BRANCHES; do
+              if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
+                EXEC_CD_COMMAND="true"
+                exit 0
+              fi
+            done
+          fi
+          echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_ENV
+          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_ENV
+
+
           
       - name: Get Label
         id: get-label
@@ -138,7 +156,7 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
-  deploy-tenant:
+  exec-deployment-script:
     if: startsWith(github.event.pull_request.base.ref, 'main')
     needs: post-coverage-to-convoy
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2

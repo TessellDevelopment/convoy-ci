@@ -18,6 +18,11 @@ jobs:
           export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
 
+      - name: Set Deploy Command
+        run: |
+          DEPLOY_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
+          echo "DEPLOY_COMMAND=$DEPLOY_COMMAND" >> $GITHUB_ENV
+
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
@@ -27,9 +32,8 @@ jobs:
           token_format: access_token
           create_credentials_file: true
 
-      - name: Upgrade GCP env
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+      - name: Execute Deployment Script
+        if: ${{ env.DEPLOY_COMMAND != null }}
         run: |
-          deploy_command=$(yq '.cd.exec' convoy.yaml)
-          echo $deploy_command
-          $deploy_command
+          echo ${DEPLOY_COMMAND}
+          ${DEPLOY_COMMAND}
