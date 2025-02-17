@@ -1,144 +1,143 @@
 ---
-  name: Build Status POST API to Convoy
-  on:
-    workflow_call:
-      inputs:
-        BRANCH_COVERAGE:
-          required: true
-          type: string
-        LABEL:
-          description: 'Release label for upload'
-          required: true
-          type: string
-        STATEMENT_COVERAGE:
-          required: true
-          type: string
-        TAG:
-          description: 'Tag created during create-tag'
-          required: true
-          type: string
-      
-  jobs:
-    
-    post-coverage-to-convoy:
-      runs-on: non-build
-      env: 
-        BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
-        LABEL: "${{inputs.LABEL}}"
-        SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
-        STATEMENT_COVERAGE: "${{inputs.STATEMENT_COVERAGE}}"
-        TAG: "${{inputs.TAG}}"
-      steps:
-        - uses: actions/checkout@v4.1.1
-          with:
-            fetch-depth: 0
-  
-        - name: Get branch name
-          shell: bash
-          run: |
-            echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-  
-        - name: POST API to Convoy
-          env:
-            API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/coverage
-            API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-            BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-            BRANCH_COVERAGE: "${{env.BRANCH_COVERAGE}}"
-            CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-            COMMIT_HASH: "${{github.sha}}"
-            GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-            LABEL: "${{env.LABEL}}"
-            OWNER: ${{github.repository_owner}}
-            REPO: "${{github.event.pull_request.base.repo.name}}"
-            SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
-            STATEMENT_COVERAGE: "${{env.STATEMENT_COVERAGE}}"
-            TAG: "${{env.TAG}}"
-          run: |
-              python3 - <<EOF
-              
-              import requests
-              import json
-              import os
-              import time
-              import base64
-              import yaml
+name: Build Status POST API to Convoy
+on:
+  workflow_call:
+    inputs:
+      BRANCH_COVERAGE:
+        required: true
+        type: string
+      LABEL:
+        description: "Release label for upload"
+        required: true
+        type: string
+      STATEMENT_COVERAGE:
+        required: true
+        type: string
+      TAG:
+        description: "Tag created during create-tag"
+        required: true
+        type: string
 
-              def post_request(payload):
-                headers = {
-                  'Content-Type': 'application/json',
-                  'x-api-key': API_KEY
-                }
-                response = requests.post(API_URL, json=payload, headers=headers)
-                if response.status_code == 200:
-                  print(response.status_code)
-                  print(response.text)
-                else:
-                  print(response.status_code)
-                  print(response.text)
-                  print("API request to convoy failed.")
-                  exit(1)
+jobs:
+  post-coverage-to-convoy:
+    runs-on: non-build
+    env:
+      BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
+      LABEL: "${{inputs.LABEL}}"
+      SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
+      STATEMENT_COVERAGE: "${{inputs.STATEMENT_COVERAGE}}"
+      TAG: "${{inputs.TAG}}"
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
 
-              API_URL = os.environ.get('API_URL')
-              API_KEY = os.environ.get('API_KEY')
-              BASE_BRANCH = os.environ.get('BASE_BRANCH')
-              BRANCH_COVERAGE = os.environ.get('BRANCH_COVERAGE')
-              CODE_COVERAGE_S3 = os.environ.get('CODE_COVERAGE_S3')
-              COMMIT_HASH = os.environ.get('COMMIT_HASH')
-              GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
-              LABEL = os.environ.get('LABEL')
-              OWNER = os.environ.get('OWNER')
-              REPO = os.environ.get('REPO')
-              STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
-              TAG = os.environ.get('TAG')
+      - name: Get branch name
+        shell: bash
+        run: |
+          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-              if BRANCH_COVERAGE and STATEMENT_COVERAGE:
-                print("Coverage report present sending details to convoy.")
-                BRANCH_COVERAGE_VALUES = list(map(int, BRANCH_COVERAGE.split()))
-                STATEMENT_COVERAGE_VALUES = list(map(int, STATEMENT_COVERAGE.split()))
-              else:
-                print("Coverage report not generated. Skipping post call to convoy.")
-                exit(0)
+      - name: POST API to Convoy
+        env:
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/coverage
+          API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+          BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+          BRANCH_COVERAGE: "${{env.BRANCH_COVERAGE}}"
+          CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+          COMMIT_HASH: "${{github.sha}}"
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+          LABEL: "${{env.LABEL}}"
+          OWNER: ${{github.repository_owner}}
+          REPO: "${{github.event.pull_request.base.repo.name}}"
+          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
+          STATEMENT_COVERAGE: "${{env.STATEMENT_COVERAGE}}"
+          TAG: "${{env.TAG}}"
+        run: |
+          python3 - <<EOF
 
-              if not(bool(BASE_BRANCH)):
-                BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          import requests
+          import json
+          import os
+          import time
+          import base64
+          import yaml
 
-              with open('convoy.yaml', 'r') as yaml_file:
-                yaml_data = yaml.safe_load(yaml_file)
-              APP_GROUP = yaml_data.get('appGroup')
-              LANGUAGE = yaml_data.get('language')
-              if LANGUAGE == 'java':
-                REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.zip"
-              else:
-                REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.html"
+          def post_request(payload):
+            headers = {
+              'Content-Type': 'application/json',
+              'x-api-key': API_KEY
+            }
+            response = requests.post(API_URL, json=payload, headers=headers)
+            if response.status_code == 200:
+              print(response.status_code)
+              print(response.text)
+            else:
+              print(response.status_code)
+              print(response.text)
+              print("API request to convoy failed.")
+              exit(1)
 
-              payload = {
-                "repoName": REPO,
-                "appGroup": APP_GROUP,
-                "commitHash": COMMIT_HASH[:7],
-                "gitBranch": BASE_BRANCH,
-                "language": LANGUAGE,
-                "reportPath": REPORT_PATH,
-                "branchCoverage": {
-                    "covered": BRANCH_COVERAGE_VALUES[0],
-                    "skipped": BRANCH_COVERAGE_VALUES[1],
-                    "total": BRANCH_COVERAGE_VALUES[2],
-                    "percentage": BRANCH_COVERAGE_VALUES[3]
-                },
-                "statementCoverage": {
-                    "covered": STATEMENT_COVERAGE_VALUES[0],
-                    "skipped": STATEMENT_COVERAGE_VALUES[1],
-                    "total": STATEMENT_COVERAGE_VALUES[2],
-                    "percentage": STATEMENT_COVERAGE_VALUES[3]
-                }
-              }                      
-              print(json.dumps(payload, indent=4))
-              post_request(payload)
-              EOF
-  
-        - name: Slack Notification
-          uses: act10ns/slack@v2.0.0
-          with:
-              status: ${{ job.status }}
-              steps: ${{ toJson(steps) }}
-              channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-          if: failure()
+          API_URL = os.environ.get('API_URL')
+          API_KEY = os.environ.get('API_KEY')
+          BASE_BRANCH = os.environ.get('BASE_BRANCH')
+          BRANCH_COVERAGE = os.environ.get('BRANCH_COVERAGE')
+          CODE_COVERAGE_S3 = os.environ.get('CODE_COVERAGE_S3')
+          COMMIT_HASH = os.environ.get('COMMIT_HASH')
+          GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+          LABEL = os.environ.get('LABEL')
+          OWNER = os.environ.get('OWNER')
+          REPO = os.environ.get('REPO')
+          STATEMENT_COVERAGE = os.environ.get('STATEMENT_COVERAGE')
+          TAG = os.environ.get('TAG')
+
+          if BRANCH_COVERAGE and STATEMENT_COVERAGE:
+            print("Coverage report present sending details to convoy.")
+            BRANCH_COVERAGE_VALUES = list(map(int, BRANCH_COVERAGE.split()))
+            STATEMENT_COVERAGE_VALUES = list(map(int, STATEMENT_COVERAGE.split()))
+          else:
+            print("Coverage report not generated. Skipping post call to convoy.")
+            exit(0)
+
+          if not(bool(BASE_BRANCH)):
+            BASE_BRANCH = os.environ.get('SOURCE_BRANCH')
+
+          with open('convoy.yaml', 'r') as yaml_file:
+            yaml_data = yaml.safe_load(yaml_file)
+          APP_GROUP = yaml_data.get('appGroup')
+          LANGUAGE = yaml_data.get('language')
+          if LANGUAGE == 'java':
+            REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.zip"
+          else:
+            REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.html"
+
+          payload = {
+            "repoName": REPO,
+            "appGroup": APP_GROUP,
+            "commitHash": COMMIT_HASH[:7],
+            "gitBranch": BASE_BRANCH,
+            "language": LANGUAGE,
+            "reportPath": REPORT_PATH,
+            "branchCoverage": {
+                "covered": BRANCH_COVERAGE_VALUES[0],
+                "skipped": BRANCH_COVERAGE_VALUES[1],
+                "total": BRANCH_COVERAGE_VALUES[2],
+                "percentage": BRANCH_COVERAGE_VALUES[3]
+            },
+            "statementCoverage": {
+                "covered": STATEMENT_COVERAGE_VALUES[0],
+                "skipped": STATEMENT_COVERAGE_VALUES[1],
+                "total": STATEMENT_COVERAGE_VALUES[2],
+                "percentage": STATEMENT_COVERAGE_VALUES[3]
+            }
+          }                      
+          print(json.dumps(payload, indent=4))
+          post_request(payload)
+          EOF
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
+        if: failure()
