@@ -59,6 +59,7 @@ jobs:
           if [[ "$CD_COMMAND" != "null" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
+              echo $branch
               if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
                 EXEC_CD_COMMAND=true
                 exit 0
@@ -66,7 +67,8 @@ jobs:
             done
           fi
           echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_OUTPUT
-          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_ENV
+          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_OUTPUT
+          echo $EXEC_CD_COMMAND
 
       - name: Get Label
         id: get-label
