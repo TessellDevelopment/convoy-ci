@@ -17,12 +17,33 @@ jobs:
     runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
+      exec_cd: ${{ steps.check_cd.outputs.exec_cd_command }}
     needs: [dev-checks,version-check]
     steps:
 
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
+
+      - name: Check exec-deployment-script
+        id: check_cd
+        run: |
+          CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
+          EXEC_CD_COMMAND=false
+
+          if [[ "$CD_COMMAND" != "null" ]]; then
+            BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
+            for branch in $BRANCHES; do
+              echo $branch
+              if [[ "main" == "$branch" ]]; then
+                EXEC_CD_COMMAND=true
+                exit 0
+              fi
+            done
+          fi
+          echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_OUTPUT
+          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_OUTPUT
+          echo $EXEC_CD_COMMAND
 
       - name: Determine build type from Convoy
         id: runner-type
@@ -83,8 +104,8 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-3037_master_data2
     secrets: inherit 
 
-  deploy-tenant:
-    if: startsWith(github.event.pull_request.base.ref, 'main')
+  exec-deployment-script:
+    if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
     needs: build
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
     secrets: inherit
