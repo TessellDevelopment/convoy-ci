@@ -44,7 +44,7 @@ jobs:
     outputs:
       type: ${{steps.runner-type.outputs.type}}
       label: ${{steps.get-label.outputs.label}}
-      exec_cd: ${{ steps.check_cd.outputs.exec_cd_command }}
+      exec_cd: ${{ steps.check_cd.outputs.EXEC_CD_COMMAND }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -54,21 +54,20 @@ jobs:
         id: check_cd
         run: |
           CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
-          EXEC_CD_COMMAND=false
+          EXEC_CD_COMMAND="false"
 
           if [[ "$CD_COMMAND" != "null" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
               echo $branch
-              if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
-                EXEC_CD_COMMAND=true
-                exit 0
+              if [[ "main" == "$branch" ]]; then
+                EXEC_CD_COMMAND="true"
+                break
               fi
             done
           fi
+          echo "EXEC_CD_COMMAND value is $EXEC_CD_COMMAND"
           echo "EXEC_CD_COMMAND=$EXEC_CD_COMMAND" >> $GITHUB_OUTPUT
-          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_OUTPUT
-          echo $EXEC_CD_COMMAND
 
       - name: Get Label
         id: get-label
@@ -162,7 +161,7 @@ jobs:
   exec-deployment-script:
     if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
     needs: [runner-check, post-build-to-convoy]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deploy.yml@TDEVOPS-3037_master_data2
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_exec_deployment_script.yml@TDEVOPS-3037_master_data2
     secrets: inherit
 
   send-mail:
