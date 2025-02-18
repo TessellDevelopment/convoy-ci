@@ -1248,7 +1248,7 @@ upload_folder_to_gcloud() {
   local folder_path=$1
   local recursive=$2
   local temp_dir=""
-  local artifact_base_path="gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${LATEST_TAG}"
+  local artifact_base_path="gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
 
   if [[ "$recursive" != "true" ]]; then
     temp_dir=$(mktemp -d)
