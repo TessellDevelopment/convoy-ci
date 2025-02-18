@@ -12,7 +12,7 @@ curl --location "https://tenant-deployment-service-14904309605.asia-south1.run.a
 --header "Authorization: Bearer ${IDENTITY_TOKEN}" \
 --data '{
     "releaseLabel": "'"${BASE_BRANCH}"'",
-    "tenantName": "devtest02",
+    "tenantName": "main",
     "upgradeStep": "'"${UPGRADE_STEP}"'",
-    "cpProjectId": "p-dev-devtest02"
+    "cpProjectId": "p-dev-main"
 }'
