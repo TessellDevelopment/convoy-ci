@@ -14,5 +14,6 @@ curl --location "https://tenant-deployment-service-14904309605.asia-south1.run.a
     "releaseLabel": "'"${BASE_BRANCH}"'",
     "tenantName": "main",
     "upgradeStep": "'"${UPGRADE_STEP}"'",
-    "cpProjectId": "p-dev-main"
+    "cpProjectId": "p-dev-main",
+    "deploymentStage":"dev"
 }'
