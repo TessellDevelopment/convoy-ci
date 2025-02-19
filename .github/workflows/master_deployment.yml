@@ -20,8 +20,24 @@ jobs:
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CD_COMMAND: "${{inputs.cd_command}}"
       APP_GROUP: "${{inputs.app_group}}"
+      CI_BRANCH: TDEVOPS-3037_master_data2
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-
+
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
