@@ -36,7 +36,7 @@ jobs:
           git checkout ${{env.CI_BRANCH}}
           git pull
           cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login gcloud
         id: auth
