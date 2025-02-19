@@ -41,10 +41,11 @@ jobs:
     runs-on: non-build
     needs: file-check
     outputs:
-      type: ${{steps.runner-type.outputs.type}}
+      app_group: ${{steps.check_cd.outputs.app_group}}
+      cd_command: ${{steps.check_cd.outputs.cd_command}}
+      exec_cd: ${{steps.check_cd.outputs.exec_cd_command}}
       label: ${{steps.get-label.outputs.label}}
-      exec_cd: ${{ steps.check_cd.outputs.exec_cd_command }}
-      CD_COMMAND: ${{ steps.check_cd.outputs.CD_COMMAND }}
+      type: ${{steps.runner-type.outputs.type}}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -53,10 +54,11 @@ jobs:
       - name: Check exec-deployment-script
         id: check_cd
         run: |
-          CD_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
+          cd_command=$(yq '.cd.exec // null' convoy.yaml)
+          app_group=$(yq '.appGroup' convoy.yaml)
           exec_cd_command="false"
 
-          if [[ "$CD_COMMAND" != "null" ]]; then
+          if [[ "$cd_command" != "null" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
               echo $branch
@@ -68,7 +70,8 @@ jobs:
           fi
           echo "exec_cd_command value is $exec_cd_command"
           echo "exec_cd_command=$exec_cd_command" >> $GITHUB_OUTPUT
-          echo "CD_COMMAND=$CD_COMMAND" >> $GITHUB_OUTPUT
+          echo "cd_command=$cd_command" >> $GITHUB_OUTPUT
+          echo "app_group=$app_group" >> $GITHUB_OUTPUT
 
       - name: Get Label
         id: get-label
@@ -162,10 +165,11 @@ jobs:
   exec-deployment-script:
     if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
     needs: [runner-check, post-build-to-convoy]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_exec_deployment_script.yml@TDEVOPS-3037_master_data2
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deployment.yml@TDEVOPS-3037_master_data2
     secrets: inherit
     with:
-      CD_COMMAND: ${{needs.runner-check.outputs.CD_COMMAND}}
+      app_group: ${{needs.runner-check.outputs.app_group}}
+      cd_command: ${{needs.runner-check.outputs.cd_command}}
 
   send-mail:
     needs: create-double-commit

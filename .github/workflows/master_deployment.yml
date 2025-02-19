@@ -3,7 +3,10 @@ name: Tessell Pipelines Code Deploy
 on:
   workflow_call:
     inputs:
-      CD_COMMAND:
+      app_group:
+        required: true
+        type: string
+      cd_command:
         required: true
         type: string
 
@@ -15,19 +18,10 @@ jobs:
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CD_COMMAND: "${{inputs.CD_COMMAND}}"
+      CD_COMMAND: "${{inputs.cd_command}}"
+      APP_GROUP: "${{inputs.app_group}}"
 
     steps:
-      - name: Set Application Name
-        run: |
-          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
-
-      - name: Set Deploy Command
-        run: |
-          DEPLOY_COMMAND=$(yq '.cd.exec // null' convoy.yaml)
-          echo "DEPLOY_COMMAND=$DEPLOY_COMMAND" >> $GITHUB_ENV
-
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
@@ -38,7 +32,7 @@ jobs:
           create_credentials_file: true
 
       - name: Execute Deployment Script
-        if: ${{ env.DEPLOY_COMMAND != null }}
+        if: ${{ env.CD_COMMAND != null }}
         run: |
           echo ${CD_COMMAND}
-          ${DEPLOY_COMMAND}
+          ${CD_COMMAND}
