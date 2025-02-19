@@ -19,7 +19,7 @@ jobs:
         run: |
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           LABEL_CUT_STATUS_KEY="LABEL_CUT_STATUS_FOR_${APP_GROUP}"
-          label_cut_status=$(kubectl exec -it redis-master-0 -n convoy -- redis-cli -h ${REDIS_HOSTNAME} -a ${REDIS_PASSOWRD} -n 1 GET ${LABEL_CUT_STATUS_KEY)
+          label_cut_status=$(kubectl exec -it redis-master-0 -n convoy -- redis-cli -h ${REDIS_HOSTNAME} -a ${REDIS_PASSOWRD} -n 1 GET ${LABEL_CUT_STATUS_KEY})
           echo ${label_cut_status}
           if [[ "${label_cut_status}" == "IN_PROGRESS" ]]; then
             echo "Label cut is IN_PROGRESS. Exiting the merge workflow. Please retry once label cut is complete."
