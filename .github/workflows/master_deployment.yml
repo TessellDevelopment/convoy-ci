@@ -12,7 +12,7 @@ on:
 
 jobs:
   deploy-tenant:
-    runs-on: self-hosted
+    runs-on: non-build
     env:
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
