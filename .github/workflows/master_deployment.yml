@@ -3,7 +3,10 @@ name: Execute Deployment Script
 on:
   workflow_call:
     inputs:
-      CD_COMMAND:
+      app_group:
+        required: true
+        type: string
+      cd_command:
         required: true
         type: string
 
@@ -15,19 +18,20 @@ jobs:
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CD_COMMAND: "${{inputs.CD_COMMAND}}"
+      CD_COMMAND: "${{inputs.cd_command}}"
+      APP_GROUP: "${{inputs.app_group}}"
+      CI_BRANCH: main
 
     steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-        with:
-          fetch-depth: 0
-
-      - name: Set Application Name
+      - name: Setup CI Scripts
         run: |
-          export APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login gcloud
         id: auth
@@ -39,7 +43,6 @@ jobs:
           create_credentials_file: true
 
       - name: Execute Deployment Script
-        if: ${{ env.DEPLOY_COMMAND != null }}
         run: |
           echo ${CD_COMMAND}
-          ${DEPLOY_COMMAND}
+          ${CD_COMMAND}
