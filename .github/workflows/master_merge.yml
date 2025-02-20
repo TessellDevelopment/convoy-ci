@@ -60,8 +60,8 @@ jobs:
       - name: Check exec-deployment-script
         id: check_cd
         run: |
-          cd_command=$(yq '.cd.exec // "" | trim' convoy.yaml)
           app_group=$(yq '.appGroup' convoy.yaml)
+          cd_command=$(yq '.cd.exec // "" | trim' convoy.yaml)
           exec_cd_command="false"
 
           if [[ -n "$cd_command" ]]; then
