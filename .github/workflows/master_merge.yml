@@ -64,11 +64,10 @@ jobs:
           cd_command=$(yq '.cd.exec // "" | trim' convoy.yaml)
           exec_cd_command="false"
 
-          if [[ -n "$cd_command" ]]; then
+          if [[ -n "${cd_command}" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
-              echo $branch
-              if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
+              if [[ "${{ github.event.pull_request.base.ref }}" == "${branch}" ]]; then
                 exec_cd_command="true"
                 break
               fi
