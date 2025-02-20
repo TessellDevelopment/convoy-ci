@@ -68,7 +68,6 @@ jobs:
               fi
             done
           fi
-          echo "exec_cd_command value is $exec_cd_command"
           echo "exec_cd_command=$exec_cd_command" >> $GITHUB_OUTPUT
           echo "cd_command=$cd_command" >> $GITHUB_OUTPUT
           echo "app_group=$app_group" >> $GITHUB_OUTPUT
