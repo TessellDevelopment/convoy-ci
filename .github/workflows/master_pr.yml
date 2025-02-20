@@ -30,11 +30,11 @@ jobs:
       - name: Check exec-deployment-script
         id: check_cd
         run: |
-          cd_command=$(yq '.cd.exec // null' convoy.yaml)
+          cd_command=$(yq '.cd.exec // "" | trim' convoy.yaml)
           app_group=$(yq '.appGroup' convoy.yaml)
           exec_cd_command="false"
 
-          if [[ "$cd_command" != "null" ]]; then
+          if [[  -z "$cd_command" ]]; then
             BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
             for branch in $BRANCHES; do
               echo $branch
