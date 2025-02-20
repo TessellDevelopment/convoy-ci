@@ -1,0 +1,19 @@
+#!/bin/bash
+if [ -z "${1}" ]; then
+  echo "Usage: ${0} <UPGRADE_STEP>"
+  exit 1
+fi
+
+UPGRADE_STEP=${1}
+IDENTITY_TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=${TESSELL_GCP_SERVICE_ACCOUNT_NAME}@${TESSELL_GCP_PROJECT_ID}.iam.gserviceaccount.com)
+
+curl --location "https://tenant-deployment-service-14904309605.asia-south1.run.app/deploy-upgrade-workflow" \
+--header "Content-Type: application/json" \
+--header "Authorization: Bearer ${IDENTITY_TOKEN}" \
+--data '{
+    "releaseLabel": "'"${BASE_BRANCH}"'",
+    "tenantName": "main",
+    "upgradeStep": "'"${UPGRADE_STEP}"'",
+    "cpProjectId": "p-dev-main",
+    "deploymentStage":"dev"
+}'

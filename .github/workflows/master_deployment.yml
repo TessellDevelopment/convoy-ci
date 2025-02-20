@@ -1,0 +1,48 @@
+---
+name: Execute Deployment Script
+on:
+  workflow_call:
+    inputs:
+      app_group:
+        required: true
+        type: string
+      cd_command:
+        required: true
+        type: string
+
+jobs:
+  deploy-tenant:
+    runs-on: non-build
+    env:
+      APP_GROUP: "${{inputs.app_group}}"
+      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      CD_COMMAND: "${{inputs.cd_command}}"
+      CI_BRANCH: main
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+
+    steps:
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
+      - name: Execute Deployment Script
+        run: |
+          echo ${CD_COMMAND}
+          ${CD_COMMAND}

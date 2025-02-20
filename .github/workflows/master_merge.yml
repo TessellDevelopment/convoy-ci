@@ -2,12 +2,11 @@
 name: Master CI Merge Workflows
 on:
   workflow_call:
-    
-jobs:
 
+jobs:
   check-label-cut-status:
     runs-on: self-hosted
-    env: 
+    env:
       REDIS_HOSTNAME: ${{ vars.REDIS_HOSTNAME }}
       REDIS_PASSOWRD: ${{ secrets.REDIS_PASSWORD }}
     steps:
@@ -25,7 +24,7 @@ jobs:
             echo "Label cut is IN_PROGRESS. Exiting the merge workflow. Please retry once label cut is complete."
             exit 1
           fi
-      
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -40,21 +39,45 @@ jobs:
     secrets: inherit
 
   sonar-scan:
-      needs: check-label-cut-status
-      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
-      secrets: inherit
-  
+    needs: check-label-cut-status
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
+    secrets: inherit
+
   runner-check:
     runs-on: non-build
     needs: file-check
     outputs:
-      type: ${{steps.runner-type.outputs.type}}
+      app_group: ${{steps.check_cd.outputs.app_group}}
+      cd_command: ${{steps.check_cd.outputs.cd_command}}
+      exec_cd: ${{steps.check_cd.outputs.exec_cd_command}}
       label: ${{steps.get-label.outputs.label}}
+      type: ${{steps.runner-type.outputs.type}}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-          
+
+      - name: Check exec-deployment-script
+        id: check_cd
+        run: |
+          cd_command=$(yq '.cd.exec // "" | trim' convoy.yaml)
+          app_group=$(yq '.appGroup' convoy.yaml)
+          exec_cd_command="false"
+
+          if [[ -z "$cd_command" ]]; then
+            BRANCHES=$(yq '.cd.branches[]' convoy.yaml)
+            for branch in $BRANCHES; do
+              echo $branch
+              if [[ "${{ github.event.pull_request.base.ref }}" == "$branch" ]]; then
+                exec_cd_command="true"
+                break
+              fi
+            done
+          fi
+          echo "exec_cd_command=$exec_cd_command" >> $GITHUB_OUTPUT
+          echo "cd_command=$cd_command" >> $GITHUB_OUTPUT
+          echo "app_group=$app_group" >> $GITHUB_OUTPUT
+
       - name: Get Label
         id: get-label
         shell: bash
@@ -79,14 +102,14 @@ jobs:
             fi
            else
             echo "convoy.yaml not found"
-           fi 
-          
+           fi
+
       - name: Determine runner type from Convoy
         id: runner-type
         run: |
           runner=$(yq '.runner' convoy.yaml)
           echo "type=$runner" >> $GITHUB_OUTPUT
-  
+
   create-tag:
     needs: runner-check
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
@@ -103,7 +126,7 @@ jobs:
       uses_custom_version: ${{needs.create-tag.outputs.uses_custom_version}}
 
   build:
-    needs: [runner-check,create-tag]
+    needs: [runner-check, create-tag]
     if: needs.file-check.outputs.github-changes == 'false'
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
@@ -114,7 +137,7 @@ jobs:
 
   post-build-to-convoy:
     if: always()
-    needs: [file-check,create-tag,build,runner-check]
+    needs: [file-check, create-tag, build, runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
     with:
@@ -124,11 +147,11 @@ jobs:
       LABEL: ${{needs.runner-check.outputs.label}}
 
   post-coverage-to-convoy:
-    needs: [create-tag,build,runner-check]
+    needs: [create-tag, build, runner-check]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
     with:
-      BRANCH_COVERAGE:  ${{needs.build.outputs.BRANCH_COVERAGE}}
+      BRANCH_COVERAGE: ${{needs.build.outputs.BRANCH_COVERAGE}}
       LABEL: ${{needs.runner-check.outputs.label}}
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
       TAG: ${{needs.create-tag.outputs.tag}}
@@ -138,6 +161,15 @@ jobs:
     needs: build
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
     secrets: inherit
+
+  exec-deployment-script:
+    if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
+    needs: [runner-check, post-build-to-convoy]
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deployment.yml@main
+    secrets: inherit
+    with:
+      app_group: ${{needs.runner-check.outputs.app_group}}
+      cd_command: ${{needs.runner-check.outputs.cd_command}}
 
   send-mail:
     needs: create-double-commit
