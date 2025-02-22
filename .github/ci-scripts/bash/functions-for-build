@@ -1135,7 +1135,7 @@ sonar_scan() {
         -Dsonar.java.binaries=. \
         -Dsonar.python.version=3.9 \
         -Dsonar.sourceEncoding=UTF-8 \
-        -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar'
+        -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar,ci-scripts/**'
 }
 
 tailscale_build() {
