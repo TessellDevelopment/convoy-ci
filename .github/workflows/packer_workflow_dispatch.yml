@@ -269,7 +269,7 @@ jobs:
             RETRY_DELAY=3
             local attempt=0
             while [ ${attempt} -lt ${MAX_RETRIES} ]; do
-              mc cp "${SOURCE}" "${DESTINATION}"
+              mc cp "${SOURCE}" "minio-ci/${DESTINATION}"
               if [ $? -eq 0 ]; then
                 echo "Artifact successfully pushed to minio ${DESTINATION}."
                 return
