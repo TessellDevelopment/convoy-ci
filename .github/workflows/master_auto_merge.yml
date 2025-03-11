@@ -28,9 +28,6 @@ jobs:
           github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
           number: "${{ github.event.number }}"
 
-      # Don't approve in case of more than one commits
-      # Don't approve in case of failure in dev-check or build
-
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         with:
