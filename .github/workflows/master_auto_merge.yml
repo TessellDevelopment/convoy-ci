@@ -14,6 +14,13 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+          
+      - name: Enable Auto Merge
+        uses: peter-evans/enable-pull-request-automerge@v3.0.0
+        with:
+          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
+          pull-request-number: "${{ github.event.number }}"
+          merge-method: squash
 
       - name: Auto approve
         uses: juliangruber/approve-pull-request-action@v2.0.4
@@ -21,12 +28,8 @@ jobs:
           github-token: ${{ secrets.CI_APPROVER_TOKEN  }}
           number: "${{ github.event.number }}"
 
-      - name: Enable Auto Merge
-        uses: peter-evans/enable-pull-request-automerge@v3.0.0
-        with:
-          token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
-          pull-request-number: "${{ github.event.number }}"
-          merge-method: squash
+      # Don't approve in case of more than one commits
+      # Don't approve in case of failure in dev-check or build
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
