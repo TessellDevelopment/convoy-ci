@@ -365,7 +365,7 @@ jobs:
 
       - name: Check specific file changes
         id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
         with:
           files: |
             Chart.yaml
@@ -375,7 +375,7 @@ jobs:
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
