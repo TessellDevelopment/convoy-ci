@@ -21,7 +21,7 @@
   jobs:
     
     post-coverage-to-convoy:
-      runs-on: non-build
+      runs-on: ui-build-test
       env: 
         BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
         LABEL: "${{inputs.LABEL}}"

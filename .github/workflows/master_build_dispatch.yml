@@ -5,7 +5,7 @@
  
   jobs:
     build-file:
-      runs-on: non-build
+      runs-on: ui-build-test
       outputs:
         type: ${{steps.build-type.outputs.type}}
         label: ${{steps.get-label.outputs.label}}

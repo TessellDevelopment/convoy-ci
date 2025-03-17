@@ -19,7 +19,7 @@ on:
 
 jobs:
   cherry_pick:
-    runs-on: self-hosted
+    runs-on: ui-build-test
     env: 
       URL: ${{inputs.base_repo}}
       REPO: ${{github.repository}}

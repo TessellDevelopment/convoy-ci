@@ -11,7 +11,7 @@ on:
 
 jobs:
   post-message:
-    runs-on: non-build
+    runs-on: ui-build-test
     env:
       TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
     steps: 

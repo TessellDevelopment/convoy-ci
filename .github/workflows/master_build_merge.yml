@@ -513,7 +513,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
-    runs-on: self-hosted
+    runs-on: ui-build-test
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}

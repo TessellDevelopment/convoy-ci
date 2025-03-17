@@ -6,7 +6,7 @@ on:
 jobs:
   
   send-email:
-    runs-on: non-build
+    runs-on: ui-build-test
     steps:
       - name: Get PR-Author,subject & body to send email
         run: |

@@ -5,7 +5,7 @@ on:
 
 jobs:
   check-label-cut-status:
-    runs-on: self-hosted
+    runs-on: ui-build-test
     env:
       REDIS_HOSTNAME: ${{ vars.REDIS_HOSTNAME }}
       REDIS_PASSOWRD: ${{ secrets.REDIS_PASSWORD }}
@@ -44,7 +44,7 @@ jobs:
     secrets: inherit
 
   runner-check:
-    runs-on: non-build
+    runs-on: ui-build-test
     needs: file-check
     outputs:
       app_group: ${{steps.check_cd.outputs.app_group}}

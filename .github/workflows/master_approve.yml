@@ -26,7 +26,7 @@ jobs:
 
   check-update-branch: 
     needs: read-codeowners
-    runs-on: non-build
+    runs-on: ui-build-test
     outputs:
       update-branch: ${{steps.check-commit.outputs.update-branch}}
     steps:
@@ -67,7 +67,7 @@ jobs:
   rerun-approval:
     needs: [check-approval]
     if: ${{ github.event.review.state == 'approved' }}
-    runs-on: non-build
+    runs-on: ui-build-test
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -90,7 +90,7 @@ jobs:
   # auto-merge:
   #   needs: check-approval
   #   if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' )
-  #   runs-on: non-build
+  #   runs-on: ui-build-test
   #   env:
   #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
   #   steps:

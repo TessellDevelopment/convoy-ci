@@ -6,7 +6,7 @@ on:
 jobs:
 
   convoy-check:
-    runs-on: non-build
+    runs-on: ui-build-test
     outputs:
       check: ${{steps.convoy_check.outputs.check}}
     steps:
@@ -39,7 +39,7 @@ jobs:
   version-check:
     if: needs.convoy-check.outputs.check == 'true'
     needs: convoy-check
-    runs-on: non-build
+    runs-on: ui-build-test
     steps:
 
       - uses: actions/checkout@v4.1.1

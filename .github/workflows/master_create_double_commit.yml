@@ -7,7 +7,7 @@ jobs:
 
   create-pr-for-double-merge:
     if: github.event.pull_request.merged == true
-    runs-on: non-build
+    runs-on: ui-build-test
     env:
        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:

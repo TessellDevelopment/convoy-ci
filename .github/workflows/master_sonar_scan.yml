@@ -5,7 +5,7 @@ on:
 jobs:
   sonar-scan:
     if: github.ref_name == 'main' ||  github.event.pull_request.base.ref == 'main'
-    runs-on: self-hosted
+    runs-on: ui-build-test
     env:
       CI_BRANCH: TDEVOPS-3165
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

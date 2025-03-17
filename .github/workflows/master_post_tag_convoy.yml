@@ -15,7 +15,7 @@ on:
 jobs:
   
   push-commit-details-to-convoy: 
-    runs-on: non-build
+    runs-on: ui-build-test
     env:
       TAG: "${{inputs.tag}}"
       USES_CUSTOM_VERSION: "${{inputs.uses_custom_version}}"

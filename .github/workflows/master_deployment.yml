@@ -12,7 +12,7 @@ on:
 
 jobs:
   deploy-tenant:
-    runs-on: non-build
+    runs-on: ui-build-test
     env:
       APP_GROUP: "${{inputs.app_group}}"
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
