@@ -363,19 +363,19 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
-      - name: Check specific file changes
-        id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
-        with:
-          files: |
-            Chart.yaml
-            services/**
-            scripts/Dockerfile
-            scripts/initializeAutomation.sh
+      # - name: Check specific file changes
+      #   id: changed-files
+      #   uses: tj-actions/changed-files@v42.0.2
+      #   with:
+      #     files: |
+      #       Chart.yaml
+      #       services/**
+      #       scripts/Dockerfile
+      #       scripts/initializeAutomation.sh
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
@@ -518,17 +518,17 @@ jobs:
             set +e
           }
           helmTemplateBuild() {
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              set -e
-              CHART_NAME="$1"
-              requiredInputs="1"
-              validateInputs "$requiredInputs" "$@" 
-              cloneHelmTemplate
-              echo "Running package and push"
-              ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
-              cd $GITHUB_WORKSPACE
-              set +e
-            fi
+            # if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+            set -e
+            CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            cloneHelmTemplate
+            echo "Running package and push"
+            ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
+            cd $GITHUB_WORKSPACE
+            set +e
+            # fi
           }
           javaApiClientBuild() {
             set -e
@@ -646,11 +646,11 @@ jobs:
             source qavenv/bin/activate
             python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
             deactivate
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              cd scripts
-              dockerBuild "$@"
-              cd ..
-            fi
+            # if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+            cd scripts
+            dockerBuild "$@"
+            cd ..
+            # fi
             set +e
           }
           setupOpa() {

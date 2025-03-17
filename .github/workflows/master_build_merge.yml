@@ -626,19 +626,19 @@ jobs:
             echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
 
-      - name: Check specific file changes
-        id: changed-files
-        uses: tj-actions/changed-files@v42.0.2
-        with:
-          files: |
-            Chart.yaml
-            services/**
-            scripts/Dockerfile
-            scripts/initializeAutomation.sh
+      # - name: Check specific file changes
+      #   id: changed-files
+      #   uses: tj-actions/changed-files@v42.0.2
+      #   with:
+      #     files: |
+      #       Chart.yaml
+      #       services/**
+      #       scripts/Dockerfile
+      #       scripts/initializeAutomation.sh
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
       
 
       - name: Login to docker
@@ -668,7 +668,7 @@ jobs:
         id: build
         shell: bash
         env:
-          CHANGED_FILES_ANY_MODIFIED: ${{steps.changed-files.outputs.any_modified}}
+          # CHANGED_FILES_ANY_MODIFIED: ${{steps.changed-files.outputs.any_modified}}
           CHANGED_AND_MODIFIED_FILES: ${{steps.changed-files-all.outputs.all_changed_and_modified_files}}
         run: |
           agentBuild() {
@@ -809,21 +809,21 @@ jobs:
             set +e
           }
           helmTemplateBuildAndPush() {
-            if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
-              set -e
-              CHART_NAME="$1"
-              requiredInputs="1"
-              validateInputs "$requiredInputs" "$@" 
-              cloneHelmTemplate
-              echo "Running package and push"
-              if ${DEV_BUILD}; then
-                ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
-              else
-                ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
-              fi
-              cd $GITHUB_WORKSPACE
-              set +e
+            # if [[ ${{steps.changed-files.outputs.any_modified}} == 'true' ]]; then
+            set -e
+            CHART_NAME="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            cloneHelmTemplate
+            echo "Running package and push"
+            if ${DEV_BUILD}; then
+              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
+            else
+              ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
+            cd $GITHUB_WORKSPACE
+            set +e
+            # fi
           }
           installPythonDependencies() {
             DIR=$1

@@ -1028,11 +1028,11 @@ qa_build_and_push(){
   source qavenv/bin/activate
   python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
   deactivate
-  if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
-    cd scripts
-    docker_build_and_push $@
-    cd ..
-  fi
+  # if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
+  cd scripts
+  docker_build_and_push $@
+  cd ..
+  # fi
   set +e
 }
 
