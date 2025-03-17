@@ -34,21 +34,21 @@ jobs:
 
       - name: Check .github changes
         id: changed-files-github
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
         with:
           files: |
             .github/**
 
       - name: Check convoy.yaml changes
         id: changed-files-convoy
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
         with:
           files: |
             convoy.yaml
 
       - name: Check All file changes
         id: changed-files-all
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
 
       - name: Set Output
         id: set-output

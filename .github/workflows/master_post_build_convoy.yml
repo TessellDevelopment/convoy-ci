@@ -41,7 +41,7 @@ jobs:
       - name: Check specific file changes
         if: endsWith(github.event.pull_request.base.repo.name, 'helm-svc-defns')
         id: helm-files
-        uses: tj-actions/changed-files@v42.0.2
+        uses: step-security/changed-files@v45.0.1
         with:
           files: |
             Chart.yaml
