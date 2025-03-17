@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ui-build-test
+    runs-on: non-build
     outputs:
       mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
       mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}

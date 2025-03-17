@@ -15,7 +15,7 @@ on:
 jobs:
 
   check-approval:
-    runs-on: ui-build-test
+    runs-on: non-build
     steps:
 
         - uses: actions/checkout@v4.1.1

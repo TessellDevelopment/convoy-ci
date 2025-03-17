@@ -5,9 +5,9 @@ on:
 jobs:
   sonar-scan:
     if: github.ref_name == 'main' ||  github.event.pull_request.base.ref == 'main'
-    runs-on: ui-build-test
+    runs-on: non-build
     env:
-      CI_BRANCH: TDEVOPS-3165
+      CI_BRANCH: main
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:

@@ -24,7 +24,7 @@ on:
 jobs:
   
   post-build-status-to-convoy:
-    runs-on: ui-build-test
+    runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
       TAG: "${{inputs.TAG}}"

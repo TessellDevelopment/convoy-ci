@@ -19,7 +19,7 @@ jobs:
 
   create-tag-on-merge:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
-    runs-on: ui-build-test
+    runs-on: non-build
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
       LABEL: ${{inputs.label}}

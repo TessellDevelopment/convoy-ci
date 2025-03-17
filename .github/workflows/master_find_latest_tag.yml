@@ -16,7 +16,7 @@ on:
 jobs:
 
   find-latest-tag:
-    runs-on: ui-build-test
+    runs-on: non-build
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     outputs:

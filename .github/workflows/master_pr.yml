@@ -6,15 +6,15 @@ on:
 jobs:
 
   dev-checks:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-3165
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@main
     secrets: inherit
 
   version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-3165
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@main
     secrets: inherit
 
   runner-check:
-    runs-on: ui-build-test
+    runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
     needs: [dev-checks,version-check]
@@ -32,7 +32,7 @@ jobs:
 
   build:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@TDEVOPS-3165
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_pr.yml@main
     with:
       type: ${{needs.runner-check.outputs.type}}
     secrets: inherit
@@ -45,7 +45,7 @@ jobs:
 
   # check-commits:
   #   if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
-  #   runs-on: ui-build-test
+  #   runs-on: non-build
   #   needs: build
   #   env:
   #     REPO: ${{github.repository}}
@@ -80,11 +80,11 @@ jobs:
   auto-merge:
     needs: build
     if: (contains(github.event.pull_request.head.ref, 'double_commit')) && (github.event.pull_request.user.login == 'cipipelinetessell' ) && always()
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@TDEVOPS-3165
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_auto_merge.yml@main
     secrets: inherit 
 
   send-mail:
     needs: auto-merge
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-3165
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main
     secrets: inherit

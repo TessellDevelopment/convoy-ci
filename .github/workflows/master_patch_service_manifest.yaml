@@ -6,7 +6,7 @@ on:
 jobs:
   
   patch-service-manifest-to-convoy:
-    runs-on: ui-build-test
+    runs-on: non-build
     env: 
       SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true

@@ -16,7 +16,7 @@ on:
 jobs:
 
   file-check:
-    runs-on: ui-build-test
+    runs-on: non-build
     outputs:
       github-changes: ${{ steps.set-output.outputs.github-changes }}
       convoy-changes: ${{ steps.set-output.outputs.convoy-changes }}
