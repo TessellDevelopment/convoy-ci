@@ -38,11 +38,6 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
-  sonar-scan:
-    needs: check-label-cut-status
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
-    secrets: inherit
-
   runner-check:
     runs-on: non-build
     needs: file-check
@@ -145,6 +140,11 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
       TAG: ${{needs.create-tag.outputs.tag}}
       LABEL: ${{needs.runner-check.outputs.label}}
+
+  sonar-scan:
+    needs: post-build-to-convoy
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
+    secrets: inherit
 
   post-coverage-to-convoy:
     needs: [create-tag, build, runner-check]
