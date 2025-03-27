@@ -173,7 +173,7 @@ jobs:
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |          
-          mc cp "minio-ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json1" software_image_manifest.json
+          mc cp "minio-ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software_image_manifest.json
 
 
       - name: Set Pull repository
