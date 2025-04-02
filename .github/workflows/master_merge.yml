@@ -35,7 +35,7 @@ jobs:
 
   file-check:
     needs: check-label-cut-status
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@main
     secrets: inherit
 
   runner-check:
@@ -106,14 +106,14 @@ jobs:
 
   create-tag:
     needs: runner-check
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_tag.yml@main
     secrets: inherit
     with:
       label: ${{needs.runner-check.outputs.label}}
 
   post-tag-to-convoy:
     needs: create-tag
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@main
     secrets: inherit
     with:
       tag: ${{needs.create-tag.outputs.tag}}
@@ -122,7 +122,7 @@ jobs:
   build:
     needs: [runner-check, create-tag]
     # if: needs.file-check.outputs.github-changes == 'false'
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@main
     secrets: inherit
     with:
       type: ${{needs.runner-check.outputs.type}}
@@ -132,7 +132,7 @@ jobs:
   post-build-to-convoy:
     if: always()
     needs: [file-check, create-tag, build, runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
     with:
       # ARTIFACT_GENERATED: ${{ needs.file-check.outputs.github-changes == 'false' }}
@@ -143,12 +143,12 @@ jobs:
 
   sonar-scan:
     needs: post-build-to-convoy
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
     secrets: inherit
 
   post-coverage-to-convoy:
     needs: [create-tag, build, runner-check]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
     with:
       BRANCH_COVERAGE: ${{needs.build.outputs.BRANCH_COVERAGE}}
@@ -159,13 +159,13 @@ jobs:
   create-double-commit:
     if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
     needs: build
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
     secrets: inherit
 
   exec-deployment-script:
     if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
     needs: [runner-check, post-build-to-convoy]
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deployment.yml@TDEVOPS-3205
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_deployment.yml@main
     secrets: inherit
     with:
       app_group: ${{needs.runner-check.outputs.app_group}}
@@ -174,5 +174,5 @@ jobs:
   send-mail:
     needs: create-double-commit
     if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-3205 
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@main 
     secrets: inherit
