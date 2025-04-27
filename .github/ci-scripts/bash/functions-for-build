@@ -925,6 +925,8 @@ push_terraform_modules() {
   else
     mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
     push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    aws_configure_prod_assets
+    aws s3 cp "${ARTIFACT_FILE}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
     aws_configure_devqa_infra
     aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
