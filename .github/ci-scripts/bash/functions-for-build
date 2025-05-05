@@ -927,7 +927,7 @@ push_terraform_modules() {
     aws_configure_prod_assets
     aws s3 cp "${ARTIFACT_FILE}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
 
-    if git tag | grep -qE '^0\.131\.[0-9]+$'; then
+    if ! git tag | grep -qE '^0\.132\.[0-9]+$'; then
       mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
       aws_configure_devqa_infra
       aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
@@ -936,7 +936,7 @@ push_terraform_modules() {
       configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
       configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
     fi
-    
+
     for ENV in "${environments[@]}"
     do
       push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
