@@ -1000,18 +1000,6 @@ push_to_minio() {
   return 1
 }
 
-validate_reponse_code() {
-  HTTP_CODE="${1}"
-  EXPECTED_CODE="${2}"
-  echo ${HTTP_CODE}
-  HTTP_CODE=$((HTTP_CODE))
-  if [ "${HTTP_CODE}" -ne ${EXPECTED_CODE} ]; then
-    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
-    exit 1
-  fi
-
-}
-
 push_to_nexus() {
   FILE_PATH="${1}"
   URL_PATH="${2}"
@@ -1307,6 +1295,17 @@ upload_folder_to_gcloud() {
   push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
 
   [[ -n $temp_dir ]] && rm -rf "$temp_dir"
+}
+
+validate_reponse_code() {
+  HTTP_CODE="${1}"
+  EXPECTED_CODE="${2}"
+  echo ${HTTP_CODE}
+  HTTP_CODE=$((HTTP_CODE))
+  if [ "${HTTP_CODE}" -ne ${EXPECTED_CODE} ]; then
+    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
+    exit 1
+  fi
 }
 
 vss_tar_build() {
