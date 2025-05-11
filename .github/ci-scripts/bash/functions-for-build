@@ -399,7 +399,9 @@ get_commit_build_status() {
     --data '')
   echo "response" ${response}
   # http_code=$(echo "$response" | grep -o '[0-9]\{3\}$')
-  validate_reponse_code ${response} "200"
+  HTTP_CODE=$(echo "${response}" | tail -n1)
+
+  validate_reponse_code "$(echo "${response}" | tail -n1)" "200"
   COMMIT_BUILD_STATUS=$(echo $(echo "$response" | sed '$d') | jq -r '.response.buildStatus')
   echo "build_status" ${COMMIT_BUILD_STATUS}
 }
@@ -1005,12 +1007,11 @@ push_to_minio() {
 }
 
 validate_reponse_code() {
-  RESPONSE="${1}"
+  HTTP_CODE="${1}"
   EXPECTED_CODE="${2}"
-  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
   echo ${HTTP_CODE}
   HTTP_CODE=$((HTTP_CODE))
-  if [ "${HTTP_CODE}" -ne 201 ]; then
+  if [ "${HTTP_CODE}" -ne ${EXPECTED_CODE} ]; then
     echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
     exit 1
   fi
@@ -1026,8 +1027,9 @@ push_to_nexus() {
       --upload-file ${FILE_PATH}  -w "%{http_code}" \
       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
   echo ${REPONSE}
-  validate_reponse_code "${RESPONSE}" "201"
-  # HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
+  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
+  validate_reponse_code "${HTTP_CODE}" "201"
+
   # echo ${HTTP_CODE}
   # HTTP_CODE=$((HTTP_CODE))
   # if [ "${HTTP_CODE}" -ne 201 ]; then
