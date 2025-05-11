@@ -393,12 +393,14 @@ get_commit_build_status() {
   base_branch="${2}"
   app_group=$(yq '.appGroup' convoy.yaml)
   echo "app_group" ${app_group}
-  response=$(curl --location --request GET "${COMMIT_STATUS_API_URL}/app-groups/${app_group}/commit-hash/${commit_hash}/base-branch/${base_branch}" \
+  response=$(curl --write-out "\n%{http_code}" --location --request GET "${COMMIT_STATUS_API_URL}/app-groups/${app_group}/commit-hash/${commit_hash}/base-branch/${base_branch}" \
     --header 'Content-Type: application/json' \
     --header "x-api-key: ${CONVOY_API_KEY}" \
     --data '')
+  echo "response" ${response}
+  # http_code=$(echo "$response" | grep -o '[0-9]\{3\}$')
   validate_reponse_code ${response} "200"
-  COMMIT_BUILD_STATUS=$(echo ${response} | jq -r '.response.buildStatus')
+  COMMIT_BUILD_STATUS=$(echo $(echo "$response" | sed '$d') | jq -r '.response.buildStatus')
   echo "build_status" ${COMMIT_BUILD_STATUS}
 }
 
