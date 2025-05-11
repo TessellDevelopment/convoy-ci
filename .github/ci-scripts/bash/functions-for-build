@@ -4,8 +4,9 @@ source ./ci-scripts/bash/functions-for-build-camel-case
 
 assert_base_branch_commit_success() {
   echo "Checking base branch commit build status"
-  echo "SOURCE_BRANCH: ${SOURCE_BRANCH}"
-  base_branch_commit=$(git log origin/${SOURCE_BRANCH} -n 1 --format="%h")
+  echo "SOURCE_BRANCH: ${GITHUB_BASE_REF}"
+  base_branch_commit=$(git log origin/${GITHUB_BASE_REF} -n 1 --format="%h")
+  echo "Base branch commit: ${base_branch_commit}"
   get_commit_build_status "${base_branch_commit}" "${GITHUB_BASE_REF}"
   if [[ "${COMMIT_BUILD_STATUS}" != "SUCCESSFUL" ]]; then
     echo "Base branch commit ${base_branch_commit} build status is ${COMMIT_BUILD_STATUS}.\nPlease check and re-trigger the pipeline."
@@ -391,7 +392,7 @@ get_commit_build_status() {
   commit_hash="${1}"
   base_branch="${2}"
   app_group=$(yq '.appGroup' convoy.yaml)
-  
+  echo "app_group" ${app_group}
   response=$(curl --location --request GET "${COMMIT_STATUS_API_URL}/app-groups/${app_group}/commit-hash/${commit_hash}/base-branch/${base_branch}" \
     --header 'Content-Type: application/json' \
     --header "x-api-key: ${CONVOY_API_KEY}" \
