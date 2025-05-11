@@ -311,6 +311,7 @@ jobs:
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CI_BRANCH: TDEVOPS-3261_commit_build_status
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      COMMIT_STATUS_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commit
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -341,7 +342,6 @@ jobs:
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
-      REPOSITORY: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
