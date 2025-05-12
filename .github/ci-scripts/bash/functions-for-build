@@ -451,6 +451,7 @@ get_release_branch() {
 get_previous_commited_software_manifest() {
   rm -rf /tmp/software_manifest_workdir && mkdir -p /tmp/software_manifest_workdir
   export WORKDIR="/tmp/software_manifest_workdir/"
+  echo "starting previous manifest download"
   install_minio_client
   get_release_branch "${COMMIT_TAG}"
   minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
