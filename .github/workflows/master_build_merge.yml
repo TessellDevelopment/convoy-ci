@@ -324,25 +324,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          installMinioClient() {
-            wget https://dl.min.io/client/mc/release/linux-amd64/mc
-            sudo mv ./mc /usr/local/bin/mc
-            chmod +x /usr/local/bin/mc
-            export PATH=$PATH:/usr/local/bin
-            mc --version
-            while true; do
-                response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
-                echo "$response"
-                if echo "$response" | grep -q "successfully"; then
-                    echo "Command succeeded: Added 'minio-ci' successfully."
-                    break
-                else
-                    echo "Command failed, retrying..."
-                    sleep 2
-                fi
-            done  
-            mc alias list
-          }
           installAwsCli() {
             curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
             chmod +x install-aws.sh

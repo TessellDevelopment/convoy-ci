@@ -395,8 +395,10 @@ get_commit_build_status() {
     --header "x-api-key: ${CONVOY_API_KEY}" \
     --data '')
   echo "response" ${response}
+  JSON_BODY=$(echo "$response" | sed '$d')
   validate_reponse_code "$(echo "${response}" | tail -n1)" "200"
-  COMMIT_BUILD_STATUS=$(echo $(echo "$response" | sed '$d') | jq -r '.response.buildStatus')
+  COMMIT_BUILD_STATUS=$(echo "${JSON_BODY}" | jq -r '.response.buildStatus')
+  COMMIT_TAG=$(echo "${JSON_BODY}" | jq -r '.response.tag')
   echo "build_status" ${COMMIT_BUILD_STATUS}
 }
 
@@ -432,6 +434,28 @@ generate_sts_session_token() {
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
   export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+}
+
+get_release_branch() {
+  if [ -z "$1" ]; then
+      echo "Error: No version string provided."
+      return 1
+  fi
+  local VERSION_STRING="$1"
+  MAJOR_MINOR=$(echo "$VERSION_STRING" | cut -d. -f1,2)
+  REL_TAG="rel-${MAJOR_MINOR}.0"
+  export REL_TAG="$REL_TAG"
+  echo $REL_TAG
+}
+
+get_previous_commited_software_manifest() {
+  rm -rf /tmp/software_manifest_workdir && mkdir -p /tmp/software_manifest_workdir
+  export WORKDIR="/tmp/software_manifest_workdir/"
+  install_minio_client
+  get_release_branch "${COMMIT_TAG}"
+  minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
+  download_path="${WORKDIR}/software_image_manifest.json"
+  mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
 }
 
 get_required_go_version() {
@@ -629,6 +653,26 @@ install_go_dependencies() {
   go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
   go env
+}
+
+install_minio_client() {
+  wget https://dl.min.io/client/mc/release/linux-amd64/mc
+  sudo mv ./mc /usr/local/bin/mc
+  chmod +x /usr/local/bin/mc
+  export PATH=$PATH:/usr/local/bin
+  mc --version
+  while true; do
+      response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+      echo "$response"
+      if echo "$response" | grep -q "successfully"; then
+          echo "Command succeeded: Added 'minio-ci' successfully."
+          break
+      else
+          echo "Command failed, retrying..."
+          sleep 2
+      fi
+  done  
+  mc alias list
 }
 
 install_node() {
@@ -1117,12 +1161,12 @@ software_def_build() {
   export CURRENT_VERSION_TAG="0.0.0"
   mkdir -p ~/.packer.d/plugins
   assert_base_branch_commit_success
+  get_previous_commited_software_manifest
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "${BRANCH_NAME} contains double_commit"
     get_dc_root_pr_diff
     assert_root_pr_commit_success
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
-    cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
       echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
       return
