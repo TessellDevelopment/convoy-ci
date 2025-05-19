@@ -282,7 +282,7 @@ jobs:
           }
 
           src_file="./output.json"
-          dest_path="tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json"
+          dest_path="tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{github.ref_name}}.json"
 
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file $src_file \
