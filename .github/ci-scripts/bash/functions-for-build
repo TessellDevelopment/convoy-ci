@@ -438,23 +438,20 @@ generate_sts_session_token() {
 
 get_release_branch() {
   if [ -z "$1" ]; then
-      echo "Error: No version string provided."
-      return 1
+    echo "Error: No version string provided."
+    return 1
   fi
   local VERSION_STRING="$1"
   MAJOR_MINOR=$(echo "$VERSION_STRING" | cut -d. -f1,2)
   REL_TAG="rel-${MAJOR_MINOR}.0"
   export REL_TAG="$REL_TAG"
-  echo $REL_TAG
 }
 
 get_previous_commited_software_manifest() {
-  rm -rf /tmp/software_manifest_workdir && mkdir -p /tmp/software_manifest_workdir
-  export WORKDIR="/tmp/software_manifest_workdir/"
-  echo "starting previous manifest download"
   install_minio_client
   get_release_branch "${COMMIT_TAG}"
   minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
+  echo "starting previous manifest download ${minio_path}"
   download_path="${WORKDIR}/software_image_manifest.json"
   mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
 }
@@ -663,15 +660,15 @@ install_minio_client() {
   export PATH=$PATH:/usr/local/bin
   mc --version
   while true; do
-      response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
-      echo "$response"
-      if echo "$response" | grep -q "successfully"; then
-          echo "Command succeeded: Added 'minio-ci' successfully."
-          break
-      else
-          echo "Command failed, retrying..."
-          sleep 2
-      fi
+    response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+    echo "$response"
+    if echo "$response" | grep -q "successfully"; then
+        echo "Command succeeded: Added 'minio-ci' successfully."
+        break
+    else
+        echo "Command failed, retrying..."
+        sleep 2
+    fi
   done  
   mc alias list
 }
@@ -1160,6 +1157,8 @@ software_def_build() {
   set -e
   setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
+  export WORKDIR="/tmp/software_manifest_workdir/"
+  rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
   assert_base_branch_commit_success
   get_previous_commited_software_manifest
