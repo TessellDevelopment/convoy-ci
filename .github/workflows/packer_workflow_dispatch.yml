@@ -242,6 +242,7 @@ jobs:
         run: |
           source pkenv/bin/activate
           export WORKDIR=`pwd`
+          export REPLICATION_ENABLED=false
           get_software_image_manifest_seed_file
 
       - name: Push Final software-image to Nexus & minio
