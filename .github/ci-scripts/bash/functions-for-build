@@ -364,7 +364,7 @@ get_root_pr_tag() {
   get_base_branch_commit_from_pr_number
   echo "base branch commit" ${base_branch_commit_of_root_pr}
   git diff ${base_branch_commit_of_root_pr}^!
-  root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | head -n 1)
+  root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | sort -V | head -n 1)
   base_branch_of_root_pr="rel-$(echo "${root_pr_tag}" | cut -d. -f1,2).0"
 }
 
