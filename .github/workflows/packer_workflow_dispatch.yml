@@ -106,19 +106,6 @@ jobs:
         id: split
         run: echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=${SOFTWARE_IMAGE_BASE_LATEST_RELEASE##*-}" >> $GITHUB_ENV
 
-      - name: Get Tag from branch
-        id: tag_output
-        run: |
-          branch_name="${{github.ref_name}}"
-          if [[ "${branch_name}" =~ ^[^-]+-([0-9]+) ]]; then
-            version="0.0.${BASH_REMATCH[1]}"
-          else
-            echo "Error: Branch name is not in format 'TS/TDEVOPS/SRE-XXXX'"
-            exit 1
-          fi
-          echo "DEV_BUILD_VERSION: ${version}"
-          echo "DEV_BUILD_VERSION=${version}" >> $GITHUB_ENV
-
       - name: Set Label
       # We do not want this workflow to run when SOURCE_BRANCH (PR_SOURCE_BRANCH) is main or "rel-*" or workflowType is "build.".
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
@@ -255,6 +242,7 @@ jobs:
         run: |
           source pkenv/bin/activate
           export WORKDIR=`pwd`
+          export REPLICATION_ENABLED=false
           get_software_image_manifest_seed_file
 
       - name: Push Final software-image to Nexus & minio
@@ -282,7 +270,7 @@ jobs:
           }
 
           src_file="./output.json"
-          dest_path="tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{ env.DEV_BUILD_VERSION }}.json"
+          dest_path="tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{github.ref_name}}.json"
 
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file $src_file \
