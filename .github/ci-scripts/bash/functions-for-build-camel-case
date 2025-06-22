@@ -152,6 +152,10 @@ installGoDependencies() {
  install_go_dependencies "$@"
 }
 
+installMinioClient() {
+ install_minio_client "$@"
+}
+
 installPythonDependencies() {
   install_python_dependencies "$@"
 }

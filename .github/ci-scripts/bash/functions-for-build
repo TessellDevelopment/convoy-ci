@@ -2,6 +2,23 @@
 
 source ./ci-scripts/bash/functions-for-build-camel-case
 
+assert_base_branch_commit_success() {
+  echo "Checking base branch ${GITHUB_BASE_REF} commit build status"
+  base_branch_commit=$(git log origin/${GITHUB_BASE_REF} -n 1 --format="%h")
+  get_commit_build_status "${base_branch_commit}" "${GITHUB_BASE_REF}"
+  if [[ "${COMMIT_BUILD_STATUS}" != "SUCCESSFUL" ]]; then
+    echo "Base branch commit ${base_branch_commit} build status is ${COMMIT_BUILD_STATUS}.\nPlease check and re-trigger the pipeline."
+    exit 1
+  fi
+}
+
+assert_root_pr_commit_success() {
+  get_commit_build_status "${base_branch_commit_of_root_pr}" "${base_branch_of_root_pr}"
+  if [[ "${COMMIT_BUILD_STATUS}" != "SUCCESSFUL" ]]; then
+    echo "Root PR commit ${base_branch_commit_of_root_pr} build status is ${COMMIT_BUILD_STATUS}.\nPlease check and re-trigger the pipeline."
+    exit 1
+  fi
+}
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
   aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
@@ -346,7 +363,7 @@ get_base_branch_commit_from_pr_number() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.merge_commit_sha')
+  "${GH_API_URL}/repos/${REPO}/pulls/${root_pr_number}"| jq -r '.merge_commit_sha')
 }
 
 get_dc_messages() {
@@ -354,7 +371,7 @@ get_dc_messages() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message' | head -n 1)
+  "${GH_API_URL}/repos/${REPO}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message' | head -n 1)
 }
 
 get_root_pr_tag() {
@@ -366,6 +383,23 @@ get_root_pr_tag() {
   git diff ${base_branch_commit_of_root_pr}^!
   root_pr_tag=$(git tag --contains ${base_branch_commit_of_root_pr} | sort -V | head -n 1)
   base_branch_of_root_pr="rel-$(echo "${root_pr_tag}" | cut -d. -f1,2).0"
+}
+
+get_commit_build_status() {
+  check_convoy_yaml
+  commit_hash="${1}"
+  base_branch="${2}"
+  app_group=$(yq '.appGroup' convoy.yaml)
+  response=$(curl --write-out "\n%{http_code}" --location --request GET "${COMMIT_STATUS_API_URL}/app/${app_group}/commits/${commit_hash}/base-branch/${base_branch}" \
+    --header 'Content-Type: application/json' \
+    --header "x-api-key: ${CONVOY_API_KEY}" \
+    --data '')
+  echo "response" ${response}
+  JSON_BODY=$(echo "$response" | sed '$d')
+  validate_reponse_code "$(echo "${response}" | tail -n1)" "200"
+  COMMIT_BUILD_STATUS=$(echo "${JSON_BODY}" | jq -r '.response.buildStatus')
+  COMMIT_TAG=$(echo "${JSON_BODY}" | jq -r '.response.tag')
+  echo "build_status" ${COMMIT_BUILD_STATUS}
 }
 
 get_dc_root_pr_diff() {
@@ -400,6 +434,26 @@ generate_sts_session_token() {
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
   export AWS_SESSION_TOKEN=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SessionToken')
+}
+
+get_release_branch() {
+  if [ -z "$1" ]; then
+    echo "Error: No version string provided."
+    return 1
+  fi
+  local VERSION_STRING="$1"
+  MAJOR_MINOR=$(echo "$VERSION_STRING" | cut -d. -f1,2)
+  REL_TAG="rel-${MAJOR_MINOR}.0"
+  export REL_TAG="$REL_TAG"
+}
+
+get_previous_commited_software_manifest() {
+  install_minio_client
+  get_release_branch "${COMMIT_TAG}"
+  minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
+  echo "starting previous manifest download ${minio_path}"
+  download_path="${WORKDIR}/software_image_manifest.json"
+  mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
 }
 
 get_required_go_version() {
@@ -597,6 +651,26 @@ install_go_dependencies() {
   go install golang.org/x/tools/cmd/goimports@v0.24.0
   which go
   go env
+}
+
+install_minio_client() {
+  wget https://dl.min.io/client/mc/release/linux-amd64/mc
+  sudo mv ./mc /usr/local/bin/mc
+  chmod +x /usr/local/bin/mc
+  export PATH=$PATH:/usr/local/bin
+  mc --version
+  while true; do
+    response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+    echo "$response"
+    if echo "$response" | grep -q "successfully"; then
+        echo "Command succeeded: Added 'minio-ci' successfully."
+        break
+    else
+        echo "Command failed, retrying..."
+        sleep 2
+    fi
+  done  
+  mc alias list
 }
 
 install_node() {
@@ -981,13 +1055,8 @@ push_to_nexus() {
       --upload-file ${FILE_PATH}  -w "%{http_code}" \
       ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH})
   echo ${REPONSE}
-  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1) 
-  echo ${HTTP_CODE}
-  HTTP_CODE=$((HTTP_CODE))
-  if [ "${HTTP_CODE}" -ne 201 ]; then
-    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
-    exit 1
-  fi
+  HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
+  validate_reponse_code "${HTTP_CODE}" "201"
 }
 
 python_docker_build_and_push() {
@@ -1092,12 +1161,16 @@ software_def_build() {
   set -e
   setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
+  export WORKDIR="/tmp/software_manifest_workdir"
+  rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
+  assert_base_branch_commit_success
+  get_previous_commited_software_manifest
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
     echo "${BRANCH_NAME} contains double_commit"
     get_dc_root_pr_diff
+    assert_root_pr_commit_success
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
-    cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
       echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
       return
@@ -1270,6 +1343,17 @@ upload_folder_to_gcloud() {
   push_to_gcloud "${ARTIFACT}.zip" "${artifact_base_path}/${ARTIFACT}.zip"
 
   [[ -n $temp_dir ]] && rm -rf "$temp_dir"
+}
+
+validate_reponse_code() {
+  HTTP_CODE="${1}"
+  EXPECTED_CODE="${2}"
+  echo ${HTTP_CODE}
+  HTTP_CODE=$((HTTP_CODE))
+  if [ "${HTTP_CODE}" -ne ${EXPECTED_CODE} ]; then
+    echo "Error: Unexpected HTTP response code ${HTTP_CODE}"
+    exit 1
+  fi
 }
 
 vss_tar_build() {
