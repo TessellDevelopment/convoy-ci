@@ -77,10 +77,24 @@ jobs:
       - name: Fetch and Rerun Failed workflow
         run: |
           WORKFLOW_ID=$(gh run list --branch "${{github.event.pull_request.head.ref}}" --status 'failure' --event 'pull_request' --workflow 'Master CI Approve Workflow' --limit 1 --json 'databaseId' | jq '.[0].databaseId')
-          echo $WORKFLOW_ID
-          if [[ ! -z "$WORKFLOW_ID" && "$WORKFLOW_ID" != "null" ]]; then
+          echo ${WORKFLOW_ID}
+          if [[ ! -z "${WORKFLOW_ID}" && "${WORKFLOW_ID}" != "null" ]]; then
             echo "Rerunning Failed Approval Workflow"
-            gh run rerun $WORKFLOW_ID --failed
+            set +e
+            rerun_output=$(gh run rerun "${WORKFLOW_ID}" --failed 2>&1)
+            rerun_status=$?
+            set -e
+            if [[ $rerun_status -ne 0 ]]; then
+              if grep -qiE 'cannot be rerun|Unable to retry this workflow run' <<<"${rerun_output}"; then
+                echo "Workflow is too old to rerun. Skipping."
+              else
+                echo "❌ Error while trying to rerun:"
+                echo "${rerun_output}"
+                exit 1
+              fi
+            else
+              echo "✅ Workflow re-run triggered."
+            fi
           else
             echo "No failed workflow found. Skipping re-run of 'Master CI Approve Workflow'"
           fi
