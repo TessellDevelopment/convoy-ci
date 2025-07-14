@@ -342,6 +342,7 @@ jobs:
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
+      REPOSITORY: "${{github.repository}}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
