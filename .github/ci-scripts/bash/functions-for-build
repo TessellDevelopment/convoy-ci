@@ -598,6 +598,46 @@ gradlew_ui_build_and_push() {
   set +e
 }
 
+hcp_build_and_push() {
+  set -e
+  ARTIFACT=${1}
+  EXTENSION=${2}
+  # Download templated manifests declared in convoy.yaml
+  mapfile -t manifest_keys < \
+    <(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .manifests | keys | .[]" convoy.yaml)
+  for key in "${manifest_keys[@]}"; do
+    path="$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .manifests.${key}" convoy.yaml)"
+    manifest_filename="${key}-$(basename "${path}")"
+    curl --header "Authorization: token ${GITHUB_TOKEN}" \
+      --header 'Accept: application/vnd.github.v3.raw' \
+      -o ${manifest_filename} \
+      --location https://raw.githubusercontent.com/TessellDevelopment/${path}
+    # Run manifest curator to replace base64 paths and split the manifest based on sync wave
+    python3 ci-scripts/k8s-manifest-processor.py ${key} "${manifest_filename}"
+    # Execute script to download docker images into assets/docker-images from dockerhub
+    ./ci-scripts/download_docker_images.sh "${manifest_filename}" 
+  done
+  # Execute script to downlaod minio artifact into assets/artifacts from convoy minio
+  ./ci-scripts/download_minio_artifacts.sh
+  EXCLUDES=(
+    ".git/*"       
+    ".github/*"    
+    ".gitignore"   
+    "ci-scripts/*" 
+    "README.md"    
+    "convoy.yaml"
+    ".DS_Store"
+    "${ARTIFACT}.${EXTENSION}"
+  )
+  TAR_EXCLUDES=()
+  for pat in "${EXCLUDES[@]}"; do
+    TAR_EXCLUDES+=("--exclude=$pat")
+  done
+  tar -czf "${ARTIFACT}.${EXTENSION}" "${TAR_EXCLUDES[@]}" .
+  configure_and_push_aws ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${TESSELL_ARTIFACTS_HCP_S3} "${ARTIFACT}.${EXTENSION}" "s3://${TESSELL_ARTIFACTS_HCP_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  set +e
+}
+
 image_scan(){
   set -e
   export IMAGE="${1}"
