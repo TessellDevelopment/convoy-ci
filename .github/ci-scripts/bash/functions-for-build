@@ -613,17 +613,17 @@ hcp_build_and_push() {
       -o ${manifest_filename} \
       --location https://raw.githubusercontent.com/TessellDevelopment/${path}
     # Run manifest curator to replace base64 paths and split the manifest based on sync wave
-    python3 ci-scripts/k8s-manifest-processor.py ${key} "${manifest_filename}"
+    python3 build-scripts/k8s-manifest-processor.py ${key} "${manifest_filename}"
     # Execute script to download docker images into assets/docker-images from dockerhub
-    ./ci-scripts/download_docker_images.sh "${manifest_filename}" 
+    ./build-scripts/download_docker_images.sh "${manifest_filename}" 
   done
   # Execute script to downlaod minio artifact into assets/artifacts from convoy minio
-  ./ci-scripts/download_minio_artifacts.sh
+  ./build-scripts/download_minio_artifacts.sh
   EXCLUDES=(
     ".git/*"       
     ".github/*"    
     ".gitignore"   
-    "ci-scripts/*" 
+    "build-scripts/*" 
     "README.md"    
     "convoy.yaml"
     ".DS_Store"
