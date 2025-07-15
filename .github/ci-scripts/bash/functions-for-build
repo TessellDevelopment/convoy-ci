@@ -602,6 +602,8 @@ hcp_build_and_push() {
   set -e
   ARTIFACT=${1}
   EXTENSION=${2}
+  # Execute script to downlaod minio artifact into assets/artifacts from convoy minio
+  ./build-scripts/download_minio_artifacts.sh
   # Download templated manifests declared in convoy.yaml
   mapfile -t manifest_keys < \
     <(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .manifests | keys | .[]" convoy.yaml)
@@ -612,13 +614,11 @@ hcp_build_and_push() {
       --header 'Accept: application/vnd.github.v3.raw' \
       -o ${manifest_filename} \
       --location https://raw.githubusercontent.com/TessellDevelopment/${path}
-    # Run manifest curator to replace base64 paths and split the manifest based on sync wave
-    python3 build-scripts/k8s-manifest-processor.py ${key} "${manifest_filename}"
     # Execute script to download docker images into assets/docker-images from dockerhub
     ./build-scripts/download_docker_images.sh "${manifest_filename}" 
+    # Run manifest curator to replace base64 paths and split the manifest based on sync wave
+    python3 build-scripts/k8s-manifest-processor.py ${key} "${manifest_filename}"
   done
-  # Execute script to downlaod minio artifact into assets/artifacts from convoy minio
-  ./build-scripts/download_minio_artifacts.sh
   EXCLUDES=(
     ".git/*"       
     ".github/*"    
