@@ -4,16 +4,16 @@ on:
   workflow_call:
     inputs:
       type:
-        description: 'This is used to determine build type'
+        description: This is used to determine build type
         required: true
         type: string
 
 jobs:
-
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -90,11 +90,12 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           parseCoverageReport
-  
+
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -134,8 +135,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          java-version: "17"
+          distribution: adopt
 
       - name: Set up Docker Buildx
         id: buildx
@@ -304,6 +305,7 @@ jobs:
     if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
     runs-on: self-hosted
     env:
+      BUILD_PHASE: pre-merge
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
@@ -696,7 +698,7 @@ jobs:
               terraformBuild
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -704,13 +706,21 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction buildTool ext file <<< "$artifactData"
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
+              echo "buildTool: $buildTool"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
+
+              if [[ -n ${buildFunction} ]]; then
+                ${buildFunction} ${name} ${ext} ${version} ${file}
+              elif [[ -n ${buildTool} ]]; then
+                $(yq .pre-merge.${buildTool})
+              fi
+
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -739,6 +749,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}

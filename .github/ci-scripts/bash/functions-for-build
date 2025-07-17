@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source ./ci-scripts/bash/build-tool-cmd-map.yaml
 source ./ci-scripts/bash/functions-for-build-camel-case
 
 assert_base_branch_commit_success() {

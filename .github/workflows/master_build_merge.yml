@@ -4,35 +4,34 @@ on:
   workflow_call:
     inputs:
       type:
-        description: 'This is used to determine build type'
+        description: This is used to determine build type
         required: true
         type: string
       tag:
-        description: 'Latest tag for upload'
+        description: Latest tag for upload
         required: true
         type: string
       label:
-        description: 'Release label for upload'
+        description: Release label for upload
         required: true
         type: string
       dev_build:
-        description: 'Determine whether dispatch is on dev branch or not'
+        description: Determine whether dispatch is on dev branch or not
         required: false
         default: false
-        type: boolean  
+        type: boolean
 
     outputs:
       ARTIFACT_CHECKSUMS:
-        description: 'Consolidated Checksum of generated artifacts'
-        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }} 
+        description: Consolidated Checksum of generated artifacts
+        value: ${{ (jobs.build-ui.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-amd.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-ubuntu-latest.outputs.ARTIFACT_CHECKSUMS) || (jobs.build-arm.outputs.ARTIFACT_CHECKSUMS) }}
       BRANCH_COVERAGE:
-        description: 'Branch coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
+        description: Branch coverage parameters of the repository
+        value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }}
       STATEMENT_COVERAGE:
-        description: 'Statement coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
+        description: Statement coverage parameters of the repository
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }}
 jobs:
-
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
@@ -41,6 +40,7 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      BUILD_PHASE: post-merge
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
@@ -107,7 +107,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-      
+
       - name: Setup CI Scripts
         run: |
           cd ~/convoy-ci
@@ -136,9 +136,9 @@ jobs:
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: 'google-github-actions/auth@v2'
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          credentials_json: ${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}
           token_format: access_token
           create_credentials_file: true
 
@@ -146,7 +146,7 @@ jobs:
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v1
         with:
-          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
@@ -196,7 +196,6 @@ jobs:
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
-
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -204,7 +203,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-    
+
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
@@ -213,6 +212,7 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      BUILD_PHASE: post-merge
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
@@ -287,8 +287,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4.0.0
         with:
-          java-version: '17'
-          distribution: 'adopt'
+          java-version: "17"
+          distribution: adopt
 
       - name: Set up Docker Buildx
         id: buildx
@@ -334,7 +334,7 @@ jobs:
           installPythonDependencies
           installAwsCli
           installMinioClient
-      
+
       - name: Build
         id: build
         shell: bash
@@ -483,7 +483,6 @@ jobs:
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
 
-
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -500,6 +499,7 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      BUILD_PHASE: post-merge
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
@@ -620,7 +620,6 @@ jobs:
       - name: Check All file changes
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
-      
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
@@ -631,9 +630,9 @@ jobs:
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: 'google-github-actions/auth@v2'
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          credentials_json: ${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}
           token_format: access_token
           create_credentials_file: true
 
@@ -641,7 +640,7 @@ jobs:
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v1
         with:
-          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
@@ -994,7 +993,7 @@ jobs:
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .buildAndPushFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -1002,13 +1001,24 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction buildTool buildAndPushFunction ext file <<< "$artifactData"
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
+              echo "buildTool: $buildTool"
+              echo "buildAndPushFunction: $buildAndPushFunction"
               echo "Ext: $ext"
               echo "Version: $version"
               echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
+
+              if [[ -n ${buildAndPushFunction} ]]; then
+                ${buildAndPushFunction}
+              elif [[ -n ${buildFunction} ]]; then
+                ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
+              elif [[ -n ${buildTool} ]]; then
+                $(yq .post-merge.${buildTool})
+              fi
+
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -1039,7 +1049,7 @@ jobs:
           helm repo remove nexus-prod
           docker container prune --force
           docker volume prune --force
-                  
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
@@ -1047,7 +1057,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-      
+
   build-arm:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
@@ -1056,6 +1066,7 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
+      BUILD_PHASE: post-merge
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
@@ -1099,8 +1110,7 @@ jobs:
       TESSELLOPS_ARTIFACTS_DEV_S3: ${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
-    steps: 
-
+    steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
@@ -1138,15 +1148,15 @@ jobs:
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Login to Docker
-        run : |
+        run: |
           docker login -u="${{ secrets.DOCKER_USERNAME }}" -p="${{ secrets.DOCKER_PASSWORD }}"
 
       - name: Login gcloud
         id: auth
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
-        uses: 'google-github-actions/auth@v2'
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          credentials_json: ${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}
           token_format: access_token
           create_credentials_file: true
 
@@ -1154,7 +1164,7 @@ jobs:
         if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
         uses: docker/login-action@v1
         with:
-          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev 
+          registry: ${{vars.TESSELL_GCP_REGION}}-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
@@ -1260,7 +1270,7 @@ jobs:
           helm repo remove nexus-prod
           docker container prune --force
           docker volume prune --force
-                    
+
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
         if: failure()
