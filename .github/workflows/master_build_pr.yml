@@ -14,6 +14,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -95,6 +96,7 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -308,6 +310,7 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+      BUILD_PHASE: pre-merge
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -690,27 +693,52 @@ jobs:
               return
             fi
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version' convoy.yaml)
-            language=$(yq '.language' convoy.yaml)
+            version=$(yq '.version // ""' convoy.yaml)
+            language=$(yq '.language // ""' convoy.yaml)
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
+              artifactData=$(sed "${lineNumber}!d" artifacts.txt)
+              if [[ -z "${artifactData}" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
+
+              set -x
+              java_version=$(yq '.javaVersion // ""' convoy.yaml)
+              if [[ -n ${java_version:-} ]]; then
+                if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
+                  export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
+                else
+                  echo "Java Version ${java_version}, as required in convoy.yaml, is not installed"
+                  exit 1
+                fi
+              fi
+
+              IFS=',' read -r name buildFunction buildTool ext file <<< "${artifactData}"
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
+              echo "Name: ${name}"
+              echo "buildFunction: ${buildFunction}"
+              echo "buildTool: ${buildTool}"
+              echo "Ext: ${ext}"
+              echo "Version: ${version}"
+              echo "dockerFile: ${file}"
+
+              if [[ -n ${buildFunction:-} && ${buildFunction} != null ]]; then
+                set -e
+                ${buildFunction} ${name} ${ext} ${version} ${file}
+                set +e
+              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
+                set -e
+                $(yq .pre-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
+                set +e
+              fi
+              set +x
+
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -719,6 +747,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
+          [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersion
           build "artifacts"
           build "dockerImages"
@@ -739,6 +768,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
+      BUILD_PHASE: pre-merge
       CI_BRANCH: main
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}

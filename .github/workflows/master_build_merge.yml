@@ -51,6 +51,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      BUILD_PHASE: post-merge
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -224,6 +225,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      BUILD_PHASE: post-merge
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -513,6 +515,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+      BUILD_PHASE: post-merge
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -987,28 +990,56 @@ jobs:
               return
             fi
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version' convoy.yaml)
-            language=$(yq '.language' convoy.yaml)
+            version=$(yq '.version // ""' convoy.yaml)
+            language=$(yq '.language // ""' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
+              artifactData=$(sed "${lineNumber}!d" artifacts.txt)
+              if [[ -z "${artifactData}" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
+
+              set -x
+              java_version=$(yq '.javaVersion // ""' convoy.yaml)
+              if [[ -n ${java_version:-} ]]; then
+                if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
+                  export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
+                else
+                  echo "Java Version ${java_version}, as required in convoy.yaml, is not installed"
+                  exit 1
+                fi
+              fi
+
+              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file <<< "${artifactData}"
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
+              echo "Name: ${name}"
+              echo "buildAndPushFunction: ${buildAndPushFunction}"
+              echo "buildFunction: ${buildFunction}"
+              echo "buildTool: ${buildTool}"
+              echo "Ext: ${ext}"
+              echo "Version: ${version}"
+              echo "dockerFile: ${file}"
+
+              if [[ -n ${buildAndPushFunction:-} && ${buildAndPushFunction} != null ]]; then
+                set -e
+                ${buildAndPushFunction}
+                set +e
+              elif [[ -n ${buildFunction} ]]; then
+                ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
+              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
+                set -e
+                $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
+                set +e
+              fi
+              set +x
+
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -1062,6 +1093,7 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      BUILD_PHASE: post-merge
       CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       DEV_BUILD: ${{inputs.dev_build}}
