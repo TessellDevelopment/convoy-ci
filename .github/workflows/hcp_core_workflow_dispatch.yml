@@ -185,7 +185,8 @@ jobs:
         run: |
           packer version
           packer plugins install github.com/hashicorp/azure 
-          zip -r tessell-hcp-for-azure.zip .
+          # zip -r tessell-hcp-for-azure.zip .
+          tar -cvf tessell-hcp-for-azure.tar .
           packer init .
           packer validate packer-file.json.pkr.hcl
 
