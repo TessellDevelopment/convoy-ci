@@ -461,7 +461,7 @@ get_required_go_version() {
   if [[ -n ${required_go_version} ]]; then
     echo "Go version declared in convoy.yaml: ${required_go_version}" >&2
   elif [[ -n ${GOROOT:-} ]]; then
-    echo "GOROOT is already set and convoy.yaml doesn't have 'goVersion' declared"
+    echo "GOROOT is already set and convoy.yaml doesn't have 'goVersion' declared" >&2
   else
     runner=$(yq e '.runner // ""' convoy.yaml)
     case "$runner" in
