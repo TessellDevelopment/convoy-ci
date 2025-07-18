@@ -60,6 +60,7 @@ jobs:
             const content = fs.readFileSync('./convoy.yaml', 'utf8');
             const data = yaml.load(content);
             var language = data.language
+            var appGroup = data.appGroup
             var version = data.version
             var uses_custom_version = "false"
             var base_branch = "${{ github.event.pull_request.base.ref }}"
@@ -148,7 +149,7 @@ jobs:
                 console.log("Couldn't determine the latest tag, exiting. Retry manually..")
                 process.exit(1);
               }
-              if (language === 'helm'){
+              if (language === 'helm' || appGroup == 'none') {
                 previous_version = latest_tag.split('-')[0];
                 previous_patch_version = parseInt(previous_version.split('.').pop(), 10);
                 new_patch_version = previous_patch_version + 1;
@@ -207,6 +208,11 @@ jobs:
         run: |
           validate_label=false
           if [ -f convoy.yaml ]; then
+            APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+            if [[ ${APP_GROUP} == none ]]; then
+              echo "validate_label=$validate_label" >> $GITHUB_OUTPUT
+              exit 0
+            fi
             language=$(yq '.language' convoy.yaml)
             version=$(yq '.version' convoy.yaml)
             if [[ "$language" == "helm" ]]; then
@@ -216,7 +222,6 @@ jobs:
             else
               validate_label=true
               if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
-                APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
                 URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
                 RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"

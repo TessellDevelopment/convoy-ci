@@ -23,6 +23,9 @@
             if [ -f convoy.yaml ]; then
               if [[ "${{ github.ref_name}}" == "main" ]]; then
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+                if [[ ${APP_GROUP} == none ]]; then
+                  exit 0
+                fi
                 URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
                 RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
                 echo "$RESPONSE"

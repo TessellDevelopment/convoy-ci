@@ -103,17 +103,16 @@ check_flyway() {
 
 configure_go_version() {
   required_go_version=$(get_required_go_version)
+  [[ -n ${required_go_version:-} ]] || return
   if ! is_go_version_installed ${required_go_version}; then
     echo "Go lang version ${required_go_version} is not installed."
     gvm install ${required_go_version}
   fi
   gvm use ${required_go_version}
   export GOROOT="/home/github/.gvm/versions/go${required_go_version}.linux.amd64"
-  export GOPATH="/home/github/.gvm/versions/go${required_go_version}"
-  export PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
-  echo ${GOROOT}
-  echo ${GOPATH}
-  echo ${PATH}
+  export PATH="${GOROOT}/bin:${PATH}"
+  echo "GOROOT = ${GOROOT}"
+  echo "PATH = ${PATH}"
   go version
 }
 
@@ -459,8 +458,10 @@ get_previous_commited_software_manifest() {
 get_required_go_version() {
   check_convoy_yaml
   required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
-  if [[ -n "${required_go_version}" ]]; then
-    echo "Go version declared in convoy.yaml: ${required_go_version}"  >&2
+  if [[ -n ${required_go_version} ]]; then
+    echo "Go version declared in convoy.yaml: ${required_go_version}" >&2
+  elif [[ -n ${GOROOT:-} ]]; then
+    echo "GOROOT is already set and convoy.yaml doesn't have 'goVersion' declared" >&2
   else
     runner=$(yq e '.runner // ""' convoy.yaml)
     case "$runner" in
@@ -469,7 +470,7 @@ get_required_go_version() {
       amd-go-21) required_go_version="1.21.5" ;;
       amd-go-22) required_go_version="1.22.7" ;;
       *) 
-        echo "Error: Unknown runner value '${runner}'!"  >&2
+        echo "Error: Unknown runner value '${runner}'!" >&2
         exit 1
         ;;
     esac
