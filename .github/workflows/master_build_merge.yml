@@ -1002,6 +1002,7 @@ jobs:
                 break
               fi
 
+              set -x
               java_version=$(yq '.javaVersion // ""' convoy.yaml)
               if [[ -n ${java_version:-} ]]; then
                 if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
@@ -1022,13 +1023,18 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
 
-              if [[ -n ${buildAndPushFunction} ]]; then
+              if [[ -n ${buildAndPushFunction:-} && ${buildAndPushFunction} != null ]]; then
+                set -e
                 ${buildAndPushFunction}
+                set +e
               elif [[ -n ${buildFunction} ]]; then
                 ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
-              elif [[ -n ${buildTool} ]]; then
+              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
+                set -e
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
+                set +e
               fi
+              set +x
 
               echo "$type $name done"
               echo ------------------------------

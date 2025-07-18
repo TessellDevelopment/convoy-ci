@@ -736,11 +736,11 @@ jobs:
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
                 set +e
               fi
+              set +x
 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
-              set +x
             done
             rm artifacts.txt
           }
