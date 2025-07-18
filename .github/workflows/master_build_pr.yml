@@ -707,6 +707,7 @@ jobs:
                 break
               fi
 
+              set -x
               java_version=$(yq '.javaVersion // ""' convoy.yaml)
               if [[ -n ${java_version:-} ]]; then
                 if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
@@ -735,6 +736,7 @@ jobs:
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
+              set +x
             done
             rm artifacts.txt
           }
