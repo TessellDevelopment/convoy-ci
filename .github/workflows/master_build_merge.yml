@@ -993,7 +993,7 @@ jobs:
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .buildAndPushFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -1008,20 +1008,20 @@ jobs:
                 if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
                   export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
                 else
-                  echo "Java Vaersion ${java_version}, as required in convoy.yaml, is not installed"
+                  echo "Java Version ${java_version}, as required in convoy.yaml, is not installed"
                   exit 1
                 fi
               fi
 
-              read -r name buildFunction buildTool buildAndPushFunction ext file <<< "$artifactData"
+              read -r name buildAndPushFunction buildFunction buildTool ext file <<< "$artifactData"
               export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "buildTool: $buildTool"
-              echo "buildAndPushFunction: $buildAndPushFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
+              echo "Name: ${name}"
+              echo "buildAndPushFunction: ${buildAndPushFunction}"
+              echo "buildFunction: ${buildFunction}"
+              echo "buildTool: ${buildTool}"
+              echo "Ext: ${ext}"
+              echo "Version: ${version}"
+              echo "dockerFile: ${file}"
 
               if [[ -n ${buildAndPushFunction:-} && ${buildAndPushFunction} != null ]]; then
                 set -e
