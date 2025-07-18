@@ -715,9 +715,9 @@ jobs:
               echo "Version: $version"
               echo "dockerFile: $file"
 
-              if [[ -n ${buildFunction} ]]; then
+              if [[ -n ${buildFunction:-} && ${buildFunction} != null ]]; then
                 ${buildFunction} ${name} ${ext} ${version} ${file}
-              elif [[ -n ${buildTool} ]]; then
+              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
               fi
 
