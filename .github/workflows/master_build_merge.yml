@@ -493,7 +493,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
-    runs-on: self-hosted
+    runs-on: self-hosted-custom
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
@@ -1001,6 +1001,17 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
+
+              java_version=$(yq '.javaVersion // ""' convoy.yaml)
+              if [[ -n ${java_version:-} ]]; then
+                if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
+                  export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
+                else
+                  echo "Java Vaersion ${java_version}, as required in convoy.yaml, is not installed"
+                  exit 1
+                fi
+              fi
+
               read -r name buildFunction buildTool buildAndPushFunction ext file <<< "$artifactData"
               export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
               echo "Name: $name"
