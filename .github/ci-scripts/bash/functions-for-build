@@ -109,11 +109,9 @@ configure_go_version() {
   fi
   gvm use ${required_go_version}
   export GOROOT="/home/github/.gvm/versions/go${required_go_version}.linux.amd64"
-  export GOPATH="/home/github/.gvm/versions/go${required_go_version}"
-  export PATH="${GOROOT}/bin:${GOPATH}/bin:$PATH"
-  echo ${GOROOT}
-  echo ${GOPATH}
-  echo ${PATH}
+  export PATH="${GOROOT}/bin:${PATH}"
+  echo "GOROOT = ${GOROOT}"
+  echo "PATH = ${PATH}"
   go version
 }
 
