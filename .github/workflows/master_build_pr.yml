@@ -746,6 +746,7 @@ jobs:
           }
           set +e
           source ./ci-scripts/bash/functions-for-build
+          [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersion
           build "artifacts"
           build "dockerImages"
