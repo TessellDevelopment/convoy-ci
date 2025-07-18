@@ -733,7 +733,7 @@ jobs:
                 set +e
               elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
                 set -e
-                $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
+                $(yq .pre-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
                 set +e
               fi
               set +x
