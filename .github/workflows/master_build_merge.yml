@@ -1016,7 +1016,7 @@ jobs:
               elif [[ -n ${buildFunction} ]]; then
                 ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
               elif [[ -n ${buildTool} ]]; then
-                $(yq .post-merge.${buildTool})
+                $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
               fi
 
               echo "$type $name done"

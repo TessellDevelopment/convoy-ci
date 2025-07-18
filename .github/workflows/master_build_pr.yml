@@ -718,7 +718,7 @@ jobs:
               if [[ -n ${buildFunction} ]]; then
                 ${buildFunction} ${name} ${ext} ${version} ${file}
               elif [[ -n ${buildTool} ]]; then
-                $(yq .pre-merge.${buildTool})
+                $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
               fi
 
               echo "$type $name done"
