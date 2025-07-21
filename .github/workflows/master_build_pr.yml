@@ -710,6 +710,7 @@ jobs:
               if [[ -n ${java_version:-} ]]; then
                 if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
                   export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
+                  export PATH="/usr/lib/jvm/java-${java_version}-openjdk-amd64/bin:${PATH}"
                 else
                   echo "Java Version ${java_version}, as required in convoy.yaml, is not installed"
                   exit 1
