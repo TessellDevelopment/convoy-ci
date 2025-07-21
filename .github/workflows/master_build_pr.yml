@@ -303,7 +303,7 @@ jobs:
           parseCoverageReport
 
   build-amd:
-    if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     env:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
@@ -748,7 +748,7 @@ jobs:
           set +e
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
-          configureGoVersion
+          configureGoVersionIfRequired
           build "artifacts"
           build "dockerImages"
           build "helmCharts"

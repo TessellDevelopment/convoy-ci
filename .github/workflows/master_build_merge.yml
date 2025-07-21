@@ -495,7 +495,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
-    if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
@@ -1051,7 +1051,7 @@ jobs:
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
-          configureGoVersion
+          configureGoVersionIfRequired
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
