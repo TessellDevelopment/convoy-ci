@@ -35,5 +35,4 @@ jobs:
 
       - name: Run packer build
         run: |
-          packer version
           packer build packer-file.json.pkr.hcl
