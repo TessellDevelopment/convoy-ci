@@ -284,7 +284,7 @@ download_binary_from_source() {
         wget -q "${http_url}" -O "${download_path}"
       elif [[ -n "${minio_path}" ]]; then
         echo "Downloading from MinIO: ${minio_path}"
-        mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
+        mc cp "minio_ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
       else
         echo "No valid source found for entry: ${entry}"
         exit 1
@@ -454,7 +454,7 @@ get_previous_commited_software_manifest() {
   minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
   echo "starting previous manifest download ${minio_path}"
   download_path="${WORKDIR}/software_image_manifest.json"
-  mc cp "minio-ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
+  mc cp "minio_ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
 }
 
 go_docker_build() {
@@ -639,10 +639,10 @@ install_minio_client() {
   export PATH=$PATH:/usr/local/bin
   mc --version
   while true; do
-    response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+    response=$(mc alias set minio_ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
     echo "$response"
     if echo "$response" | grep -q "successfully"; then
-        echo "Command succeeded: Added 'minio-ci' successfully."
+        echo "Command succeeded: Added 'minio_ci' successfully."
         break
     else
         echo "Command failed, retrying..."
@@ -962,7 +962,7 @@ push_release_manifest_artifacts() {
     push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     for ENV in "${environments[@]}"
     do
-      push_to_minio "${ARTIFACT_FILE_PATH}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      push_to_minio "${ARTIFACT_FILE_PATH}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     done
     if [[ ${ARTIFACT_FILE_NAME} == "${ARTIFACT}.${EXTENSION}" ]]; then
       generate_checksum "${ARTIFACT_FILE_NAME}"
@@ -992,7 +992,7 @@ push_terraform_modules() {
     
     for ENV in "${environments[@]}"
     do
-      push_to_minio "${ARTIFACT_FILE}" "minio-ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+      push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
     done
   fi
 }

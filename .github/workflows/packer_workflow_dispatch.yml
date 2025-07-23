@@ -58,10 +58,10 @@ jobs:
           export PATH=$PATH:/usr/local/bin
           mc --version
           while true; do
-              response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
+              response=$(mc alias set minio_ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
               echo "$response"
               if echo "$response" | grep -q "successfully"; then
-                  echo "Command succeeded: Added 'minio-ci' successfully."
+                  echo "Command succeeded: Added 'minio_ci' successfully."
                   break
               else
                   echo "Command failed, retrying..."
@@ -160,7 +160,7 @@ jobs:
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |          
-          mc cp "minio-ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software_image_manifest.json
+          mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software_image_manifest.json
 
 
       - name: Set Pull repository
@@ -255,7 +255,7 @@ jobs:
             RETRY_DELAY=3
             local attempt=0
             while [ ${attempt} -lt ${MAX_RETRIES} ]; do
-              mc cp "${SOURCE}" "minio-ci/${DESTINATION}"
+              mc cp "${SOURCE}" "minio_ci/${DESTINATION}"
               if [ $? -eq 0 ]; then
                 echo "Artifact successfully pushed to minio ${DESTINATION}."
                 return
