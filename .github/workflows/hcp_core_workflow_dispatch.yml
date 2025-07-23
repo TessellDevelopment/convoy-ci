@@ -1,0 +1,38 @@
+name: Tessell HCP Core Image Creation Wokflow Dispatch
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
+      CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
+      CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: "0"
+
+      - name: Check packer software
+        run: |
+          packer version
+          packer plugins install github.com/hashicorp/azure 
+          tar -cvf tessell-hcp-for-azure.tar .
+          packer init .
+          packer validate packer-file.json.pkr.hcl
+
+      - name: Run packer build
+        run: |
+          packer build packer-file.json.pkr.hcl
