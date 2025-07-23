@@ -229,7 +229,7 @@ docker_build_and_push() {
   echo "Version is ${VERSION}"
   TAG=${LATEST_TAG}
   # if [[ "${VERSION}" != "" ]]; then
-  if [[ "${VERSION}" == "null" || -z "${VERSION}" ]]; then
+  if [[ "${VERSION}" != "null" && -n "${VERSION}" ]]; then
     TAG=${VERSION}
   fi
   if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
