@@ -873,7 +873,6 @@ jobs:
           opsImageBuildAndPush() {
             set -e
             ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-            echo "Version is ${Version}"
             dockerBuildAndPush "$@"
             set +e
           }
