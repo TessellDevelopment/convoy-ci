@@ -988,7 +988,7 @@ jobs:
               return
             fi
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version // "null"' convoy.yaml)
+            version=$(yq '.version // ""' convoy.yaml)
             language=$(yq '.language // ""' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
             if [[ "$language" == "terraform" ]]; then
