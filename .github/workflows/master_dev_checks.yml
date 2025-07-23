@@ -188,6 +188,23 @@
               raise Exception(ex)  
             EOF
 
+        - name: Validate Go Version for Go Repos
+          shell: bash
+          run: |
+            err_msg=""
+            if [[ $(yq '.language // ""' convoy.yaml) == go ]]; then
+              if [[ -z $(yq '.goVersion // ""' convoy.yaml) ]]; then
+                err_msg+=$(echo -e "Key 'goVersion' must bet set to a valid go version, in convoy.yaml if 'language: go'\n")
+              fi
+              if [[ $(yq '.runner // ""' convoy.yaml) != amd ]]; then
+                err_msg+="Key '.runner' in convoy.yaml must bet set to 'amd' if 'language: go'"
+              fi
+              if [[ -n ${err_msg:-} ]]; then
+                echo -e "${err_msg}"
+                exit 1
+              fi
+            fi
+
         - name: Check double commit
           env: 
             PR_TITLE: ${{github.event.pull_request.title}}

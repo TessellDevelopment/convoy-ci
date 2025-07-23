@@ -493,7 +493,7 @@ jobs:
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
-    if: ${{ inputs.type == 'amd' || inputs.type == 'amd-go-20' || inputs.type == 'amd-go-21' || inputs.type == 'amd-go-22' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
@@ -987,28 +987,57 @@ jobs:
               return
             fi
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
-            version=$(yq '.version' convoy.yaml)
-            language=$(yq '.language' convoy.yaml)
+            version=$(yq '.version // ""' convoy.yaml)
+            language=$(yq '.language // ""' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
             if [[ "$language" == "terraform" ]]; then
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
-              artifactData=$(sed "$lineNumber!d" artifacts.txt)
-              if [[ -z "$artifactData" ]]; then
+              artifactData=$(sed "${lineNumber}!d" artifacts.txt)
+              if [[ -z "${artifactData}" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
-              echo "Name: $name"
-              echo "buildFunction: $buildFunction"
-              echo "Ext: $ext"
-              echo "Version: $version"
-              echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
+
+              set -x
+              java_version=$(yq '.javaVersion // ""' convoy.yaml)
+              if [[ -n ${java_version:-} ]]; then
+                if [[ -d /usr/lib/jvm/java-${java_version}-openjdk-amd64 ]]; then
+                  export JAVA_HOME=/usr/lib/jvm/java-${java_version}-openjdk-amd64
+                  export PATH="/usr/lib/jvm/java-${java_version}-openjdk-amd64/bin:${PATH}"
+                else
+                  echo "Java Version ${java_version}, as required in convoy.yaml, is not installed"
+                  exit 1
+                fi
+              fi
+
+              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file <<< "${artifactData}"
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
+              echo "Name: ${name}"
+              echo "buildAndPushFunction: ${buildAndPushFunction}"
+              echo "buildFunction: ${buildFunction}"
+              echo "buildTool: ${buildTool}"
+              echo "Ext: ${ext}"
+              echo "Version: ${version}"
+              echo "dockerFile: ${file}"
+
+              if [[ -n ${buildAndPushFunction:-} && ${buildAndPushFunction} != null ]]; then
+                set -e
+                ${buildAndPushFunction}
+                set +e
+              elif [[ -n ${buildFunction} ]]; then
+                ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
+              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
+                set -e
+                $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
+                set +e
+              fi
+              set +x
+
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -1020,7 +1049,7 @@ jobs:
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
-          configureGoVersion
+          configureGoVersionIfRequired
           build "artifacts"
           build "dockerImages"
           build "helmCharts"

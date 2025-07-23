@@ -79,6 +79,10 @@ jobs:
           if [ -f convoy.yaml ]; then
             if [[ "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
               APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+              if [[ ${APP_GROUP} == none ]]; then
+                echo "LABEL=rel-0.0.0" >> $GITHUB_OUTPUT
+                exit 0
+              fi
               URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
               RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
               echo "$RESPONSE"
@@ -113,6 +117,7 @@ jobs:
 
   post-tag-to-convoy:
     needs: create-tag
+    if: needs.runner-check.outputs.app_group != 'none'
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_tag_convoy.yml@main
     secrets: inherit
     with:
@@ -130,7 +135,7 @@ jobs:
       label: ${{needs.runner-check.outputs.label}}
 
   post-build-to-convoy:
-    if: always()
+    if: needs.runner-check.outputs.app_group != 'none' && always()
     needs: [file-check, create-tag, build, runner-check, post-tag-to-convoy]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@main
     secrets: inherit
@@ -148,6 +153,7 @@ jobs:
 
   post-coverage-to-convoy:
     needs: [create-tag, build, runner-check]
+    if: needs.runner-check.outputs.app_group != 'none'
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_coverage_convoy.yml@main
     secrets: inherit
     with:
