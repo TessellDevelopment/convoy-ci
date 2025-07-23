@@ -1,7 +1,4 @@
-name: Tessell Packer Wokflow Dispatch
-
-# SOURCE_BRANCH or PR_SOURCE_BRANCH is "Use workflow from" in "Run Workflow". This is the branch which will have new DB engines (so branch which will merge in main). We do not want this workflow to run when SOURCE_BRANCH is main or "rel-*".
-# BASE_BRANCH is " Provide branch name or commit id ". This is the branch which we will compare to SOURCE_BRANCH and generate delta. We only want to push to nexus when BASE_BRANCH is main or "rel-*".
+name: Tessell HCP Core Image Creation Wokflow Dispatch
 
 on:
   workflow_call:
@@ -10,19 +7,11 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    # outputs:
-    #   mail_id_output: ${{ steps.mail_info.outputs.mail_id }}
-    #   mail_subject_output: ${{ steps.mail_info.outputs.mail_subject}}
-    #   mail_body_output: ${{ steps.mail_info.outputs.mail_body }}
     env:
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
       NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
       NEXUS_PULL_REPOS_RAW: tessell-raw-development
-      # BASE_BRANCH: ${{ inputs.branchName }}
-      # SOFTWARE_IMAGE_BASE_RELEASE: ${{ inputs.software_image_base_release }}
-      # DESTINATION_ACCOUNT: ${{ inputs.accountId }}
-      # https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#using-data-from-the-triggering-workflow
       CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "GITHUB_USER": "${{ github.triggering_actor }}", "GITHUB_WORKFLOW_RUN_ID": "${{ github.run_id }}", "GITHUB_PR_BRANCH": "${{ github.ref_name }}" }'
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
@@ -39,8 +28,6 @@ jobs:
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
       AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
-      # AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
-      # AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
 
 
     steps:
@@ -48,142 +35,6 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: "0"
-      # - name: Set Python version
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.10'
-      
-      # - name: Setup minio
-      #   run: |    
-      #     wget https://dl.min.io/client/mc/release/linux-amd64/mc
-      #     sudo mv ./mc /usr/local/bin/mc
-      #     chmod +x /usr/local/bin/mc
-      #     export PATH=$PATH:/usr/local/bin
-      #     mc --version
-      #     while true; do
-      #         response=$(mc alias set minio-ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
-      #         echo "$response"
-      #         if echo "$response" | grep -q "successfully"; then
-      #             echo "Command succeeded: Added 'minio-ci' successfully."
-      #             break
-      #         else
-      #             echo "Command failed, retrying..."
-      #             sleep 2
-      #         fi
-      #     done  
-      #     mc alias list
-
-      # - name: Dump GitHub context
-      #   env:
-      #     GITHUB_CONTEXT: ${{ toJson(github) }}
-      #   run: |
-      #     echo "$GITHUB_CONTEXT"
-      # - name: Get branch name
-      #   shell: bash
-      #   run: | 
-      #     # SOURCE_BRANCH (PR_SOURCE_BRANCH) is "Use workflow from" in "Run Workflow".
-      #     echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-      #     echo $pull_request_number
-      
-      # - name: Get Software Image release
-      #   if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}  
-      #   shell: bash
-      #   run: |
-      #     APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-      #     echo "$APP_GROUP"
-
-      #     if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
-      #       URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
-      #     elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
-      #       URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}"
-      #     fi
-
-      #     echo "$URL"
-      #     RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
-      #     echo "$RESPONSE"
-      #     SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages.software_image_manifest.tag' )
-      #     echo "$SOFTWARE_IMAGE_BASE_LATEST_RELEASE"
-      #     echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$SOFTWARE_IMAGE_BASE_LATEST_RELEASE" >> $GITHUB_ENV
-
-      # - name: Split Manifest Version
-      #   id: split
-      #   run: echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=${SOFTWARE_IMAGE_BASE_LATEST_RELEASE##*-}" >> $GITHUB_ENV
-
-      # - name: Set Label
-      # # We do not want this workflow to run when SOURCE_BRANCH (PR_SOURCE_BRANCH) is main or "rel-*" or workflowType is "build.".
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
-      #   shell: bash
-      #   run: |
-      #     # If dev specifies BASE_BRANCH as main, that means he wants to use latest release as base for generating delta.
-      #     # get the latest release label from nexus.
-
-      #     if [[ "${{ env.BASE_BRANCH }}" == "main" ]]; then
-      #       APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-      #       echo "$APP_GROUP"
-      #       URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
-      #       echo "$URL"
-      #       RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
-      #       echo "$RESPONSE"
-      #       LABEL=$(echo "$RESPONSE" | jq -r '.["latest-main-release-label"]')
-      #       echo "$LABEL"
-      #       if [[ $LABEL != rel-* ]]; then
-      #           echo "Response: $LABEL"
-      #           echo "Label does not start with 'rel'. Check response."
-      #           exit 1 
-      #       fi
-      #     # if BASE_BRANCH is given by dev and starts with rel, take it as it is. This means the dev wants to generate delta using a particular release as base.
-      #     elif [[  "${{ env.BASE_BRANCH }}" == rel-* ]]; then
-      #       LABEL=${{ env.BASE_BRANCH }}
-      #     else
-      #     # otherwise use the branch the dev has added new artifacts in (generally the source branch of PR)
-      #       LABEL=${{ env.SOURCE_BRANCH }}
-      #     fi
-      #     echo "LABEL=$LABEL" >> $GITHUB_ENV
-          
-      # - name: Get arg for Cloud build type
-      #   shell: bash
-      #   run: |
-      #     echo "CLOUD_BUILD_TYPE_ARG=$(case "$CLOUD_BUILD_TYPE" in aws) echo "--aws";; azure) echo "--azure";; all) :;; esac)" >> $GITHUB_ENV
-
-      # - name: visible
-      # # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs
-      #   run: |
-      #     echo BASE_BRANCH= ${{ env.BASE_BRANCH }}
-      #     echo SOURCE_BRANCH= ${{ env.SOURCE_BRANCH }}
-      #     echo LABEL= ${{ env.LABEL }}
-      #     echo SOFTWARE_IMAGE_BASE_LATEST_RELEASE= ${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}
-      #     echo CUSTOM_TAGS= ${{ env.CUSTOM_TAGS}}
-      #     echo github.base_ref= ${{ github.base_ref }}
-      #     echo github.head_ref= ${{ github.head_ref }}
-      #     echo github.event_path= 
-      #     cat ${{ github.event_path}} | jq '.'
-
-      #     echo CLOUD_BUILD_TYPE_ARG= ${{ env.CLOUD_BUILD_TYPE_ARG }}
-
-      # - name: Download the software-image-manifest
-      #   if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
-      #   run: |          
-      #     mc cp "minio-ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software_image_manifest.json
-
-
-      # - name: Set Pull repository
-      #   if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
-      #   shell: bash
-      #   run: |
-      #     echo "NEXUS_PULL_REPOS_PY=tessell-py-component" >> $GITHUB_ENV
-      #     echo "NEXUS_PUSH_REPOS_PY=tessell-repos-py-component" >> $GITHUB_ENV
-
-      # - name: Create pip conf
-      #   run: |
-      #     # Create pip.conf and copy to /etc;
-      #     # The --extra_index_url option of pip install does not work with username/password
-      #     # Also pip does not have separate option to specify creds.
-      #     echo "[global]" > pip.conf
-      #     echo "index =  ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-      #     echo "index-url = ${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple" >> pip.conf
-      #     echo "extra-index-url = https://pypi.org/simple" >> pip.conf
-      #     sudo cp pip.conf /etc/pip.conf
-      #   shell: bash
 
       - name: Check packer software
         run: |
@@ -191,24 +42,10 @@ jobs:
           echo "${AZURE_CLIENT_ID}"
           packer version
           packer plugins install github.com/hashicorp/azure 
-          # zip -r tessell-hcp-for-azure.zip .
           tar -cvf tessell-hcp-for-azure.tar .
           packer init .
           packer validate packer-file.json.pkr.hcl
 
-      # - name: Install dependencies
-      #   run: |
-      #     sudo python3 -m pip uninstall -y packer_framework
-      #     python3 -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-      #     python3 -m venv pkenv
-      #     source pkenv/bin/activate
-      #     python3 -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-      #     python3 -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-      #     find /usr/bin /usr/local/bin -name build_all_artifacts
-      #     rm -rf /usr/lib/python3/dist-packages/OpenSSL
-      #     pip3 install pyopenssl
-      #     pip3 install pyopenssl --upgrade
-      #     pip3 install --force-reinstall setuptools==45.2.0
       - name: Run packer build
         run: |
           packer version
