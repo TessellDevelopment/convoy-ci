@@ -8,17 +8,6 @@ jobs:
   build:
     runs-on: self-hosted
     env:
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_PY: tessell-repos-py-development
-      NEXUS_PUSH_REPOS_RAW: tessell-repos-raw-component
-      NEXUS_PULL_REPOS_RAW: tessell-raw-development
-      CUSTOM_TAGS: '{"TESSELL_ENVIRONMENT": "DEVELOPMENT", "GITHUB_USER": "${{ github.triggering_actor }}", "GITHUB_WORKFLOW_RUN_ID": "${{ github.run_id }}", "GITHUB_PR_BRANCH": "${{ github.ref_name }}" }'
-      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
-      PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
-      NEXUS_ARTIFACT_REPO: tessell-artifacts
-      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
