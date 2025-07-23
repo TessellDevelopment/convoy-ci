@@ -726,9 +726,9 @@ jobs:
               echo "Version: ${version}"
               echo "dockerFile: ${file}"
 
-              if [[ -n ${buildFunction:-} && ${buildFunction} != null ]]; then
+              if [[ -n ${buildFunction:-} ]]; then
                 ${buildFunction} ${name} ${ext} ${version} ${file}
-              elif [[ -n ${buildTool:-} && ${buildTool} != null ]]; then
+              elif [[ -n ${buildTool:-} ]]; then
                 set -e
                 $(yq .pre-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
                 set +e
