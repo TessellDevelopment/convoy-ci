@@ -27,8 +27,6 @@ jobs:
 
       - name: Check packer software
         run: |
-          echo "${AZURE_CLIENT_SECRET}"
-          echo "${AZURE_CLIENT_ID}"
           packer version
           packer plugins install github.com/hashicorp/azure 
           tar -cvf tessell-hcp-for-azure.tar .
