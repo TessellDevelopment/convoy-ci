@@ -226,6 +226,7 @@ docker_build_and_push() {
   IMAGE="${1}"
   VERSION="${3}"
   FILE="${4}"
+  echo "Version is ${VERSION}"
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" ]]; then
     TAG=${VERSION}
