@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /home/github/.sourcables
+source ./ci-scripts/bash/functions-for-build-camel-case
+source ./ci-scripts/bash/functions-for-build

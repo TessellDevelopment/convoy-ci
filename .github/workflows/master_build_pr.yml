@@ -358,6 +358,7 @@ jobs:
         run: |
           cd ~/convoy-ci
           git checkout main
+          git branch -D ${{env.CI_BRANCH}}
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
