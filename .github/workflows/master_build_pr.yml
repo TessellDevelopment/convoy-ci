@@ -430,9 +430,10 @@ jobs:
             echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
           }
           dbPluginBuild() {
-            set -e
+            set -xe
             ARTIFACT="$1"
             requiredInputs="1"
+            dbPluginBuildHook
             validateInputs "$requiredInputs" "$@" 
             installPythonDependencies $ARTIFACT
             lintCheck
