@@ -1427,6 +1427,6 @@ zip_file_and_push() {
 
 dbPluginBuildHook() {
   env
-  which flake8
-  which -a flake8
+  which flake8 || :
+  which -a flake8 || :
 }
