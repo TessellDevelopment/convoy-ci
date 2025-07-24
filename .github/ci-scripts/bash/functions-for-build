@@ -1426,7 +1426,8 @@ zip_file_and_push() {
 }
 
 dbPluginBuildHook() {
-  env
+  ech ${PATH}
+  ls -al /home/github/.pyenv/shims
   which flake8 || :
   which -a flake8 || :
 }
