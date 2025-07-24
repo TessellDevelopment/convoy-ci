@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+if [[ -z ${1:-} ]]; then
+  echo "This script expects one single argument: the name of the test branch to create"
+  exit 1
+fi
+
+cd ${script_dir}/../.github
+files_to_modify=$(find . -type f | grep '^./ci-scripts/\|^./workflows/')
+
+for i in ${files_to_modify}; do
+  sed -i '' "s/@main/@${1}/;s/CONVOY_API_ENDPOINT/CONVOY_DEV_API_ENDPOINT/;s/CI_BRANCH: main/CI_BRANCH: ${1}/" ${i}
+done
