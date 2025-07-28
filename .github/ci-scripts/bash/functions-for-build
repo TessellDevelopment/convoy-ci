@@ -71,7 +71,7 @@ build_convoy_tessell_image() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
-  python3 -m pip install build
+  python -m pip install build
   bash ./setup -i
 }
 
@@ -449,7 +449,6 @@ get_release_branch() {
 }
 
 get_previous_commited_software_manifest() {
-  install_minio_client
   get_release_branch "${COMMIT_TAG}"
   minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
   echo "starting previous manifest download ${minio_path}"
@@ -611,11 +610,11 @@ initialise_coverage() {
   venv_path=${PWD}/${venv_name}
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
   source_path=${venv_path}/lib/python${python_version}/site-packages/
-  python3 -m venv ${venv_name}
+  python -m venv ${venv_name}
   source ${venv_name}/bin/activate
   dist_dir=$(find . -type d -name "dist" 2>/dev/null | head -n 1)
-  python3 -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip list | grep tessell
+  python -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python -m pip list | grep tessell
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
@@ -674,10 +673,10 @@ install_python_dependencies() {
   if [[ -z "${DIR}" ]]; then
     DIR='.'
   fi
-  python3 -m pip install --upgrade pip
-  python3 -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4
+  python -m pip install --upgrade pip
+  python -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4
   if [ -f "${DIR}/requirements.txt" ]; then
-    python3 -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+    python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
 }
 
@@ -1098,11 +1097,11 @@ run_python_unit_test() {
   include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
   pushd ${source_path}
   echo "Running unit tests"
-  python3 -m coverage run --branch --source "." -m pytest tests
+  python -m coverage run --branch --source "." -m pytest tests
   echo "Generating code coverage report"
-  python3 -m coverage report --skip-empty --include="${include}"
-  python3 -m coverage html --include="${include}"
-  python3 -m coverage json --include="${include}"
+  python -m coverage report --skip-empty --include="${include}"
+  python -m coverage html --include="${include}"
+  python -m coverage json --include="${include}"
   popd
   deactivate 
 }
@@ -1115,25 +1114,25 @@ setup_qa_env() {
   sudo chmod 755 ${INSTALL_DIR}/openapitools/openapi-generator-cli
   sudo ln -f -s ${INSTALL_DIR}/openapitools/openapi-generator-cli ${INSTALL_DIR}/openapi-generator
   wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O openapi-generator-cli.jar
-  python3 -m pip cache purge
+  python -m pip cache purge
   sudo mv openapi-generator-cli.jar /usr/local/bin/openapi-generator-cli-6.0.0.jar
-  python3 -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install yq wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m venv qavenv
+  python -m pip install --user virtualenv --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python -m pip install yq wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python -m venv qavenv
   source qavenv/bin/activate
-  python3 -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
-  python3 -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
-  python3 -m pip list | grep harness
+  python -m pip install wheel --trusted-host ${NEXUS_SERVER_ENDPOINT}
+  python -m pip install -r scripts/requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python -m pip list | grep harness
   deactivate
 }
 
 setup_packer_env() {
-  sudo python3 -m pip uninstall -y packer_framework
-  python3 -m pip install --user virtualenv
-  python3 -m venv pkenv
+  python -m pip uninstall -y packer_framework
+  python -m pip install --user virtualenv
+  python -m venv pkenv
   source pkenv/bin/activate
-  python3 -m pip install wheel
-  python3 -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  python -m pip install wheel
+  python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 }
 
 software_def_build() {
