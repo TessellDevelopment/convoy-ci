@@ -1128,7 +1128,7 @@ setup_qa_env() {
 }
 
 setup_packer_env() {
-  sudo python3 -m pip uninstall -y packer_framework
+  python3 -m pip uninstall -y packer_framework
   python3 -m pip install --user virtualenv
   python3 -m venv pkenv
   source pkenv/bin/activate
