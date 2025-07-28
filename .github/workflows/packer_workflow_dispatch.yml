@@ -45,26 +45,6 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: "0"
-      
-      - name: Setup minio
-        run: |    
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
-          sudo mv ./mc /usr/local/bin/mc
-          chmod +x /usr/local/bin/mc
-          export PATH=$PATH:/usr/local/bin
-          mc --version
-          while true; do
-              response=$(mc alias set minio_ci ${CONVOY_MINIO_ENDPOINT} ${CONVOY_MINIO_ACCESS_KEY} ${CONVOY_MINIO_SECRET_KEY} 2>&1)
-              echo "$response"
-              if echo "$response" | grep -q "successfully"; then
-                  echo "Command succeeded: Added 'minio_ci' successfully."
-                  break
-              else
-                  echo "Command failed, retrying..."
-                  sleep 2
-              fi
-          done  
-          mc alias list
 
       - name: Dump GitHub context
         env:
@@ -86,9 +66,9 @@ jobs:
           echo "$APP_GROUP"
 
           if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
-            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
           elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
-            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}"
           fi
 
           echo "$URL"
@@ -113,7 +93,7 @@ jobs:
           if [[ "${{ env.BASE_BRANCH }}" == "main" ]]; then
             APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
             echo "$APP_GROUP"
-            URL="http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
+            URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/latest-main-release-label"
             echo "$URL"
             RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
             echo "$RESPONSE"
