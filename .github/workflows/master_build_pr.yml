@@ -181,7 +181,7 @@ jobs:
             sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
             curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
             sudo dpkg -i dockle.deb && rm dockle.deb
-            python3 -m pip install slack-sdk==3.26.2 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
+            python -m pip install slack-sdk==3.26.2 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
           }
           setupTrivyDockle
 
