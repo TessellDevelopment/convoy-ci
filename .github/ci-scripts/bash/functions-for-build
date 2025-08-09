@@ -226,6 +226,9 @@ docker_build_and_push() {
   IMAGE="${1}"
   VERSION="${3}"
   FILE="${4}"
+  REGISTRY="${5}"
+  setDockerOrg ${REGISTRY}
+  
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" && -n "${VERSION}" ]]; then
     TAG=${VERSION}
@@ -244,6 +247,13 @@ docker_build_and_push() {
               --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
   docker_tag_and_push "${IMAGE}" "${TAG}"
   set +e
+}
+
+setDockerOrg() {
+  if [[ "$1" == "ECR" ]]; then
+    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $TESSELL_CI_ECR
+    export DOCKERHUB_ORG=$TESSELL_CI_ECR
+  fi
 }
 
 docker_tag_and_push() {
