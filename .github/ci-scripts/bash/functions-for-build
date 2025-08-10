@@ -249,11 +249,13 @@ docker_build_and_push() {
 }
 
 setDockerOrg() {
+  set -ex
   export DOCKERHUB_ORG=$DOCKERHUB_ORG_DEFAULT
   if [[ "$1" == "ECR" ]]; then
     aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $TESSELL_CI_ECR
     export DOCKERHUB_ORG=$TESSELL_CI_ECR
   fi
+  set +ex
 }
 
 docker_tag_and_push() {
