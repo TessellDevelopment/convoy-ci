@@ -1027,14 +1027,14 @@ jobs:
               echo "dockerFile: ${file}"
               echo "registry: ${registry}"
 
-              setDockerOrg ${REGISTRY}
+              setDockerOrg ${registry}
 
               if [[ -n ${buildAndPushFunction:-} ]]; then
                 set -e
                 ${buildAndPushFunction}
                 set +e
               elif [[ -n ${buildFunction} ]]; then
-                ${buildFunction}AndPush ${name} ${ext} ${version} ${file} ${registry}
+                ${buildFunction}AndPush ${name} ${ext:-null} ${version:-null} ${file:-null} ${registry:-null}
               elif [[ -n ${buildTool:-} ]]; then
                 set -e
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
