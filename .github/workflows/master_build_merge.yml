@@ -1027,6 +1027,8 @@ jobs:
               echo "dockerFile: ${file}"
               echo "registry: ${registry}"
 
+              setDockerOrg ${REGISTRY}
+
               if [[ -n ${buildAndPushFunction:-} ]]; then
                 set -e
                 ${buildAndPushFunction}
@@ -1100,6 +1102,7 @@ jobs:
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKERHUB_ORG_DEFAULT: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
