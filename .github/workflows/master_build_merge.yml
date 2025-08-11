@@ -505,6 +505,8 @@ jobs:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      AWS_ACCESS_KEY_FOR_CONVOY: ${{ secrets.AWS_ACCESS_KEY_FOR_CONVOY }}
+      AWS_SECRET_KEY_FOR_CONVOY: ${{ secrets.AWS_SECRET_KEY_FOR_CONVOY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
@@ -1027,7 +1029,7 @@ jobs:
               echo "dockerFile: ${file}"
               echo "registry: ${registry}"
 
-              setDockerOrg ${registry}
+              set_docker_org ${registry}
 
               if [[ -n ${buildAndPushFunction:-} ]]; then
                 set -e

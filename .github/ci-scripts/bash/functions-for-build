@@ -148,7 +148,9 @@ configure_and_push_aws() {
   BUCKET_NAME=${2}
   SOURCE=${3}
   DESTINATION=${4}
-  generate_sts_session_token ${BUCKET_ACCOUNT}
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  generate_sts_session_token ${BUCKET_ACCOUNT} "artifacts-bucket-update-role"
   aws s3 cp "${SOURCE}" "${DESTINATION}"
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
@@ -248,15 +250,6 @@ docker_build_and_push() {
   set +e
 }
 
-setDockerOrg() {
-  set -ex
-  export DOCKERHUB_ORG=$DOCKERHUB_ORG_DEFAULT
-  if [[ "$1" == "ECR" ]]; then
-    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $TESSELL_CI_ECR
-    export DOCKERHUB_ORG=$TESSELL_CI_ECR
-  fi
-  set +ex
-}
 
 docker_tag_and_push() {
   IMAGE="${1}"
@@ -439,10 +432,9 @@ generate_checksum() {
 }
 
 generate_sts_session_token() {
-  BUCKET_ACCOUNT=${1}
-  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
-  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ACCOUNT=${1}
+  ROLE=${2}
+  ROLE_ARN=arn:aws:iam::${ACCOUNT}:role/${ROLE}
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
@@ -1118,6 +1110,21 @@ run_python_unit_test() {
   deactivate 
 }
 
+set_docker_org() {
+  export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_FOR_CONVOY
+  export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY_FOR_CONVOY
+  generate_sts_session_token "402291221517" "convoy"
+  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}" "convoy-assumed-role"
+
+  set -ex
+  export DOCKERHUB_ORG=$DOCKERHUB_ORG_DEFAULT
+  if [[ "$1" == "ECR" ]]; then
+    aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $TESSELL_CI_ECR
+    export DOCKERHUB_ORG=$TESSELL_CI_ECR
+  fi
+  set +ex
+}
+
 setup_qa_env() {
   INSTALL_DIR=/usr/local/bin
   sudo mkdir -p ${INSTALL_DIR}/openapitools
@@ -1235,7 +1242,9 @@ tailscale_build_and_push() {
 terraform_apply() {
   set -e
   cd terraform
-  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
+  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}" "artifacts-bucket-update-role"
   terraform init
   terraform plan
   cd ..
