@@ -51,7 +51,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3605_
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEV_BUILD: ${{inputs.dev_build}}
@@ -60,7 +60,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -224,7 +224,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3605_
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
@@ -237,7 +237,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GOPATH: /home/runner/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -505,15 +505,18 @@ jobs:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      AWS_ACCESS_KEY_FOR_CONVOY: ${{ secrets.AWS_ACCESS_KEY_FOR_CONVOY }}
+      AWS_SECRET_KEY_FOR_CONVOY: ${{ secrets.AWS_SECRET_KEY_FOR_CONVOY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_DEVOPS: ${{vars.AWS_ACCOUNT_TESSELL_DEVOPS}}}
       AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3605_
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
@@ -525,7 +528,7 @@ jobs:
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NAMESPACE: "convoy"
@@ -548,7 +551,7 @@ jobs:
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -561,6 +564,7 @@ jobs:
       TESSELL_ARTIFACTS_TF_QA_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
       TESSELL_ARTIFACTS_TF_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
       TESSELL_ARTIFACTS_TF_PROD_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
+      TESSELL_CI_ECR: ${{vars.TESSELL_DEV_ECR}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
@@ -994,7 +998,7 @@ jobs:
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile, .artifactRegistry] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -1015,7 +1019,7 @@ jobs:
                 fi
               fi
 
-              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file <<< "${artifactData}"
+              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file registry<<< "${artifactData}"
               export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
               echo "Name: ${name}"
               echo "buildAndPushFunction: ${buildAndPushFunction}"
@@ -1024,13 +1028,16 @@ jobs:
               echo "Ext: ${ext}"
               echo "Version: ${version}"
               echo "dockerFile: ${file}"
+              echo "registry: ${registry}"
+
+              set_docker_org ${registry}
 
               if [[ -n ${buildAndPushFunction:-} ]]; then
                 set -e
                 ${buildAndPushFunction}
                 set +e
               elif [[ -n ${buildFunction} ]]; then
-                ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
+                ${buildFunction}AndPush ${name} ${ext:-null} ${version:-null} ${file:-null} ${registry:-null}
               elif [[ -n ${buildTool:-} ]]; then
                 set -e
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
@@ -1091,16 +1098,17 @@ jobs:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-3605_
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       DEV_BUILD: ${{inputs.dev_build}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKERHUB_ORG_DEFAULT: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
