@@ -198,7 +198,7 @@
               fi
               runner=$(yq '.runner // ""' convoy.yaml)
               if [[ ${runner} != amd && ${runner} != ubuntu-latest ]]; then
-                err_msg+="Key '.runner' in convoy.yaml must bet set to 'amd' if 'language: go'"
+                err_msg+="Key '.runner' in convoy.yaml must bet set to 'amd' or 'ubuntu-latest' if 'language: go'"
               fi
               if [[ -n ${err_msg:-} ]]; then
                 echo -e "${err_msg}"
