@@ -1395,24 +1395,25 @@ yarn_build_and_push() {
 zip() {
   set -e
   ARTIFACT="${1}"
-  zip_dirs=$(yq -r ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
-  if [[ ${zip_dirs} == null ]]; then
+  zip_dirs=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
+  if [[ -z ${zip_dirs} || ${zip_dirs} == null ]]; then
     echo "❌ No zipDirectory found for artifact: ${ARTIFACT}"
     exit 1
   fi
   if [[ "${zip_dirs}" =~ ^\[ ]]; then
     dirs=($(echo "${zip_dirs}" | yq -r '.[]'))
   else
-    dirs=("${zip_dirs}")
+    dirs=(${zip_dirs})
   fi
+  OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
+  rm -f "${OUTPUT_ZIP}"
   if [[ ${#dirs[@]} -eq 1 ]]; then
     dir="${dirs[0]}"
-    (cd "${dir}" && zip -r "${ARTIFACT}" ./*)
+    (cd "${dir}" && zip -r "${OUTPUT_ZIP}" ./*)
   else
     for dir in "${dirs[@]}"; do
-      parent=$(dirname "${dir}")
-      base=$(basename "${dir}")
-      (cd "$parent" && zip -r "${ARTIFACT}.zip" "${base}")
+      [[ -d "${dir}" ]] || { echo "❌ Directory not found: ${dir}"; exit 1; }
+      zip -r "${OUTPUT_ZIP}" "${dir}"
     done
   fi
   set +e
