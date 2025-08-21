@@ -1419,8 +1419,8 @@ zip() {
 }
 
 zip_and_push() {
-  set -e
   zip "$@"
+  set -e
   ARTIFACT=${1}
   EXTENSION=${2}
   generate_checksum "${ARTIFACT}.${EXTENSION}"
@@ -1445,8 +1445,8 @@ zip_file() {
 }
 
 zip_file_and_push() {
-  set -e
   zip_file "$@"
+  set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
