@@ -1392,6 +1392,42 @@ yarn_build_and_push() {
   set +e
 }
 
+zip() {
+  set -e
+  ARTIFACT="${1}"
+  zip_dirs=$(yq -r ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
+  if [[ ${zip_dirs} == null ]]; then
+    echo "❌ No zipDirectory found for artifact: ${ARTIFACT}"
+    exit 1
+  fi
+  if [[ "${zip_dirs}" =~ ^\[ ]]; then
+    dirs=($(echo "${zip_dirs}" | yq -r '.[]'))
+  else
+    dirs=("${zip_dirs}")
+  fi
+  if [[ ${#dirs[@]} -eq 1 ]]; then
+    dir="${dirs[0]}"
+    (cd "${dir}" && zip -r "${ARTIFACT}" ./*)
+  else
+    for dir in "${dirs[@]}"; do
+      parent=$(dirname "${dir}")
+      base=$(basename "${dir}")
+      (cd "$parent" && zip -r "${ARTIFACT}.zip" "${base}")
+    done
+  fi
+  set +e
+}
+
+zip_and_push() {
+  set -e
+  zip "$@"
+  ARTIFACT=${1}
+  EXTENSION=${2}
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  push_release_manifest_artifacts
+  set +e
+}
+
 zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
