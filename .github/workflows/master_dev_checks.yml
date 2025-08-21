@@ -197,7 +197,7 @@
                 err_msg+=$(echo -e "Key 'goVersion' must bet set to a valid go version, in convoy.yaml if 'language: go'\n")
               fi
               runner=$(yq '.runner // ""' convoy.yaml)
-              if [[ "${runner}" != "amd" && "${runner}" != "ubuntu-latest" ]]; then
+              if [[ ${runner} != amd && ${runner} != ubuntu-latest ]]; then
                 err_msg+="Key '.runner' in convoy.yaml must bet set to 'amd' if 'language: go'"
               fi
               if [[ -n ${err_msg:-} ]]; then
