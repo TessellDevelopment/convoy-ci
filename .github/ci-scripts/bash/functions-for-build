@@ -485,36 +485,11 @@ go_docker_build_and_push() {
 }
 
 go_library_build() {
-  set -e
-  ARTIFACT="${1}"
-  required_inputs="1"
-  validate_inputs "${required_inputs}" "$@"
-  NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
-  if [ "${NAME}" == "${ARTIFACT}" ]; then
-      NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
-      OS="windows"
-  else
-      OS="linux"
-  fi
-  ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
-  echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
-  if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
-    make service os=${OS}
-  else
-    make service os=${OS} engine=${ENGINE}
-  fi
-  set +e
+  make_service "$@"
 }
 
 go_library_build_and_push() {
-  go_library_build "$@"
-  set -e
-  ARTIFACT="${1}"
-  EXTENSION="${2}"
-  aws_configure_prod_assets
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
-  push_release_manifest_artifacts
-  set +e
+  make_service_and_push "$@"
 }
 
 gradlew_build() {
@@ -712,6 +687,39 @@ jar_build_and_push() {
     -DgroupId=tessellops -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
   generate_checksum $ARTIFACT "${ARTIFACT}-${VERSION}.${EXTENSION}"
+  set +e
+}
+
+make_service() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
+  if [ "${NAME}" == "${ARTIFACT}" ]; then
+      NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
+      OS="windows"
+  else
+      OS="linux"
+  fi
+  ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
+  echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
+  if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
+    make service os=${OS}
+  else
+    make service os=${OS} engine=${ENGINE}
+  fi
+  set +e
+}
+
+make_service_and_push() {
+  make_service "$@"
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  aws_configure_prod_assets
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
+  push_release_manifest_artifacts
   set +e
 }
 
