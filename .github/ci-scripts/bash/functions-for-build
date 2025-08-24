@@ -386,6 +386,12 @@ get_root_pr_tag() {
   base_branch_of_root_pr="rel-$(echo "${root_pr_tag}" | cut -d. -f1,2).0"
 }
 
+get_checksum_from_release_manifest() {
+  release_manifest="${1}"
+  artifact="${2}"
+  echo "$release_manifest" | jq -r --arg key $(echo ${artifact} | jq -r .releaseManifestKey) '.artifacts[$key].commit'
+}
+
 get_commit_build_status() {
   check_convoy_yaml
   commit_hash="${1}"
