@@ -367,6 +367,12 @@ get_base_branch_commit_from_pr_number() {
   "${GH_API_URL}/repos/${REPOSITORY}/pulls/${root_pr_number}"| jq -r '.merge_commit_sha')
 }
 
+get_checksum_from_release_manifest() {
+  release_manifest="${1}"
+  artifact="${2}"
+  echo "$release_manifest" | jq -r --arg key $(echo ${artifact} | jq -r .releaseManifestKey) '.artifacts[$key].commit'
+}
+
 get_dc_messages() {
   dc_message=$(curl -L \
   -H "Accept: application/vnd.github+json" \
