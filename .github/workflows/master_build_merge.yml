@@ -60,7 +60,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -237,7 +237,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GOPATH: /home/runner/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -525,7 +525,7 @@ jobs:
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NAMESPACE: "convoy"
@@ -548,7 +548,7 @@ jobs:
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
+      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -1104,7 +1104,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
