@@ -747,7 +747,7 @@ jobs:
           configureGoVersionIfRequired
           ci_cmd=$(yq .ci.preMerge.cmd convoy.yaml)
           if [[ -n ${ci_cmd:-} ]]; then
-            bash -c "${ci_cmd}"
+            bash -e -c "${ci_cmd}"
           fi
           build "artifacts"
           build "dockerImages"
