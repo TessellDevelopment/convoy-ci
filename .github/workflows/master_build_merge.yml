@@ -1050,20 +1050,11 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-
-          if yq e '.ci.postMerge' "convoy.yaml" >/dev/null 2>&1; then
-            local cmd=$(yq e -r '.ci.postMerge.cmd' "convoy.yaml")
-            if [[ -n "$cmd" && "$cmd" != "null" ]]; then
-              echo "Executing postMerge command: $cmd"
-              /bin/bash -c "$cmd"
-            fi
-          else
-            build "artifacts"
-            build "dockerImages"
-            build "helmCharts"
-            build "terraform"
-            build "softwareImages"
-          fi
+          build "artifacts"
+          build "dockerImages"
+          build "helmCharts"
+          build "terraform"
+          build "softwareImages"
           parseAndPushCoverageReport
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
