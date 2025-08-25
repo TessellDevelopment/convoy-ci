@@ -1049,6 +1049,7 @@ jobs:
           else 
               release_manifest_label="${LABEL}"
           fi
+          export RELEASE_MANIFEST_LABEL=${release_manifest_label}
           configureGoVersionIfRequired
           ci_cmd=$(yq .ci.postMerge.cmd convoy.yaml)
           if [[ -n ${ci_cmd:-} ]]; then
