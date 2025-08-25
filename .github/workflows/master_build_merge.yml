@@ -498,6 +498,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
+      GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
@@ -514,13 +515,16 @@ jobs:
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: TDEVOPS-3633_convoy_ci_on_3693
+      CI_PHASE: postMerge
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DEV_BUILD: ${{inputs.dev_build}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GIT_BASE_REF: HEAD~1
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
@@ -1051,7 +1055,7 @@ jobs:
           fi
           export RELEASE_MANIFEST_LABEL=${release_manifest_label}
           configureGoVersionIfRequired
-          ci_cmd=$(yq .ci.postMerge.cmd convoy.yaml)
+          ci_cmd=$(yq .ci.${CI_PHASE}.cmd convoy.yaml)
           if [[ -n ${ci_cmd:-} ]]; then
             set -e;bash -c "${ci_cmd}";set +e
             source /tmp/artifacts.env
@@ -1063,6 +1067,7 @@ jobs:
           build "terraform"
           build "softwareImages"
           parseAndPushCoverageReport
+          cat ${CONTENT_FOR_GITHUB_OUTPUT} >> $GITHUB_OUTPUT
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
