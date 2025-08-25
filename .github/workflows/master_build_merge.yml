@@ -1053,7 +1053,9 @@ jobs:
           ci_cmd=$(yq .ci.postMerge.cmd convoy.yaml)
           if [[ -n ${ci_cmd:-} ]]; then
             set -e;bash -c "${ci_cmd}";set +e
+            source /tmp/artifacts.env
           fi
+          echo "ARTIFACT_CHECKSUMS is ${ARTIFACT_CHECKSUMS}"
           build "artifacts"
           build "dockerImages"
           build "helmCharts"

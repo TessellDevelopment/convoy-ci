@@ -418,11 +418,12 @@ get_dc_root_pr_diff() {
 generate_checksum() {
   ARTIFACT=${1}
   BUILD_FILE=${2}
+  find_type=${3:-name}
   if [[ -z "${BUILD_FILE}" ]]; then
     echo "Build File name same as Artifact name"
     BUILD_FILE=${ARTIFACT}
   fi
-  file_path=$(find . -type f -name "${BUILD_FILE}" 2>/dev/null | head -n 1)
+  file_path=$(find . -type f -${find_type} "${BUILD_FILE}" 2>/dev/null | head -n 1)
   if [[ -z "${file_path}" ]]; then
     echo "File not found!"
     return 1
