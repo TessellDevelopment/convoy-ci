@@ -20,7 +20,10 @@ on:
         description: 'Release label for upload'
         required: true
         type: string
-    
+      GENERATED_ARTIFACTS:
+        description: Stringified json containing value for field 'artifacts' in payload
+        default: ""
+        type: string
 jobs:
   
   post-build-status-to-convoy:
@@ -60,6 +63,7 @@ jobs:
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
+          GENERATED_ARTIFACTS: ${{inputs.GENERATED_ARTIFACTS}}
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
@@ -218,7 +222,7 @@ jobs:
 
             if IS_ANY_ARTIFACT_GENERATED == 'true' 
                 if GENERATED_ARTIFACTS is not empty:
-                    payload["artifacts"] = GENERATED_ARTIFACTS
+                    payload["artifacts"] = json.loads(GENERATED_ARTIFACTS)
                 else:
                     generates = yaml_data.get('generates')
                     language = yaml_data.get('language')
