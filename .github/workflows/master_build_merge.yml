@@ -937,12 +937,7 @@ jobs:
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
             fi
-            if [[ ${BASE_BRANCH} == 'main' ]]; then
-              manifestLabel="latest-main"
-            else 
-              manifestLabel="${LABEL}"
-            fi
-            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
+            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${release_manifest_label}")
             for DIR in "${DIRECTORIES[@]}"; do
               CHECKSUM=""
               DIR=${DIR%/}
@@ -1049,6 +1044,11 @@ jobs:
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
+          if [[ ${BASE_BRANCH} == 'main' ]]; then
+              release_manifest_label="latest-main"
+          else 
+              release_manifest_label="${LABEL}"
+          fi
           configureGoVersionIfRequired
           ci_cmd=$(yq .ci.postMerge.cmd convoy.yaml)
           if [[ -n ${ci_cmd:-} ]]; then

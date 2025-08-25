@@ -344,9 +344,9 @@ yarnBuildAndPush() {
   yarn_build_and_push "$@"
 }
 
-zip() {
-  zip "$@"
-}
+# zip() {
+#   zip "$@"
+# }
 
 zipAndPush() {
   zip_and_push "$@"
