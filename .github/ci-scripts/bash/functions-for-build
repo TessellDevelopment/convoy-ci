@@ -1392,7 +1392,7 @@ yarn_build_and_push() {
   set +e
 }
 
-zip() {
+zip_build() {
   set -e
   ARTIFACT="${1}"
   zip_dirs=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
@@ -1419,7 +1419,7 @@ zip() {
   set +e
 }
 
-zip_and_push() {
+zip_build_and_push() {
   zip "$@"
   set -e
   ARTIFACT=${1}
