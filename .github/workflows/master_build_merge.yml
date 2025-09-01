@@ -1056,7 +1056,6 @@ jobs:
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
           set -e; bash -c "$(yq '.ci.${CI_PHASE}.cmd // :' convoy.yaml)"; set +e
-          echo "ARTIFACT_CHECKSUMS is ${ARTIFACT_CHECKSUMS}"
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
