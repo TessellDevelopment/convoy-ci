@@ -168,6 +168,14 @@ jarBuildAndPush() {
   jar_build_and_push "$@"
 }
 
+makeService() {
+  make_service "$@"
+}
+
+makeServiceAndPush() {
+  make_service_and_push "$@"
+}
+
 mvnDeploy() {
   mvn_deploy "$@"
 }
