@@ -32,6 +32,7 @@ jobs:
           tar -cvf tessell-hcp-for-azure.tar .
           packer init .
           packer validate packer-file.json.pkr.hcl
+
       - name: Run packer build
         run: |
           packer build packer-file.json.pkr.hcl

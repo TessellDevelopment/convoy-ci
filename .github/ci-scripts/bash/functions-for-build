@@ -1417,17 +1417,17 @@ zip_file() {
 }
 
 zip_file_and_push() {
-  zip_file "$@"
   set -e
+  zip_file "$@"
   ARTIFACT="${1}"
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
       push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      generate_checksum "${ARTIFACT}.${EXTENSION}"
     else
       push_release_manifest_artifacts
     fi
   fi
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e  
 }
