@@ -24,6 +24,7 @@ on:
         description: Stringified json containing value for field 'artifacts' in payload
         default: ""
         type: string
+
 jobs:
   
   post-build-status-to-convoy:
