@@ -1413,13 +1413,11 @@ zip_build() {
     echo "❌ No zipDirectory found for artifact: ${ARTIFACT}"
     exit 1
   fi
+  dirs=("${zip_dirs}")
   if [[ "${zip_dirs}" =~ ^\[ ]]; then
     mapfile -t dirs < <(echo "${zip_dirs}" | yq -r '.[]')
-  else
-    dirs=("${zip_dirs}")
   fi
   OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
-  rm -f "${OUTPUT_ZIP}"
   if [[ ${#dirs[@]} -eq 1 ]]; then
     zip -r -j "${OUTPUT_ZIP}" "${dirs[0]}"/*
   else
