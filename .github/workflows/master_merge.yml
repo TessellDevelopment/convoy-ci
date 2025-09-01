@@ -146,6 +146,7 @@ jobs:
       TAG: ${{needs.create-tag.outputs.tag}}
       LABEL: ${{needs.runner-check.outputs.label}}
       GENERATED_ARTIFACTS: ${{needs.build.outputs.GENERATED_ARTIFACTS}}
+
   sonar-scan:
     needs: post-build-to-convoy
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@main
