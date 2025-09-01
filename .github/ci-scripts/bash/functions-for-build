@@ -1400,42 +1400,6 @@ yarn_build_and_push() {
   set +e
 }
 
-# Usage:
-# generates:
-#   - buildFunction: zip
-#     zipDirectory: tessell-hcp-setup (To have contents of this directory at root of zip)
-#     zipDirectory: [tessell-hcp-setup, tessell/worker] (To have these two directories at root of zip, `tessell/worker` path would be preserved in zip)
-zip_build() {
-  set -e
-  ARTIFACT="${1}"
-  zip_dirs=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
-  if [[ -z ${zip_dirs} || ${zip_dirs} == "null" ]]; then
-    echo "❌ No zipDirectory found for artifact: ${ARTIFACT}"
-    exit 1
-  fi
-  dirs=("${zip_dirs}")
-  if [[ "${zip_dirs}" =~ ^\[ ]]; then
-    mapfile -t dirs < <(echo "${zip_dirs}" | yq -r '.[]')
-  fi
-  OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
-  if [[ ${#dirs[@]} -eq 1 ]]; then
-    zip -r -j "${OUTPUT_ZIP}" "${dirs[0]}"/*
-  else
-    zip -r "${OUTPUT_ZIP}" "${dirs[@]}"
-  fi
-  set +e
-}
-
-zip_build_and_push() {
-  zip_build "$@"
-  set -e
-  ARTIFACT=${1}
-  EXTENSION=${2}
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
-  push_release_manifest_artifacts
-  set +e
-}
-
 zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
