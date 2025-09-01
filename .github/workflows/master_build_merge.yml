@@ -1055,10 +1055,7 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-          ci_cmd=$(yq .ci.${CI_PHASE}.cmd convoy.yaml)
-          if [[ -n ${ci_cmd:-} ]]; then
-            set -e;bash -c "${ci_cmd}";set +e
-          fi
+          set -e; bash -c "$(yq '.ci.${CI_PHASE}.cmd // :' convoy.yaml)"; set +e
           echo "ARTIFACT_CHECKSUMS is ${ARTIFACT_CHECKSUMS}"
           build "artifacts"
           build "dockerImages"
