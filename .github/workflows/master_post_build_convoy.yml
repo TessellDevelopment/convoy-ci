@@ -119,10 +119,7 @@ jobs:
                     element["extension"] = object["extension"]
                     element["version"] = module_data.get('version')
                     version = module_data.get('version')
-                    if "path" in object:
-                      element["path"] = f"tessell-artifacts/{LABEL}/{object['path']}"
-                    else:
-                      element["path"] = f"tessell-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
+                    element["path"] = f"tessell-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
                     artifacts.append(element)
               return artifacts
 
@@ -143,10 +140,7 @@ jobs:
                   except:
                     print("Extension Details not present")
                   if artifact_type == 'artifacts':
-                    if object.get("path"):
-                      element["path"] = f"tessell-artifacts/{LABEL}/{object['path']}"
-                    else:
-                      element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
+                    element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
                   artifacts.append(element)
               if len(artifacts) == 0: 
                 return
