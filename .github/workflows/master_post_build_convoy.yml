@@ -63,8 +63,8 @@ jobs:
           API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
-          IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           GENERATED_ARTIFACTS: ${{inputs.GENERATED_ARTIFACTS}}
+          IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
