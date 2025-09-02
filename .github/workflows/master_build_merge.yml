@@ -553,7 +553,6 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
-      RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
