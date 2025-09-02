@@ -217,7 +217,7 @@ jobs:
 
             if IS_ANY_ARTIFACT_GENERATED == 'true':
                 GENERATED_ARTIFACTS = os.environ.get('GENERATED_ARTIFACTS')
-                if GENERATED_ARTIFACTS is not None:
+                if GENERATED_ARTIFACTS and GENERATED_ARTIFACTS.strip():
                     payload["artifacts"] = json.loads(GENERATED_ARTIFACTS)
                 else:
                     generates = yaml_data.get('generates')

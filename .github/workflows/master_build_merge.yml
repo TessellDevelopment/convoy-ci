@@ -43,9 +43,8 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-      GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
+      # GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
     env:
-      GENERATED_ARTIFACTS: GENERATED_ARTIFACTS
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
