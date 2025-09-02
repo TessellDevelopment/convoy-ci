@@ -524,6 +524,7 @@ jobs:
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DEV_BUILD: ${{inputs.dev_build}}
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
