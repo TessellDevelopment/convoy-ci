@@ -580,6 +580,7 @@ jobs:
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
+      GENERATED_ARTIFACTS: GENERATED_ARTIFACTS
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -1071,7 +1072,7 @@ jobs:
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
           [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || cat ${CONTENT_FOR_GITHUB_OUTPUT} >> $GITHUB_OUTPUT
-
+          echo "GENERATED_ARTIFACTS=$GENERATED_ARTIFACTS" >> $GITHUB_OUTPUT
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
