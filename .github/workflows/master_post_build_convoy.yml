@@ -216,7 +216,7 @@ jobs:
             }
 
             if IS_ANY_ARTIFACT_GENERATED == 'true':
-              GENERATED_ARTIFACTS = os.environ.get('GENERATED_ARTIFACTS')
+                GENERATED_ARTIFACTS = os.environ.get('GENERATED_ARTIFACTS')
                 if GENERATED_ARTIFACTS is not empty:
                     payload["artifacts"] = json.loads(GENERATED_ARTIFACTS)
                 else:
