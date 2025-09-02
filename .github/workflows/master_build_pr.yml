@@ -747,7 +747,7 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
-          set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // :" convoy.yaml)"; set +e
+          set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
