@@ -215,7 +215,7 @@ jobs:
               "artifactGenerated": IS_ANY_ARTIFACT_GENERATED == "true",
             }
 
-            if IS_ANY_ARTIFACT_GENERATED == 'true' 
+            if IS_ANY_ARTIFACT_GENERATED == 'true':
                 if GENERATED_ARTIFACTS is not empty:
                     payload["artifacts"] = json.loads(GENERATED_ARTIFACTS)
                 else:
