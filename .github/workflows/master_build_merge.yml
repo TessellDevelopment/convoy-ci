@@ -1059,7 +1059,7 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-          set -e; bash -c "$(yq '.ci.${CI_PHASE}.cmd // :' convoy.yaml)"; set +e
+          set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
