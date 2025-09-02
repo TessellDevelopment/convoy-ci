@@ -30,7 +30,7 @@ on:
         value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       GENERATED_ARTIFACTS:
         description: Stringified json containing value for field 'artifacts' in payload
-        value: ${{ (jobs.build-ui.outputs.GENERATED_ARTIFACTS) || (jobs.build-amd.outputs.GENERATED_ARTIFACTS) || (jobs.build-ubuntu-latest.outputs.GENERATED_ARTIFACTS) || (jobs.build-arm.outputs.GENERATED_ARTIFACTS) }}
+        value: ${{ (jobs.build-amd.outputs.GENERATED_ARTIFACTS) }}
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
         value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
@@ -43,7 +43,6 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-      # GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
@@ -216,10 +215,8 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-      GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      GENERATED_ARTIFACTS: GENERATED_ARTIFACTS
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
@@ -1100,9 +1097,7 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
-      GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
     env:
-      GENERATED_ARTIFACTS: GENERATED_ARTIFACTS
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
       ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
