@@ -1050,10 +1050,6 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-          ci_cmd=$(yq .ci.postMerge.cmd convoy.yaml)
-          if [[ -n ${ci_cmd:-} ]]; then
-            bash -c "${ci_cmd}"
-          fi
           build "artifacts"
           build "dockerImages"
           build "helmCharts"

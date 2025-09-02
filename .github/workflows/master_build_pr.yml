@@ -745,10 +745,6 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
-          ci_cmd=$(yq .ci.preMerge.cmd convoy.yaml)
-          if [[ -n ${ci_cmd:-} ]]; then
-            bash -c "${ci_cmd}"
-          fi
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
