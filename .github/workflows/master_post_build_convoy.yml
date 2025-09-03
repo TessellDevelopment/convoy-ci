@@ -76,7 +76,9 @@ jobs:
           TAG: "${{env.TAG}}"
           LABEL: "${{env.LABEL}}"
         run: |
-            export GENERATED_ARTIFACTS=$(echo ${GENERATED_ARTIFACTS} | base64 -d)
+            set -a
+            source CONTENT_FOR_GITHUB_OUTPUT
+            set +a
             python3 - <<EOF
             
             import requests
