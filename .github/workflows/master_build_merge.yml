@@ -1069,7 +1069,7 @@ jobs:
           parseAndPushCoverageReport
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
-          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || cat ${CONTENT_FOR_GITHUB_OUTPUT} | base64 -w0 >> $GITHUB_OUTPUT
+          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || cat ${CONTENT_FOR_GITHUB_OUTPUT} >> $GITHUB_OUTPUT
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
