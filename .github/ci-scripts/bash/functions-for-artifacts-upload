@@ -1,8 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-
-source ${script_dir}/common
+source ./ci-scripts/bash/common
 
 
 function upload_to_nexus() {
