@@ -1,9 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-
-# source ${script_dir}/common
-source /home/github/actions-runner/_work/ci-test-repo-b/ci-test-repo-b/ci-scripts/bash/common
+source ./ci-scripts/bash/common
 
 
 function upload_to_nexus() {
@@ -36,7 +33,7 @@ function upload_artifact() {
   local dest_path_prefix deployment_stage
   if [[ ${push_to} == convoy-minio ]]; then
     alias cp_cmd='mc cp'
-    dest_path_prefix=minio_ci/
+    dest_path_prefix=${MC_ALIAS_FOR_CONVOY_MINIO}/
   else
     alias cp_cmd='aws s3 cp'
     dest_path_prefix=s3://
