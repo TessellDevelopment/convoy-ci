@@ -12,7 +12,6 @@ function die() {
 function ensure_accessability_to_upload_locations() {
   local deployment_stage
 
-  local MC_ALIAS_FOR_CONVOY_MINIO=${MC_ALIAS_FOR_CONVOY_MINIO:-minio_ci}
   generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
 
   for deployment_stage in dev qa stage prod; do
