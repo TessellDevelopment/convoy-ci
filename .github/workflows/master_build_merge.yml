@@ -1073,6 +1073,8 @@ jobs:
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+          echo "GITHUB OUTPUT:"
+          cat $GITHUB_OUTPUT
 
       - name: Cleanup
         if: always()
