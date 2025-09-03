@@ -1076,6 +1076,11 @@ jobs:
           echo "GITHUB OUTPUT:"
           cat $GITHUB_OUTPUT
 
+      - uses: actions/upload-artifact@v3
+        # continue-on-error: true
+        with:
+          name: export content for github output as artifact
+          path: ${{env.CONTENT_FOR_GITHUB_OUTPUT}}
       - name: Cleanup
         if: always()
         run: |

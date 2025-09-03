@@ -318,7 +318,7 @@ jobs:
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
+      GIT_BASE_REF: ${{ github.base_ref }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_BASE_REF: ${{ github.base_ref }}
