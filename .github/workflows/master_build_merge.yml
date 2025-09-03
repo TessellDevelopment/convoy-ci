@@ -1054,6 +1054,7 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          echo GIT_BASE_REF: ${GIT_BASE_REF}
           source ./ci-scripts/bash/functions-for-build
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""

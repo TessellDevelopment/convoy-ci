@@ -318,7 +318,7 @@ jobs:
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GIT_BASE_REF: ${{ github.base_ref }}
+      GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GITHUB_BASE_REF: ${{ github.base_ref }}
@@ -744,6 +744,7 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          echo GIT_BASE_REF: ${GIT_BASE_REF}
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
