@@ -217,7 +217,9 @@ jobs:
 
             if IS_ANY_ARTIFACT_GENERATED == 'true':
                 generated_artifacts = os.environ.get('GENERATED_ARTIFACTS')
+                print(f"Generated Artifacts: {generated_artifacts}")
                 if generated_artifacts and generated_artifacts.strip():
+                    print(f"Decoding generated artifacts: {generated_artifacts}")
                     decoded = base64.b64decode(generated_artifacts, validate=True).decode("utf-8")
                     payload["artifacts"] = json.loads(decoded)
                 else:
