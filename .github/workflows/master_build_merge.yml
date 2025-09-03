@@ -1083,7 +1083,7 @@ jobs:
         name: Export content for github output as artifact
         # continue-on-error: true
         with:
-          name: export content for github output as artifact
+          name: generated-artifacts
           path: ${{env.CONTENT_FOR_GITHUB_OUTPUT}}
       - name: Cleanup
         if: always()
