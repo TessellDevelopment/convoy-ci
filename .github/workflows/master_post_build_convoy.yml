@@ -76,6 +76,7 @@ jobs:
           TAG: "${{env.TAG}}"
           LABEL: "${{env.LABEL}}"
         run: |
+            export GENERATED_ARTIFACTS=$(echo ${GENERATED_ARTIFACTS} | base64 -d)
             python3 - <<EOF
             
             import requests
@@ -219,11 +220,11 @@ jobs:
                 generated_artifacts = os.environ.get('GENERATED_ARTIFACTS')
                 print(f"Generated Artifacts: {generated_artifacts}")
                 if generated_artifacts and generated_artifacts.strip():
-                    print(f"Decoding generated artifacts: {generated_artifacts}")
-                    print(f"Raw env len={len(generated_artifacts)}, startswith={generated_artifacts[:20]}, endswith={generated_artifacts[-20:]}")
+                    # print(f"Decoding generated artifacts: {generated_artifacts}")
+                    # print(f"Raw env len={len(generated_artifacts)}, startswith={generated_artifacts[:20]}, endswith={generated_artifacts[-20:]}")
 
-                    decoded = base64.b64decode(generated_artifacts, validate=True).decode("utf-8")
-                    payload["artifacts"] = json.loads(decoded)
+                    # decoded = base64.b64decode(generated_artifacts, validate=True).decode("utf-8")
+                    payload["artifacts"] = json.loads(generated_artifacts)
                 else:
                     generates = yaml_data.get('generates')
                     language = yaml_data.get('language')
