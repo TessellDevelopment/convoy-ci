@@ -220,6 +220,8 @@ jobs:
                 print(f"Generated Artifacts: {generated_artifacts}")
                 if generated_artifacts and generated_artifacts.strip():
                     print(f"Decoding generated artifacts: {generated_artifacts}")
+                    print(f"Raw env len={len(generated_artifacts)}, startswith={generated_artifacts[:20]}, endswith={generated_artifacts[-20:]}")
+
                     decoded = base64.b64decode(generated_artifacts, validate=True).decode("utf-8")
                     payload["artifacts"] = json.loads(decoded)
                 else:
