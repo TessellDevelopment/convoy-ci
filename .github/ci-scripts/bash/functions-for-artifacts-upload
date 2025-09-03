@@ -38,10 +38,11 @@ function upload_artifact() {
     alias cp_cmd='aws s3 cp'
     dest_path_prefix=s3://
   fi
-
-  # for deployment_stage in dev qa stage prod; do
-  #   cp_cmd ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
-  # done
+  set -x
+  type cp_cmd
+  for deployment_stage in dev qa stage prod; do
+    cp_cmd ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
+  done
 }
 
 
