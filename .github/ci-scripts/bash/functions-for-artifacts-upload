@@ -7,6 +7,7 @@ function upload_to_nexus() {
   local local_abs_path_to_src=${1:-} upload_path_in_nexus=${2:-}
   validate_inputs "1 2" "$@"
 
+  log "Uploading artifact from local path '${local_abs_path_to_src}' to Nexus at '${upload_path_in_nexus}'."
   curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
     --upload-file ${local_abs_path_to_src} -w "%{http_code}" \
     ${NEXUS_ADDR}/repository/${upload_path_in_nexus}
@@ -28,6 +29,7 @@ function upload_artifact() {
   local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3}
   validate_inputs "1 2" "$@"
 
+  log "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
   upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
 
   local dest_path_prefix deployment_stage
@@ -40,6 +42,7 @@ function upload_artifact() {
   fi
 
   for deployment_stage in dev qa stage prod; do
+    log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}'"
     ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
   done
 }
@@ -49,6 +52,7 @@ function upload_artifacts_using_src_dest_map() {
   local map=${1:-} artifacts local_abs_path_to_src dest_path_without_bucket push_to
   [[ -n ${map:-} ]] || die "This function must invoked with a path to the src-dest-map file as its one-and-only argument. Currently, no argument has been passed."
 
+  log "Validating src-dest-map for artifacts upload..."
   $(yq 'has("artifacts") and .artifacts | type == "!!seq"' ${map}) || \
     die "The src-dest-map must be a yaml file consisting only one top level key 'artifacts' of type list."
   
@@ -65,6 +69,8 @@ function upload_artifacts_using_src_dest_map() {
     [[ -f $(echo ${artifact} | yq '.local_abs_path_to_src') ]] || \
       die "One or more local paths provided with 'local_abs_path_to_src' does not exist in the local file system."
   done
+
+  log "Validation of src-dest-map for artifacts upload completed. Proceeding with uploads..."
 
   for artifact in "${artifacts[@]}"; do
     local_abs_path_to_src=$(echo ${artifact} | yq '.local_abs_path_to_src')
