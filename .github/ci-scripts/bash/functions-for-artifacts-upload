@@ -32,15 +32,15 @@ function upload_artifact() {
 
   local dest_path_prefix deployment_stage
   if [[ ${push_to} == convoy-minio ]]; then
-    alias cp_cmd='mc cp'
+    local cp_cmd='mc cp'
     dest_path_prefix=${MC_ALIAS_FOR_CONVOY_MINIO}/
   else
-    alias cp_cmd='aws s3 cp'
+    local cp_cmd='aws s3 cp'
     dest_path_prefix=s3://
   fi
 
   for deployment_stage in dev qa stage prod; do
-    cp_cmd ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
+    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
   done
 }
 
