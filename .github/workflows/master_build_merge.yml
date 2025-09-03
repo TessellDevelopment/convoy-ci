@@ -538,6 +538,7 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
       NAMESPACE: "convoy"
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
