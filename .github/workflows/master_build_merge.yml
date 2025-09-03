@@ -536,6 +536,7 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
+      MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
       NAMESPACE: "convoy"
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
