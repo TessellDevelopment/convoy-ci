@@ -529,7 +529,6 @@ jobs:
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
-      GITHUB_RUN_ID: ${{ github.run_id }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}

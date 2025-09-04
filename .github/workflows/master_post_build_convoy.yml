@@ -77,7 +77,6 @@ jobs:
           COMMIT_HASH: "${{github.sha}}"
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-          GITHUB_RUN_ID: ${{github.run_id}}
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           OWNER: ${{github.repository_owner}}
           STATUS: "${{env.WORKFLOW_CONCLUSION}}"
