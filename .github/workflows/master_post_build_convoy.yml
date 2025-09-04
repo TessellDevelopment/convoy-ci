@@ -20,10 +20,10 @@ on:
         description: 'Release label for upload'
         required: true
         type: string
-      GENERATED_ARTIFACTS:
-        description: Stringified json containing value for field 'artifacts' in payload
-        default: ""
-        type: string
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
+        description: Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT
+        default: false
+        type: boolean
 
 jobs:
   
@@ -59,12 +59,13 @@ jobs:
 
       - name: Download generated artifacts file
         uses: actions/download-artifact@v4
-        continue-on-error: true
+        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED }}
         with:
           name: generated-artifacts
-          path: /tmp
-          # if-no-artifact-found: ignore
-          continue-on-error: true
+          path: /mnt
+
+
+          
 
       - name: POST API to Convoy
         env:
@@ -72,8 +73,8 @@ jobs:
           API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
-          CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-          GENERATED_ARTIFACTS: ${{inputs.GENERATED_ARTIFACTS}}
+          CONTENT_FOR_GITHUB_OUTPUT: /mnt/content-for-github-output
+          IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}}
           IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
@@ -87,7 +88,7 @@ jobs:
           LABEL: "${{env.LABEL}}"
         run: |
             set -a
-            source ${CONTENT_FOR_GITHUB_OUTPUT}
+            ${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED} && source ${CONTENT_FOR_GITHUB_OUTPUT}
             set +a
             python3 - <<EOF
             
