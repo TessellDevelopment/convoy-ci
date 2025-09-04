@@ -61,7 +61,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: generated-artifacts
-          path: /tmp/content-for-github-output
+          path: /tmp
 
       - name: POST API to Convoy
         env:
