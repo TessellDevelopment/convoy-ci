@@ -1,6 +1,5 @@
 #!/bin/bash
 
-source ./ci-scripts/bash/functions-for-artifacts-upload
 source ./ci-scripts/bash/functions-for-build-camel-case
 
 assert_base_branch_commit_success() {
