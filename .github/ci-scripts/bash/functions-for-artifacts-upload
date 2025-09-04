@@ -55,7 +55,7 @@ function upload_artifacts_using_src_dest_map() {
   log "Validating src-dest-map for artifacts upload..."
   $(yq 'has("artifacts") and .artifacts | type == "!!seq"' ${map}) || \
     die "The src-dest-map must be a yaml file consisting only one top level key 'artifacts' of type list."
-  
+
   [[ $(yq '[.artifacts[] | select((has("local_abs_path_to_src") and has("dest_path_without_bucket")) | not)] | length') -eq 0 ]] || \
     die <(cat <<-EOF
 			All src-dest-map entries in the file must have both of the keys: 'local_abs_path_to_src' and 'dest_path_without_bucket'.
