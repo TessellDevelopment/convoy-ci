@@ -20,9 +20,9 @@ on:
         description: 'Release label for upload'
         required: true
         type: string
-      GENERATED_ARTIFACTS:
-        description: Stringified json containing value for field 'artifacts' in payload
-        default: ""
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
+        description: 'Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT'
+        default: "false"
         type: string
 
 jobs:
@@ -57,16 +57,24 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
+      - name: Download generated artifacts file
+        uses: actions/download-artifact@v4
+        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
+        with:
+          name: generated-artifacts
+          path: /tmp
+
       - name: POST API to Convoy
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
-          IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
-          GENERATED_ARTIFACTS: ${{inputs.GENERATED_ARTIFACTS}}
+          CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
+          IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}}
+          IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -76,6 +84,9 @@ jobs:
           TAG: "${{env.TAG}}"
           LABEL: "${{env.LABEL}}"
         run: |
+            set -a
+            [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
+            set +a
             python3 - <<EOF
             
             import requests
@@ -215,9 +226,10 @@ jobs:
               "artifactGenerated": IS_ANY_ARTIFACT_GENERATED == "true",
             }
 
-            if IS_ANY_ARTIFACT_GENERATED == 'true' 
-                if GENERATED_ARTIFACTS is not empty:
-                    payload["artifacts"] = json.loads(GENERATED_ARTIFACTS)
+            if IS_ANY_ARTIFACT_GENERATED == 'true':
+                generated_artifacts = os.environ.get('GENERATED_ARTIFACTS')
+                if generated_artifacts and generated_artifacts.strip():
+                    payload["artifacts"] = json.loads(generated_artifacts)
                 else:
                     generates = yaml_data.get('generates')
                     language = yaml_data.get('language')

@@ -145,7 +145,7 @@ jobs:
       ARTIFACT_CHECKSUMS: ${{needs.build.outputs.ARTIFACT_CHECKSUMS}}
       TAG: ${{needs.create-tag.outputs.tag}}
       LABEL: ${{needs.runner-check.outputs.label}}
-      GENERATED_ARTIFACTS: ${{needs.build.outputs.GENERATED_ARTIFACTS}}
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{needs.build.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}}
 
   sonar-scan:
     needs: post-build-to-convoy

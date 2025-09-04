@@ -28,6 +28,9 @@ on:
       BRANCH_COVERAGE:
         description: 'Branch coverage parameters of the repository'
         value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
+        description: Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT
+        value: ${{ (jobs.build-amd.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED) }}
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
         value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
@@ -498,7 +501,7 @@ jobs:
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
-      GENERATED_ARTIFACTS: ${{ steps.build.outputs.GENERATED_ARTIFACTS }}
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{ steps.build.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
       ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
@@ -521,10 +524,11 @@ jobs:
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DEV_BUILD: ${{inputs.dev_build}}
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GIT_BASE_REF: HEAD~1
+      GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
@@ -533,6 +537,7 @@ jobs:
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NAMESPACE: "convoy"
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -553,6 +558,7 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
+      RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -1054,7 +1060,8 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-          set -e; bash -c "$(yq '.ci.${CI_PHASE}.cmd // :' convoy.yaml)"; set +e
+          echo "Executing pre-merge command"
+          set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
           build "helmCharts"
@@ -1063,11 +1070,17 @@ jobs:
           parseAndPushCoverageReport
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
-          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || cat ${CONTENT_FOR_GITHUB_OUTPUT} >> $GITHUB_OUTPUT
-
+          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        name: Export content for github output as artifact
+        if: ${{ steps.build.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true'}}
+        with:
+          name: generated-artifacts
+          path: ${{env.CONTENT_FOR_GITHUB_OUTPUT}}
 
       - name: Cleanup
         if: always()
