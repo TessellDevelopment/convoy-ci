@@ -36,10 +36,10 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           sonar_scan
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: failure()
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+      # - name: Slack Notification
+      #   uses: act10ns/slack@v2.0.0
+      #   if: failure()
+      #   with:
+      #     status: ${{ job.status }}
+      #     steps: ${{ toJson(steps) }}
+      #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
