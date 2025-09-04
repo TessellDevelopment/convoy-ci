@@ -1072,7 +1072,7 @@ jobs:
           parseAndPushCoverageReport
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
-          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED="true"' >> $GITHUB_OUTPUT
+          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
@@ -1081,8 +1081,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         name: Export content for github output as artifact
-        if: ${{ env.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
-        # continue-on-error: true
+        if: ${{ vars.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
         with:
           name: generated-artifacts
           path: ${{env.CONTENT_FOR_GITHUB_OUTPUT}}
