@@ -22,8 +22,8 @@ on:
         type: string
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
         description: 'Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT'
-        default: false
-        type: boolean
+        default: "false"
+        type: string
 
 jobs:
   
@@ -59,7 +59,7 @@ jobs:
 
       - name: Download generated artifacts file
         uses: actions/download-artifact@v4
-        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED }}
+        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
         with:
           name: generated-artifacts
           path: /mnt
@@ -85,7 +85,7 @@ jobs:
           LABEL: "${{env.LABEL}}"
         run: |
             set -a
-            ${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED} && source ${CONTENT_FOR_GITHUB_OUTPUT}
+            [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
             set +a
             python3 - <<EOF
             
