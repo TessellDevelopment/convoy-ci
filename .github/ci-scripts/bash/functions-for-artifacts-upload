@@ -40,7 +40,7 @@ function upload_artifact() {
   fi
 
   for deployment_stage in dev qa stage prod; do
-    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-srtifacts-${deployment_stage}/${dest_path_without_bucket}
+    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_without_bucket}
   done
 }
 
