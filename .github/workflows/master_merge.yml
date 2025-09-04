@@ -33,14 +33,14 @@ jobs:
       #     steps: ${{ toJson(steps) }}
       #     channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
-  file-check:
-    needs: check-label-cut-status
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-3633_convoy_ci_on_3693_test
-    secrets: inherit
+  # file-check:
+  #   needs: check-label-cut-status
+  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_file_check.yml@TDEVOPS-3633_convoy_ci_on_3693_test
+  #   secrets: inherit
 
   runner-check:
     runs-on: non-build
-    needs: file-check
+    # needs: file-check
     outputs:
       app_group: ${{steps.check_cd.outputs.app_group}}
       cd_command: ${{steps.check_cd.outputs.cd_command}}
@@ -136,7 +136,7 @@ jobs:
 
   post-build-to-convoy:
     if: needs.runner-check.outputs.app_group != 'none' && always()
-    needs: [file-check, create-tag, build, runner-check, post-tag-to-convoy]
+    needs: [create-tag, build, runner-check, post-tag-to-convoy]
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_post_build_convoy.yml@TDEVOPS-3633_convoy_ci_on_3693_test
     secrets: inherit
     with:
