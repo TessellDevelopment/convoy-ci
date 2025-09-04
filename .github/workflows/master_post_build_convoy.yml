@@ -57,12 +57,12 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
-      # - name: Download generated artifacts file
-      #   uses: actions/download-artifact@v4
-      #   if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
-      #   with:
-      #     name: generated-artifacts
-      #     path: /mnt
+      - name: Download generated artifacts file
+        uses: actions/download-artifact@v4
+        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
+        with:
+          name: generated-artifacts
+          path: /mnt
 
       - name: POST API to Convoy
         env:
@@ -70,7 +70,7 @@ jobs:
           API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
-          CONTENT_FOR_GITHUB_OUTPUT: /mnt/content-for-github-output
+          CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
           IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}}
           IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
@@ -86,10 +86,10 @@ jobs:
           LABEL: "${{env.LABEL}}"
         run: |
             set -a
-            # [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
-            if [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]]; then
-              mc cp  minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID} ${CONTENT_FOR_GITHUB_OUTPUT}
-              source ${CONTENT_FOR_GITHUB_OUTPUT}
+            [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
+            # if [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]]; then
+            #   mc cp  minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID} ${CONTENT_FOR_GITHUB_OUTPUT}
+            #   source ${CONTENT_FOR_GITHUB_OUTPUT}
             fi
             set +a
             python3 - <<EOF
