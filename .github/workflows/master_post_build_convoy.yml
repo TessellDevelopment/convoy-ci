@@ -56,12 +56,12 @@ jobs:
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+
       - name: Download generated artifacts file
         uses: actions/download-artifact@v4
         with:
           name: generated-artifacts
-          path: .
-
+          path: /tmp/content-for-github-output
 
       - name: POST API to Convoy
         env:
@@ -69,6 +69,7 @@ jobs:
           API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
+          CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
           GENERATED_ARTIFACTS: ${{inputs.GENERATED_ARTIFACTS}}
           IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
@@ -83,7 +84,7 @@ jobs:
           LABEL: "${{env.LABEL}}"
         run: |
             set -a
-            source CONTENT_FOR_GITHUB_OUTPUT
+            source ${CONTENT_FOR_GITHUB_OUTPUT}
             set +a
             python3 - <<EOF
             
