@@ -1073,11 +1073,10 @@ jobs:
           parseAndPushCoverageReport
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
-          [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
-          if [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]]; then
+          # [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
+          if [[ -s ${CONTENT_FOR_GITHUB_OUTPUT} ]]; then
             echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
             mc cp ${CONTENT_FOR_GITHUB_OUTPUT} minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID}
-            # echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           fi
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT

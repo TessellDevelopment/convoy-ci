@@ -87,10 +87,8 @@ jobs:
         run: |
             set -a
             [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
-            if [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]]; then
-              # echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
+            if [[ -s ${CONTENT_FOR_GITHUB_OUTPUT} ]]; then
               mc cp  minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID} ${CONTENT_FOR_GITHUB_OUTPUT}
-              # echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
             fi
             set +a
             python3 - <<EOF
