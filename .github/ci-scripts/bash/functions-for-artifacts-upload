@@ -28,7 +28,7 @@ function upload_artifact() {
   local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3}
   validate_inputs "1 2" "$@"
 
-  upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
+  # upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
 
   local dest_path_prefix deployment_stage
   if [[ ${push_to} == convoy-minio ]]; then
