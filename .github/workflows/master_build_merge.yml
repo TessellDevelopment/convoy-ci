@@ -1081,7 +1081,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         name: Export content for github output as artifact
-        if: ${{ vars.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
+        if: ${{ steps.build.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true'}}
         with:
           name: generated-artifacts
           path: ${{env.CONTENT_FOR_GITHUB_OUTPUT}}
