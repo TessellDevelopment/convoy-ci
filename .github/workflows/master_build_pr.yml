@@ -744,7 +744,6 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          echo GIT_BASE_REF: ${GIT_BASE_REF}
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired

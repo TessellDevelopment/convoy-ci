@@ -229,7 +229,6 @@ jobs:
 
             if IS_ANY_ARTIFACT_GENERATED == 'true':
                 generated_artifacts = os.environ.get('GENERATED_ARTIFACTS')
-                print(f"Generated Artifacts: {generated_artifacts}")
                 if generated_artifacts and generated_artifacts.strip():
                     payload["artifacts"] = json.loads(generated_artifacts)
                 else:

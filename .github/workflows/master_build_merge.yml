@@ -537,7 +537,6 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
-      MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
       NAMESPACE: "convoy"
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
@@ -1057,7 +1056,6 @@ jobs:
             rm artifacts.txt
           }
           set +e
-          echo GIT_BASE_REF: ${GIT_BASE_REF}
           source ./ci-scripts/bash/functions-for-build
           ARTIFACT_CHECKSUMS=""
           BRANCH_COVERAGE=""
@@ -1074,15 +1072,9 @@ jobs:
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
           [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
-          # if [[ -s ${CONTENT_FOR_GITHUB_OUTPUT} ]]; then
-          #   echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
-          #   mc cp ${CONTENT_FOR_GITHUB_OUTPUT} minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID}
-          # fi
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
-          echo "GITHUB OUTPUT:"
-          cat $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v4
         name: Export content for github output as artifact
