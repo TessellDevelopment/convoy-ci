@@ -62,7 +62,7 @@ jobs:
         if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
         with:
           name: generated-artifacts
-          path: /mnt
+          path: /tmp
 
       - name: POST API to Convoy
         env:
