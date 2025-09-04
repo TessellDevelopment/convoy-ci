@@ -90,7 +90,7 @@ jobs:
             # if [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]]; then
             #   mc cp  minio_ci/argo-temporary-artifacts/content-for-github-output/${GITHUB_RUN_ID} ${CONTENT_FOR_GITHUB_OUTPUT}
             #   source ${CONTENT_FOR_GITHUB_OUTPUT}
-            fi
+            # fi
             set +a
             python3 - <<EOF
             
