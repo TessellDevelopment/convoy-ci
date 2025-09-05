@@ -29,7 +29,7 @@ on:
         description: 'Branch coverage parameters of the repository'
         value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
-        description: Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT
+        description: 'To determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated'
         value: ${{ (jobs.build-amd.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED) }}
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
@@ -1070,6 +1070,7 @@ jobs:
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value
           [[ ! -s ${CONTENT_FOR_GITHUB_OUTPUT} ]] || echo 'IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED=true' >> $GITHUB_OUTPUT
+
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT

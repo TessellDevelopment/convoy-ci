@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
-        description: 'Bool flag to determine whether github output is populated with CONTENT_FOR_GITHUB_OUTPUT'
+        description: 'To determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated'
         default: "false"
         type: string
 
@@ -85,8 +85,9 @@ jobs:
           LABEL: "${{env.LABEL}}"
         run: |
             set -a
-            [[ "${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}" == "true" ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
+            [[ ${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED} == true ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
             set +a
+
             python3 - <<EOF
             
             import requests
