@@ -392,7 +392,7 @@ get_commit_build_status() {
   commit_hash="${1}"
   base_branch="${2}"
   app_group=$(yq '.appGroup' convoy.yaml)
-  response=$(curl --write-out "\n%{http_code}" --location --request GET "${COMMIT_STATUS_API_URL}/apps/${app_group}/commits/${commit_hash}?baseBranch=${base_branch}" \
+  response=$(curl --write-out "\n%{http_code}" --location --request GET "${DEVOPS_GIT_METADATA_API_ENDPOINT}/apps/${app_group}/commits/${commit_hash}?baseBranch=${base_branch}" \
     --header 'Content-Type: application/json' \
     --header "x-api-key: ${CONVOY_API_KEY}" \
     --data '')
