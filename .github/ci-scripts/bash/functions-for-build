@@ -1419,7 +1419,7 @@ zip_build() {
   fi
   OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
   if [[ ${#dirs[@]} -eq 1 ]]; then
-    zip -r -j "${OUTPUT_ZIP}" "${dirs[0]}"/*
+    (cd "${dirs[0]}" && zip -r "${OUTPUT_ZIP}" .)
   else
     zip -r "${OUTPUT_ZIP}" "${dirs[@]}"
   fi
