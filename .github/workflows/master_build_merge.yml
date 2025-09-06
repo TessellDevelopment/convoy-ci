@@ -29,7 +29,7 @@ on:
         description: 'Branch coverage parameters of the repository'
         value: ${{ (jobs.build-ui.outputs.BRANCH_COVERAGE) || (jobs.build-amd.outputs.BRANCH_COVERAGE) || (jobs.build-ubuntu-latest.outputs.BRANCH_COVERAGE) || (jobs.build-arm.outputs.BRANCH_COVERAGE) }} 
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
-        description: 'To determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated'
+        description: Bool flag to determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated
         value: ${{ (jobs.build-amd.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED) }}
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'

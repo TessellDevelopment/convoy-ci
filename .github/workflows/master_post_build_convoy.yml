@@ -21,7 +21,7 @@ on:
         required: true
         type: string
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
-        description: 'To determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated'
+        description: Bool flag to determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated
         default: "false"
         type: string
 
