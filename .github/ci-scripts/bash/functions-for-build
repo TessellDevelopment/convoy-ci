@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source ./ci-scripts/bash/functions-for-artifacts-upload
 source ./ci-scripts/bash/functions-for-build-camel-case
 
 assert_base_branch_commit_success() {
@@ -391,7 +392,7 @@ get_commit_build_status() {
   commit_hash="${1}"
   base_branch="${2}"
   app_group=$(yq '.appGroup' convoy.yaml)
-  response=$(curl --write-out "\n%{http_code}" --location --request GET "${COMMIT_STATUS_API_URL}/app/${app_group}/commits/${commit_hash}/base-branch/${base_branch}" \
+  response=$(curl --write-out "\n%{http_code}" --location --request GET "${COMMIT_STATUS_API_URL}/apps/${app_group}/commits/${commit_hash}?baseBranch=${base_branch}" \
     --header 'Content-Type: application/json' \
     --header "x-api-key: ${CONVOY_API_KEY}" \
     --data '')
