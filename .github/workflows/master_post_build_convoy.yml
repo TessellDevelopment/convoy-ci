@@ -3,7 +3,7 @@ name: Build Status POST API to Convoy
 on:
   workflow_call:
     inputs:
-      ARTIFACT_GENERATED: 
+      IS_ANY_ARTIFACT_GENERATED: 
         description: 'Flag if any artifact was pushed during build'
         required: true
         default: "true"
@@ -20,7 +20,11 @@ on:
         description: 'Release label for upload'
         required: true
         type: string
-    
+      IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED:
+        description: Bool flag to determine whether the GitHub artifact CONTENT_FOR_GITHUB_OUTPUT has been populated
+        default: "false"
+        type: string
+
 jobs:
   
   post-build-status-to-convoy:
@@ -53,15 +57,24 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
 
+      - name: Download generated artifacts file
+        uses: actions/download-artifact@v4
+        if: ${{ inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED == 'true' }}
+        with:
+          name: generated-artifacts
+          path: /tmp
+
       - name: POST API to Convoy
         env:
           API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
           API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
-          ARTIFACT_GENERATED: ${{inputs.ARTIFACT_GENERATED}}
+          CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
           # HELM_CHART_FILES_MODIFIED: ${{steps.helm-files.outputs.any_modified}}
           COMMIT_HASH: "${{github.sha}}"
+          IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{inputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED}}
+          IS_ANY_ARTIFACT_GENERATED: ${{inputs.IS_ANY_ARTIFACT_GENERATED}}
           REPO: "${{github.event.pull_request.base.repo.name}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -71,6 +84,10 @@ jobs:
           TAG: "${{env.TAG}}"
           LABEL: "${{env.LABEL}}"
         run: |
+            set -a
+            [[ ${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED} == true ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
+            set +a
+
             python3 - <<EOF
             
             import requests
@@ -174,7 +191,7 @@ jobs:
             API_URL = os.environ.get('API_URL')
             API_KEY = os.environ.get('API_KEY')
             ARTIFACT_CHECKSUMS = os.environ.get('ARTIFACT_CHECKSUMS')
-            ARTIFACT_GENERATED = os.environ.get('ARTIFACT_GENERATED')
+            IS_ANY_ARTIFACT_GENERATED = os.environ.get('IS_ANY_ARTIFACT_GENERATED')
             # HELM_CHART_FILES_MODIFIED = os.environ.get('HELM_CHART_FILES_MODIFIED')
             REPO = os.environ.get('REPO')
             COMMIT_HASH = os.environ.get('COMMIT_HASH')
@@ -193,10 +210,10 @@ jobs:
               STATUS = 'SUCCESSFUL'
             if STATUS == 'FAILURE':
               STATUS = 'FAILED'
-              ARTIFACT_GENERATED = "false"
+              IS_ANY_ARTIFACT_GENERATED = "false"
 
             # if REPO.endswith("helm-svc-defns") and HELM_CHART_FILES_MODIFIED == 'false':
-            #   ARTIFACT_GENERATED = "false"
+            #   IS_ANY_ARTIFACT_GENERATED = "false"
 
             with open('convoy.yaml', 'r') as yaml_file:
               yaml_data = yaml.safe_load(yaml_file)
@@ -207,47 +224,51 @@ jobs:
               "commitHash": COMMIT_HASH[:7],
               "baseBranch": BASE_BRANCH,
               "buildStatus": STATUS,
-              "artifactGenerated": ARTIFACT_GENERATED == "true",
+              "artifactGenerated": IS_ANY_ARTIFACT_GENERATED == "true",
             }
 
-            if ARTIFACT_GENERATED == 'true':
-              generates = yaml_data.get('generates')
-              language = yaml_data.get('language')
-              if generates != None:
-                version = yaml_data.get('version')
-                if version == None:
-                  version = TAG
-                payload["artifacts"] = get_artifacts(generates, version)
-                if payload["artifacts"] == None:
-                  del payload["artifacts"]
-              elif language == 'terraform':
-                payload["artifacts"] = get_artifacts_tf()
-              elif generates == None:
-                print("No artifact generated in the repo.")
-              else:
-                print(f"Not able to build payload for API call. Please check convoy.yaml content")
-                exit(1)
-
-              if generates and "softwareImages" in generates:
-                payload, API_URL = get_software_def_url(payload, API_URL)
-            
-              if ARTIFACT_CHECKSUMS and payload.get("artifacts"):
-                checksum_map = {}
-                parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
-                for part in parts:
-                  if part:
-                    key, value = part.split(':')
-                    checksum_map[key] = value
-            
-                for artifact in payload["artifacts"]:
-                  key = artifact["name"]
-                  type = artifact["type"]
-                  if type == "artifacts":
-                    if key in checksum_map:
-                      artifact["checksum"] = checksum_map[key]
+            if IS_ANY_ARTIFACT_GENERATED == 'true':
+                generated_artifacts = os.environ.get('GENERATED_ARTIFACTS')
+                if generated_artifacts and generated_artifacts.strip():
+                    payload["artifacts"] = json.loads(generated_artifacts)
+                else:
+                    generates = yaml_data.get('generates')
+                    language = yaml_data.get('language')
+                    if generates != None:
+                      version = yaml_data.get('version')
+                      if version == None:
+                        version = TAG
+                      payload["artifacts"] = get_artifacts(generates, version)
+                      if payload["artifacts"] == None:
+                        del payload["artifacts"]
+                    elif language == 'terraform':
+                      payload["artifacts"] = get_artifacts_tf()
+                    elif generates == None:
+                      print("No artifact generated in the repo.")
                     else:
-                      print(f"Checksum not found for artifact: {key}")
+                      print(f"Not able to build payload for API call. Please check convoy.yaml content")
                       exit(1)
+
+                    if generates and "softwareImages" in generates:
+                      payload, API_URL = get_software_def_url(payload, API_URL)
+                  
+                    if ARTIFACT_CHECKSUMS and payload.get("artifacts"):
+                      checksum_map = {}
+                      parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
+                      for part in parts:
+                        if part:
+                          key, value = part.split(':')
+                          checksum_map[key] = value
+                  
+                      for artifact in payload["artifacts"]:
+                        key = artifact["name"]
+                        type = artifact["type"]
+                        if type == "artifacts":
+                          if key in checksum_map:
+                            artifact["checksum"] = checksum_map[key]
+                          else:
+                            print(f"Checksum not found for artifact: {key}")
+                            exit(1)
 
             print(json.dumps(payload, indent=4))
             post_request(payload)
