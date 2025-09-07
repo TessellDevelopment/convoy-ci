@@ -1433,7 +1433,6 @@ zip_build_and_push() {
   ARTIFACT=${1}
   EXTENSION=${2}
   generate_checksum "${ARTIFACT}.${EXTENSION}"
-  push_release_manifest_artifacts
   set +e
 }
 
@@ -1465,6 +1464,5 @@ zip_file_and_push() {
       push_release_manifest_artifacts
     fi
   fi
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e  
 }
