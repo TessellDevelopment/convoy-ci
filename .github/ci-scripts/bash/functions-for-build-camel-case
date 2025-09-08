@@ -352,6 +352,14 @@ yarnBuildAndPush() {
   yarn_build_and_push "$@"
 }
 
+zipBuild() {
+  zip_build "$@"
+}
+
+zipBuildAndPush() {
+  zip_build_and_push "$@"
+}
+
 zipDirectory() {
   zip_directory "$@"
 }
