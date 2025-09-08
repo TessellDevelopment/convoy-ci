@@ -981,7 +981,7 @@ push_release_manifest_artifacts() {
     if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
       generate_checksum "${source_file_name}"
     else
-      generate_checksum "${ARTIFACT}" "${ARTIFACT_FILE_NAME}"
+      generate_checksum "${ARTIFACT}" "${source_file_name}"
     fi
   fi
 }
