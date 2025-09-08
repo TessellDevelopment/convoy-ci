@@ -151,7 +151,7 @@ configure_and_push_aws() {
   DESTINATION=${4}
   generate_sts_session_token ${BUCKET_ACCOUNT}
   aws s3 cp "${SOURCE}" "${DESTINATION}"
-  [[ ${DONT_UNSET} == true ]] || unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 convoy_codegen_build() {
@@ -998,7 +998,8 @@ push_terraform_modules() {
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
     # fi
     # Push tf-modules to tessell-artifacts-* common-infra
-    DONT_UNSET=true configure_and_push_aws ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${TESSELL_ARTIFACTS_DEV_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+    generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
+    aws s3 cp ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
     aws s3 cp ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
     aws s3 cp ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
     aws s3 cp ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
