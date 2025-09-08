@@ -958,25 +958,25 @@ provider_build_and_push() {
 }
 
 push_artifact_to_tessell_artifact_buckets() {
-  local ACCOUNT=${1}
-  local ARTIFACT_FILE_PATH=${2}
-  generate_sts_session_token ${ACCOUNT}
-  for BUCKET in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
-    aws s3 cp ${ARTIFACT_FILE_PATH} s3://${BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+  local account=${1} artifact_file_path=${2} dest_path=${3} bucket
+  generate_sts_session_token ${account}
+  for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
+    aws s3 cp ${artifact_file_path} s3://${bucket}/${dest_path}
   done
 }
 
 push_release_manifest_artifacts() {
   local ARTIFACT_FILE_NAME=${1:-"${ARTIFACT}.${EXTENSION}"}
   local ARTIFACT_FILE_PATH=${2:-"${ARTIFACT}.${EXTENSION}"}
+  local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   if ! ${DEV_BUILD}; then
     aws_configure_prod_assets
-    aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+    aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${dest_path}
     push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE_PATH}
-    push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${dest_path}"
     for ENV in "${environments[@]}"
     do
-      push_to_minio "${ARTIFACT_FILE_PATH}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      push_to_minio "${ARTIFACT_FILE_PATH}" "minio_ci/tessell-artifacts-${ENV}/${dest_path}"
     done
     if [[ ${ARTIFACT_FILE_NAME} == "${ARTIFACT}.${EXTENSION}" ]]; then
       generate_checksum "${ARTIFACT_FILE_NAME}"
