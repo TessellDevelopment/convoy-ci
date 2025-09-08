@@ -997,7 +997,9 @@ push_terraform_modules() {
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
     # fi
+
     push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE}
+    
     for ENV in "${environments[@]}"
     do
       push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
