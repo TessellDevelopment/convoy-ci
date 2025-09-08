@@ -958,10 +958,10 @@ provider_build_and_push() {
 }
 
 push_artifact_to_tessell_artifact_buckets() {
-  local account=${1} artifact_file_path=${2} artifact_dest_path=${3} bucket
+  local account=${1} artifact_src_path=${2} artifact_dest_path=${3} bucket
   generate_sts_session_token ${account}
   for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
-    aws s3 cp ${artifact_file_path} s3://${bucket}/${artifact_dest_path}
+    aws s3 cp ${artifact_src_path} s3://${bucket}/${artifact_dest_path}
   done
 }
 
