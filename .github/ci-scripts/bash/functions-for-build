@@ -987,26 +987,27 @@ push_release_manifest_artifacts() {
 }
 
 push_terraform_modules() {
+  local artifact_dest_path=${LABEL}/${DIR}/${DIR}-${VERSION}.zip
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-    push_to_gcloud "$ARTIFACT_FILE" "gs://tessellgcp-artifacts/${LABEL}/$DIR/$DIR-$VERSION.zip"
+    push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
-    push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-    aws_configure_prod_assets
-    aws s3 cp "${ARTIFACT_FILE}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+    push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${artifact_dest_path}"
 
     # if ! git tag | grep -qE '^0\.131\.[0-9]+$'; then
     mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
     aws_configure_devqa_infra
     aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} "${ARTIFACT_FILE}" "s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${artifact_dest_path}
     # fi
+
+    push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE} ${artifact_dest_path}
     
     for ENV in "${environments[@]}"
     do
-      push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${DIR}/${DIR}-${VERSION}.zip"
+      push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
     done
   fi
 }
