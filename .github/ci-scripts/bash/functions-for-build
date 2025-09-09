@@ -963,6 +963,7 @@ push_artifact_to_tessell_artifact_buckets() {
   for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
     aws s3 cp ${artifact_src_path} s3://${bucket}/${artifact_dest_path}
   done
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 push_release_manifest_artifacts() {
@@ -1243,6 +1244,7 @@ terraform_apply() {
   terraform init
   terraform plan
   cd ..
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   set +e
 }
 
