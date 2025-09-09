@@ -74,7 +74,7 @@ jobs:
           echo "$URL"
           RESPONSE=$(curl -f --location "$URL" --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}")
           echo "$RESPONSE"
-          SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.softwareImages.software_image_manifest.tag' )
+          SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$(echo "$RESPONSE" | jq -r '.artifacts."software-image-manifest".tag' )
           echo "$SOFTWARE_IMAGE_BASE_LATEST_RELEASE"
           echo "SOFTWARE_IMAGE_BASE_LATEST_RELEASE=$SOFTWARE_IMAGE_BASE_LATEST_RELEASE" >> $GITHUB_ENV
 
@@ -136,7 +136,7 @@ jobs:
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |          
-          mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/software_image_manifest/software_image_manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software_image_manifest.json
+          mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/software-image-manifest/software-image-manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software-image-manifest.json
 
 
       - name: Set Pull repository
@@ -246,7 +246,7 @@ jobs:
           }
 
           src_file="./output.json"
-          dest_path="tessell-artifacts-devtest/software_image_manifest/software_image_manifest-${{github.ref_name}}.json"
+          dest_path="tessell-artifacts-devtest/software-image-manifest/software-image-manifest-${{github.ref_name}}.json"
 
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file $src_file \
