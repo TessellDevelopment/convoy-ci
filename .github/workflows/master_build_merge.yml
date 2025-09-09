@@ -400,8 +400,8 @@ jobs:
             elasticTarBuild
             FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
             FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
+            # mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
+            # mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
             awsConfigureProdAssets
             EXTENSION="tar.gz"
             ARTIFACT="filebeat-linux"
