@@ -957,25 +957,31 @@ provider_build_and_push() {
   set +e
 }
 
+push_artifact_to_tessell_artifact_buckets() {
+  local account=${1} artifact_src_path=${2} artifact_dest_path=${3} bucket
+  generate_sts_session_token ${account}
+  for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
+    aws s3 cp ${artifact_src_path} s3://${bucket}/${artifact_dest_path}
+  done
+}
+
 push_release_manifest_artifacts() {
-  local ARTIFACT_FILE_NAME=${1:-"${ARTIFACT}.${EXTENSION}"}
-  local ARTIFACT_FILE_PATH=${2:-"${ARTIFACT}.${EXTENSION}"}
+  local source_file_name=${1:-"${ARTIFACT}.${EXTENSION}"}
+  local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
+  local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   if ! ${DEV_BUILD}; then
     aws_configure_prod_assets
-    aws s3 cp "${ARTIFACT_FILE_PATH}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
-    # configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_DEV_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    # configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_QA_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_QA_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    # configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_STAGE_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_STAGE_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    # configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_PROD_S3} "${ARTIFACT_FILE_PATH}" "s3://${TESSELL_ARTIFACTS_PROD_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-    push_to_nexus "${ARTIFACT_FILE_PATH}" "${NEXUS_ARTIFACT_REPO}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    aws s3 cp "${source_file_path}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
+    push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
+    push_to_nexus "${source_file_path}" "${NEXUS_ARTIFACT_REPO}/${artifact_dest_path}"
     for ENV in "${environments[@]}"
     do
-      push_to_minio "${ARTIFACT_FILE_PATH}" "minio_ci/tessell-artifacts-${ENV}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+      push_to_minio "${source_file_path}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
     done
-    if [[ ${ARTIFACT_FILE_NAME} == "${ARTIFACT}.${EXTENSION}" ]]; then
-      generate_checksum "${ARTIFACT_FILE_NAME}"
+    if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
+      generate_checksum "${source_file_name}"
     else
-      generate_checksum "${ARTIFACT}" "${ARTIFACT_FILE_NAME}"
+      generate_checksum "${ARTIFACT}" "${source_file_name}"
     fi
   fi
 }
@@ -1404,6 +1410,41 @@ yarn_build_and_push() {
   set +e
 }
 
+# Usage:
+# generates:
+#   - buildFunction: zip
+#     zipDirectory: tessell-hcp-setup (To have contents of this directory at root of zip)
+#     zipDirectory: [tessell-hcp-setup, tessell/worker] (To have these two directories at root of zip, `tessell/worker` path would be preserved in zip)
+zip_build() {
+  set -e
+  ARTIFACT="${1}"
+  zip_dirs=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .zipDirectory" convoy.yaml)
+  if [[ -z ${zip_dirs} || ${zip_dirs} == "null" ]]; then
+    echo "❌ No zipDirectory found for artifact: ${ARTIFACT}"
+    exit 1
+  fi
+  dirs=("${zip_dirs}")
+  if [[ "${zip_dirs}" =~ ^\[ ]]; then
+    mapfile -t dirs < <(echo "${zip_dirs}" | yq -r '.[]')
+  fi
+  OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
+  if [[ ${#dirs[@]} -eq 1 ]]; then
+    (cd "${dirs[0]}" && zip -r "${OUTPUT_ZIP}" .)
+  else
+    zip -r "${OUTPUT_ZIP}" "${dirs[@]}"
+  fi
+  set +e
+}
+
+zip_build_and_push() {
+  zip_build "$@"
+  set -e
+  ARTIFACT=${1}
+  EXTENSION=${2}
+  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  set +e
+}
+
 zip_directory() {
   DIR="${1}"
   ARTIFACT_FILE="${2}"
@@ -1421,8 +1462,8 @@ zip_file() {
 }
 
 zip_file_and_push() {
-  set -e
   zip_file "$@"
+  set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
   if ! ${DEV_BUILD}; then
