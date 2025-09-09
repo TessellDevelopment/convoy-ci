@@ -1441,7 +1441,7 @@ zip_build_and_push() {
   set -e
   ARTIFACT=${1}
   EXTENSION=${2}
-  generate_checksum "${ARTIFACT}.${EXTENSION}"
+  push_release_manifest_artifacts
   set +e
 }
 
