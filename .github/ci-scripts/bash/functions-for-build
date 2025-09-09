@@ -992,8 +992,6 @@ push_terraform_modules() {
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
     push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${artifact_dest_path}"
-    aws_configure_prod_assets
-    aws s3 cp ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
 
     # if ! git tag | grep -qE '^0\.131\.[0-9]+$'; then
     mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
