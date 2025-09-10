@@ -30,9 +30,14 @@ function upload_artifact() {
   validate_inputs "1 2" "$@"
 
   log "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
-  upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
 
   local dest_path_prefix deployment_stage
+  local deployment_stages=( dev qa stage prod )
+
+  ${DEV_BUILD:-false} \
+    && deployment_stages=( devtest ) \
+    || upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
+
   if [[ ${push_to} == convoy-minio ]]; then
     local cp_cmd='mc cp'
     dest_path_prefix=${MC_ALIAS_FOR_CONVOY_MINIO}/
@@ -41,7 +46,7 @@ function upload_artifact() {
     dest_path_prefix=s3://
   fi
 
-  for deployment_stage in dev qa stage prod; do
+  for deployment_stage in ${deployment_stages[@]}; do
     log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_without_bucket}'"
     ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_without_bucket}
   done
