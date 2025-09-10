@@ -1067,7 +1067,6 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
-          build "softwareImages"
           parseAndPushCoverageReport
 
           # the file CONTENT_FOR_GITHUB_OUTPUT may contain GENERATED_ARTIFACTS with a stringified json as its value

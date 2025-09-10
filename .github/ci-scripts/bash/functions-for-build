@@ -451,9 +451,9 @@ get_release_branch() {
 
 get_previous_commited_software_manifest() {
   get_release_branch "${COMMIT_TAG}"
-  minio_path="${REL_TAG}/software_image_manifest/software_image_manifest-${COMMIT_TAG}.json"
+  minio_path="${REL_TAG}/software-image-manifest/software-image-manifest-${COMMIT_TAG}.json"
   echo "starting previous manifest download ${minio_path}"
-  download_path="${WORKDIR}/software_image_manifest.json"
+  download_path="${WORKDIR}/software-image-manifest.json"
   mc cp "minio_ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
 }
 
