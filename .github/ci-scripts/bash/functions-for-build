@@ -1173,6 +1173,7 @@ software_def_build() {
   fi
   # validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
   # build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
+  set +e
 }
 
 software_def_build_and_push() {
@@ -1199,6 +1200,7 @@ software_def_build_and_push() {
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  set +e
 }
 
 sonar_scan() {
