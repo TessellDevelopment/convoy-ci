@@ -755,9 +755,13 @@ jobs:
           configureGoVersionIfRequired
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
+          echo "artifacts done"
           build "dockerImages"
+          echo "docker images done"
           build "helmCharts"
+          echo "helm charts done"
           build "terraform"
+          echo "terraform done"
           echo "then what"
           parseCoverageReport
 
