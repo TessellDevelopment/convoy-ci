@@ -688,10 +688,12 @@ jobs:
           }
           build() {
             type="$1"
-            check=$(grep "$type" convoy.yaml)
+            check=$(yq ".generates.${type} // \"\"" convoy.yaml)
             if [[ -z "$check" ]]; then
+              echo "Skipping build for ${type}"
               return
             fi
+            echo "Building ${type}"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version // ""' convoy.yaml)
             language=$(yq '.language // ""' convoy.yaml)
