@@ -1168,13 +1168,13 @@ software_def_build() {
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
       echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
-      # set +e
+      set +e
       return
     fi
   fi
   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
   build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
-  # set +e
+  set +e
 }
 
 software_def_build_and_push() {
