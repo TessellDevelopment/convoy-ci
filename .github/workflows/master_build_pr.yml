@@ -741,7 +741,12 @@ jobs:
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
+              echo "it's done"
+              ls
             done
+            echo "now it's done"
+            pwd
+            ls
             rm artifacts.txt
           }
           set +e
@@ -753,6 +758,7 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           build "terraform"
+          echo "then what"
           parseCoverageReport
 
       - name: Cleanup
