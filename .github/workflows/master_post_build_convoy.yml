@@ -66,8 +66,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
@@ -147,6 +147,8 @@ jobs:
                   element["releaseManifestKey"] = object["releaseManifestKey"]
                   element["name"] = object["name"]
                   element["version"] = version
+                  if object.get("consumes"):
+                    element["consumes"] = object["consumes"]
                   try:
                     element["extension"] = f".{object['extension']}" if 'extension' in object and object['extension'] else ""
                   except:
