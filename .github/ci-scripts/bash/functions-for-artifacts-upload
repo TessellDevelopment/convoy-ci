@@ -46,9 +46,11 @@ function upload_artifact() {
     dest_path_prefix=s3://
   fi
 
+  local dest_path_suffix=$(echo ${dest_path_without_bucket} | sed 's|^s3://tessell-artifacts-devtest/||')
+
   for deployment_stage in ${deployment_stages[@]}; do
-    log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_without_bucket}'"
-    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_without_bucket}
+    log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}'"
+    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}
   done
 }
 
@@ -61,9 +63,9 @@ function upload_artifacts_using_src_dest_map() {
   $(yq 'has("artifacts") and .artifacts | type == "!!seq"' ${map}) || \
     die "The src-dest-map must be a yaml file consisting only one top level key 'artifacts' of type list."
 
-  [[ $(yq '[.artifacts[] | select((has("local_abs_path_to_src") and has("dest_path_without_bucket")) | not)] | length') -eq 0 ]] || \
+  [[ $(yq '[.artifacts[] | select((has("localAbsPathToSrc") and has("destPathWithoutBucket")) | not)] | length') -eq 0 ]] || \
     die <(cat <<-EOF
-			All src-dest-map entries in the file must have both of the keys: 'local_abs_path_to_src' and 'dest_path_without_bucket'.
+			All src-dest-map entries in the file must have both of the keys: 'localAbsPathToSrc' and 'destPathWithoutBucket'.
 			One or more entries in the current file is missing at least one of the required keys.
 			EOF
     )
@@ -71,16 +73,16 @@ function upload_artifacts_using_src_dest_map() {
   readarray artifacts < <(yq -o=j -I=0 '.artifacts[]' ${map})
 
   for artifact in "${artifacts[@]}"; do
-    [[ -f $(echo ${artifact} | yq '.local_abs_path_to_src') ]] || \
-      die "One or more local paths provided with 'local_abs_path_to_src' does not exist in the local file system."
+    [[ -f $(echo ${artifact} | yq '.localAbsPathToSrc') ]] || \
+      die "One or more local paths provided with 'localAbsPathToSrc' does not exist in the local file system."
   done
 
   log "Validation of src-dest-map for artifacts upload completed. Proceeding with uploads..."
 
   for artifact in "${artifacts[@]}"; do
-    local_abs_path_to_src=$(echo ${artifact} | yq '.local_abs_path_to_src')
-    dest_path_without_bucket=$(echo ${artifact} | yq '.dest_path_without_bucket')
-    push_to=$(echo ${artifact} | yq '.push_to')
+    local_abs_path_to_src=$(echo ${artifact} | yq '.localAbsPathToSrc')
+    dest_path_without_bucket=$(echo ${artifact} | yq '.destPathWithoutBucket')
+    push_to=$(echo ${artifact} | yq '.pushTo')
 
     upload_artifact ${local_abs_path_to_src} ${dest_path_without_bucket} ${push_to}
   done
