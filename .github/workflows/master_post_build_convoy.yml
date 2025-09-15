@@ -147,6 +147,8 @@ jobs:
                   element["releaseManifestKey"] = object["releaseManifestKey"]
                   element["name"] = object["name"]
                   element["version"] = version
+                  if object.get("consumes"):
+                    element["consumes"] = object["consumes"]
                   try:
                     element["extension"] = f".{object['extension']}" if 'extension' in object and object['extension'] else ""
                   except:
