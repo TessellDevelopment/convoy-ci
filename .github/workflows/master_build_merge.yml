@@ -728,7 +728,7 @@ jobs:
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             ls -Rlrta
-            mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
+            mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             awsConfigureProdAssets
             push_release_manifest_artifacts
             set +e
