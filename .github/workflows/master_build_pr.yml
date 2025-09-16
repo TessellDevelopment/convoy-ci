@@ -435,11 +435,16 @@ jobs:
           dbPluginBuild() {
             set -e
             ARTIFACT="$1"
+            sourceArtifactDir="$2"   # optional
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPackagePlugin
+            # Export so next step can pick it up if passed
+            if [ -n "$sourceArtifactDir" ]; then
+                export SOURCE_ARTIFACT_DIR="$sourceArtifactDir"
+            fi
             set +e
           }
           functionBuild() {
