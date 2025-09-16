@@ -995,6 +995,8 @@ push_release_manifest_artifacts() {
 
 push_terraform_modules() {
   local artifact_dest_path=${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+  local release=$(echo ${LABEL} | cut -d'.' -f2)
+
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
@@ -1011,11 +1013,12 @@ push_terraform_modules() {
     # fi
 
     push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE} ${artifact_dest_path}
-    
-    for ENV in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
-    done
+    if [[ ${release} -le 134 ]]; then
+      for ENV in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
+      done
+    fi
   fi
 }
 
