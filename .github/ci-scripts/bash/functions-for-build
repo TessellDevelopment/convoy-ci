@@ -745,7 +745,7 @@ mvnw_build() {
   ARTIFACT="$1"
   BUILDER_IMAGE_OPTION=""
 
-  # Only append if defined
+  # Only append if defined in repo's convoy.yaml
   if [ -n "${builderImage}" ]; then
     BUILDER_IMAGE_OPTION="-Dquarkus.native.builder-image=${builderImage}"
   fi
