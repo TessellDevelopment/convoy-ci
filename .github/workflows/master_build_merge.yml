@@ -524,7 +524,6 @@ jobs:
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DEV_BUILD: ${{inputs.dev_build}}
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
@@ -794,7 +793,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             cd scripts
             if ${DEV_BUILD}; then
-              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
+              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${LABEL}"
             else
               ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
@@ -810,7 +809,7 @@ jobs:
             cloneHelmTemplate
             echo "Running package and push"
             if ${DEV_BUILD}; then
-              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
+              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${LABEL}"
             else
               ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi

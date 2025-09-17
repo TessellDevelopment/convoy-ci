@@ -19,9 +19,11 @@
         - name: Get Label
           id: get-label
           shell: bash
+          env: 
+            GIT_REF: ${{ github.ref_name }}
           run: |
             if [ -f convoy.yaml ]; then
-              if [[ "${{ github.ref_name}}" == "main" ]]; then
+              if [[ ${GIT_REF} == main ]]; then
                 APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
                 if [[ ${APP_GROUP} == none ]]; then
                   exit 0
@@ -39,7 +41,7 @@
                   exit 1 
                 fi
               else
-                echo "LABEL=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+                echo "LABEL=$(echo ${GIT_REF} | tr '_/' '-')" >> $GITHUB_OUTPUT
               fi
             else
               echo "convoy.yaml not found"
