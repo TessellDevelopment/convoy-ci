@@ -742,8 +742,18 @@ mvn_deploy() {
 
 mvnw_build() {
   set -e
-  ./mvnw install -Dnative -DskipTests -Dquarkus.native.remote-container-build=true
-  set +e
+  ARTIFACT="$1"
+  BUILDER_IMAGE_OPTION=""
+
+  # Only append if defined
+  if [ -n "${builderImage}" ]; then
+    BUILDER_IMAGE_OPTION="-Dquarkus.native.builder-image=${builderImage}"
+  fi
+
+  ./mvnw clean install -Dnative \
+    -DskipTests \
+    -Dquarkus.native.container-build=true \
+    $BUILDER_IMAGE_OPTION
 }
 
 mvnw_build_and_push() {
