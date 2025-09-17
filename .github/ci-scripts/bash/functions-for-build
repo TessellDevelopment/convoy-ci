@@ -65,7 +65,11 @@ build_convoy_tessell_client_and_push() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
-  ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+  if ! ${DEV_BUILD}; then
+    ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+  else
+    ./setup --client --version ${LATEST_TAG} --upload-to-nexus
+  fi
 }
 
 build_convoy_tessell_image() {
@@ -81,7 +85,7 @@ build_convoy_tessell_image_and_push() {
   validate_inputs "${required_inputs}" "$@"
   IMAGE="${1}"
   build_convoy_tessell_image  "$@"
-  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+  docker_tag_and_push "${IMAGE}" "${LATEST_TAG}"
 }
 
 check_convoy_yaml() {
@@ -252,11 +256,6 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-  if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
-    REL_TAG=${TAG%.*}.0  
-    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-  fi  
 }
 
 download_binary_from_source() {
@@ -340,7 +339,6 @@ frp_build_and_push() {
   frp_build
   set -e
   EXTENSION="${2}"
-  aws_configure_prod_assets
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
     ARTIFACT="tessell-frpc-${OS}"
@@ -966,6 +964,13 @@ push_artifact_to_tessell_artifact_buckets() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
+push_artifact_to_tessell_artifact_devtest() {
+  local account=${1} artifact_src_path=${2} artifact_dest_path=${3}
+  generate_sts_session_token ${account}
+  aws s3 cp ${source_file_path} s3://${TESSELL_ARTIFACTS_DEVTEST_S3}/${artifact_dest_path}
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+}
+
 push_release_manifest_artifacts() {
   local source_file_name=${1:-"${ARTIFACT}.${EXTENSION}"}
   local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
@@ -990,6 +995,8 @@ push_release_manifest_artifacts() {
     else
       generate_checksum "${ARTIFACT}" "${source_file_name}"
     fi
+  else
+    push_artifact_to_tessell_artifact_devtest ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
   fi
 }
 
@@ -1245,14 +1252,16 @@ tailscale_build_and_push() {
   go install tailscale.com/cmd/gitops-pusher@latest
   export TS_API_KEY=${TS_API_KEY}
   export TS_TAILNET=${TS_TAILNET}
-  gitops-pusher --policy-file ./policy.hujson apply
+  if ! ${DEV_BUILD}; then
+    gitops-pusher --policy-file ./policy.hujson apply
+  fi
   set +e
 }
 
 terraform_apply() {
   set -e
   cd terraform
-  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
   terraform init
   terraform plan
   cd ..
@@ -1263,9 +1272,11 @@ terraform_apply() {
 terraform_apply_and_push() {
   set -e
   terraform_apply
-  cd terraform
-  terraform apply -auto-approve
-  cd ..
+  if ! ${DEV_BUILD}; then
+    cd terraform
+    terraform apply -auto-approve
+    cd ..
+  fi
   set +e
 }
 
