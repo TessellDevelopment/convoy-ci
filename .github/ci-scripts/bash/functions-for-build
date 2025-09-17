@@ -964,7 +964,7 @@ push_artifact_to_tessell_artifact_buckets() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
-push_artifact_to_tessell_artifact_devtest() {
+push_artifact_to_tessell_artifacts_devtest_bucket() {
   local account=${1} artifact_src_path=${2} artifact_dest_path=${3}
   generate_sts_session_token ${account}
   aws s3 cp ${source_file_path} s3://${TESSELL_ARTIFACTS_DEVTEST_S3}/${artifact_dest_path}
@@ -996,7 +996,7 @@ push_release_manifest_artifacts() {
       generate_checksum "${ARTIFACT}" "${source_file_name}"
     fi
   else
-    push_artifact_to_tessell_artifact_devtest ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
+    push_artifact_to_tessell_artifacts_devtest_bucket ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
   fi
 }
 
