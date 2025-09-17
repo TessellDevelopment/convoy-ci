@@ -742,18 +742,11 @@ mvn_deploy() {
 
 mvnw_build() {
   set -e
-  ARTIFACT="$1"
-  BUILDER_IMAGE_OPTION=""
-
-  # Only append if defined in repo's convoy.yaml
-  if [ -n "${builderImage}" ]; then
-    BUILDER_IMAGE_OPTION="-Dquarkus.native.builder-image=${builderImage}"
-  fi
-
   ./mvnw clean install -Dnative \
-    -DskipTests \
-    -Dquarkus.native.container-build=true \
-    $BUILDER_IMAGE_OPTION
+  -DskipTests \
+  -Dquarkus.native.container-build=true \
+  -Dquarkus.native.builder-image=quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.1-java21
+  set +e
 }
 
 mvnw_build_and_push() {
