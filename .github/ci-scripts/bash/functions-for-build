@@ -955,21 +955,24 @@ provider_build_and_push() {
   set +e
 }
 
-push_artifact_to_tessell_artifact_buckets() {
-  local account=${1} artifact_src_path=${2} artifact_dest_path=${3} bucket
-  generate_sts_session_token ${account}
-  for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
+push_artifact_to_tessell_artifacts_buckets() {
+  local account=${1} artifact_src_path=${2} artifact_dest_path=${3}
+  local buckets=(
+      ${TESSELL_ARTIFACTS_DEV_S3}
+      ${TESSELL_ARTIFACTS_QA_S3}
+      ${TESSELL_ARTIFACTS_STAGE_S3}
+      ${TESSELL_ARTIFACTS_PROD_S3}
+    )
+  generate_sts_session_token "${account}"
+  if ${DEV_BUILD}; then
+    buckets=(${TESSELL_ARTIFACTS_DEVTEST_S3})
+  fi
+  for bucket in ${buckets[@]}; do
     aws s3 cp ${artifact_src_path} s3://${bucket}/${artifact_dest_path}
   done
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
-push_artifact_to_tessell_artifacts_devtest_bucket() {
-  local account=${1} artifact_src_path=${2} artifact_dest_path=${3}
-  generate_sts_session_token ${account}
-  aws s3 cp ${source_file_path} s3://${TESSELL_ARTIFACTS_DEVTEST_S3}/${artifact_dest_path}
-  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-}
 
 push_release_manifest_artifacts() {
   local source_file_name=${1:-"${ARTIFACT}.${EXTENSION}"}
@@ -981,7 +984,7 @@ push_release_manifest_artifacts() {
   if ! ${DEV_BUILD}; then
     aws_configure_prod_assets
     aws s3 cp "${source_file_path}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
-    push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
+    push_artifact_to_tessell_artifacts_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
     push_to_nexus "${source_file_path}" "${NEXUS_ARTIFACT_REPO}/${artifact_dest_path}"
 
     if [[ ${push_to} == convoy-minio || ${release} -le 134 ]]; then
@@ -996,7 +999,7 @@ push_release_manifest_artifacts() {
       generate_checksum "${ARTIFACT}" "${source_file_name}"
     fi
   else
-    push_artifact_to_tessell_artifacts_devtest_bucket ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
+    push_artifact_to_tessell_artifacts_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
   fi
 }
 
@@ -1019,7 +1022,7 @@ push_terraform_modules() {
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${artifact_dest_path}
     # fi
 
-    push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE} ${artifact_dest_path}
+    push_artifact_to_tessell_artifacts_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE} ${artifact_dest_path}
     if [[ ${release} -le 134 ]]; then
       for ENV in "${environments[@]}"
       do
