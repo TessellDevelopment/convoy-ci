@@ -220,6 +220,14 @@ opsUIBuildAndPush() {
   ops_ui_build_and_push "$@"
 }
 
+packerBuild() {
+  packer_build "$@"
+}
+
+packerBuildAndPush() {
+  packer_build_and_push "$@"
+}
+
 parseCoverageReport() {
   parse_coverage_report "$@"
 }
