@@ -965,7 +965,7 @@ push_release_manifest_artifacts() {
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
 
   if ! ${DEV_BUILD}; then
-    aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
+    aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path}
     
     if [[ ${push_to} == convoy-minio || ${release} -le 134 ]]; then
       for ENV in "${environments[@]}"
