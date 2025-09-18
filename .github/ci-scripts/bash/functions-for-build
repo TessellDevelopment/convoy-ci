@@ -20,6 +20,7 @@ assert_root_pr_commit_success() {
     exit 1
   fi
 }
+
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
   aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
@@ -716,7 +717,6 @@ make_service_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  aws_configure_prod_assets
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
   push_release_manifest_artifacts
   set +e
@@ -966,6 +966,7 @@ push_release_manifest_artifacts() {
 
   if ! ${DEV_BUILD}; then
     aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
+    
     if [[ ${push_to} == convoy-minio || ${release} -le 134 ]]; then
       for ENV in "${environments[@]}"
       do
@@ -989,10 +990,10 @@ push_terraform_modules() {
   else
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
 
     if [[ ${release} -le 134 ]]; then
       for ENV in "${environments[@]}"

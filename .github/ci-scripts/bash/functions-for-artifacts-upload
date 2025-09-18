@@ -29,6 +29,7 @@ function upload_artifact() {
   local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3}
   validate_inputs "1 2" "$@"
 
+  ensure_accessability_to_upload_locations
   log "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
 
   local dest_path_prefix deployment_stage
@@ -52,6 +53,7 @@ function upload_artifact() {
     log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}'"
     ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}
   done
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 
