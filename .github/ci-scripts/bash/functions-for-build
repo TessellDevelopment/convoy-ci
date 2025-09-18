@@ -66,11 +66,7 @@ build_convoy_tessell_client_and_push() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
-  if ! ${DEV_BUILD}; then
-    ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
-  else
-    ./setup --client --version ${LATEST_TAG} --upload-to-nexus
-  fi
+  ./setup --client --version ${LATEST_TAG} --upload-to-nexus $(${DEV_BUILD} || echo "--prod")
 }
 
 build_convoy_tessell_image() {
