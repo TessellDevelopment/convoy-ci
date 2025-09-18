@@ -101,7 +101,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_DEVTEST_S3=tessell-artifacts-devtest" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -266,7 +265,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_DEVTEST_S3=tessell-artifacts-devtest" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -580,7 +578,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_DEVTEST_S3=tessell-artifacts-devtest" >> $GITHUB_ENV
           echo "GITHUB_REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Checkout code
@@ -1152,7 +1149,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_DEVTEST_S3=tessell-artifacts-devtest" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
