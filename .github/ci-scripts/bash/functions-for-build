@@ -985,17 +985,17 @@ push_terraform_modules() {
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
-    
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
-
-    if [[ ${release} -le 134 ]]; then
-      for ENV in "${environments[@]}"
-      do
-        push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
-      done
+    if ! ${DEV_BUILD}; then
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
+      if [[ ${release} -le 134 ]]; then
+        for ENV in "${environments[@]}"
+        do
+          push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
+        done
+      fi
     fi
   fi
 }
