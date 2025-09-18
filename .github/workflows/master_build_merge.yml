@@ -528,6 +528,7 @@ jobs:
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+      DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
