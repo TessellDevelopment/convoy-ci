@@ -711,7 +711,7 @@ jobs:
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
             ##installPythonDependencies $ARTIFACT
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple; fi
+            ## if [ -f ./$ARTIFACT/requirements.txt ]; then python -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple; fi
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
