@@ -428,8 +428,8 @@ generate_sts_session_token() {
   echo "ARTIFACTS_UPLOAD_SECRET_KEY ${ARTIFACTS_UPLOAD_SECRET_KEY}" >> /tmp/credentials
   aws configure set aws_access_key_id ${ARTIFACTS_UPLOAD_ACCESS_KEY}
   aws configure set aws_secret_access_key ${ARTIFACTS_UPLOAD_SECRET_KEY}
-  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  # export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+  # export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
