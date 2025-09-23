@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ./ci-scripts/bash/common
-
+set -x
 
 function upload_to_nexus() {
   # Remove in next PR
@@ -30,7 +30,7 @@ function upload_to_nexus_tessell_artifacts() {
 function upload_artifact() {
   local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3}
   validate_inputs "1 2" "$@"
-  echo "push_to: ${push_to}"
+
   ensure_accessability_to_upload_locations
   log "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
 
