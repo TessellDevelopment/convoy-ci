@@ -17,7 +17,7 @@ jobs:
       APP_GROUP: "${{inputs.app_group}}"
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       CD_COMMAND: "${{inputs.cd_command}}"
-      CI_BRANCH: TDEVOPS-3610-ci-changes
+      CI_BRANCH: main
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
