@@ -741,9 +741,8 @@ mvn_deploy() {
 }
 
 mvnw_build() {
-  set -e
   ./mvnw clean install -Dnative -DskipTests -Dquarkus.native.container-build=true -Dquarkus.native.builder-image=quay.io/quarkus/ubi-quarkus-mandrel-builder-image:21.3-java21
-  set +e
+  
 }
 
 mvnw_build_and_push() {
