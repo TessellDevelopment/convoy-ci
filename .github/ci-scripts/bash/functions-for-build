@@ -20,6 +20,7 @@ assert_root_pr_commit_success() {
     exit 1
   fi
 }
+
 aws_configure_devqa_infra() {
   aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
   aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
@@ -65,7 +66,7 @@ build_convoy_tessell_client_and_push() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   install_go_dependencies
-  ./setup --client --version ${LATEST_TAG} --upload-to-nexus --prod
+  ./setup --client --version ${LATEST_TAG} --upload-to-nexus $(${DEV_BUILD} || echo "--prod")
 }
 
 build_convoy_tessell_image() {
@@ -81,7 +82,7 @@ build_convoy_tessell_image_and_push() {
   validate_inputs "${required_inputs}" "$@"
   IMAGE="${1}"
   build_convoy_tessell_image  "$@"
-  docker_tag_and_push  "${IMAGE}" "${LATEST_TAG}"
+  docker_tag_and_push "${IMAGE}" "${LATEST_TAG}"
 }
 
 check_convoy_yaml() {
@@ -252,11 +253,6 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
-  if [[ "${IMAGE}" == "tessell-deployment-utils" ]]; then
-    REL_TAG=${TAG%.*}.0  
-    docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-    docker push ${DOCKERHUB_ORG}/${IMAGE}:${REL_TAG}
-  fi  
 }
 
 download_binary_from_source() {
@@ -340,7 +336,6 @@ frp_build_and_push() {
   frp_build
   set -e
   EXTENSION="${2}"
-  aws_configure_prod_assets
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
     ARTIFACT="tessell-frpc-${OS}"
@@ -718,7 +713,6 @@ make_service_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  aws_configure_prod_assets
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
   push_release_manifest_artifacts
   set +e
@@ -957,19 +951,11 @@ provider_build_and_push() {
   set +e
 }
 
-push_artifact_to_tessell_artifact_buckets() {
-  local account=${1} artifact_src_path=${2} artifact_dest_path=${3} bucket
-  generate_sts_session_token ${account}
-  for bucket in ${TESSELL_ARTIFACTS_DEV_S3} ${TESSELL_ARTIFACTS_QA_S3} ${TESSELL_ARTIFACTS_STAGE_S3} ${TESSELL_ARTIFACTS_PROD_S3}; do
-    aws s3 cp ${artifact_src_path} s3://${bucket}/${artifact_dest_path}
-  done
-  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-}
-
 push_release_manifest_artifacts() {
   local source_file_name=${1:-"${ARTIFACT}.${EXTENSION}"}
   local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
   local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
+
   
   if ! ${DEV_BUILD}; then
     if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
@@ -995,27 +981,24 @@ push_release_manifest_artifacts() {
 
 push_terraform_modules() {
   local artifact_dest_path=${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+  local release=$(echo ${LABEL} | cut -d'.' -f2)
+
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
-    push_to_nexus "${ARTIFACT_FILE}" "${NEXUS_ARTIFACT_REPO}/${artifact_dest_path}"
-
-    # if ! git tag | grep -qE '^0\.131\.[0-9]+$'; then
-    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
-    aws_configure_devqa_infra
-    aws s3 cp "${ARTIFACT_FILE}" "s3://tessell-terraform-modules-terls/${DIR}/${VERSION}/"
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_ARTIFACTS_TF_DEV_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_DEV_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_ARTIFACTS_TF_QA_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_QA_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_ARTIFACTS_TF_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_STAGE_S3}/${artifact_dest_path}
-    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_ARTIFACTS_TF_PROD_S3} ${ARTIFACT_FILE} s3://${TESSELL_ARTIFACTS_TF_PROD_S3}/${artifact_dest_path}
-    # fi
-
-    push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${ARTIFACT_FILE} ${artifact_dest_path}
-    
-    for ENV in "${environments[@]}"
-    do
-      push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
-    done
+    upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
+    if ! ${DEV_BUILD}; then
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
+      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
+      if [[ ${release} -le 134 ]]; then
+        for ENV in "${environments[@]}"
+        do
+          push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
+        done
+      fi
+    fi
   fi
 }
 
@@ -1242,14 +1225,16 @@ tailscale_build_and_push() {
   go install tailscale.com/cmd/gitops-pusher@latest
   export TS_API_KEY=${TS_API_KEY}
   export TS_TAILNET=${TS_TAILNET}
-  gitops-pusher --policy-file ./policy.hujson apply
+  if ! ${DEV_BUILD}; then
+    gitops-pusher --policy-file ./policy.hujson apply
+  fi
   set +e
 }
 
 terraform_apply() {
   set -e
   cd terraform
-  generate_sts_session_token "${AWS_ACCOUNT_TESSELL_COMMON_INFRA}"
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
   terraform init
   terraform plan
   cd ..
@@ -1260,9 +1245,11 @@ terraform_apply() {
 terraform_apply_and_push() {
   set -e
   terraform_apply
-  cd terraform
-  terraform apply -auto-approve
-  cd ..
+  if ! ${DEV_BUILD}; then
+    cd terraform
+    terraform apply -auto-approve
+    cd ..
+  fi
   set +e
 }
 
