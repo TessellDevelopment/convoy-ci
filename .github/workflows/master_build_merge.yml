@@ -67,6 +67,7 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
@@ -82,11 +83,7 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
-      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
-      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
-      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
@@ -105,7 +102,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -245,6 +241,7 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
@@ -258,11 +255,7 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
-      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
-      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
-      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -274,7 +267,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -524,13 +516,13 @@ jobs:
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DEV_BUILD: ${{inputs.dev_build}}
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+      DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
+      GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
@@ -564,15 +556,11 @@ jobs:
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_DEV_S3: ${{vars.TESSELL_ARTIFACTS_DEV_S3}}
-      TESSELL_ARTIFACTS_QA_S3: ${{vars.TESSELL_ARTIFACTS_QA_S3}}
-      TESSELL_ARTIFACTS_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_STAGE_S3}}
-      TESSELL_ARTIFACTS_PROD_S3: ${{vars.TESSELL_ARTIFACTS_PROD_S3}}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
-      TESSELL_ARTIFACTS_TF_DEV_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
-      TESSELL_ARTIFACTS_TF_QA_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
-      TESSELL_ARTIFACTS_TF_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
-      TESSELL_ARTIFACTS_TF_PROD_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
+      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELL_TERRAFORM_MODULES_TERLS_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
+      TESSELL_TERRAFORM_MODULES_BARC_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
+      TESSELL_TERRAFORM_MODULES_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
+      TESSELL_TERRAFORM_MODULES_BETA_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
@@ -592,7 +580,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
           echo "GITHUB_REPO_NAME=${GITHUB_REPOSITORY#$GITHUB_REPOSITORY_OWNER/}" >> $GITHUB_ENV
 
       - name: Checkout code
@@ -723,11 +710,9 @@ jobs:
             EXTENSION="$2"
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@" 
-            installPythonDependencies $ARTIFACT
-            if [ -f ./$ARTIFACT/requirements.txt ]; then python -m pip install -r ./$ARTIFACT/requirements.txt --dry-run --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple; fi
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
-            mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
+            mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
             awsConfigureProdAssets
             push_release_manifest_artifacts
             set +e
@@ -794,7 +779,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             cd scripts
             if ${DEV_BUILD}; then
-              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
+              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${LABEL}"
             else
               ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
@@ -810,7 +795,7 @@ jobs:
             cloneHelmTemplate
             echo "Running package and push"
             if ${DEV_BUILD}; then
-              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${DISPATCH_BRANCH_NAME}"
+              ./package-and-push -f -n $CHART_NAME -v "0.0.0-${LABEL}"
             else
               ./package-and-push --prod -n $CHART_NAME -v ${LATEST_TAG}
             fi
@@ -1127,6 +1112,7 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -1142,7 +1128,7 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELL_ARTIFACTS_PROD_ASSETS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
@@ -1164,7 +1150,6 @@ jobs:
           echo "NEXUS_PULL_REPOS_M2=tessell-m2-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_NPM=tessell-npm-development" >> $GITHUB_ENV
           echo "NEXUS_PULL_REPOS_PY=tessell-py-development" >> $GITHUB_ENV
-          echo "TESSELL_ARTIFACTS_PROD_ASSETS_S3=tesselltools-dev" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4.1.1
