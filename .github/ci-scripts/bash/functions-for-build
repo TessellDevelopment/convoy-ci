@@ -972,7 +972,7 @@ push_release_manifest_artifacts() {
   local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   
   if
-  [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+  [[ "${APP_GROUP}" =~ ^tessell-?gcp- ]]; then
     push_to_gcloud "${source_file_path}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${artifact_dest_path}"
   else
     if ! ${DEV_BUILD}; then
