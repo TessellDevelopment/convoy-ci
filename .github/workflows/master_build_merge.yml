@@ -712,8 +712,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
-            mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            awsConfigureProdAssets
+            mv "$ARTIFACT/build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION" 
             push_release_manifest_artifacts
             set +e
           }
