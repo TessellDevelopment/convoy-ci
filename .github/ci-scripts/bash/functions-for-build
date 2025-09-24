@@ -971,10 +971,11 @@ push_release_manifest_artifacts() {
   local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
   local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   
-  if [[ "${APP_GROUP}" =~ ^tessell-?gcp- ]]; then
-    push_to_gcloud "${source_file_path}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${artifact_dest_path}"
-  else
-    if ! ${DEV_BUILD}; then
+  if ! ${DEV_BUILD}; then
+    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+      push_to_gcloud ${source_file_path} gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${artifact_dest_path}
+    else
+    
       aws_configure_prod_assets
       aws s3 cp "${source_file_path}" s3://${TESSELL_ARTIFACTS_PROD_ASSETS_S3}/${artifact_dest_path}
       push_artifact_to_tessell_artifact_buckets ${AWS_ACCOUNT_TESSELL_COMMON_INFRA} ${source_file_path} ${artifact_dest_path}
