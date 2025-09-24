@@ -714,7 +714,7 @@ jobs:
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"        
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-              push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+              push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
               generate_checksum "$ARTIFACT.$EXTENSION" 
             else
               push_release_manifest_artifacts
