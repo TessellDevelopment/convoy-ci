@@ -667,7 +667,7 @@ jobs:
             set -e
             EXTENSION="$2"
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
-              push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
+              push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
               generate_checksum "$ARTIFACT.$EXTENSION" 
             else
               mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
