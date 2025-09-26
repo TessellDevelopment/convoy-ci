@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ./ci-scripts/bash/common
-set -x
+
 
 function upload_to_nexus() {
   # Remove in next PR
@@ -87,7 +87,7 @@ function upload_artifacts_using_src_dest_map() {
     local_abs_path_to_src=$(echo ${artifact} | yq '.localAbsPathToSrc')
     dest_path_without_bucket=$(echo ${artifact} | yq '.destPathWithoutBucket')
     push_to=$(echo ${artifact} | yq '.pushTo')
-    echo "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
+
     upload_artifact ${local_abs_path_to_src} ${dest_path_without_bucket} ${push_to}
   done
 }
