@@ -17,7 +17,7 @@ function ensure_accessability_to_upload_locations() {
   for deployment_stage in dev qa stage prod; do
     [[ -n $(mc ls ${MC_ALIAS_FOR_CONVOY_MINIO}/tessell-artifacts-${deployment_stage}) ]] || \
       die "Failed to access MinIO bucket: ${MC_ALIAS_FOR_CONVOY_MINIO}/tessell-artifacts-${deployment_stage}"
-    
+
     aws s3api head-bucket --bucket tessell-artifacts-${deployment_stage} &>/dev/null || \
       die "Failed to access S3 bucket 'tessell-artifacts-${deployment_stage}' in common-infra account"
   done
