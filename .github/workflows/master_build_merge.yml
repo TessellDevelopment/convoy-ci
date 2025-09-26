@@ -666,9 +666,14 @@ jobs:
             agentBuild "$@"
             set -e
             EXTENSION="$2"
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
-            awsConfigureProdAssets
-            push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
+            if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
+              push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
+              generate_checksum "$ARTIFACT.$EXTENSION" 
+            else
+              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
+              awsConfigureProdAssets
+              push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
+            fi 
             set +e
           }
           awsConfigureTessellArtifacts() {
@@ -712,9 +717,13 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
-            mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"
-            awsConfigureProdAssets
-            push_release_manifest_artifacts
+            mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"        
+            if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+              push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
+              generate_checksum "$ARTIFACT.$EXTENSION" 
+            else
+              push_release_manifest_artifacts
+            fi
             set +e
           }
           functionBuildAndPush() {
@@ -731,9 +740,14 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
-            awsConfigureProdAssets
-            mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
-            push_release_manifest_artifacts
+            if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+              push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
+              generate_checksum "$ARTIFACT.$EXTENSION" 
+            else
+              awsConfigureProdAssets
+              mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
+              push_release_manifest_artifacts
+            fi
             if $changed_dir; then
               cd ..;
             fi
