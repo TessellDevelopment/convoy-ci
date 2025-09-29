@@ -155,6 +155,31 @@ configure_and_push_aws() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
+convoy_build() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  bash ./setup 
+}
+
+convoy_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  convoy_build
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "./build/${ARTIFACT}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+    generate_checksum $ARTIFACT
+  else
+    aws_configure_tessellops_artifacts
+    push_to_nexus "./build/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+    mv ./build/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
+    aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+    generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
+  fi
+  set +e
+}
+
 convoy_codegen_build() {
   set -e
   ARTIFACT="${1}"
@@ -176,6 +201,7 @@ convoy_codegen_build_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +e
 }
+
 
 convoy_go_library_build() {
   set -e
