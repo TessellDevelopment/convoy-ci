@@ -60,6 +60,14 @@ configureNpmrcYarnrc() {
   configure_npmrc_yarnrc "$@"
 }
 
+convoyBuild() {
+  convoy_build "$@"
+}
+
+convoyBuildAndPush() {
+  convoy_build_and_push "$@"
+}
+
 convoyCodegenBuild() {
   convoy_codegen_build "$@"
 }
