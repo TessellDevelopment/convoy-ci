@@ -159,7 +159,7 @@ convoy_build() {
   required_inputs="1"
   #validate_inputs "${required_inputs}" "$@"
   bash ./setup 
-  ls -lrth
+  ls -lrRth
 }
 
 convoy_build_and_push() {
