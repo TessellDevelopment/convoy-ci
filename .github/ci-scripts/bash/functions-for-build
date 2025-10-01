@@ -1228,6 +1228,7 @@ tailscale_build_and_push() {
   if ! ${DEV_BUILD}; then
     gitops-pusher --policy-file ./policy.hujson apply
   fi
+  generate_checksum "policy.hujson"
   set +e
 }
 
