@@ -156,10 +156,11 @@ configure_and_push_aws() {
 }
 
 convoy_build() {
+  set -e
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   bash ./setup 
-  ls -lrRth
+  set +e
 }
 
 convoy_build_and_push() {
