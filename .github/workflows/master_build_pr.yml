@@ -870,6 +870,7 @@ jobs:
             rm artifacts.txt
           }
           set +e
+          set -x
           source ./ci-scripts/bash/functions-for-build
           build "artifacts"
           build "dockerImages"
