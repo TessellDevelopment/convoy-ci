@@ -157,7 +157,7 @@ configure_and_push_aws() {
 
 convoy_build() {
   required_inputs="1"
-  #validate_inputs "${required_inputs}" "$@"
+  validate_inputs "${required_inputs}" "$@"
   bash ./setup 
   ls -lrRth
 }
@@ -166,10 +166,10 @@ convoy_build_and_push() {
   set -e
   ARTIFACT="${1}"
   required_inputs="1"
-  #validate_inputs "${required_inputs}" "$@"
+  validate_inputs "${required_inputs}" "$@"
   convoy_build
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-    push_to_gcloud "./build/${ARTIFACT}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+    push_to_gcloud "./build/${ARTIFACT}.zip" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     generate_checksum $ARTIFACT
   else
     aws_configure_tessellops_artifacts
