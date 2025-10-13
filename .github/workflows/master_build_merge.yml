@@ -1102,7 +1102,7 @@ jobs:
       
   build-arm:
     if: ${{ inputs.type == 'arm' }}
-    runs-on: ARM64
+    runs-on: ARM64-NEW
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}

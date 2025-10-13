@@ -766,7 +766,7 @@ jobs:
 
   build-arm:
     if: ${{ inputs.type == 'arm' }}
-    runs-on: ARM64
+    runs-on: ARM64-NEW
     env:
       CI_BRANCH: TDEVOPS-3851
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
