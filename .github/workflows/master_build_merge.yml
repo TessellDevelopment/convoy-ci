@@ -1291,6 +1291,7 @@ jobs:
             done
             rm artifacts.txt
           }
+          set -x
           set +e
           source ./ci-scripts/bash/functions-for-build
           ARTIFACT_CHECKSUMS=""
