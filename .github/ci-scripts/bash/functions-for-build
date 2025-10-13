@@ -168,7 +168,7 @@ convoy_build_and_push() {
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     CURRENT_PATH=$(pwd)
     ls -lRth .
-    push_to_gcloud "${CURRENT_PATH}/build/${ARTIFACT}.zip" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+    push_to_gcloud "./build/${ARTIFACT}.zip" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     generate_checksum $ARTIFACT
   else
     aws_configure_tessellops_artifacts
