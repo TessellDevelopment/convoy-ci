@@ -162,7 +162,7 @@ convoy_build() {
 }
 
 convoy_build_and_push() {
-  set -e
+  
   ARTIFACT="${1}"
   EXTENSION="${2}"
   convoy_build "$@"
@@ -174,8 +174,8 @@ convoy_build_and_push() {
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
-    
-  elif [][ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
+
+  elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
@@ -186,7 +186,7 @@ convoy_build_and_push() {
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
-  set +e
+  
 }
 
 convoy_codegen_build() {
