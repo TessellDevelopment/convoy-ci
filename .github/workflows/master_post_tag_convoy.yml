@@ -25,12 +25,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get branch name
-        shell: bash
-        run: |
-          echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
-          echo $GITHUB_ENV
-
       - name: POST API to Convoy
         env:
           API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/commits
@@ -43,11 +37,10 @@ jobs:
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_ID: "${{github.event.number}}"
           SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
-          SOURCE_BRANCH: "${{env.SOURCE_BRANCH}}"
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           OWNER: ${{github.repository_owner}}
           USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
-          BRANCH: ${{ github.event.pull_request.head.ref }}
+          SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           python3 - <<EOF
           
