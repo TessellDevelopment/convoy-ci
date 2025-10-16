@@ -155,6 +155,40 @@ configure_and_push_aws() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
+convoy_build() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  bash ./setup 
+}
+
+convoy_build_and_push() {
+  
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  convoy_build "$@"
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+    
+  elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
+    aws_configure_tessellops_artifacts
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
+
+  elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_release_manifest_artifacts
+
+  elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_release_manifest_artifacts
+  fi
+  generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
+  
+}
+
 convoy_codegen_build() {
   set -e
   ARTIFACT="${1}"
@@ -176,6 +210,7 @@ convoy_codegen_build_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +e
 }
+
 
 convoy_go_library_build() {
   set -e
@@ -424,6 +459,7 @@ generate_checksum() {
 
 generate_sts_session_token() {
   BUCKET_ACCOUNT=${1}
+  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY 
   export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
   export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
@@ -984,6 +1020,7 @@ push_terraform_modules() {
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
+    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     if ! ${DEV_BUILD}; then
       configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
@@ -1226,6 +1263,7 @@ tailscale_build_and_push() {
   if ! ${DEV_BUILD}; then
     gitops-pusher --policy-file ./policy.hujson apply
   fi
+  generate_checksum "policy.hujson"
   set +e
 }
 
