@@ -52,6 +52,8 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
+      - name: Lint Action
+        uses: wearerequired/lint-action@v2.3.0
       - name: Build
         shell: bash
         run: |
@@ -89,8 +91,6 @@ jobs:
           build "dockerImages"
           build "helmCharts"
           parseCoverageReport
-      - name: Lint Action
-        uses: wearerequired/lint-action@v2.3.0
 
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
