@@ -63,30 +63,30 @@ jobs:
               
               # Install dependencies if node_modules doesn't exist
               if [[ ! -d "node_modules" ]]; then
-                echo "Installing dependencies..."
-                npm install
+                echo "Installing dependencies with Yarn..."
+                yarn install
               fi
               
-              # Run ESLint for React/JS/TS files
-              if command -v npx &> /dev/null; then
+              # Run ESLint for React/JS/TS files using Yarn
+              if command -v yarn &> /dev/null; then
                 echo "Running ESLint on React/JavaScript/TypeScript files..."
-                npx eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 || {
+                yarn eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 || {
                   echo "ESLint found issues. Please fix them before building."
                   exit 1
                 }
               else
-                echo "npx not found, trying npm run lint..."
-                npm run lint || {
+                echo "yarn not found, trying yarn run lint..."
+                yarn run lint || {
                   echo "Lint script failed. Please fix linting issues before building."
                   exit 1
                 }
               fi
               
-              # Run Prettier check for code formatting
-              if command -v npx &> /dev/null; then
+              # Run Prettier check for code formatting using Yarn
+              if command -v yarn &> /dev/null; then
                 echo "Checking code formatting with Prettier..."
-                npx prettier --check "src/**/*.{js,jsx,ts,tsx}" "**/*.{js,jsx,ts,tsx}" 2>/dev/null || {
-                  echo "Code formatting issues found. Run 'npx prettier --write' to fix them."
+                yarn prettier --check "src/**/*.{js,jsx,ts,tsx}" "**/*.{js,jsx,ts,tsx}" 2>/dev/null || {
+                  echo "Code formatting issues found. Run 'yarn prettier --write' to fix them."
                   exit 1
                 }
               fi
