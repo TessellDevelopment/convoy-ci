@@ -40,7 +40,7 @@
   
         - name: POST API to Convoy
           env:
-            API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/coverage
+            API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/coverage
             API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
             BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
             BRANCH_COVERAGE: "${{env.BRANCH_COVERAGE}}"
