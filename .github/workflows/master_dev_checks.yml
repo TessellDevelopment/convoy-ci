@@ -480,18 +480,18 @@
               echo "No consumes section found"
               exit 0
             fi
-            echo "Validating consumes section"
-            APP_GROUP=$(yq e '.appGroup' convoy.yaml)
+            APP_GROUP=$(yq '.appGroup' convoy.yaml)
 
             echo "Fetching release manifest for appGroup: $APP_GROUP ..."
             curl --silent --fail --location "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests/main" \
               --output release_manifest.json || { echo "::error::Failed to fetch release manifest."; exit 1; }
 
             echo "Validating consumed artifacts..."
-            mapfile -t CONSUMES < <(yq e -r '.generates.dockerImages[].consumes[].name' convoy.yaml)
+            mapfile -t CONSUMES < <(yq e -r '.generates.dockerImages[].consumes[]' convoy.yaml)
             missing=()
 
             for c in "${CONSUMES[@]}"; do
+              echo "Checking artifact: $c"
               jq -e --arg a "$c" '.artifacts[$a]' release_manifest.json >/dev/null \
                 && echo "✅ $c found" \
                 || { echo "❌ $c missing"; missing+=("$c"); }
