@@ -478,8 +478,7 @@
           env:
             API_KEY: cnvy_Z0ifnET3TXV7fp6oJuJFENIcLGlc2F
           run: |
-            set -e        
-            if ! yq e '.generates.dockerImages[].consumes' convoy.yaml >/dev/null 2>&1; then
+            if ! yq '.generates.dockerImages[].consumes' convoy.yaml >/dev/null 2>&1; then
               echo "No consumes section found"
               exit 0
             fi
