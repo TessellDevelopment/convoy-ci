@@ -494,9 +494,7 @@
                 && echo "✅ $c found" \
                 || { echo "❌ $c missing"; missing+=("$c"); }
             done
-
             if (( ${#missing[@]} )); then
               echo "::error::Missing artifacts:"; printf ' - %s\n' "${missing[@]}"; exit 1
             fi
-
             echo "✅ All consumed artifacts are valid."
