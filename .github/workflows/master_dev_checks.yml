@@ -473,7 +473,7 @@
             fi
             done
         - name: Validate Consumed Artifacts in Release Manifest
-          if: ${{ contains(fromJson(steps.parse_convoy.outputs.has_consumes), 'true') }}
+          # if: ${{ contains(fromJson(steps.parse_convoy.outputs.has_consumes), 'true') }}
           shell: bash
           env:
             API_KEY: cnvy_Z0ifnET3TXV7fp6oJuJFENIcLGlc2F
