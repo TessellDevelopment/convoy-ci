@@ -475,44 +475,30 @@
         - name: Validate Consumed Artifacts in Release Manifest
           # if: ${{ contains(fromJson(steps.parse_convoy.outputs.has_consumes), 'true') }}
           shell: bash
-          env:
-            API_KEY: cnvy_Z0ifnET3TXV7fp6oJuJFENIcLGlc2F
           run: |
             if ! yq '.generates.dockerImages[].consumes' convoy.yaml >/dev/null 2>&1; then
               echo "No consumes section found"
               exit 0
             fi
             echo "Validating consumes section"
-            yq '.generates.dockerImages[].consumes[] | [.name, .version] | @csv' convoy.yaml | sed 's/,/ /g' > consumes.txt
-            lineNumber=1
-            # http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
             APP_GROUP=$(yq e '.appGroup' convoy.yaml)
 
             echo "Fetching release manifest for appGroup: $APP_GROUP ..."
             curl --silent --fail --location "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests/main" \
-              --header "x-api-key: ${API_KEY}" \
               --output release_manifest.json || { echo "::error::Failed to fetch release manifest."; exit 1; }
 
-            # Extract all consumes entries into a Bash array
-            mapfile -t CONSUMES < <(yq e '.generates.dockerImages[].consumes[]' convoy.yaml)
+            echo "Validating consumed artifacts..."
+            mapfile -t CONSUMES < <(yq e -r '.generates.dockerImages[].consumes[].name' convoy.yaml)
+            missing=()
 
-            echo "Validating consumed artifacts from convoy.yaml against release manifest..."
-            missing_artifacts=()
-
-            for consume in "${CONSUMES[@]}"; do
-              echo "Checking artifact: $consume"
-              if jq -e --arg key "$consume" '.artifacts[$key]' release_manifest.json >/dev/null; then
-                echo "✅ Found $consume in release manifest."
-              else
-                echo "❌ Missing artifact: $consume"
-                missing_artifacts+=("$consume")
-              fi
+            for c in "${CONSUMES[@]}"; do
+              jq -e --arg a "$c" '.artifacts[$a]' release_manifest.json >/dev/null \
+                && echo "✅ $c found" \
+                || { echo "❌ $c missing"; missing+=("$c"); }
             done
 
-            if [[ ${#missing_artifacts[@]} -ne 0 ]]; then
-              echo "::error::Some consumed artifacts were not found in the release manifest:"
-              printf ' - %s\n' "${missing_artifacts[@]}"
-              exit 1
+            if (( ${#missing[@]} )); then
+              echo "::error::Missing artifacts:"; printf ' - %s\n' "${missing[@]}"; exit 1
             fi
 
             echo "✅ All consumed artifacts are valid."
