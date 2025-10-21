@@ -489,7 +489,7 @@
             APP_GROUP=$(yq e '.appGroup' convoy.yaml)
 
             echo "Fetching release manifest for appGroup: $APP_GROUP ..."
-            curl --silent --fail --location "https://api.convoy.tessell.cloud/devops/applications/app-groups/${APP_GROUP}/release-manifests/main" \
+            curl --silent --fail --location "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests/main" \
               --header "x-api-key: ${API_KEY}" \
               --output release_manifest.json || { echo "::error::Failed to fetch release manifest."; exit 1; }
 
