@@ -479,7 +479,6 @@
               echo "No consumes section found. Skipping validation."
               exit 0
             fi
-            echo "Validating consumes section"
             APP_GROUP=$(yq '.appGroup' convoy.yaml)
 
             echo "Fetching release manifest for appGroup: $APP_GROUP ..."
