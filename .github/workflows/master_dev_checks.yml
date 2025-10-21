@@ -475,10 +475,11 @@
         - name: Validate Consumed Artifacts in Release Manifest
           shell: bash
           run: |
-            if [[ "$(yq -e '.generates.dockerImages[].consumes' convoy.yaml 2>/dev/null || echo '')" == "" ]]; then
+            if [[ -z "$(yq '.generates.dockerImages[].consumes // empty' convoy.yaml 2>/dev/null || echo '')" ]]; then
               echo "No consumes section found. Skipping validation."
               exit 0
             fi
+            echo "Validating consumes section"
             APP_GROUP=$(yq '.appGroup' convoy.yaml)
 
             echo "Fetching release manifest for appGroup: $APP_GROUP ..."
