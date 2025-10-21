@@ -473,11 +473,10 @@
             fi
             done
         - name: Validate Consumed Artifacts in Release Manifest
-          # if: ${{ contains(fromJson(steps.parse_convoy.outputs.has_consumes), 'true') }}
           shell: bash
           run: |
-            if ! yq '.generates.dockerImages[].consumes' convoy.yaml >/dev/null 2>&1; then
-              echo "No consumes section found"
+            if [[ "$(yq -e '.generates.dockerImages[].consumes' convoy.yaml 2>/dev/null || echo '')" == "" ]]; then
+              echo "No consumes section found. Skipping validation."
               exit 0
             fi
             APP_GROUP=$(yq '.appGroup' convoy.yaml)
@@ -491,7 +490,6 @@
             missing=()
 
             for c in "${CONSUMES[@]}"; do
-              echo "Checking artifact: $c"
               jq -e --arg a "$c" '.artifacts[$a]' release_manifest.json >/dev/null \
                 && echo "✅ $c found" \
                 || { echo "❌ $c missing"; missing+=("$c"); }
