@@ -472,5 +472,17 @@
               echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
             fi
             done
-              
-   
+        - name: Validate Consumed Artifacts in Release Manifest
+          if: ${{ contains(fromJson(steps.parse_convoy.outputs.has_consumes), 'true') }}
+          shell: bash
+          env:
+            API_KEY: cnvy_Z0ifnET3TXV7fp6oJuJFENIcLGlc2F
+          run: |
+            set -e        
+            if ! yq e '.generates.dockerImages[].consumes' convoy.yaml >/dev/null 2>&1; then
+              echo "No consumes section found"
+              exit 0
+            fi
+            echo "Validating consumes section"
+            yq '.generates.dockerImages[].consumes[] | [.name, .version] | @csv' convoy.yaml | sed 's/,/ /g' > consumes.txt
+            lineNumber=1
