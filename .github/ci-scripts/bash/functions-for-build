@@ -162,7 +162,7 @@ convoy_build() {
 }
 
 convoy_build_and_push() {
-  
+  set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
   convoy_build "$@"
@@ -186,7 +186,7 @@ convoy_build_and_push() {
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
-  
+  set +e
 }
 
 convoy_codegen_build() {
