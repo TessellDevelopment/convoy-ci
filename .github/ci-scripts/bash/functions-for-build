@@ -186,6 +186,8 @@ convoy_build_and_push() {
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
+  
+  set -x 
   set +e
 }
 
