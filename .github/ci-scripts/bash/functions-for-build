@@ -170,8 +170,9 @@ convoy_build_and_push() {
     push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     
   elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
-    aws_configure_tessellops_artifacts
+    
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    aws_configure_tessellops_artifacts
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
     
@@ -1066,7 +1067,6 @@ push_to_minio() {
 }
 
 push_to_nexus() {
-  set -e
   FILE_PATH="${1}"
   URL_PATH="${2}"
   required_inputs="1 2"
@@ -1077,7 +1077,6 @@ push_to_nexus() {
   echo ${REPONSE}
   HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
   validate_reponse_code "${HTTP_CODE}" "201"
-  set +e
 }
 
 python_docker_build_and_push() {
