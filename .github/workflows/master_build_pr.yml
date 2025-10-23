@@ -69,7 +69,7 @@ jobs:
               
               # Run ESLint for React/JS/TS files using Yarn
               if command -v yarn &> /dev/null; then
-                echo "Running ESLint on React/JavaScript/TypeScript files..."
+                echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
                 yarn eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 || {
                   echo "ESLint found issues. Please fix them before building."
                   exit 1
