@@ -70,16 +70,18 @@ jobs:
               # Run ESLint for React/JS/TS files using Yarn
               if command -v yarn &> /dev/null; then
                 echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
-                yarn eslint . --ext .js,.jsx,.ts,.tsx || {
-                  echo "ESLint found errors. Build will continue but please review the errors."
-                  # Don't exit on warnings, only log them
-                }
+                if yarn eslint . --ext .js,.jsx,.ts,.tsx; then
+                  echo "✅ ESLint check passed - no errors found"
+                else
+                  echo "❌ ESLint found errors. Build will continue but please review the errors."
+                fi
               else
                 echo "yarn not found, trying yarn run lint..."
-                yarn run lint || {
-                  echo "Lint script failed. Build will continue but please review the issues."
-                  # Don't exit on lint failures, just log them
-                }
+                if yarn run lint; then
+                  echo "✅ Lint check passed - no errors found"
+                else
+                  echo "❌ Lint script found issues. Build will continue but please review the issues."
+                fi
               fi
               
               echo "React lint checks completed successfully"
