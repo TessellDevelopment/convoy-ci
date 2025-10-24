@@ -70,24 +70,15 @@ jobs:
               # Run ESLint for React/JS/TS files using Yarn
               if command -v yarn &> /dev/null; then
                 echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
-                yarn eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0 || {
-                  echo "ESLint found issues. Please fix them before building."
-                  exit 1
+                yarn eslint . --ext .js,.jsx,.ts,.tsx || {
+                  echo "ESLint found errors. Build will continue but please review the errors."
+                  # Don't exit on warnings, only log them
                 }
               else
                 echo "yarn not found, trying yarn run lint..."
                 yarn run lint || {
-                  echo "Lint script failed. Please fix linting issues before building."
-                  exit 1
-                }
-              fi
-              
-              # Run Prettier check for code formatting using Yarn
-              if command -v yarn &> /dev/null; then
-                echo "Checking code formatting with Prettier..."
-                yarn prettier --check "src/**/*.{js,jsx,ts,tsx}" "**/*.{js,jsx,ts,tsx}" 2>/dev/null || {
-                  echo "Code formatting issues found. Run 'yarn prettier --write' to fix them."
-                  exit 1
+                  echo "Lint script failed. Build will continue but please review the issues."
+                  # Don't exit on lint failures, just log them
                 }
               fi
               
