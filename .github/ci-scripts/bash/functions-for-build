@@ -167,6 +167,7 @@ convoy_build_and_push() {
   EXTENSION="${2}"
   convoy_build "$@"
   echo "APP_GROUP: ${APP_GROUP}"
+  echo "TESSELLOPS_APP_NAME is : ${TESSELLOPS_APP_NAME}"
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     
