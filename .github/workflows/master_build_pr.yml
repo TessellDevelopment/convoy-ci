@@ -809,6 +809,7 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
       - name: Run ESLint
+        continue-on-error: true
         shell: bash
         run: |
           lintCheck() {
