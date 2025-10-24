@@ -166,6 +166,7 @@ convoy_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   convoy_build "$@"
+  echo "APP_GROUP: ${APP_GROUP}"
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     
@@ -185,6 +186,8 @@ convoy_build_and_push() {
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
   fi
+  echo "Generating checksum"
+  echo "This is done now"
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
   
 }
