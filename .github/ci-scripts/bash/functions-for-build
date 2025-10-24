@@ -171,7 +171,7 @@ convoy_build_and_push() {
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
     
-  elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
+  elif [[ ${APP_GROUP} == "tessellops" ]]; then
     aws_configure_tessellops_artifacts
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
