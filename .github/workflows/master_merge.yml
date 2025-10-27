@@ -163,11 +163,11 @@ jobs:
       STATEMENT_COVERAGE: ${{needs.build.outputs.STATEMENT_COVERAGE}}
       TAG: ${{needs.create-tag.outputs.tag}}
 
-  create-double-commit:
-    if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
-    needs: build
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3749_ayush
-    secrets: inherit
+  # create-double-commit:
+  #   if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
+  #   needs: build
+  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@TDEVOPS-3749_ayush
+  #   secrets: inherit
 
   exec-deployment-script:
     if: ${{ needs.runner-check.outputs.exec_cd == 'true' }}
