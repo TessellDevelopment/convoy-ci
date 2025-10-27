@@ -178,8 +178,8 @@ jobs:
       app_group: ${{needs.runner-check.outputs.app_group}}
       cd_command: ${{needs.runner-check.outputs.cd_command}}
 
-  send-mail:
-    needs: create-double-commit
-    if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-3749_ayush
-    secrets: inherit
+  # send-mail:
+  #   needs: create-double-commit
+  #   if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
+  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-3749_ayush
+  #   secrets: inherit
