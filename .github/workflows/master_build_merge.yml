@@ -513,6 +513,7 @@ jobs:
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: TDEVOPS-3833_test_ayush
       CI_PHASE: postMerge
+      CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -567,6 +568,7 @@ jobs:
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
     steps:
@@ -1123,6 +1125,7 @@ jobs:
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: TDEVOPS-3833_test_ayush
       CI_PHASE: postMerge
+      CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -1171,9 +1174,11 @@ jobs:
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_APP_NAME: ${{ vars.TESSELL_APP_NAME }}
       TESSELLOPS_ARTIFACTS_DEV_S3: ${{vars.TESSELLOPS_ARTIFACTS_DEV_S3}}
       TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY }}
       TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY }}
+      TESSELLOPS_APP_NAME: ${{ vars.TESSELLOPS_APP_NAME }}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
     steps: 
