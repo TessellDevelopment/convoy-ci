@@ -472,5 +472,29 @@
               echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
             fi
             done
-              
-   
+        - name: Validate Consumed Artifacts through Release Manifest
+          shell: bash
+          run: |
+            if [[ -z $(yq '.generates.dockerImages[].consumes // ""' convoy.yaml 2>/dev/null || echo '') ]]; then
+              echo "No consumes section found. Skipping validation."
+              exit 0
+            fi
+            APP_GROUP=$(yq '.appGroup' convoy.yaml)
+
+            echo "Fetching release manifest for appGroup: $APP_GROUP ..."
+            curl -sfL "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests/${TARGET_BRANCH}?latest=true" \
+              --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}" -o release_manifest.json || { echo "::error::Failed to fetch release manifest."; exit 1; }
+
+            echo "Validating consumed artifacts..."
+            mapfile -t CONSUMES < <(yq e -r '.generates.dockerImages[].consumes[]' convoy.yaml)
+            missing=()
+
+            for c in "${CONSUMES[@]}"; do
+              jq -e --arg a "$c" '.artifacts[$a]' release_manifest.json >/dev/null \
+                && echo "✅ $c found" \
+                || { echo "❌ $c missing"; missing+=("$c"); }
+            done
+            if (( ${#missing[@]} )); then
+              echo "::error::Missing artifacts:"; printf ' - %s\n' "${missing[@]}"; exit 1
+            fi
+            echo "✅ All consumed artifacts are valid."
