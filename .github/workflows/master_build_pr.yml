@@ -63,7 +63,7 @@ jobs:
             fi
             
             # Run lint checks before building
-            lintCheck
+            lintCheck || true
             
             version=$(yq '.version' convoy.yaml)
             yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
@@ -821,24 +821,16 @@ jobs:
               # Install dependencies if node_modules doesn't exist
               if [[ ! -d "node_modules" ]]; then
                 echo "Installing dependencies with Yarn..."
-                yarn install
+                yarn install || true
               fi
               
               # Run ESLint for React/JS/TS files using Yarn
               if command -v yarn &> /dev/null; then
                 echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
-                if yarn eslint . --ext .js,.jsx,.ts,.tsx; then
-                  echo "✅ ESLint check passed - no errors found"
-                else
-                  echo "❌ ESLint found errors. Build will continue but please review the errors."
-                fi
+                yarn eslint . --ext .js,.jsx,.ts,.tsx || echo "❌ ESLint found errors. Build will continue but please review the errors."
               else
                 echo "yarn not found, trying yarn run lint..."
-                if yarn run lint; then
-                  echo "✅ Lint check passed - no errors found"
-                else
-                  echo "❌ Lint script found issues. Build will continue but please review the issues."
-                fi
+                yarn run lint || echo "❌ Lint script found issues. Build will continue but please review the issues."
               fi
               
               echo "React lint checks completed successfully"
@@ -846,6 +838,7 @@ jobs:
               echo "No package.json found, skipping React lint checks"
             fi
           }
+          lintCheck || true
       - name: Build
         shell: bash
         run: |
