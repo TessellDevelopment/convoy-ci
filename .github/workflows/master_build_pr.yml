@@ -814,29 +814,29 @@ jobs:
           lintCheck() {
             echo "Running React code lint checks..."
             
-            # # Check if this is a React/JavaScript project
-            # if [[ -f "package.json" ]]; then
-            #   echo "Detected React/JavaScript project, running lint checks..."
+            # Check if this is a React/JavaScript project
+            if [[ -f "package.json" ]]; then
+              echo "Detected React/JavaScript project, running lint checks..."
               
-            #   # Install dependencies if node_modules doesn't exist
-            #   if [[ ! -d "node_modules" ]]; then
-            #     echo "Installing dependencies with Yarn..."
-            #     yarn install || true
-            #   fi
+              # Install dependencies if node_modules doesn't exist
+              if [[ ! -d "node_modules" ]]; then
+                echo "Installing dependencies with Yarn..."
+                yarn install || true
+              fi
               
-            #   # Run ESLint for React/JS/TS files using Yarn
-            #   if command -v yarn &> /dev/null; then
-            #     echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
-            #     yarn eslint . --ext .js,.jsx,.ts,.tsx || echo "❌ ESLint found errors. Build will continue but please review the errors."
-            #   else
-            #     echo "yarn not found, trying yarn run lint..."
-            #     yarn run lint || echo "❌ Lint script found issues. Build will continue but please review the issues."
-            #   fi
+              # Run ESLint for React/JS/TS files using Yarn
+              if command -v yarn &> /dev/null; then
+                echo "Running ESLint on React/JavaScript/TypeScript files with yarn"
+                yarn eslint . --ext .js,.jsx,.ts,.tsx || echo "❌ ESLint found errors. Build will continue but please review the errors."
+              else
+                echo "yarn not found, trying yarn run lint..."
+                yarn run lint || echo "❌ Lint script found issues. Build will continue but please review the issues."
+              fi
               
-            #   echo "React lint checks completed successfully"
-            # else
-            #   echo "No package.json found, skipping React lint checks"
-            # fi
+              echo "React lint checks completed successfully"
+            else
+              echo "No package.json found, skipping React lint checks"
+            fi
           }
           lintCheck || true
       - name: Build
