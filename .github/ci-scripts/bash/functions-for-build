@@ -1198,7 +1198,6 @@ software_def_build() {
     fi
   fi
   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
-  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
   set +e
 }
 
