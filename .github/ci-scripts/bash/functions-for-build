@@ -563,8 +563,8 @@ gradlew_build() {
 gradlew_pythonwheel() {
   set -e
   ./gradlew pythonWheel docker --console plain \
-    -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-    -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
   set +e
 }
 
