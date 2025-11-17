@@ -276,9 +276,9 @@ pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
 }
 
-pythonLibraryBuild() {
-  python_library_build "$@"
-}
+# pythonLibraryBuild() {
+#   python_library_build "$@"
+# }
 
 pythonLibraryBuildAndPush() {
   python_library_build_and_push "$@"
