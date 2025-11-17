@@ -112,7 +112,7 @@ configure_python_version_if_required() {
   echo "Checking for python version in convoy.yaml..."
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
   echo "required_python_version: ${required_python_version}"
-  [[ -n "${required_python_version:-}" ]] || return
+  [[ -n "${required_python_version:-}" ]] || return 0
   echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
 
   if ! is_pyenv_entity_exists "${required_python_version}";  then
