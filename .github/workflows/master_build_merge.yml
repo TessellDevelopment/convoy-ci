@@ -926,16 +926,6 @@ jobs:
             mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.tessell" "${LATEST_TAG}"
             set +e
           }
-          pythonLibraryBuildAndPush() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installPythonDependencies $ARTIFACT
-            lintCheck
-            gradlewTwineUpload
-            set +e
-          }
           setupOpa() {
             curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
             chmod 755 ~/opa

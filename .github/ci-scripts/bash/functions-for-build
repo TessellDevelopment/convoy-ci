@@ -558,6 +558,14 @@ gradlew_build() {
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
 }
 
+gradlew_pythonwheel() {
+  set -e
+  ./gradlew pythonWheel docker --console plain \
+    -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
+    -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+  set +e
+}
+
 gradlew_build_and_push() {
   ./gradlew build publish --console plain \
     -Pnexus_push_username="${NEXUS_USERNAME}" \
@@ -657,6 +665,16 @@ initialise_coverage() {
   fi
   rm -rf ${source_path}/tests
   cp -r ${test_dir} pytest.ini ${source_path}
+}
+
+initialize_python_build_env() {
+  set -e
+  requiredInputs="1"
+  validateInputs "$requiredInputs" "$@"
+  configure_python_version_if_required
+  install_python_dependencies "$ARTIFACT"
+  lintCheck
+  set +e
 }
 
 install_go_dependencies() {
@@ -1113,6 +1131,20 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
+python_library_build() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlew_pythonwheel
+  set +e
+}
+
+python_library_build_and_push() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlewTwineUpload
   set +e
 }
 

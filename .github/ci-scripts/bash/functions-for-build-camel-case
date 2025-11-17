@@ -136,6 +136,10 @@ gradlewBuild() {
   gradlew_build "$@"
 }
 
+gradlewPythonwheel() {
+  gradlew_pythonwheel "$@"
+}
+
 gradlewBuildAndPush() {
   gradlew_build_and_push "$@"
 }
@@ -270,6 +274,14 @@ pushToNexus() {
 
 pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
+}
+
+pythonLibraryBuild() {
+  python_library_build "$@"
+}
+
+pythonLibraryBuildAndPush() {
+  python_library_build_and_push "$@"
 }
 
 pythonSetupBuild() {
