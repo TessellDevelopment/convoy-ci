@@ -126,7 +126,7 @@ configure_python_version_if_required() {
     echo "Creating virtualenv ${env_name}..."
     pyenv virtualenv "${required_python_version}" "${env_name}"
   fi
-
+  source ${HOME}/.bashrc
   pyenv shell "${env_name}"
   echo "Activated pyenv environment: ${env_name}"
   python --version
