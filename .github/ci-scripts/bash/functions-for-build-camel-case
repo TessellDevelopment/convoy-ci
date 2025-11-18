@@ -136,10 +136,6 @@ gradlewBuild() {
   gradlew_build "$@"
 }
 
-gradlewPythonwheel() {
-  gradlew_pythonwheel "$@"
-}
-
 gradlewBuildAndPush() {
   gradlew_build_and_push "$@"
 }
