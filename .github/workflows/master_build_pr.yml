@@ -629,16 +629,12 @@ jobs:
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
           }
-          pythonLibraryBuild() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@"
-            configure_python_version_if_required
-            installPythonDependencies $ARTIFACT
-            lintCheck
-            gradlewPythonwheel
-            set +e
+          gradlewPythonwheel() {	
+            set -e	
+            ./gradlew pythonWheel --console plain \
+              -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \	
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"	
+            set +e	
           }
           qaBuild(){
             set -e
