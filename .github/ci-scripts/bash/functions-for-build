@@ -675,7 +675,6 @@ initialize_python_build_env() {
   requiredInputs="1"
   validateInputs "$requiredInputs" "$@"
   configure_python_version_if_required
-  echo "initializing python dependencies."
   install_python_dependencies "$ARTIFACT"
   lintCheck
   set +e
@@ -726,7 +725,6 @@ install_node() {
 }
 
 install_python_dependencies() {
-  echo "Installing python dependencies."
   DIR=${1}
   if [[ -z "${DIR}" ]]; then
     DIR='.'
