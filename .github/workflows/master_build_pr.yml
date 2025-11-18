@@ -233,10 +233,10 @@ jobs:
             tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
             popd
           }
-          gradlewPythonwheel() {	
-            ./gradlew pythonWheel docker --console plain \	
+          gradlewPythonwheel() {
+            ./gradlew pythonWheel docker --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"	
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
           infraProvisionBuild() {
             set -e
@@ -484,12 +484,12 @@ jobs:
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
           }
-          gradlewPythonwheel() {	
+          gradlewPythonwheel() {
             set -e
-            ./gradlew pythonWheel --console plain \	
+            ./gradlew pythonWheel --console plain \
               -Pnexus_username="${{ secrets.CIPIPELINE_NEXUS_USERNAME }}" \	
-              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"	
-            set +e	
+              -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
+            set +e
           }
           gradlewDocker() {
             set -e
