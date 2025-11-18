@@ -633,7 +633,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
+            configure_python_version_if_required
             installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPythonwheel
