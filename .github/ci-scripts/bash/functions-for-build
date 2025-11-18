@@ -553,14 +553,6 @@ gradlew_build() {
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
 }
 
-gradlew_pythonwheel() {
-  set -e
-  ./gradlew pythonWheel docker --console plain \
-    -Pnexus_username="${NEXUS_USERNAME}" \
-    -Pnexus_password="${NEXUS_PASSWORD}"
-  set +e
-}
-
 gradlew_build_and_push() {
   ./gradlew build publish --console plain \
     -Pnexus_push_username="${NEXUS_USERNAME}" \
