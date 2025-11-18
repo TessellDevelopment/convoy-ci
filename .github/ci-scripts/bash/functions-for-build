@@ -103,10 +103,6 @@ check_flyway() {
   fi
 }
 
-is_pyenv_entity_exists() {
-  pyenv versions --bare | grep -q "^${1}"
-}
-
 configure_python_version_if_required() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
@@ -731,6 +727,10 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
+}
+
+is_pyenv_entity_exists() {
+  pyenv versions --bare | grep -q "^${1}"
 }
 
 is_go_version_installed() {
