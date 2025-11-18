@@ -1136,7 +1136,7 @@ python_library_build() {
   echo "Current directory: $(pwd)"
   initialize_python_build_env "$@"
   echo "Current directory: $(pwd)"
-  gradlew_pythonwheel
+  gradlewPythonwheel
   set +e
 }
 
