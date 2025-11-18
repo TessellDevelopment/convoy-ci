@@ -1142,6 +1142,7 @@ python_docker_build_and_push() {
 python_library_build() {
   set -e
   initialize_python_build_env "$@"
+  echo "Current directory: $(pwd)"
   gradlew_pythonwheel
   set +e
 }
