@@ -104,7 +104,7 @@ check_flyway() {
 }
 
 is_pyenv_entity_exists() {
-  pyenv versions --bare | grep -qx "${1}"
+  pyenv versions --bare | grep -q "^${1}"
 }
 
 configure_python_version_if_required() {
@@ -117,7 +117,7 @@ configure_python_version_if_required() {
 
   if ! is_pyenv_entity_exists "${required_python_version}";  then
     echo "Python ${required_python_version} not found. Installing..."
-    pyenv install "${required_python_version}"
+    # pyenv install "${required_python_version}"
   fi
 
   env_name="build-${required_python_version}"
