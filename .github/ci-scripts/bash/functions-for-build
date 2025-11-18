@@ -655,14 +655,12 @@ initialise_coverage() {
 }
 
 initialize_python_build_env() {
-  set -e
-  ARTIFACT=${1}
+  ARTIFACT="${1}"
   requiredInputs="1"
   validateInputs "$requiredInputs" "$@"
   configure_python_version_if_required
   install_python_dependencies "$ARTIFACT"
   lintCheck
-  set +e
 }
 
 install_go_dependencies() {
