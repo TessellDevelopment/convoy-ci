@@ -259,7 +259,6 @@ jobs:
             IMAGE="$1"
             rm pip.conf
             lintCheck
-            configure_python_version_if_required
             gradlewPythonwheel
             imageScan $IMAGE
             set +e
@@ -507,7 +506,6 @@ jobs:
             set -e
             IMAGE="$1"
             lintCheck
-            configure_python_version_if_required
             gradlewDocker
             imageScan $IMAGE
             set +e
@@ -627,17 +625,6 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
-            set +e
-          }
-          pythonLibraryBuild() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@"
-            configure_python_version_if_required
-            installPythonDependencies $ARTIFACT
-            lintCheck
-            gradlewPythonwheel
             set +e
           }
           qaBuild(){
