@@ -301,7 +301,7 @@ jobs:
           parseCoverageReport
 
   build-amd:
-    if: ${{ inputs.type == 'build-go-test' }}
+    if: ${{ inputs.type == 'amd' }}
     runs-on: build-go-test
     env:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
