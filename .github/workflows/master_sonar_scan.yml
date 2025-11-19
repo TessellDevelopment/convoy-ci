@@ -7,7 +7,7 @@ jobs:
     if: github.ref_name == 'main' ||  github.event.pull_request.base.ref == 'main'
     runs-on: self-hosted
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-4000_py_env_2
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
