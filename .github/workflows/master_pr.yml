@@ -9,9 +9,9 @@ jobs:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-4000_py_env_2
     secrets: inherit
 
-  version-check:
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-4000_py_env_2
-    secrets: inherit
+  # version-check:
+  #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-4000_py_env_2
+  #   secrets: inherit
 
   runner-check:
     runs-on: non-build

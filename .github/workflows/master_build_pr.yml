@@ -302,7 +302,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
-    runs-on: build-go-test
+    runs-on: ui-build-test-2
     env:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
