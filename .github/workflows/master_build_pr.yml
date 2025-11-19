@@ -627,16 +627,6 @@ jobs:
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
           }
-          pythonLibraryBuild() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installPythonDependencies $ARTIFACT
-            lintCheck
-            gradlewPythonwheel
-            set +e
-          }
           qaBuild(){
             set -e
             requiredInputs="1 3"

@@ -103,6 +103,28 @@ check_flyway() {
   fi
 }
 
+configure_python_version_if_required() {
+  check_convoy_yaml
+  required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
+  [[ -n "${required_python_version:-}" ]] || return 0
+  echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
+
+  if ! is_pyenv_entity_exists "${required_python_version}";  then
+    echo "Python ${required_python_version} not found. Installing..."
+    pyenv install "${required_python_version}"
+  fi
+  env_name="build-${required_python_version}"
+
+  if ! is_pyenv_entity_exists "${env_name}"; then
+    echo "Creating virtualenv ${env_name}..."
+    pyenv virtualenv "${required_python_version}" "${env_name}"
+  fi
+  source ${HOME}/.sourcables
+  pyenv shell "${env_name}"
+  echo "Activated pyenv environment: ${env_name}"
+  python --version
+}
+
 configure_go_version_if_required() {
   check_convoy_yaml
   required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
@@ -632,6 +654,15 @@ initialise_coverage() {
   cp -r ${test_dir} pytest.ini ${source_path}
 }
 
+initialize_python_build_env() {
+  ARTIFACT="${1}"
+  requiredInputs="1"
+  validateInputs "$requiredInputs" "$@"
+  configure_python_version_if_required
+  install_python_dependencies "$ARTIFACT"
+  lintCheck
+}
+
 install_go_dependencies() {
   go version
   go install golang.org/x/tools/cmd/goimports@v0.24.0
@@ -686,6 +717,10 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
+}
+
+is_pyenv_entity_exists() {
+  pyenv versions --bare | grep -q "^${1}"
 }
 
 is_go_version_installed() {
@@ -1086,6 +1121,20 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
+python_library_build() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlewPythonwheel
+  set +e
+}
+
+python_library_build_and_push() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlewTwineUpload
   set +e
 }
 
