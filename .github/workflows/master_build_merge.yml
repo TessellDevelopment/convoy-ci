@@ -494,7 +494,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
-    runs-on: self-hosted
+    runs-on: ui-build-test-2
     outputs:
       ARTIFACT_CHECKSUMS: ${{ steps.build.outputs.ARTIFACT_CHECKSUMS }}
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
