@@ -17,24 +17,18 @@ source "amazon-ebs" "windows-builder" {
   communicator   = "winrm"
   winrm_username = "TessellMssql"
   winrm_password = "AWSMSSQL82wnellxrVaRMZpQ"
-
   profile        = 402291221517
-
   ami_name       = "native-build-{{timestamp}}"
   winrm_insecure = true
   skip_create_ami = true
-
-  # optional: tag the instance
   run_tags = {
     Name = "windows-native-builder"
   }
 }
 
-
 build {
   name    = "windows-native-builder"
   sources = ["source.amazon-ebs.windows-builder"]
-
   #####################################
   # Upload repo ZIP
   #####################################
