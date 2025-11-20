@@ -119,7 +119,14 @@ configure_python_version_if_required() {
     echo "Creating virtualenv ${env_name}..."
     pyenv virtualenv "${required_python_version}" "${env_name}"
   fi
-  source ${HOME}/.sourcables
+  # source ${HOME}/.sourcables
+  export PYENV_ROOT="$HOME/.pyenv"
+  export PATH="$PYENV_ROOT/bin:$PATH"
+
+  # ALWAYS emit full initialization even in non-interactive CI
+  eval "$(pyenv init --path)"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
   pyenv local "${env_name}"
   echo "Activated pyenv environment: ${env_name}"
   python --version
