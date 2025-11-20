@@ -132,6 +132,7 @@ configure_python_version_if_required() {
   pyenv rehash
   echo "Activated pyenv environment: ${env_name}"
   python --version
+  echo $PATH
 }
 
 configure_go_version_if_required() {
