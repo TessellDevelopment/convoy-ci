@@ -1228,7 +1228,7 @@ setup_qa_env() {
 
 setup_packer_env() {
   python -m pip uninstall -y packer_framework
-  configure_python_version_if_required
+  # configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   # source ${HOME}/.sourcables
