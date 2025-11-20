@@ -120,7 +120,7 @@ configure_python_version_if_required() {
     pyenv virtualenv "${required_python_version}" "${env_name}"
   fi
   source ${HOME}/.sourcables
-  pyenv shell "${env_name}"
+  pyenv local "${env_name}"
   echo "Activated pyenv environment: ${env_name}"
   python --version
 }
