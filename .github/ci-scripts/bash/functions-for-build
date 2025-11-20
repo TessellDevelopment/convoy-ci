@@ -127,7 +127,9 @@ configure_python_version_if_required() {
   eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
-  pyenv local "${env_name}"
+  # pyenv local "${env_name}"
+  pyenv shell "${env_name}"
+  pyenv rehash
   echo "Activated pyenv environment: ${env_name}"
   python --version
 }
