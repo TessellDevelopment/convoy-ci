@@ -109,19 +109,13 @@ configure_python_version_if_required() {
   [[ -n "${required_python_version:-}" ]] || return 0
   echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
 
-  if ! is_pyenv_entity_exists "${required_python_version}";  then
+  if ! is_pyenv_version_installed "${required_python_version}";  then
     echo "Python ${required_python_version} not found. Installing..."
     pyenv install "${required_python_version}"
   fi
-  env_name="build-${required_python_version}"
-
-  if ! is_pyenv_entity_exists "${env_name}"; then
-    echo "Creating virtualenv ${env_name}..."
-    pyenv virtualenv "${required_python_version}" "${env_name}"
-  fi
-  source ${HOME}/.sourcables
-  pyenv shell "${env_name}"
-  echo "Activated pyenv environment: ${env_name}"
+  pyenv shell "${required_python_version}"
+  python3 -m venv venv
+  source venv/bin/activate
   python --version
 }
 
@@ -719,7 +713,7 @@ install_python_dependencies() {
   fi
 }
 
-is_pyenv_entity_exists() {
+is_pyenv_version_installed() {
   pyenv versions --bare | grep -q "^${1}"
 }
 
