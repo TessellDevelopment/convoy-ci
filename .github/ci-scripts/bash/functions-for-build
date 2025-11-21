@@ -114,7 +114,7 @@ configure_python_version_if_required() {
     pyenv install "${required_python_version}"
   fi
   echo "PYENV_ROOT ${PYENV_ROOT}"
-  pyenv init
+  source ${HOME}/.sourcables
   pyenv shell "${required_python_version}"
   python3 -m venv venv
   source venv/bin/activate
