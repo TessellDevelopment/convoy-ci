@@ -113,6 +113,8 @@ configure_python_version_if_required() {
     echo "Python ${required_python_version} not found. Installing..."
     pyenv install "${required_python_version}"
   fi
+  echo "PYENV_ROOT ${PYENV_ROOT}"
+  pyenv init
   pyenv shell "${required_python_version}"
   python3 -m venv venv
   source venv/bin/activate
