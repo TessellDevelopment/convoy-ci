@@ -89,7 +89,7 @@ build_windows_native_binary() {
   set -e
   check_convoy_yaml
   generate_sts_session_token "402291221517" "convoy-leak-cleaner-role"
-  zip -r repo.zip . -x ".git/*"
+  zip -r repo.zip .
   packer validate ci-scripts/windows-native-builder.pkr.hcl
   packer build ci-scripts/windows-native-builder.pkr.hcl
   set +e
