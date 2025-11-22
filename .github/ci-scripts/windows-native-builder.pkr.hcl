@@ -40,18 +40,18 @@ build {
   #####################################
   # Upload environment variables file
   #####################################
-  # provisioner "file" {
-  #   source      = "envvars.ps1"
-  #   destination = "C:\\Users\\Administrator\\envvars.ps1"
-  # }
+  provisioner "file" {
+    source      = "envvars.ps1"
+    destination = "C:\\Users\\Administrator\\envvars.ps1"
+  }
 
   #####################################
   # Upload build script
   #####################################
-  # provisioner "file" {
-  #   source      = "build.ps1"
-  #   destination = "C:\\Users\\Administrator\\build.ps1"
-  # }
+  provisioner "file" {
+    source      = "build.ps1"
+    destination = "C:\\Users\\Administrator\\build.ps1"
+  }
 
   #####################################
   # Main execution
