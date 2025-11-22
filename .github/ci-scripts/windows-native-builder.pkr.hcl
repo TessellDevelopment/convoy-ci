@@ -17,7 +17,7 @@ source "amazon-ebs" "windows-builder" {
   communicator   = "winrm"
   winrm_username = "TessellMssql"
   winrm_password = "AWSMSSQL82wnellxrVaRMZpQ"
-  profile        = 402291221517
+  # profile        = 402291221517
   ami_name       = "native-build-{{timestamp}}"
   winrm_insecure = true
   skip_create_ami = true
@@ -33,7 +33,7 @@ build {
   # Upload repo ZIP
   #####################################
   provisioner "file" {
-    source      = var.repo_zip
+    source      = "repo.zip"
     destination = "C:\\Users\\Administrator\\repo.zip"
   }
 

@@ -85,6 +85,13 @@ build_convoy_tessell_image_and_push() {
   docker_tag_and_push "${IMAGE}" "${LATEST_TAG}"
 }
 
+build_windows_native_binary() {
+  check_convoy_yaml
+  zip -r repo.zip .
+  packer validate ci-scripts/windows-native-builder.pkr.hcl
+  packer build ci-scripts/windows-native-builder.pkr.hcl
+}
+
 check_convoy_yaml() {
   if ! [[ -f "convoy.yaml" ]]; then
     echo "Error: File 'convoy.yaml' not found." >&2
