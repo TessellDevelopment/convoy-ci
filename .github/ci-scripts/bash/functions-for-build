@@ -88,6 +88,7 @@ build_convoy_tessell_image_and_push() {
 build_windows_native_binary() {
   set -e
   check_convoy_yaml
+  generate_sts_session_token "402291221517" "convoy-leak-cleaner-role"
   zip -r repo.zip . -x ".git/*"
   packer validate ci-scripts/windows-native-builder.pkr.hcl
   packer build ci-scripts/windows-native-builder.pkr.hcl
