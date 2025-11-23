@@ -88,6 +88,19 @@ build_convoy_tessell_image_and_push() {
 build_windows_native_binary() {
   set -e
   OUTPUT="output.zip"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  OUTPUT_ENV_FILE="envvars.ps1"
+
+  VARS=(GITHUB_USER GITHUB_TOKEN ARTIFACT EXTENSION)
+
+  # echo "# Auto-generated environment variable file" > "$OUTPUT_FILE"
+  echo "" > "$OUTPUT_FILE"
+
+  for var in "${VARS[@]}"; do
+    val="${!var:-}"; val="${val//\"/\\\`\"}"
+    echo "\$env:$var = \"$val\"" >> "$OUTPUT_ENV_FILE"
+  done
   check_convoy_yaml
   generate_sts_session_token "402291221517" "convoy-leak-cleaner-role"
   # Only inside CI workspace
