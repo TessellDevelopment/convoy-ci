@@ -20,6 +20,10 @@ source "amazon-ebs" "windows-builder" {
   # profile        = 402291221517
   ami_name       = "native-build-{{timestamp}}"
   winrm_insecure = true
+
+  pause_before_connecting = "2m"
+  winrm_timeout   = "30m"
+
   skip_create_ami = true
   run_tags = {
     Name = "windows-native-builder"
