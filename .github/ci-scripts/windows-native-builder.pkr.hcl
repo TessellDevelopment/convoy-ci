@@ -15,8 +15,6 @@ source "amazon-ebs" "windows-builder" {
   source_ami     = "ami-03d3615b6028a7af3"
   instance_type  = "c5.2xlarge"
   communicator   = "winrm"
-  winrm_username = "TessellMssql"
-  winrm_password = "AWSMSSQL82wnellxrVaRMZpQ"
   ami_name       = "native-build-{{timestamp}}"
   winrm_insecure = true
 
