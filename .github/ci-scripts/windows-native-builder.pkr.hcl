@@ -12,7 +12,7 @@ variable "tessell_mysql_db_password" {
 
 source "amazon-ebs" "windows-builder" {
   region         = "ap-south-1"
-  source_ami     = "ami-055e7062ae33416ae"
+  source_ami     = "ami-03d3615b6028a7af3"
   instance_type  = "c5.4xlarge"
   communicator   = "winrm"
   winrm_username = "TessellMssql"
