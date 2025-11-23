@@ -22,12 +22,12 @@ source "amazon-ebs" "windows-builder" {
   winrm_insecure = true
   skip_create_ami = true
   run_tags = {
-    Name = "windows-native-builder"
+    Name = "windows-native-builder-2"
   }
 }
 
 build {
-  name    = "windows-native-builder"
+  name    = "windows-native-builder-2"
   sources = ["source.amazon-ebs.windows-builder"]
   #####################################
   # Upload repo ZIP
