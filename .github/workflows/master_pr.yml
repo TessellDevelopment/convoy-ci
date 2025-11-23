@@ -17,7 +17,7 @@ jobs:
     runs-on: non-build
     outputs:
       type: ${{steps.runner-type.outputs.type}}
-    needs: [dev-checks]
+    needs: [dev-checks,version-check]
     steps:
 
       - uses: actions/checkout@v4.1.1
