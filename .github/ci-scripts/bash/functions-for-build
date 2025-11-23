@@ -95,7 +95,7 @@ build_windows_native_binary() {
   VARS=(GITHUB_USER GITHUB_TOKEN ARTIFACT EXTENSION)
 
   # echo "# Auto-generated environment variable file" > "$OUTPUT_FILE"
-  echo "" > "$OUTPUT_FILE"
+  echo "" > "$OUTPUT_ENV_FILE"
 
   for var in "${VARS[@]}"; do
     val="${!var:-}"; val="${val//\"/\\\`\"}"
