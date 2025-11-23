@@ -117,7 +117,6 @@ build_windows_native_artifact_and_push() {
     aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}.zip --profile tessellops
   fi
   generate_checksum ${ARTIFACT}.${EXTENSION}
-
 }
 
 check_convoy_yaml() {
@@ -280,7 +279,6 @@ create_powershell_env_vars() {
   VARS=(GITHUB_USER GITHUB_TOKEN ARTIFACT EXTENSION)
 
   echo "" > "$OUTPUT_ENV_FILE"
-
   for var in "${VARS[@]}"; do
     val="${!var:-}"; val="${val//\"/\\\`\"}"
     echo "\$env:$var = \"$val\"" >> "$OUTPUT_ENV_FILE"
