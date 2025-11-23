@@ -13,7 +13,7 @@ variable "tessell_mysql_db_password" {
 source "amazon-ebs" "windows-builder" {
   region         = "ap-south-1"
   source_ami     = "ami-03d3615b6028a7af3"
-  instance_type  = "c5.4xlarge"
+  instance_type  = "c5.2xlarge"
   communicator   = "winrm"
   winrm_username = "TessellMssql"
   winrm_password = "AWSMSSQL82wnellxrVaRMZpQ"
@@ -22,12 +22,12 @@ source "amazon-ebs" "windows-builder" {
   winrm_insecure = true
   skip_create_ami = true
   run_tags = {
-    Name = "windows-native-builder-2"
+    Name = "windows-native-builder"
   }
 }
 
 build {
-  name    = "windows-native-builder-2"
+  name    = "windows-native-builder"
   sources = ["source.amazon-ebs.windows-builder"]
   #####################################
   # Upload repo ZIP
