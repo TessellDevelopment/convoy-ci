@@ -37,21 +37,21 @@ build {
     destination = "C:\\Users\\Administrator\\repo.zip"
   }
 
-  #####################################
-  # Upload environment variables file
-  #####################################
-  provisioner "file" {
-    source      = "envvars.ps1"
-    destination = "C:\\Users\\Administrator\\envvars.ps1"
-  }
+  # #####################################
+  # # Upload environment variables file
+  # #####################################
+  # provisioner "file" {
+  #   source      = "envvars.ps1"
+  #   destination = "C:\\Users\\Administrator\\envvars.ps1"
+  # }
 
-  #####################################
-  # Upload build script
-  #####################################
-  provisioner "file" {
-    source      = "build.ps1"
-    destination = "C:\\Users\\Administrator\\build.ps1"
-  }
+  # #####################################
+  # # Upload build script
+  # #####################################
+  # provisioner "file" {
+  #   source      = "build.ps1"
+  #   destination = "C:\\Users\\Administrator\\build.ps1"
+  # }
 
   #####################################
   # Main execution
@@ -64,7 +64,7 @@ build {
       "& 'C:\\Program Files\\7-Zip\\7z.exe' x 'C:\\Users\\Administrator\\repo.zip' -oC:\\Users\\Administrator\\repo -y",
 
       "Write-Host '🚀 Running build script...'",
-      ". C:\\Users\\Administrator\\build.ps1",
+      ". C:\\Users\\Administrator\\repo\\convoy-scripts\\build.ps1",
 
       "Write-Host '🪣 Zipping output folder with 7-Zip...'",
       "& 'C:\\Program Files\\7-Zip\\7z.exe' a -tzip 'C:\\Users\\Administrator\\output.zip' 'C:\\Users\\Administrator\\output\\*' -mx=9",
