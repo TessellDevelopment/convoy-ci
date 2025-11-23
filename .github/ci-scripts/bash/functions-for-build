@@ -87,6 +87,7 @@ build_convoy_tessell_image_and_push() {
 
 build_windows_native_binary() {
   set -e
+  OUTPUT="output.zip"
   check_convoy_yaml
   generate_sts_session_token "402291221517" "convoy-leak-cleaner-role"
   # Only inside CI workspace
@@ -94,6 +95,11 @@ build_windows_native_binary() {
   zip -r repo.zip .
   packer validate ci-scripts/windows-native-builder.pkr.hcl
   packer build ci-scripts/windows-native-builder.pkr.hcl
+  if [ ! -f "${OUTPUT}" ] || [ ! -s "${OUTPUT}" ]; then
+    echo "❌ Build failure: ${OUTPUT} is missing or empty"
+    exit 1
+  fi
+  unzip ${OUTPUT}
   set +e
 }
 
