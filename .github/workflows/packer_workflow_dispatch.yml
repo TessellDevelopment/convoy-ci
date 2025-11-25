@@ -162,30 +162,42 @@ jobs:
         run: |
           packer version
 
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
       - name: Install dependencies
         run: |
-          python -m pip uninstall -y packer_framework
-          python -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-          python -m venv pkenv
-          source pkenv/bin/activate
-          python -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-          python -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
-          find /usr/bin /usr/local/bin -name build_all_artifacts
-          rm -rf /usr/lib/python3/dist-packages/OpenSSL
-          pip3 install pyopenssl
-          pip3 install pyopenssl --upgrade
-          pip3 install --force-reinstall setuptools==45.2.0
+          source ./ci-scripts/bash/functions-for-build
+          setup_packer_env
+      #     python -m pip uninstall -y packer_framework
+      #     python -m pip install --user virtualenv --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+      #     python -m venv pkenv
+      #     source pkenv/bin/activate
+      #     python -m pip install wheel --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+      #     python -m pip install -r ./requirements.txt --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}}
+      #     find /usr/bin /usr/local/bin -name build_all_artifacts
+      #     rm -rf /usr/lib/python3/dist-packages/OpenSSL
+      #     pip3 install pyopenssl
+      #     pip3 install pyopenssl --upgrade
+      #     pip3 install --force-reinstall setuptools==45.2.0
           
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
         run: |
-          source pkenv/bin/activate
+          source venv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BASE_BRANCH} --src_branch ${{ env.SOURCE_BRANCH }} --dry_run --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Build artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
-          source pkenv/bin/activate
+          source venv/bin/activate
           build_all_artifacts -r $PWD --dest_branch ${BASE_BRANCH} --src_branch ${{ env.SOURCE_BRANCH }} --pipeline_run ${CLOUD_BUILD_TYPE_ARG}
 
       - name: Share built artifacts
@@ -208,7 +220,7 @@ jobs:
       - name: Generate seed data
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
-          source pkenv/bin/activate
+          source venv/bin/activate
           export WORKDIR=`pwd`
           cp ./common_manifest.json ./combined_delta_cloud_image_manifest.json
           get_cloud_image_manifest_for_seed
@@ -216,7 +228,7 @@ jobs:
       - name: Generate final software manifest.
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
         run: |
-          source pkenv/bin/activate
+          source venv/bin/activate
           export WORKDIR=`pwd`
           export REPLICATION_ENABLED=false
           get_software_image_manifest_seed_file
