@@ -175,7 +175,7 @@ jobs:
       - name: Install dependencies
         run: |
           source ./ci-scripts/bash/functions-for-build
-          setup_packer_env
+          setupPackerEnv
    
       - name: Dry-run artifacts Input-config
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'dry_run' }}
