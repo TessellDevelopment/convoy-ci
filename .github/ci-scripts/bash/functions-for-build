@@ -420,13 +420,9 @@ get_dc_messages() {
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
   "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message | split("\n")[0]')
-  # echo "dc_messages" ${dc_messages}
-  # dc_message=$(echo ${dc_messages} | head -n 1)
-  echo "dc_message is ${dc_message} this"
 }
 
 get_root_pr_tag() {
-  echo "starting with get dc messages"
   get_dc_messages
   echo "dc_message" ${dc_message}
   root_pr_number=$(echo ${dc_message} | grep -oE '[0-9]+' | tail -1 )
@@ -1225,7 +1221,7 @@ setup_packer_env() {
 
 software_def_build() {
   set -e
-  # setup_packer_env
+  setup_packer_env
   export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
