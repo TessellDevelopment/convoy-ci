@@ -21,22 +21,26 @@ assert_root_pr_commit_success() {
   fi
 }
 
+aws_configure_profile() {
+  local PROFILE_NAME=$1
+  local AWS_ACCESS_KEY=$2
+  local AWS_SECRET_KEY=$3
+  local REGION=${4:-ap-south-1}
+  aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile ${PROFILE_NAME}
+  aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile ${PROFILE_NAME}
+  aws configure set region ${REGION} --profile ${PROFILE_NAME}
+}
+
 aws_configure_devqa_infra() {
-  aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY} --profile devqa
-  aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY} --profile devqa
-  aws configure set region ap-south-1 --profile devqa
+  aws_configure_profile "devqa" "${DEVQA_INFRA_ACCESS_KEY}" "${DEVQA_INFRA_SECRET_KEY}"
 }
 
 aws_configure_prod_assets() {
-  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY} --profile prod
-  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY} --profile prod
-  aws configure set region ap-south-1 --profile prod
+  aws_configure_profile "prod" "${PROD_ASSET_ACCESS_KEY}" "${PROD_ASSET_SECRET_KEY}"
 }
 
 aws_configure_tessellops_artifacts() {
-  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY} --profile tessellops
-  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY} --profile tessellops
-  aws configure set region ap-south-1 --profile tessellops
+  aws_configure_profile "tessellops" "${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}" "${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}"
 }
 
 bash_build() {
