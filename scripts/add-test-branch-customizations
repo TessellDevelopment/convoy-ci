@@ -10,5 +10,5 @@ cd ${script_dir}/../.github
 files_to_modify=$(find . -type f | grep '^./ci-scripts/\|^./workflows/')
 
 for i in ${files_to_modify}; do
-  sed -i '' "s/@TDEVOPS-3803/@${BRANCH}/;s/CONVOY_API_ENDPOINT/CONVOY_DEV_API_ENDPOINT/;s/CI_BRANCH: TDEVOPS-3803/CI_BRANCH: ${BRANCH}/" ${i}
+  sed -i '' "s/@main/@${BRANCH}/;s/CONVOY_API_ENDPOINT/CONVOY_DEV_API_ENDPOINT/;s/CI_BRANCH: main/CI_BRANCH: ${BRANCH}/" ${i}
 done
