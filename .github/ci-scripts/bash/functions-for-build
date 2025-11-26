@@ -422,7 +422,7 @@ get_dc_messages() {
   "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
   echo "dc_messages" ${dc_messages}
   dc_message=$(echo ${dc_messages} | head -n 1)
-  echo "dc_message is" ${dc_message}
+  echo "dc_message is ${dc_message} this"
 }
 
 get_root_pr_tag() {
