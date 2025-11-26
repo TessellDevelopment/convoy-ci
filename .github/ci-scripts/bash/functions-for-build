@@ -103,6 +103,22 @@ check_flyway() {
   fi
 }
 
+configure_python_version_if_required() {
+  check_convoy_yaml
+  required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
+  [[ -n "${required_python_version:-}" ]] || return 0
+  echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
+
+  if ! is_pyenv_version_installed "${required_python_version}";  then
+    echo "Python ${required_python_version} not found. Installing..."
+    pyenv install "${required_python_version}"
+  fi
+  pyenv local "${required_python_version}"
+  python3 -m venv venv
+  source venv/bin/activate
+  python --version
+}
+
 configure_go_version_if_required() {
   check_convoy_yaml
   required_go_version=$(yq e '.goVersion // ""' convoy.yaml 2>/dev/null)
@@ -155,6 +171,40 @@ configure_and_push_aws() {
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
+convoy_build() {
+  required_inputs="1"
+  validate_inputs "${required_inputs}" "$@"
+  bash ./setup 
+}
+
+convoy_build_and_push() {
+  
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  convoy_build "$@"
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "./build/${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+    
+  elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
+    aws_configure_tessellops_artifacts
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
+
+  elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_release_manifest_artifacts
+
+  elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
+    mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_release_manifest_artifacts
+  fi
+  generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
+  
+}
+
 convoy_codegen_build() {
   set -e
   ARTIFACT="${1}"
@@ -176,6 +226,7 @@ convoy_codegen_build_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
   set +e
 }
+
 
 convoy_go_library_build() {
   set -e
@@ -424,6 +475,7 @@ generate_checksum() {
 
 generate_sts_session_token() {
   BUCKET_ACCOUNT=${1}
+  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY 
   export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
   export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
@@ -551,6 +603,7 @@ image_scan(){
   set -e
   export IMAGE="${1}"
   RETRIES=50
+  TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
     output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
     exit_code=$?
@@ -570,7 +623,7 @@ image_scan(){
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
   fi
-  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest
+  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
@@ -593,6 +646,15 @@ initialise_coverage() {
   fi
   rm -rf ${source_path}/tests
   cp -r ${test_dir} pytest.ini ${source_path}
+}
+
+initialize_python_build_env() {
+  ARTIFACT="${1}"
+  requiredInputs="1"
+  validateInputs "$requiredInputs" "$@"
+  configure_python_version_if_required
+  install_python_dependencies "$ARTIFACT"
+  lintCheck
 }
 
 install_go_dependencies() {
@@ -649,6 +711,10 @@ install_python_dependencies() {
   if [ -f "${DIR}/requirements.txt" ]; then
     python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
+}
+
+is_pyenv_version_installed() {
+  pyenv versions --bare | grep -q "^${1}"
 }
 
 is_go_version_installed() {
@@ -999,6 +1065,7 @@ push_terraform_modules() {
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
+    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     if ! ${DEV_BUILD}; then
       configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
@@ -1063,6 +1130,20 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  set +e
+}
+
+python_library_build() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlewPythonwheel
+  set +e
+}
+
+python_library_build_and_push() {
+  set -e
+  initialize_python_build_env "$@"
+  gradlewTwineUpload
   set +e
 }
 
@@ -1147,9 +1228,7 @@ setup_qa_env() {
 
 setup_packer_env() {
   python -m pip uninstall -y packer_framework
-  python -m pip install --user virtualenv
-  python -m venv pkenv
-  source pkenv/bin/activate
+  configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 }
@@ -1241,6 +1320,7 @@ tailscale_build_and_push() {
   if ! ${DEV_BUILD}; then
     gitops-pusher --policy-file ./policy.hujson apply
   fi
+  generate_checksum "policy.hujson"
   set +e
 }
 

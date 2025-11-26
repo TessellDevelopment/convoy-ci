@@ -36,9 +36,11 @@ jobs:
           TAG: "${{env.TAG}}"
           BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
           PR_ID: "${{github.event.number}}"
+          SUPPORTED_JIRA_PROJECTS: ${{vars.SUPPORTED_JIRA_PROJECTS}}
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           OWNER: ${{github.repository_owner}}
           USER: ${{secrets.CIPIPELINE_GITHUB_USER}}
+          SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           python3 - <<EOF
           
@@ -49,6 +51,7 @@ jobs:
           import base64
           import subprocess
           import json
+          import re
           from datetime import datetime
             
           def post_request(payload):
@@ -90,6 +93,10 @@ jobs:
           COMMIT_MESSAGE = COMMIT_MESSAGE.decode('utf-8')
           COMMITTED_AT = os.environ.get('COMMITTED_AT')
           COMMITTED_AT = datetime.strptime(COMMITTED_AT, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d %H:%M:%S")
+          SOURCE_BRANCH = os.environ.get('SOURCE_BRANCH')
+          SUPPORTED_JIRA_PROJECTS = os.environ.get('SUPPORTED_JIRA_PROJECTS')
+          jira_id = re.search(rf'({SUPPORTED_JIRA_PROJECTS})\d+', SOURCE_BRANCH).group(0)
+          is_double_commit = "double_commit" in SOURCE_BRANCH
 
           try:
             with open('convoy.yaml', 'r') as yaml_file:
@@ -108,6 +115,8 @@ jobs:
             "usesCustomVersion": USES_CUSTOM_VERSION == "true",
             "tag": TAG,
             "pullRequestId": PR_ID,
+            "jiraId": jira_id,
+            "isDoubleCommit": is_double_commit,
           }
           print(json.dumps(payload, indent=4))
           post_request(payload)

@@ -60,6 +60,14 @@ configureNpmrcYarnrc() {
   configure_npmrc_yarnrc "$@"
 }
 
+convoyBuild() {
+  convoy_build "$@"
+}
+
+convoyBuildAndPush() {
+  convoy_build_and_push "$@"
+}
+
 convoyCodegenBuild() {
   convoy_codegen_build "$@"
 }
@@ -270,6 +278,14 @@ pushToNexus() {
 
 pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
+}
+
+pythonLibraryBuild() {
+  python_library_build "$@"
+}
+
+pythonLibraryBuildAndPush() {
+  python_library_build_and_push "$@"
 }
 
 pythonSetupBuild() {

@@ -437,7 +437,6 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            installPythonDependencies $ARTIFACT
             lintCheck
             gradlewPackagePlugin
             set +e
@@ -626,16 +625,6 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
-            set +e
-          }
-          pythonLibraryBuild() {
-            set -e
-            ARTIFACT="$1"
-            requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            installPythonDependencies $ARTIFACT
-            lintCheck
-            gradlewPythonwheel
             set +e
           }
           qaBuild(){
