@@ -424,7 +424,6 @@ get_dc_messages() {
 
 get_root_pr_tag() {
   get_dc_messages
-  echo "dc_message" ${dc_message}
   root_pr_number=$(echo ${dc_message} | grep -oE '[0-9]+' | tail -1 )
   echo "root_pr_number" ${root_pr_number}
   get_base_branch_commit_from_pr_number
