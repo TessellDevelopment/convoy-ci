@@ -415,13 +415,13 @@ get_base_branch_commit_from_pr_number() {
 }
 
 get_dc_messages() {
-  dc_messages=$(curl -L \
+  dc_message=$(curl -L \
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message')
-  echo "dc_messages" ${dc_messages}
-  dc_message=$(echo ${dc_messages} | head -n 1)
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message | split("\n")[0]')
+  # echo "dc_messages" ${dc_messages}
+  # dc_message=$(echo ${dc_messages} | head -n 1)
   echo "dc_message is ${dc_message} this"
 }
 
