@@ -6,7 +6,7 @@ variable "tessell_mysql_db_username" {
 
 variable "tessell_mysql_db_password" {
   description = "Password for Tessell MySQL database"
-  default     = env("TESSELL_WIN_SQL_DB_USERNAME")
+  default     = env("TESSELL_WIN_SQL_DB_PASSWORD")
   sensitive   = true
 }
 
