@@ -1,12 +1,12 @@
 
 variable "tessell_mysql_db_username" {
   description = "Username for Tessell MySQL database"
-  default     = env("TESSELL_MYSQL_DB_USERNAME")
+  default     = env("TESSELL_WIN_SQL_DB_USERNAME")
 }
 
 variable "tessell_mysql_db_password" {
   description = "Password for Tessell MySQL database"
-  default     = env("TESSELL_MYSQL_DB_PASSWORD")
+  default     = env("TESSELL_WIN_SQL_DB_USERNAME")
   sensitive   = true
 }
 
@@ -15,14 +15,14 @@ source "amazon-ebs" "windows-builder" {
   source_ami     = "ami-03d3615b6028a7af3"
   instance_type  = "c5.2xlarge"
   communicator   = "winrm"
-  winrm_username = "TessellMssql"
-  winrm_password = "AWSMSSQL82wnellxrVaRMZpQ"
+  winrm_username = var.tessell_mysql_db_username
+  winrm_password = var.tessell_mysql_db_password
   # profile        = 402291221517
   ami_name       = "native-build-{{timestamp}}"
   winrm_insecure = true
 
-  pause_before_connecting = "2m"
-  winrm_timeout   = "30m"
+  pause_before_connecting = "1m"
+  winrm_timeout   = "15m"
 
   skip_create_ami = true
   run_tags = {
