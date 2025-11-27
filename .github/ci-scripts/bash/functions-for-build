@@ -97,7 +97,8 @@ build_windows_native_artifact() {
   check_convoy_yaml
   create_powershell_env_vars
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
-
+  echo "Windows username: ${TESSELL_WIN_SQL_DB_USERNAME}"
+  echo "Windows password: ${TESSELL_WIN_SQL_DB_PASSWORD}"
   rm -rf .git/objects/pack
   zip -r repo.zip .
   packer build ci-scripts/windows-native-builder.pkr.hcl
