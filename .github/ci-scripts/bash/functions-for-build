@@ -98,7 +98,7 @@ build_windows_native_artifact() {
   create_powershell_env_vars
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
 
-  zip -r repo.zip .
+  zip -r repo.zip . -x "target/*"
   packer build ci-scripts/windows-native-builder.pkr.hcl
   if [ ! -f "${OUTPUT}" ] || [ ! -s "${OUTPUT}" ]; then
     echo "❌ Build failure: ${OUTPUT} is missing or empty"
