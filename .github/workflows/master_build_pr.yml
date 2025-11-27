@@ -302,7 +302,7 @@ jobs:
 
   build-amd:
     if: ${{ inputs.type == 'amd' }}
-    runs-on: ui-build-test-2
+    runs-on: self-hosted
     env:
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
