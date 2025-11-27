@@ -352,6 +352,8 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
+      TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
+      TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
