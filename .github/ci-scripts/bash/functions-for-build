@@ -101,7 +101,7 @@ build_windows_native_artifact() {
   echo "Windows password: ${TESSELL_WIN_SQL_DB_PASSWORD}"
   echo -n "$TESSELL_WIN_SQL_DB_PASSWORD" | sha256sum
   echo -n "$TESSELL_WIN_SQL_DB_USERNAME" | sha256sum  
-  echo "Password length: ${#TESSELL_WIN_SQL_DB_USERNAME}"
+  echo "Username length: ${#TESSELL_WIN_SQL_DB_USERNAME}"
   echo "Password length: ${#TESSELL_WIN_SQL_DB_PASSWORD}"
 
   rm -rf .git/objects/pack
@@ -116,7 +116,7 @@ build_windows_native_artifact() {
 }
 
 build_windows_native_artifact_and_push() {
-  build_windows_native_binary "$@"
+  build_windows_native_artifact "$@"
   
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}"
@@ -130,7 +130,7 @@ check_convoy_yaml() {
     return 1
   fi
 }
-
+df2a19b9 0.111.4923
 check_flyway() {
   if [ -d "flyway" ]; then
     echo "The 'flyway' directory exists in this repository."
