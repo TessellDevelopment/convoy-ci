@@ -21,22 +21,26 @@ assert_root_pr_commit_success() {
   fi
 }
 
+aws_configure_profile() {
+  local PROFILE_NAME=$1
+  local AWS_ACCESS_KEY=$2
+  local AWS_SECRET_KEY=$3
+  local REGION=${4:-ap-south-1}
+  aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile ${PROFILE_NAME}
+  aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile ${PROFILE_NAME}
+  aws configure set region ${REGION} --profile ${PROFILE_NAME}
+}
+
 aws_configure_devqa_infra() {
-  aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
-  aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
-  aws configure set region ap-south-1
+  aws_configure_profile "devqa" "${DEVQA_INFRA_ACCESS_KEY}" "${DEVQA_INFRA_SECRET_KEY}"
 }
 
 aws_configure_prod_assets() {
-  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY} --profile prod
-  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY} --profile prod
-  aws configure set region ap-south-1 --profile prod
+  aws_configure_profile "prod" "${PROD_ASSET_ACCESS_KEY}" "${PROD_ASSET_SECRET_KEY}"
 }
 
 aws_configure_tessellops_artifacts() {
-  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}
-  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}
-  aws configure set region ap-south-1
+  aws_configure_profile "tessellops" "${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}" "${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}"
 }
 
 bash_build() {
@@ -92,7 +96,7 @@ build_windows_native_artifact() {
   EXTENSION="${2}"
   check_convoy_yaml
   create_powershell_env_vars
-  generate_sts_session_token "402291221517" "convoy-leak-cleaner-role"
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
 
   rm -rf .git/objects/pack
   zip -r repo.zip .
@@ -110,14 +114,8 @@ build_windows_native_artifact_and_push() {
   
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}"
-  else
-    aws_configure_tessellops_artifacts
-    push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}.zip"
-    mv "${ARTIFACT}.${EXTENSION}"  ${ARTIFACT}-${LATEST_TAG}.zip
-    aws s3 cp "${ARTIFACT}.${EXTENSION}" s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}.zip   
   fi
   generate_checksum ${ARTIFACT}.${EXTENSION}
-
 }
 
 check_convoy_yaml() {
@@ -144,19 +142,13 @@ configure_python_version_if_required() {
   [[ -n "${required_python_version:-}" ]] || return 0
   echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
 
-  if ! is_pyenv_entity_exists "${required_python_version}";  then
+  if ! is_pyenv_version_installed "${required_python_version}";  then
     echo "Python ${required_python_version} not found. Installing..."
     pyenv install "${required_python_version}"
   fi
-  env_name="build-${required_python_version}"
-
-  if ! is_pyenv_entity_exists "${env_name}"; then
-    echo "Creating virtualenv ${env_name}..."
-    pyenv virtualenv "${required_python_version}" "${env_name}"
-  fi
-  source ${HOME}/.sourcables
-  pyenv shell "${env_name}"
-  echo "Activated pyenv environment: ${env_name}"
+  pyenv local "${required_python_version}"
+  python3 -m venv venv
+  source venv/bin/activate
   python --version
 }
 
@@ -230,7 +222,7 @@ convoy_build_and_push() {
     aws_configure_tessellops_artifacts
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
+    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} --profile tessellops
 
   elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
@@ -280,7 +272,6 @@ create_powershell_env_vars() {
   VARS=(GITHUB_USER GITHUB_TOKEN ARTIFACT EXTENSION)
 
   echo "" > "$OUTPUT_ENV_FILE"
-
   for var in "${VARS[@]}"; do
     val="${!var:-}"; val="${val//\"/\\\`\"}"
     echo "\$env:$var = \"$val\"" >> "$OUTPUT_ENV_FILE"
@@ -530,8 +521,6 @@ generate_sts_session_token() {
   BUCKET_ACCOUNT=${1}
   ROLE_NAME=${2:-"artifacts-bucket-update-role"}
   unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY 
-  # export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  # export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/${ROLE_NAME}
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
@@ -767,7 +756,7 @@ install_python_dependencies() {
   fi
 }
 
-is_pyenv_entity_exists() {
+is_pyenv_version_installed() {
   pyenv versions --bare | grep -q "^${1}"
 }
 
@@ -873,7 +862,7 @@ mvnw_build_and_push() {
     aws_configure_tessellops_artifacts
     push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
-    aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+    aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip --profile tessellops
     generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
   fi
   set +e
@@ -1267,9 +1256,7 @@ setup_qa_env() {
 
 setup_packer_env() {
   python -m pip uninstall -y packer_framework
-  python -m pip install --user virtualenv
-  python -m venv pkenv
-  source pkenv/bin/activate
+  configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
 }
