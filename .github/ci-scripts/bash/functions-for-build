@@ -517,9 +517,14 @@ generate_checksum() {
 }
 
 generate_sts_session_token() {
+  AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
   BUCKET_ACCOUNT=${1}
   ROLE_NAME=${2:-"artifacts-bucket-update-role"}
-  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY 
+  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+  if [ ! -f ${AWS_WEB_IDENTITY_TOKEN_FILE} ]; then
+    export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+    export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  fi
   ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/${ROLE_NAME}
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
