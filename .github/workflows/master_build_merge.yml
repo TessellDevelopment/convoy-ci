@@ -942,7 +942,7 @@ jobs:
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
-            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
+            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
