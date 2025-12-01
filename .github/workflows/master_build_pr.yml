@@ -216,6 +216,15 @@ jobs:
             elasticTarBuild
             set +e
           }
+          dbPluginBuild() {
+            set -e
+            ARTIFACT="$1"
+            requiredInputs="1"
+            validateInputs "$requiredInputs" "$@" 
+            lintCheck
+            gradlewPackagePlugin
+            set +e
+          }
           elasticTarBuild() {
             echo "----------------------------------------------"
             echo "---------- Creating Tar Files -----------------"
