@@ -5,7 +5,7 @@ source ./ci-scripts/bash/common
 
 function upload_to_nexus() {
   # Remove in next PR
-  local NEXUS_ADDR=http://nexus.nexus.svc.cluster.local
+  local NEXUS_ADDR=https://nexus.tessell.cloud
   local local_abs_path_to_src=${1:-} upload_path_in_nexus=${2:-}
   validate_inputs "1 2" "$@"
 
