@@ -244,7 +244,8 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
-      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
+      MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
+      NEXUS_ADDR: https://nexus.tessell.cloud
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
