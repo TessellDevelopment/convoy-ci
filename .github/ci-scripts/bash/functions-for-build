@@ -109,12 +109,13 @@ build_windows_native_artifact() {
 }
 
 build_windows_native_artifact_and_push() {
-  build_windows_native_binary "$@"
-  
+  build_windows_native_artifact "$@"
+  set -e  
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}.${EXTENSION}-${LATEST_TAG}"
   fi
   generate_checksum ${ARTIFACT}.${EXTENSION}
+  set +e
 }
 
 check_convoy_yaml() {
