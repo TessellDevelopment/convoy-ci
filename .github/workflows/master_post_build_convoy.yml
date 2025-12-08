@@ -112,10 +112,11 @@ jobs:
 
             def get_artifacts_tf():
               artifacts = []
+              SKIP_FOLDERS = [".github", "docs", "scripts"]
               tf_modules_folders = get_tf_modules_folders()
               print("Terraform Folders")
               for folder in tf_modules_folders:
-                if '.github' in folder or len(folder) == 0:
+                if any(s in folder for s in SKIP_FOLDERS) or len(folder) == 0:
                   continue
                 print(folder)  
                 path = f'./{folder}/convoy.yaml'
