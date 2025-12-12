@@ -1286,7 +1286,14 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  echo "GITHUB_RUN_ID is ${GITHUB_RUN_ID}"
+  echo "GITHUB_RUN_ATTEMPT is ${GITHUB_RUN_ATTEMPT}"
+  if [[ "${GITHUB_DRAFT}" == "true" ]]; then
+    echo "PR is in draft mode — skipping software_def_build"
+    validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  else
+    validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  fi
   set +e
 }
 
