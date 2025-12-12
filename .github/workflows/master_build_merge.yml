@@ -55,7 +55,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: TDEVOPS-3031_valid_version_id
+      CI_BRANCH: main
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -228,7 +228,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: TDEVOPS-3031_valid_version_id
+      CI_BRANCH: main
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
@@ -516,7 +516,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: TDEVOPS-3031_valid_version_id
+      CI_BRANCH: main
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -1121,7 +1121,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: TDEVOPS-3031_valid_version_id
+      CI_BRANCH: main
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}

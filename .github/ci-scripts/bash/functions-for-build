@@ -1288,14 +1288,6 @@ software_def_build() {
       return
     fi
   fi
-  echo "GITHUB_RUN_ID is ${GITHUB_RUN_ID}"
-  echo "GITHUB_RUN_ATTEMPT is ${GITHUB_RUN_ATTEMPT}"
-  # if [[ "${GITHUB_DRAFT}" == "true" ]]; then
-  #   echo "PR is in draft mode — skipping software_def_build"
-  #   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
-  # else
-  #   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run --is_e2e_test
-  # fi
   validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "--is_e2e_test")
   set +e
 }
