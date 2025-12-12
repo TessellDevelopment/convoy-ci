@@ -1272,6 +1272,7 @@ software_def_build() {
   export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
   export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  export REPLICATION_ENABLED="false"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
   assert_base_branch_commit_success
@@ -1289,12 +1290,13 @@ software_def_build() {
   fi
   echo "GITHUB_RUN_ID is ${GITHUB_RUN_ID}"
   echo "GITHUB_RUN_ATTEMPT is ${GITHUB_RUN_ATTEMPT}"
-  if [[ "${GITHUB_DRAFT}" == "true" ]]; then
-    echo "PR is in draft mode — skipping software_def_build"
-    validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
-  else
-    validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run --is_e2e_test
-  fi
+  # if [[ "${GITHUB_DRAFT}" == "true" ]]; then
+  #   echo "PR is in draft mode — skipping software_def_build"
+  #   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  # else
+  #   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run --is_e2e_test
+  # fi
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "--is_e2e_test")
   set +e
 }
 
