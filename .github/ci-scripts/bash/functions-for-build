@@ -21,22 +21,26 @@ assert_root_pr_commit_success() {
   fi
 }
 
+aws_configure_profile() {
+  local PROFILE_NAME=$1
+  local AWS_ACCESS_KEY=$2
+  local AWS_SECRET_KEY=$3
+  local REGION=${4:-ap-south-1}
+  aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile ${PROFILE_NAME}
+  aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile ${PROFILE_NAME}
+  aws configure set region ${REGION} --profile ${PROFILE_NAME}
+}
+
 aws_configure_devqa_infra() {
-  aws configure set aws_access_key_id ${DEVQA_INFRA_ACCESS_KEY}
-  aws configure set aws_secret_access_key ${DEVQA_INFRA_SECRET_KEY}
-  aws configure set region ap-south-1
+  aws_configure_profile "devqa" "${DEVQA_INFRA_ACCESS_KEY}" "${DEVQA_INFRA_SECRET_KEY}"
 }
 
 aws_configure_prod_assets() {
-  aws configure set aws_access_key_id ${PROD_ASSET_ACCESS_KEY}
-  aws configure set aws_secret_access_key ${PROD_ASSET_SECRET_KEY}
-  aws configure set region ap-south-1
+  aws_configure_profile "prod" "${PROD_ASSET_ACCESS_KEY}" "${PROD_ASSET_SECRET_KEY}"
 }
 
 aws_configure_tessellops_artifacts() {
-  aws configure set aws_access_key_id ${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}
-  aws configure set aws_secret_access_key ${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}
-  aws configure set region ap-south-1
+  aws_configure_profile "tessellops" "${TESSELLOPS_ARTIFACTS_DEV_ACCESS_KEY}" "${TESSELLOPS_ARTIFACTS_DEV_SECRET_KEY}"
 }
 
 bash_build() {
@@ -83,6 +87,35 @@ build_convoy_tessell_image_and_push() {
   IMAGE="${1}"
   build_convoy_tessell_image  "$@"
   docker_tag_and_push "${IMAGE}" "${LATEST_TAG}"
+}
+
+build_windows_native_artifact() {
+  set -e
+  OUTPUT="output.zip"
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  check_convoy_yaml
+  create_powershell_env_vars
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
+
+  zip -r repo.zip . -x "target/*"
+  packer build ci-scripts/windows-native-builder.pkr.hcl
+  if [ ! -f "${OUTPUT}" ] || [ ! -s "${OUTPUT}" ]; then
+    echo "❌ Build failure: ${OUTPUT} is missing or empty"
+    exit 1
+  fi
+  unzip ${OUTPUT}
+  set +e
+}
+
+build_windows_native_artifact_and_push() {
+  build_windows_native_artifact "$@"
+  set -e  
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  fi
+  generate_checksum ${ARTIFACT}.${EXTENSION}
+  set +e
 }
 
 check_convoy_yaml() {
@@ -189,7 +222,7 @@ convoy_build_and_push() {
     aws_configure_tessellops_artifacts
     push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} 
+    aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} --profile tessellops
 
   elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
@@ -232,6 +265,17 @@ convoy_go_library_build() {
   set -e
   go build ./...
   set +e
+}
+
+create_powershell_env_vars() {
+  OUTPUT_ENV_FILE="envvars.ps1"
+  VARS=(GITHUB_USER GITHUB_TOKEN ARTIFACT EXTENSION)
+
+  echo "" > "$OUTPUT_ENV_FILE"
+  for var in "${VARS[@]}"; do
+    val="${!var:-}"; val="${val//\"/\\\`\"}"
+    echo "\$env:$var = \"$val\"" >> "$OUTPUT_ENV_FILE"
+  done
 }
 
 create_tf_backend() {
@@ -419,7 +463,7 @@ get_dc_messages() {
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "X-GitHub-Api-Version: 2022-11-28" \
-  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message' | head -n 1)
+  "${GH_API_URL}/repos/${REPOSITORY}/pulls/${PR_NUMBER}/commits"| jq -r '.[0].commit.message | split("\n")[0]')
 }
 
 get_root_pr_tag() {
@@ -474,11 +518,15 @@ generate_checksum() {
 }
 
 generate_sts_session_token() {
+  AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
   BUCKET_ACCOUNT=${1}
-  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY 
-  export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
-  export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
-  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/artifacts-bucket-update-role
+  ROLE_NAME=${2:-"artifacts-bucket-update-role"}
+  unset AWS_SESSION_TOKEN AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+  if [ ! -f ${AWS_WEB_IDENTITY_TOKEN_FILE} ]; then
+    export AWS_ACCESS_KEY_ID=${ARTIFACTS_UPLOAD_ACCESS_KEY}
+    export AWS_SECRET_ACCESS_KEY=${ARTIFACTS_UPLOAD_SECRET_KEY}
+  fi
+  ROLE_ARN=arn:aws:iam::${BUCKET_ACCOUNT}:role/${ROLE_NAME}
   ROLE_OUTPUT=$(aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name session)
   export AWS_ACCESS_KEY_ID=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.AccessKeyId')
   export AWS_SECRET_ACCESS_KEY=$(echo ${ROLE_OUTPUT} | jq -r '.Credentials.SecretAccessKey')
@@ -819,7 +867,7 @@ mvnw_build_and_push() {
     aws_configure_tessellops_artifacts
     push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
-    aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip   
+    aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip --profile tessellops
     generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
   fi
   set +e
@@ -1041,7 +1089,7 @@ push_release_manifest_artifacts() {
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
 
   if ! ${DEV_BUILD}; then
-    aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path}
+    aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
     
     if [[ ${release} -le 134 ]]; then
       for ENV in "${environments[@]}"
@@ -1253,7 +1301,6 @@ software_def_build() {
     fi
   fi
   validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
-  build_all_artifacts -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --dry_run --pipeline_run
   set +e
 }
 

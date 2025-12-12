@@ -244,7 +244,8 @@ jobs:
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
-      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
+      MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
+      NEXUS_ADDR: https://nexus.tessell.cloud
       NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
@@ -509,6 +510,7 @@ jobs:
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_DEVOPS: ${{vars.AWS_ACCOUNT_TESSELL_DEVOPS}}
       AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
@@ -572,6 +574,8 @@ jobs:
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+      TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
+      TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
       TESSELLOPS_APP_NAME: ${{vars.TESSELLOPS_APP_NAME}}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
@@ -939,7 +943,7 @@ jobs:
             BUILD_DIR=$BASE_DIR/build
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
-            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts")
+            EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}

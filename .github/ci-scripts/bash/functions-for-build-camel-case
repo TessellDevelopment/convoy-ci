@@ -36,6 +36,14 @@ buildConvoyTessellImageAndPush() {
   build_convoy_tessell_image_and_push "$@"
 }
 
+buildWindowsNativeArtifact() {
+  build_windows_native_artifact "$@"
+}
+
+buildWindowsNativeArtifactAndPush() {
+  build_windows_native_artifact_and_push "$@"
+}
+
 checkFlyway() {
   check_flyway "$@"
 }
