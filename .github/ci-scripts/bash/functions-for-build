@@ -951,6 +951,20 @@ ops_ui_build_and_push() {
   set +e
 }
 
+packer_build() {
+  set -e
+  packer init .
+  packer validate .
+  set +e
+}
+
+packer_build_and_push() {
+  packer_build "$@"
+  set -e
+  PACKER_LOG=1 PACKER_LOG_PATH=packer.log packer build .
+  set +e
+}
+
 parse_coverage_report() {
   set -e
   language=$(yq '.language' convoy.yaml)
