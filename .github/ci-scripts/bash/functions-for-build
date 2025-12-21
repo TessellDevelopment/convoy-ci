@@ -809,7 +809,6 @@ make_docker_image() {
   make run_tests
   make docker_image IMAGE_NAME=${IMAGE}
   image_scan ${IMAGE}
-  parse_coverage_report_go
   set +ex
 }
 
@@ -818,7 +817,6 @@ make_docker_image_and_push() {
   wget -qO- https://github.com/vektra/mockery/releases/download/v2.53.5/mockery_2.53.5_Linux_x86_64.tar.gz | sudo tar -xvzf - -C /usr/local/bin
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
   make run_tests
-  parse_and_push_coverage_report_go
   set +ex
 }
 
@@ -1036,6 +1034,8 @@ parse_coverage_report() {
     parse_coverage_report_java "$@"
   elif [[ "${language}" == "python" ]]; then
     parse_coverage_report_python "$@"
+  elif [[ "${language}" == "go" ]]; then
+    parse_coverage_report_go "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1048,6 +1048,8 @@ parse_and_push_coverage_report() {
     parse_and_push_coverage_report_java "$@"
   elif [[ "${language}" == "python" ]]; then
     parse_and_push_coverage_report_python "$@"
+  elif [[ "${language}" == "go" ]]; then
+    parse_and_push_coverage_report_go "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
