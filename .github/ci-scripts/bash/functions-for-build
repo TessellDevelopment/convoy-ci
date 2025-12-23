@@ -805,7 +805,6 @@ make_docker_image() {
   IMAGE="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  wget -qO- https://github.com/vektra/mockery/releases/download/v2.53.5/mockery_2.53.5_Linux_x86_64.tar.gz | sudo tar -xvzf - -C /usr/local/bin
   make run_tests
   make docker_image IMAGE_NAME=${IMAGE}
   image_scan ${IMAGE}
@@ -814,7 +813,6 @@ make_docker_image() {
 
 make_docker_image_and_push() {
   set -ex
-  wget -qO- https://github.com/vektra/mockery/releases/download/v2.53.5/mockery_2.53.5_Linux_x86_64.tar.gz | sudo tar -xvzf - -C /usr/local/bin
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
   make run_tests
   set +ex
