@@ -528,6 +528,8 @@ jobs:
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
