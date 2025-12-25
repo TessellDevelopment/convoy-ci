@@ -93,8 +93,8 @@
 
               if BRANCH_COVERAGE and STATEMENT_COVERAGE:
                 print("Coverage report present sending details to convoy.")
-                BRANCH_COVERAGE_VALUES = list(map(int, BRANCH_COVERAGE.split()))
-                STATEMENT_COVERAGE_VALUES = list(map(int, STATEMENT_COVERAGE.split()))
+                BRANCH_COVERAGE_VALUES = list(map(lambda x: int(float(x)), BRANCH_COVERAGE.split()))
+                STATEMENT_COVERAGE_VALUES = list(map(lambda x: int(float(x)), STATEMENT_COVERAGE.split()))
               else:
                 print("Coverage report not generated. Skipping post call to convoy.")
                 exit(0)
