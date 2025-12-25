@@ -650,10 +650,11 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
+  TAG="${2:-latest}"
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
-    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:${TAG} 2>&1 || true)
     exit_code=$?
     echo ${output}
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
@@ -671,7 +672,7 @@ image_scan(){
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
   fi
-  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
+  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:${TAG} --timeout ${TIMEOUT}
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
@@ -806,8 +807,8 @@ make_docker_image() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
   make run_tests
-  make docker_image IMAGE_NAME=${IMAGE}
-  image_scan ${IMAGE}
+  make docker_image IMAGE_NAME=${IMAGE} TAG=test
+  image_scan ${IMAGE} test
   set +ex
 }
 
