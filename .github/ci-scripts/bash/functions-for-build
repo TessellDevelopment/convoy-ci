@@ -819,48 +819,6 @@ make_docker_image_and_push() {
   set +ex
 }
 
-parse_coverage_report_go() {
-  if [ ! -f "coverage.out" ]; then
-    echo "coverage.out not found. Skipping coverage report parsing."
-    return
-  fi
-  TOTAL_BLOCKS=0
-  COVERED_BLOCKS=0
-
-  while IFS= read -r line; do
-    if [[ $line == mode:* ]]; then
-      continue
-    fi
-    NUM_BLOCKS=$(echo "$line" | awk '{print $2}')
-    EXEC_COUNT=$(echo "$line" | awk '{print $3}')
-    
-    if [[ -n "$NUM_BLOCKS" && -n "$EXEC_COUNT" ]]; then
-      TOTAL_BLOCKS=$((TOTAL_BLOCKS + NUM_BLOCKS))
-      if [[ $EXEC_COUNT -gt 0 ]]; then
-        COVERED_BLOCKS=$((COVERED_BLOCKS + NUM_BLOCKS))
-      fi
-    fi
-  done < coverage.out
-
-  MISSED_BLOCKS=$((TOTAL_BLOCKS - COVERED_BLOCKS))
-  COVERAGE=$(echo "scale=2; $COVERED_BLOCKS / $TOTAL_BLOCKS * 100" | bc)
-  echo "COVERAGE PERCENTAGE: ${COVERED_BLOCKS}"
-  export BRANCH_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
-  export STATEMENT_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
-  flag=1
-}
-
-parse_and_push_coverage_report_go() {
-  flag=0
-  parse_coverage_report_go
-  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
-    echo "Pushing coverage report to S3"
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.out" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.out"
-    go tool cover -html=coverage.out -o coverage.html
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.html" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
-  fi
-}
-
 make_service() {
   set -e
   ARTIFACT="${1}"
@@ -1051,6 +1009,48 @@ parse_and_push_coverage_report() {
     parse_and_push_coverage_report_go "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
+  fi
+}
+
+parse_coverage_report_go() {
+  if [ ! -f "coverage.out" ]; then
+    echo "coverage.out not found. Skipping coverage report parsing."
+    return
+  fi
+  TOTAL_BLOCKS=0
+  COVERED_BLOCKS=0
+
+  while IFS= read -r line; do
+    if [[ $line == mode:* ]]; then
+      continue
+    fi
+    NUM_BLOCKS=$(echo "$line" | awk '{print $2}')
+    EXEC_COUNT=$(echo "$line" | awk '{print $3}')
+    
+    if [[ -n "$NUM_BLOCKS" && -n "$EXEC_COUNT" ]]; then
+      TOTAL_BLOCKS=$((TOTAL_BLOCKS + NUM_BLOCKS))
+      if [[ $EXEC_COUNT -gt 0 ]]; then
+        COVERED_BLOCKS=$((COVERED_BLOCKS + NUM_BLOCKS))
+      fi
+    fi
+  done < coverage.out
+
+  MISSED_BLOCKS=$((TOTAL_BLOCKS - COVERED_BLOCKS))
+  COVERAGE=$(echo "scale=2; $COVERED_BLOCKS / $TOTAL_BLOCKS * 100" | bc)
+  echo "COVERAGE PERCENTAGE: ${COVERED_BLOCKS}"
+  export BRANCH_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
+  export STATEMENT_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
+  flag=1
+}
+
+parse_and_push_coverage_report_go() {
+  flag=0
+  parse_coverage_report_go
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.out" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.out"
+    go tool cover -html=coverage.out -o coverage.html
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.html" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
   fi
 }
 
