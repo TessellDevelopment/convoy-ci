@@ -184,6 +184,14 @@ jarBuildAndPush() {
   jar_build_and_push "$@"
 }
 
+makeDockerImage() {
+  make_docker_image "$@"
+}
+
+makeDockerImageAndPush() {
+  make_docker_image_and_push "$@"
+}
+
 makeService() {
   make_service "$@"
 }
