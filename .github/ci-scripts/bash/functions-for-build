@@ -1012,6 +1012,7 @@ parse_and_push_coverage_report() {
 parse_coverage_report_go() {
   if [ ! -d "tests" ]; then
     echo "Test folder does not exists, skipping unit tests and code coverage report generation"
+    return
   fi
   make run_tests
   TOTAL_BLOCKS=0
