@@ -650,11 +650,10 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
-  TAG="${2:-latest}"
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
-    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:${TAG} 2>&1 || true)
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
     exit_code=$?
     echo ${output}
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
@@ -672,7 +671,7 @@ image_scan(){
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
   fi
-  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:${TAG} --timeout ${TIMEOUT}
+  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
@@ -802,21 +801,19 @@ jar_build_and_push() {
 }
 
 make_docker_image() {
-  set -ex
+  set -e
   IMAGE="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  make run_tests
-  make docker_image IMAGE_NAME=${IMAGE} TAG=test
-  image_scan ${IMAGE} test
-  set +ex
+  make docker_image IMAGE_NAME=${IMAGE} TAG=latest
+  image_scan ${IMAGE}
+  set +e
 }
 
 make_docker_image_and_push() {
-  set -ex
+  set -e
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
-  make run_tests
-  set +ex
+  set +e
 }
 
 make_service() {
@@ -1013,10 +1010,10 @@ parse_and_push_coverage_report() {
 }
 
 parse_coverage_report_go() {
-  if [ ! -f "coverage.out" ]; then
-    echo "coverage.out not found. Skipping coverage report parsing."
-    return
+  if [ ! -d "tests" ]; then
+    echo "Test folder does not exists, skipping unit tests and code coverage report generation"
   fi
+  make run_tests
   TOTAL_BLOCKS=0
   COVERED_BLOCKS=0
 
