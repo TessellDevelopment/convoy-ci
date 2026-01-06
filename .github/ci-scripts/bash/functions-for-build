@@ -1613,6 +1613,7 @@ yarn_build_and_push() {
 #   - buildFunction: zip
 #     zipDirectory: tessell-hcp-setup (To have contents of this directory at root of zip)
 #     zipDirectory: [tessell-hcp-setup, tessell/worker] (To have these two directories at root of zip, `tessell/worker` path would be preserved in zip)
+# Note: Automatically excludes .git, .github, README.md, *.md, .DS_Store, node_modules, .vscode, .idea, .gitignore, ci-scripts, artifacts.txt
 zip_build() {
   set -e
   ARTIFACT="${1}"
@@ -1625,11 +1626,31 @@ zip_build() {
   if [[ "${zip_dirs}" =~ ^\[ ]]; then
     mapfile -t dirs < <(echo "${zip_dirs}" | yq -r '.[]')
   fi
+
+  local default_excludes=(
+    ".git/*"
+    ".github/*"
+    ".gitignore"
+    "README.md"
+    "*.md"
+    ".DS_Store"
+    "node_modules/*"
+    ".vscode/*"
+    ".idea/*"
+    "ci-scripts/*"
+    "artifacts.txt"
+  )
+
+  local exclude_args=()
+  for pattern in "${default_excludes[@]}"; do
+    exclude_args+=("-x" "${pattern}")
+  done
+
   OUTPUT_ZIP="$(pwd)/${ARTIFACT}.zip"
   if [[ ${#dirs[@]} -eq 1 ]]; then
-    (cd "${dirs[0]}" && zip -r "${OUTPUT_ZIP}" .)
+    (cd "${dirs[0]}" && zip -r "${OUTPUT_ZIP}" . "${exclude_args[@]}")
   else
-    zip -r "${OUTPUT_ZIP}" "${dirs[@]}"
+    zip -r "${OUTPUT_ZIP}" "${dirs[@]}" "${exclude_args[@]}"
   fi
   set +e
 }
