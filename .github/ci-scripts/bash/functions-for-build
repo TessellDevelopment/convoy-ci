@@ -1004,6 +1004,8 @@ parse_and_push_coverage_report() {
     parse_and_push_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_and_push_coverage_report_go "$@"
+  elif [[ "${language}" == "nodejs" ]]; then
+    parse_and_push_coverage_report_nodejs "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1052,6 +1054,16 @@ parse_and_push_coverage_report_go() {
   fi
 }
 
+parse_and_push_coverage_report_node() {
+  flag=0
+  parse_coverage_report_nodejs
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage-final.json" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/lcov-report/index.html" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
+  fi
+}
+
 parse_coverage_report_python() {
   if [ -f "pytest.ini" ]; then
     echo "Running python Unit test and generating code coverage report"
@@ -1081,6 +1093,29 @@ parse_and_push_coverage_report_python() {
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
+  fi
+}
+parse_coverage_report_node() {
+  install_node
+  if [ -d "tests" ]; then
+    echo "Running nodejs Unit test and generating code coverage report"
+    npm install
+    npx jest --coverage
+    coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
+    coverage_html=$(dirname "${coverage_report}")/lcov-report/index.html
+    covered_branches=$(jq '.branches.covered' ${coverage_report})
+    missing_branches=$(jq '.branches.total' ${coverage_report})
+    total_branches=$((covered_branches + missing_branches))
+    branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
+    covered_statements=$(jq '.lines.covered' ${coverage_report})
+    missing_statements=$(jq '.lines.total' ${coverage_report})
+    total_statements=$((covered_statements + missing_statements))
+    statement_coverage_percentage=$(echo "scale=2; ${covered_statements} / ${total_statements} * 100" | bc)
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
+    flag=1
+  else
+    echo "Test folder does not exists, skipping unit tests and code coverage report generation"
   fi
 }
 
