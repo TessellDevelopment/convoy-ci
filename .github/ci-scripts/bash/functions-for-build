@@ -1101,8 +1101,8 @@ parse_coverage_report_nodejs() {
   install_node
   if [ -d "tests" ]; then
     echo "Running nodejs Unit test and generating code coverage report"
-    npm install
-    npx jest --coverage
+    yarn install
+    yarn test && yarn test:coverage
     coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
     coverage_html=$(dirname "${coverage_report}")/lcov-report/index.html
     covered_branches=$(jq '.branches.covered' ${coverage_report})
