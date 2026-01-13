@@ -1151,20 +1151,13 @@ push_release_manifest_artifacts() {
 
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
 
-  if ! ${DEV_BUILD}; then
-    aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
-    
-    if [[ ${release} -le 134 ]]; then
-      for ENV in "${environments[@]}"
-      do
-        push_to_minio "${source_file_path}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
-      done
-    fi
-    if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
-      generate_checksum "${source_file_name}"
-    else
-      generate_checksum "${ARTIFACT}" "${source_file_name}"
-    fi
+  ! ${DEV_BUILD} || return
+  [[ ${push_to} == "s3" ]] && aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
+
+  if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
+    generate_checksum "${source_file_name}"
+  else
+    generate_checksum "${ARTIFACT}" "${source_file_name}"
   fi
 }
 
@@ -1177,17 +1170,16 @@ push_terraform_modules() {
   else
     mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
-    if ! ${DEV_BUILD}; then
-      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
-      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
-      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
-      configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
-      if [[ ${release} -le 134 ]]; then
-        for ENV in "${environments[@]}"
-        do
-          push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
-        done
-      fi
+    ! ${DEV_BUILD} || return
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_QA} ${TESSELL_TERRAFORM_MODULES_BARC_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BARC_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_STAGE} ${TESSELL_TERRAFORM_MODULES_STAGE_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_STAGE_S3}/${artifact_dest_path}
+    configure_and_push_aws ${AWS_ACCOUNT_TESSELL_PROD} ${TESSELL_TERRAFORM_MODULES_BETA_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_BETA_S3}/${artifact_dest_path}
+    if [[ ${release} -le 134 ]]; then
+      for ENV in "${environments[@]}"
+      do
+        push_to_minio "${ARTIFACT_FILE}" "minio_ci/tessell-artifacts-${ENV}/${artifact_dest_path}"
+      done
     fi
   fi
 }
@@ -1426,9 +1418,8 @@ tailscale_build_and_push() {
   go install tailscale.com/cmd/gitops-pusher@latest
   export TS_API_KEY=${TS_API_KEY}
   export TS_TAILNET=${TS_TAILNET}
-  if ! ${DEV_BUILD}; then
-    gitops-pusher --policy-file ./policy.hujson apply
-  fi
+  ! ${DEV_BUILD} || return
+  gitops-pusher --policy-file ./policy.hujson apply
   generate_checksum "policy.hujson"
   set +e
 }
@@ -1447,11 +1438,10 @@ terraform_apply() {
 terraform_apply_and_push() {
   set -e
   terraform_apply
-  if ! ${DEV_BUILD}; then
-    cd terraform
-    terraform apply -auto-approve
-    cd ..
-  fi
+  ! ${DEV_BUILD} || return
+  cd terraform
+  terraform apply -auto-approve
+  cd ..
   set +e
 }
 
@@ -1685,13 +1675,12 @@ zip_file_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  if ! ${DEV_BUILD}; then
-    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
-      push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
-      generate_checksum "${ARTIFACT}.${EXTENSION}"
-    else
-      push_release_manifest_artifacts
-    fi
+  ! ${DEV_BUILD} || return
+  if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+    push_to_gcloud "${ARTIFACT}.${EXTENSION}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    generate_checksum "${ARTIFACT}.${EXTENSION}"
+  else
+    push_release_manifest_artifacts
   fi
-  set +e  
+  set +e
 }
