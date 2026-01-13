@@ -990,7 +990,7 @@ parse_coverage_report() {
     parse_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_coverage_report_go "$@"
-  else if [[ "${language}" == "javascript" ]]; then
+  elif [[ "${language}" == "javascript" ]]; then
     parse_coverage_report_nodejs "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
