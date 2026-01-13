@@ -1,4 +1,4 @@
-
+#!/usr/bin/env bash
 
 function generate_code() {
     set -ex
