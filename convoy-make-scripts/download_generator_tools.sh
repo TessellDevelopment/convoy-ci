@@ -12,7 +12,6 @@ CONVOY_API_SPEC_TRANSPILER_URL=${NEXUS_URL}/convoy/code-generator/convoy-api-spe
 CONVOY_OPENAPI_CODE_GENERATOR_URL=${NEXUS_URL}/convoy/code-generator/convoy-openapi-code-generator/${VERSION}/convoy-openapi-code-generator-${VERSION}.jar
 
 function download_jars() {
-    echo ${CONVOY_API_SPEC_TRANSPILER_URL}
     curl ${CONVOY_API_SPEC_TRANSPILER_URL} -O
     curl ${CONVOY_OPENAPI_CODE_GENERATOR_URL} -O 
     curl ${OPENAPI_GENERATOR_CLI_URL} -O

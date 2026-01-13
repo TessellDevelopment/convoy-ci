@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 function set_env(){
-	export $(grep -v '^#' .env | xargs)
+	set -a
+	source .env
+	set +a
 }
 
 function run(){
