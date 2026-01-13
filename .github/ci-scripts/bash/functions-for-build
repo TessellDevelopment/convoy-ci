@@ -1098,6 +1098,7 @@ parse_and_push_coverage_report_python() {
   fi
 }
 parse_coverage_report_nodejs() {
+  set -e
   install_node
   if [ -d "tests" ]; then
     echo "Running nodejs Unit test and generating code coverage report"
@@ -1119,6 +1120,7 @@ parse_coverage_report_nodejs() {
   else
     echo "Test folder does not exists, skipping unit tests and code coverage report generation"
   fi
+  set +e
 }
 
 parse_coverage_report_java() {
