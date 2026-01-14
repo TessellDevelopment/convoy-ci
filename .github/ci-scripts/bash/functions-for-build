@@ -1010,7 +1010,7 @@ parse_and_push_coverage_report() {
 }
 
 parse_coverage_report_go() {
-  if [ ! -f "Makefile" ] || ! grep -q "^run_tests:" Makefile; then
+  if ! make -n run_tests >/dev/null 2>&1; then
     echo "run_tests rule does not exists in Makefile, skipping unit tests and code coverage report generation." 
     return
   fi
