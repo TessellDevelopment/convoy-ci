@@ -1099,7 +1099,7 @@ parse_and_push_coverage_report_python() {
 }
 parse_coverage_report_nodejs() {
   set -e
-  set-x
+  set -x
   echo "Running nodejs Unit test and generating code coverage report"
   yarn test && yarn test:coverage
   coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
