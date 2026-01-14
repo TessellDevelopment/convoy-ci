@@ -1099,9 +1099,11 @@ parse_and_push_coverage_report_python() {
 }
 parse_coverage_report_nodejs() {
   set -e
+  set-x
   echo "Running nodejs Unit test and generating code coverage report"
   yarn test && yarn test:coverage
   coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
+  coverage_html=$(dirname "${coverage_report}")/lcov-report/index.html
   covered_branches=$(jq '.branches.covered' ${coverage_report})
   missing_branches=$(jq '.branches.total' ${coverage_report})
   total_branches=$((covered_branches + missing_branches))
@@ -1113,7 +1115,7 @@ parse_coverage_report_nodejs() {
   export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
   export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
   flag=1
-
+  set +x
   set +e
 }
 
