@@ -1010,8 +1010,8 @@ parse_and_push_coverage_report() {
 }
 
 parse_coverage_report_go() {
-  if [ ! -d "tests" ]; then
-    echo "Test folder does not exists, skipping unit tests and code coverage report generation"
+  if [ ! -f "Makefile" ] || ! grep -q "^run_tests:" Makefile; then
+    echo "run_tests rule does not exists in Makefile, skipping unit tests and code coverage report generation." 
     return
   fi
   make run_tests
