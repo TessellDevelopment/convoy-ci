@@ -264,8 +264,8 @@ parseCoverageReportJava() {
   parse_coverage_report_java "$@"
 }
 
-parseAndPushCoverageReportNodejs() {
-  parse_and_push_coverage_report_nodejs "$@"
+parseAndPushCoverageReportJavascript() {
+  parse_and_push_coverage_report_javascript "$@"
 }
 
 parseAndPushCoverageReportJava() {
