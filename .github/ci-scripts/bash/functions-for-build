@@ -1062,7 +1062,7 @@ parse_and_push_coverage_report_node() {
   if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage-final.json" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
   fi
 }
 
@@ -1116,10 +1116,7 @@ parse_coverage_report_nodejs() {
   export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
   echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
   echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
-  cd ../
   zip -r coverage.zip ./coverage
-  cd -
-  mv ../coverage.zip ./
   flag=1
   set +x
   set +e
