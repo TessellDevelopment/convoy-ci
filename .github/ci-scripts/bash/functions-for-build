@@ -1062,7 +1062,7 @@ parse_and_push_coverage_report_node() {
   if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage-final.json" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
-    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/lcov-report/index.html" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
   fi
 }
 
@@ -1103,7 +1103,7 @@ parse_coverage_report_nodejs() {
   echo "Running nodejs Unit test and generating code coverage report"
   yarn test && yarn test:coverage
   coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
-  coverage_html=$(dirname "${coverage_report}")/lcov-report/index.html
+  coverage_html=./index.html
   covered_branches=$(jq '.branches.covered' ${coverage_report})
   missing_branches=$(jq '.branches.total' ${coverage_report})
   total_branches=$((covered_branches + missing_branches))
@@ -1114,6 +1114,12 @@ parse_coverage_report_nodejs() {
   statement_coverage_percentage=$(echo "scale=2; ${covered_statements} / ${total_statements} * 100" | bc)
   export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
   export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
+  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+  cd ../
+  zip -r coverage.zip ./coverage
+  cd -
+  mv ../coverage.zip ./
   flag=1
   set +x
   set +e
