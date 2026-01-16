@@ -990,6 +990,8 @@ parse_coverage_report() {
     parse_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_coverage_report_go "$@"
+  elif [[ "${language}" == "javascript" ]]; then
+    parse_coverage_report_javascript "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1004,6 +1006,8 @@ parse_and_push_coverage_report() {
     parse_and_push_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_and_push_coverage_report_go "$@"
+  elif [[ "${language}" == "javascript" ]]; then
+    parse_and_push_coverage_report_javascript "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1052,6 +1056,16 @@ parse_and_push_coverage_report_go() {
   fi
 }
 
+parse_and_push_coverage_report_javascript() {
+  flag=0
+  parse_coverage_report_javascript
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage-final.json" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
+}
+
 parse_coverage_report_python() {
   if [ -f "pytest.ini" ]; then
     echo "Running python Unit test and generating code coverage report"
@@ -1082,6 +1096,33 @@ parse_and_push_coverage_report_python() {
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_report} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} ${coverage_html} "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.html" 
   fi
+}
+parse_coverage_report_javascript() {
+  set -e
+  set -x
+    echo "Running tests and generating coverage report..."
+    yarn test && yarn test:coverage
+    coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
+    # Extract coverage metrics from the JSON file
+    covered_statements=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | 1] | length' ${coverage_report})
+    total_statements=$(jq '[.[] | .s | to_entries[] | 1] | length' ${coverage_report})
+    missing_statements=$((total_statements - covered_statements))
+    statement_coverage_percentage=$([ $total_statements -gt 0 ] && echo "scale=2; ${covered_statements} / ${total_statements} * 100" | bc || echo "0")
+    covered_branches=$(jq '[.[] | .b | to_entries[] | .value[] | select(. > 0) | 1] | length' ${coverage_report})
+    total_branches=$(jq '[.[] | .b | to_entries[] | .value[] | 1] | length' ${coverage_report})
+    missing_branches=$((total_branches - covered_branches))
+    branch_coverage_percentage=$([ $total_branches -gt 0 ] && echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc || echo "0")
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
+    echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+    echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+    echo "Creating coverage archive..."
+    zip -r coverage.zip ./coverage --quiet
+    echo "Coverage archive created: coverage.zip"
+    echo "Script completed successfully!"
+  flag=1
+  set +x
+  set +e
 }
 
 parse_coverage_report_java() {

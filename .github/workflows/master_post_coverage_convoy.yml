@@ -108,6 +108,8 @@
               LANGUAGE = yaml_data.get('language')
               if LANGUAGE == 'java':
                 REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.zip"
+              elif LANGUAGE == 'javascript':
+                REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.zip"
               else:
                 REPORT_PATH = "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${TAG}.html"
 
