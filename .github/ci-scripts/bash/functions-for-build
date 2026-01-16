@@ -1100,23 +1100,26 @@ parse_and_push_coverage_report_python() {
 parse_coverage_report_nodejs() {
   set -e
   set -x
-  echo "Running nodejs Unit test and generating code coverage report"
-  yarn test && yarn test:coverage
-  coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
-  coverage_html=./index.html
-  covered_branches=$(jq '.branches.covered' ${coverage_report})
-  missing_branches=$(jq '.branches.total' ${coverage_report})
-  total_branches=$((covered_branches + missing_branches))
-  branch_coverage_percentage=$(echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc)
-  covered_statements=$(jq '.lines.covered' ${coverage_report})
-  missing_statements=$(jq '.lines.total' ${coverage_report})
-  total_statements=$((covered_statements + missing_statements))
-  statement_coverage_percentage=$(echo "scale=2; ${covered_statements} / ${total_statements} * 100" | bc)
-  export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
-  export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
-  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
-  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
-  zip -r coverage.zip ./coverage
+    echo "Running tests and generating coverage report..."
+    yarn test && yarn test:coverage
+    coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
+    # Extract coverage metrics from the JSON file
+    covered_statements=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | 1] | length' ${coverage_report})
+    total_statements=$(jq '[.[] | .s | to_entries[] | 1] | length' ${coverage_report})
+    missing_statements=$((total_statements - covered_statements))
+    statement_coverage_percentage=$([ $total_statements -gt 0 ] && echo "scale=2; ${covered_statements} / ${total_statements} * 100" | bc || echo "0")
+    covered_branches=$(jq '[.[] | .b | to_entries[] | .value[] | select(. > 0) | 1] | length' ${coverage_report})
+    total_branches=$(jq '[.[] | .b | to_entries[] | .value[] | 1] | length' ${coverage_report})
+    missing_branches=$((total_branches - covered_branches))
+    branch_coverage_percentage=$([ $total_branches -gt 0 ] && echo "scale=2; ${covered_branches} / ${total_branches} * 100" | bc || echo "0")
+    export BRANCH_COVERAGE="${covered_branches} ${missing_branches} ${total_branches} ${branch_coverage_percentage%.*}"
+    export STATEMENT_COVERAGE="${covered_statements} ${missing_statements} ${total_statements} ${statement_coverage_percentage%.*}"
+    echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+    echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+    echo "Creating coverage archive..."
+    zip -r coverage.zip ./coverage --quiet
+    echo "Coverage archive created: coverage.zip"
+    echo "Script completed successfully!"
   flag=1
   set +x
   set +e
