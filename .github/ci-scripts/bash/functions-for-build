@@ -1058,7 +1058,7 @@ parse_and_push_coverage_report_go() {
 
 parse_and_push_coverage_report_javascript() {
   flag=0
-  parse_coverage_report_nodejs
+  parse_coverage_report_javascript
   if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
     echo "Pushing coverage report to S3"
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage/coverage-final.json" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.json"
