@@ -388,7 +388,7 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ contains(env.REPOSITORY, 'ci-test-repo-b')  }}
+        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
