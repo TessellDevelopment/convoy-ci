@@ -642,7 +642,7 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        # if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME || (contains(env.REPOSITORY, 'ci-test-repo-b')) }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
