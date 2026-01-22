@@ -1383,19 +1383,19 @@ software_def_build() {
   mkdir -p ~/.packer.d/plugins
   export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   export REPLICATION_ENABLED="false"
-  # assert_base_branch_commit_success
-  # get_previous_commited_software_manifest
-  # if [[ "$BRANCH_NAME" == *double_commit* ]]; then
-  #   echo "${BRANCH_NAME} contains double_commit"
-  #   get_dc_root_pr_diff
-  #   assert_root_pr_commit_success
-  #   git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
-  #   if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
-  #     echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
-  #     set +e
-  #     return
-  #   fi
-  # fi
+  assert_base_branch_commit_success
+  get_previous_commited_software_manifest
+  if [[ "$BRANCH_NAME" == *double_commit* ]]; then
+    echo "${BRANCH_NAME} contains double_commit"
+    get_dc_root_pr_diff
+    assert_root_pr_commit_success
+    git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
+    if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
+      echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
+      set +e
+      return
+    fi
+  fi
   validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "--is_e2e_test")
   set +e
 }
