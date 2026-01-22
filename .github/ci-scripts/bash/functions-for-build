@@ -1396,7 +1396,7 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "")
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "--is_e2e_test")
   set +e
 }
 
