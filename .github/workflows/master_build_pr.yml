@@ -745,6 +745,7 @@ jobs:
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
           configurePythonVersionIfRequired
+          echo "PATH is $PATH"
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
