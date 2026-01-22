@@ -1371,15 +1371,17 @@ setup_packer_env() {
   configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  packer plugins install github.com/hashicorp/googlecompute
 }
 
 software_def_build() {
   set -e
   setup_packer_env
-  export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
+  export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  export REPLICATION_ENABLED="false"
   assert_base_branch_commit_success
   get_previous_commited_software_manifest
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
@@ -1393,7 +1395,7 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run $([[ "$GITHUB_DRAFT" == "true" ]] && echo "" || echo "--is_e2e_test")
   set +e
 }
 
