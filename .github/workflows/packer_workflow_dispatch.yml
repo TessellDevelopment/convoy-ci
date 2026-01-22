@@ -57,7 +57,15 @@ jobs:
           # SOURCE_BRANCH (PR_SOURCE_BRANCH) is "Use workflow from" in "Run Workflow".
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
           echo $pull_request_number
-      
+
+      - name: Login gcloud
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
       - name: Get Software Image release
         if: ${{ env.BASE_BRANCH == 'main' || startsWith(env.BASE_BRANCH,'rel-') || env.SOFTWARE_IMAGE_BASE_RELEASE == 'main' || startsWith(env.SOFTWARE_IMAGE_BASE_RELEASE,'rel-') }}  
         shell: bash
