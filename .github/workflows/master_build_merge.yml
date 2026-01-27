@@ -397,8 +397,8 @@ jobs:
             elasticTarBuild
             FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
             FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
+            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "${APP_GROUP}.filebeat" "${LATEST_TAG}"
+            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "${APP_GROUP}.filebeat" "${LATEST_TAG}"
             awsConfigureProdAssets
             EXTENSION="tar.gz"
             ARTIFACT="filebeat-linux"
@@ -681,12 +681,12 @@ jobs:
             EXTENSION="$2"
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
-              generate_checksum "$ARTIFACT.$EXTENSION" 
+              generate_checksum "$ARTIFACT.$EXTENSION"
             else
-              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "${APP_GROUP}.agent" "${LATEST_TAG}"
               awsConfigureProdAssets
               push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
-            fi 
+            fi
             set +e
           }
           awsConfigureTessellArtifacts() {
@@ -755,10 +755,10 @@ jobs:
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
               push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
-              generate_checksum "$ARTIFACT.$EXTENSION" 
+              generate_checksum "$ARTIFACT.$EXTENSION"
             else
               awsConfigureProdAssets
-              mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "${APP_GROUP}.functions" "${LATEST_TAG}"
               push_release_manifest_artifacts
             fi
             if $changed_dir; then
@@ -876,7 +876,7 @@ jobs:
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
             push_release_manifest_artifacts "${ARTIFACT}.${EXTENSION}" "client-package/${ARTIFACT}.${EXTENSION}"
             set +e
@@ -927,10 +927,10 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.tessell" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.${APP_GROUP}" "${LATEST_TAG}"
             set +e
           }
           setupOpa() {
