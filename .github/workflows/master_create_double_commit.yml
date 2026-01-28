@@ -9,12 +9,23 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: non-build
     env:
-       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      CI_BRANCH: main
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           token: ${{secrets.CIPIPELINE_GITHUB_TOKEN}}
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Get all the release branches
         id: all_branches
@@ -25,10 +36,19 @@ jobs:
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
 
+          if git show-ref --verify --quiet refs/remotes/origin/rel-0.0.0; then
+            echo "REL_0_0_0_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "REL_0_0_0_EXISTS=false" >> $GITHUB_ENV
+          fi
+
+          APP_GROUP=$(yq '.appGroup' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v7.0.1
-        env: 
+        env:
           PR_TITLE: ${{github.event.pull_request.title}}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
@@ -54,6 +74,12 @@ jobs:
 
             // create rel branches array
             const branches = "${{ env.BRANCHES }}".split(' ')
+            // If rel-0.0.0 exists, add it to the beginning of the array
+            const rel000Exists = "${{ env.REL_0_0_0_EXISTS }}" === 'true';
+            if (rel000Exists) {
+              console.log("rel-0.0.0 branch exists, will create DC there");
+              branches.unshift("origin/rel-0.0.0")
+            }
             // add 'main' branch to the list
             branches.push("main")
             // loop through the available active branches to create DC
@@ -78,12 +104,16 @@ jobs:
                    continue
                 }
 
-                // dst branch minor version
-                dstBranchMinVer = dstBranch.split('.')[1]
-                // if minor version is more than the current branch, its a latest release and
-                // we need to create DC
-                if (parseInt(dstBranchMinVer) <= parseInt(prBaseBranchMinVer)) {
-                  continue
+                if (dstBranch === 'rel-0.0.0') {
+                  console.log("Creating DC for rel-0.0.0 (irrespective of base branch)");
+                } else {
+                  // dst branch minor version
+                  dstBranchMinVer = dstBranch.split('.')[1]
+                  // if minor version is more than the current branch, its a latest release and
+                  // we need to create DC
+                  if (parseInt(dstBranchMinVer) <= parseInt(prBaseBranchMinVer)) {
+                    continue
+                  }
                 }
               }
               // new branch name
@@ -187,6 +217,22 @@ jobs:
               }
             }
 
+      - name: Create Cross-Repo Double Commits (CRDC)
+        id: create_crdc
+        env:
+          APP_GROUP: ${{ env.APP_GROUP }}
+          COMMIT_SHA: ${{ github.sha }}
+          CONVOY_API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
+          CONVOY_RELEASE_MGMT_API_KEY: ${{ secrets.CONVOY_RELEASE_MGMT_API_KEY }}
+          CURRENT_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+          MAILID: ${{ env.MAILID }}
+          PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          ./ci-scripts/bash/create-crdc
 
       - name: Slack Notification
         if: failure()
@@ -195,4 +241,3 @@ jobs:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}
            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-        

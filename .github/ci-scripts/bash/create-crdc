@@ -1,0 +1,149 @@
+set -exuo pipefail
+API_URL="https://api.dev.convoy.tessell.cloud/devops/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
+RESPONSE=$(curl -sf -w "\n%{http_code}" "${API_URL}" \
+  -H "X-Api-Key: ${CONVOY_API_KEY}" \
+  -H "Content-Type: application/json" 2>/dev/null || echo -e "\n000")
+
+HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
+BODY=$(echo "${RESPONSE}" | sed '$d')
+
+[[ "${HTTP_CODE}" != "200" ]] && echo "❌ CRDC API failed with HTTP ${HTTP_CODE}" && exit 1
+
+MAPPINGS_COUNT=$(echo "${BODY}" | jq -e '. | length' 2>/dev/null || echo "0")
+[[ "${MAPPINGS_COUNT}" == "0" ]] && echo "ℹ️  No CRDC mappings found" && exit 0
+
+CURRENT_REPO_NAME=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
+
+for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
+  echo "📋 Mapping $((i + 1))/${MAPPINGS_COUNT}: Target AppGroup: $(echo "${BODY}" | jq -r ".[${i}].targetAppGroup")"
+
+  TARGET_APP_GROUP=$(echo "${BODY}" | jq -r ".[${i}].targetAppGroup")
+
+  if [[ "${CURRENT_REPO_NAME}" == tessell-* ]]; then
+    TARGET_REPO="${TARGET_APP_GROUP}-${CURRENT_REPO_NAME#tessell-}"
+  else
+    TARGET_REPO="${TARGET_APP_GROUP}-${CURRENT_REPO_NAME}"
+  fi
+
+  REMOTE_NAME="crdc_remote_${RANDOM}"
+  REMOTE_URL="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${TARGET_REPO}.git"
+
+  if ! git remote add "${REMOTE_NAME}" "${REMOTE_URL}" 2>/dev/null; then
+    echo "❌ Failed to add remote for ${TARGET_REPO}"
+    continue
+  fi
+
+  if ! git fetch "${REMOTE_NAME}" 2>/dev/null; then
+    echo "❌ Failed to fetch from ${TARGET_REPO}"
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+    continue
+  fi
+
+  TARGETS_COUNT=$(echo "${BODY}" | jq ".[${i}].targets | length")
+  TARGET_BRANCH=""
+
+  for j in $(seq 0 $((TARGETS_COUNT - 1))); do
+    TARGET_TYPE=$(echo "${BODY}" | jq -r ".[${i}].targets[${j}].type")
+    TARGET_NAME=$(echo "${BODY}" | jq -r ".[${i}].targets[${j}].name")
+
+    if [[ "${TARGET_TYPE}" == "branch" ]]; then
+      if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${TARGET_NAME}" &>/dev/null; then
+        echo "  ✅ Branch '${TARGET_NAME}' exists"
+        TARGET_BRANCH="${TARGET_NAME}"
+        break
+      fi
+    elif [[ "${TARGET_TYPE}" == "release_status" ]]; then
+      RELEASES_API_URL="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
+      RELEASES_RESPONSE=$(curl -sf "${RELEASES_API_URL}" \
+        -H "action: LIST_WITH_DETAILS" \
+        -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
+
+      RELEASE_NAME=$(echo "${RELEASES_RESPONSE}" | jq -r \
+        ".releases[] | select(.dynamicStatus == \"${TARGET_NAME}\") | .name" 2>/dev/null | head -n1)
+
+      if [[ -n "${RELEASE_NAME}" && "${RELEASE_NAME}" != "null" ]]; then
+        if [[ "${RELEASE_NAME}" =~ rel-([0-9]+) ]]; then
+          MINOR_VERSION="${BASH_REMATCH[1]}"
+          FORMATTED_BRANCH="rel-0.${MINOR_VERSION}.0"
+
+          if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${FORMATTED_BRANCH}" &>/dev/null; then
+            echo "  ✅ Branch '${FORMATTED_BRANCH}' exists (from release '${RELEASE_NAME}')"
+            TARGET_BRANCH="${FORMATTED_BRANCH}"
+            break
+          fi
+        fi
+      fi
+    fi
+  done
+
+  if [[ -z "${TARGET_BRANCH}" ]]; then
+    echo "❌ No valid target found, skipping CRDC"
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+    continue
+  fi
+
+  CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}-crdc"
+  echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
+
+  if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
+    echo "❌ Failed to create branch"
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+    continue
+  fi
+
+  if git cherry-pick "${COMMIT_SHA}" 2>/dev/null; then
+    echo "✅ Cherry-pick successful"
+  else
+    echo "⚠️  Conflicts detected, attempting auto-resolution..."
+    find . -type f -name "*.lock" -path "*/.git/*" -delete 2>/dev/null || true
+    git add . 2>/dev/null || true
+
+    if ! git -c core.editor=true cherry-pick --continue 2>/dev/null; then
+      if ! git -c core.editor=true commit --amend --no-edit --author="${MAILID}" 2>/dev/null; then
+        echo "❌ Failed to resolve conflicts"
+        git cherry-pick --abort 2>/dev/null || true
+        git checkout "${PR_BASE_BRANCH}" 2>/dev/null || git checkout main 2>/dev/null || true
+        git branch -D "${CRDC_BRANCH_NAME}" 2>/dev/null || true
+        git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+        continue
+      fi
+    fi
+    echo "✅ Conflicts resolved"
+  fi
+
+  if ! git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null; then
+    echo "❌ Failed to push branch"
+    git checkout "${PR_BASE_BRANCH}" 2>/dev/null || git checkout main 2>/dev/null || true
+    git branch -D "${CRDC_BRANCH_NAME}" 2>/dev/null || true
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+    continue
+  fi
+
+  PR_PAYLOAD=$(jq -n \
+    --arg title "CRDC: ${PR_TITLE}" \
+    --arg head "${CRDC_BRANCH_NAME}" \
+    --arg base "${TARGET_BRANCH}" \
+    '{title: $title, head: $head, base: $base}')
+
+  PR_RESPONSE=$(curl -sf -w "\n%{http_code}" -X POST \
+    "https://api.github.com/repos/${REPO_OWNER}/${TARGET_REPO}/pulls" \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    -d "${PR_PAYLOAD}" 2>/dev/null || echo -e "\n000")
+
+  PR_CODE=$(echo "${PR_RESPONSE}" | tail -n1)
+  PR_BODY=$(echo "${PR_RESPONSE}" | sed '$d')
+
+  if [[ "${PR_CODE}" == "201" ]]; then
+    PR_URL=$(echo "${PR_BODY}" | jq -r '.html_url')
+    echo "✅ PR created: ${PR_URL}"
+  elif [[ "${PR_CODE}" == "422" ]]; then
+    echo "⚠️  PR already exists or no diff"
+  else
+    echo "❌ Failed to create PR (HTTP ${PR_CODE})"
+  fi
+
+  git checkout "${PR_BASE_BRANCH}" 2>/dev/null || git checkout main 2>/dev/null || true
+  git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+
+done
