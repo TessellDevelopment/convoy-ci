@@ -9,6 +9,10 @@ function die() {
   exit 1
 }
 
+function set_app_group() {
+  APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+}
+
 function ensure_accessability_to_upload_locations() {
   local deployment_stage
 
@@ -24,3 +28,5 @@ function ensure_accessability_to_upload_locations() {
 
   # TODO: Add check for Nexus access
 }
+
+set_app_group
