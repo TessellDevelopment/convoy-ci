@@ -228,7 +228,6 @@ jobs:
           APP_GROUP: ${{ env.APP_GROUP }}
           COMMIT_SHA: ${{ github.sha }}
           CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
-          CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
           CONVOY_API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
           CONVOY_RELEASE_MGMT_API_KEY: ${{ secrets.CONVOY_RELEASE_MGMT_API_KEY }}
           CURRENT_REPO: ${{ github.repository }}
