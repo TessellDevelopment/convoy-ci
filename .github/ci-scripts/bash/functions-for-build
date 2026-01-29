@@ -231,7 +231,7 @@ convoy_build_and_push() {
 
   elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "tessell-artifacts/citest/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
@@ -433,9 +433,9 @@ frp_build_and_push() {
   EXTENSION="${2}"
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
-    FILE_NAME="tessell-frpc-${OS}"
+    BUILD_GENERATED_FILE_NAME="tessell-frpc-${OS}"
     ARTIFACT="${APP_GROUP}-frpc-${OS}"
-    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${FILE_NAME}.${EXTENSION}" "${APP_GROUP}.frp" "${LATEST_TAG}"
+    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.frp" "${LATEST_TAG}"
     push_release_manifest_artifacts
   done
   set +e
@@ -651,7 +651,7 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
-  if [[ ${APP_GROUP} == "gcpcore" ]]; then
+  if [[ ${APP_GROUP} == gcpcore ]]; then
     echo "Skipping image vulnerability scanning for gcpcore appGroup"
     set +e
     return 0
@@ -840,10 +840,10 @@ make_service() {
   ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
   echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
   if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
-    FILE_NAME=${NAME}-${OS}
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}
     make service os=${OS}
   else
-    FILE_NAME=${NAME}-${OS}-${ENGINE}
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}-${ENGINE}
     make service os=${OS} engine=${ENGINE}
   fi
   set +e
@@ -854,8 +854,8 @@ make_service_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${FILE_NAME}.${EXTENSION}" "${APP_GROUP}.${NAME}" "${LATEST_TAG}"
-  push_release_manifest_artifacts "${FILENAME}.${EXTENSION}" "${FILENAME}.${EXTENSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.${NAME}" "${LATEST_TAG}"
+  push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   set +e
 }
 

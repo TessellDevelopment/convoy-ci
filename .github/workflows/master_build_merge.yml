@@ -680,14 +680,14 @@ jobs:
             agentBuild "$@"
             set -e
             EXTENSION="$2"
-            FILE_NAME="tessell-${SERVICE}-pkg-${OS}"
+            BUILD_GENERATED_FILE_NAME="tessell-${SERVICE}-pkg-${OS}"
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
               generate_checksum "$ARTIFACT.$EXTENSION"
             else
-              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$FILE_NAME.$EXTENSION" "${APP_GROUP}.agent" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.agent" "${LATEST_TAG}"
               awsConfigureProdAssets
-              push_release_manifest_artifacts "$FILE_NAME.$EXTENSION" "package/$FILE_NAME.$EXTENSION"
+              push_release_manifest_artifacts "$BUILD_GENERATED_FILE_NAME.$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION"
             fi
             set +e
           }
@@ -754,7 +754,7 @@ jobs:
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
-            FILE_NAME=tessell-task-handler-${OS}-${CLOUD}
+            BUILD_GENERATED_FILE_NAME=tessell-task-handler-${OS}-${CLOUD}
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
               push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
@@ -762,7 +762,7 @@ jobs:
             else
               awsConfigureProdAssets
               mvnDeploy "$ARTIFACT" "${EXTENSION}" "$ARTIFACT.$EXTENSION" "${APP_GROUP}.functions" "${LATEST_TAG}"
-              push_release_manifest_artifacts "${FILE_NAME}.${EXTENSION}" "${FILE_NAME}.${EXTENSION}"
+              push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
             fi
             if $changed_dir; then
               cd ..;
@@ -878,11 +878,11 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             make os=$OS pushprox-client
             make clean
-            FILENAME=pushprox-client-${OS}
+            BUILD_GENERATED_FILE_NAME=pushprox-client-${OS}
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$FILENAME.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
-            push_release_manifest_artifacts "${FILENAME}.${EXTENSION}" "client-package/${FILENAME}.${EXTENSION}"
+            push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "client-package/${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
             set +e
           }
           makeImageAndPush() {
