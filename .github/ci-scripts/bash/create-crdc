@@ -65,6 +65,7 @@ function determine_target_branchh() {
   local targets_count=$(echo "${CRDC_RESPONSE}" | jq ".[${mapping_index}].targets | length")
 
   for j in $(seq 0 $((targets_count - 1))); do
+    echo "🔄 Checking target ${j}/${targets_count}..."
     local target_type=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].type")
     local target_name=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].name")
 
@@ -73,6 +74,8 @@ function determine_target_branchh() {
         echo "  ✅ Branch '${target_name}' exists"
         TARGET_BRANCH="${target_name}"
         return 0
+      else
+        echo " ⚠️ Branch '${target_name}' does not exist in ${TARGET_REPO}"
       fi
     elif [[ "${target_type}" == "release_status" ]]; then
       local releases_api_url="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
@@ -81,9 +84,10 @@ function determine_target_branchh() {
         -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
 
       local release_name=$(echo "${releases_response}" | jq -r \
-        ".releases[] | select(.dynamicStatus == \"${target_name}\") | .name" 2>/dev/null | head -n1)
+        ".releases[] | select(.dynamicStatus != null and (.dynamicStatus | index(\"${target_name}\"))) | .name" 2>/dev/null | head -n1)
 
       if [[ -n "${release_name}" && "${release_name}" != "null" ]]; then
+        echo "  🎯 Found release '${release_name}' with status '${target_name}'"
         if [[ "${release_name}" =~ rel-([0-9]+) ]]; then
           local minor_version="${BASH_REMATCH[1]}"
           local formatted_branch="rel-0.${minor_version}.0"
@@ -92,8 +96,12 @@ function determine_target_branchh() {
             echo "  ✅ Branch '${formatted_branch}' exists (from release '${release_name}')"
             TARGET_BRANCH="${formatted_branch}"
             return 0
+          else
+            echo "  ⚠️ Branch '${formatted_branch}' does not exist in ${TARGET_REPO}"
           fi
         fi
+      else
+        echo "  ⚠️ No release found with status '${target_name}'"
       fi
     fi
   done
