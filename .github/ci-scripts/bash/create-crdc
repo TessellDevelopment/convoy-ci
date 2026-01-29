@@ -114,7 +114,11 @@ function create_crdc_branch() {
   CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}_crdc"
 
   echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
-  if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
+
+  if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${CRDC_BRANCH_NAME}" &>/dev/null; then
+    echo "⚠️  Branch ${CRDC_BRANCH_NAME} already exists on remote, checking it out"
+    git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${CRDC_BRANCH_NAME}" 2>/dev/null || exit 1
+  elif ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
     echo "❌ Failed to create branch"
     exit 1
   fi
@@ -156,9 +160,10 @@ Original PR: ${source_pr_url}"
     local pr_url=$(echo "${pr_body}" | jq -r '.html_url')
     echo "✅ PR created: ${pr_url}"
   elif [[ "${pr_code}" == "422" ]]; then
-    echo "⚠️  PR already exists or no diff"
+    echo "⚠️  PR already exists or no diff between branches"
   else
     echo "❌  Failed to create PR (HTTP ${pr_code})"
+    echo "Response: ${pr_body}"
     exit 1
   fi
 }
@@ -167,8 +172,15 @@ fetch_crdc_mappings
 
 for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
   setup_remote_for_target_repo "${i}"
-  determine_target_branchh "${i}"
+
+  if ! determine_target_branchh "${i}"; then
+    echo "⚠️ No valid target found for mapping $((i + 1)), skipping"
+    continue
+  fi
+
   create_crdc_branch
   cherry_pick_and_push_to_target_branch
   create_pull_request
 done
+
+exit 0
