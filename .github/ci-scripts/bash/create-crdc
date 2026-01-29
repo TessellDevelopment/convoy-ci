@@ -120,24 +120,27 @@ function create_crdc_branch() {
 }
 
 function cherry_pick_and_push_to_target_branch() {
-  local source_repo=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
-
   if ! git cherry-pick "${COMMIT_SHA}" 2>/dev/null; then
     echo "⚠️  Cherry-pick has conflicts, committing conflicted state"
     git add -A -- . ':!ci-scripts' ':!.github/ci-scripts' 2>/dev/null || true
-    git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" -m "CRDC: ${PR_TITLE} (from ${REPO_OWNER}/${source_repo})" 2>/dev/null || true
+    git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" -m "CRDC: ${PR_TITLE}" 2>/dev/null || true
   fi
 
   git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null || true
 }
 
 function create_pull_request() {
-  local source_repo=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
+  local source_pr_url="https://github.com/${CURRENT_REPO}/pull/${PR_NUMBER}"
+  local pr_body="Cross-repo double commit from ${CURRENT_REPO}
+
+Original PR: ${source_pr_url}"
+
   local pr_payload=$(jq -n \
-    --arg title "CRDC: ${PR_TITLE} (from ${REPO_OWNER}/${source_repo})" \
+    --arg title "CRDC: ${PR_TITLE}" \
+    --arg body "${pr_body}" \
     --arg head "${CRDC_BRANCH_NAME}" \
     --arg base "${TARGET_BRANCH}" \
-    '{title: $title, head: $head, base: $base}')
+    '{title: $title, body: $body, head: $head, base: $base}')
 
   local pr_response=$(curl -sf -w "\n%{http_code}" -X POST \
     "https://api.github.com/repos/${REPO_OWNER}/${TARGET_REPO}/pulls" \

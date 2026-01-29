@@ -235,6 +235,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
           MAILID: ${{ env.MAILID }}
           PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           REPO_OWNER: ${{ github.repository_owner }}
