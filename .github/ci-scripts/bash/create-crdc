@@ -64,8 +64,8 @@ function determine_target_branchh() {
   TARGET_BRANCH=""
   local targets_count=$(echo "${CRDC_RESPONSE}" | jq ".[${mapping_index}].targets | length")
 
-  for j in $(seq 1 $((targets_count))); do
-    echo "🔄 Checking target ${j}/${targets_count}..."
+  for j in $(seq 0 $((targets_count - 1))); do
+    echo "🔄 Checking target $((j + 1))/${targets_count}..."
     local target_type=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].type")
     local target_name=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].name")
 
