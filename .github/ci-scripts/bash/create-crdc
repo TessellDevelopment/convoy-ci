@@ -1,23 +1,24 @@
 set -exuo pipefail
-API_URL="https://api.dev.convoy.tessell.cloud/devops/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
+
+API_URL="https://${CONVOY_DEV_API_ENDPOINT}/devops/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
 RESPONSE=$(curl -sf -w "\n%{http_code}" "${API_URL}" \
   -H "X-Api-Key: ${CONVOY_API_KEY}" \
   -H "Content-Type: application/json" 2>/dev/null || echo -e "\n000")
 
 HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
-BODY=$(echo "${RESPONSE}" | sed '$d')
+RESPONSE=$(echo "${RESPONSE}" | sed '$d')
 
 [[ "${HTTP_CODE}" != "200" ]] && echo "❌ CRDC API failed with HTTP ${HTTP_CODE}" && exit 1
 
-MAPPINGS_COUNT=$(echo "${BODY}" | jq -e '. | length' 2>/dev/null || echo "0")
+MAPPINGS_COUNT=$(echo "${RESPONSE}" | jq -e '. | length' 2>/dev/null || echo "0")
 [[ "${MAPPINGS_COUNT}" == "0" ]] && echo "ℹ️  No CRDC mappings found" && exit 0
 
 CURRENT_REPO_NAME=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
 
 for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
-  echo "📋 Mapping $((i + 1))/${MAPPINGS_COUNT}: Target AppGroup: $(echo "${BODY}" | jq -r ".[${i}].targetAppGroup")"
+  echo "📋 Mapping $((i + 1))/${MAPPINGS_COUNT}: Target AppGroup: $(echo "${RESPONSE}" | jq -r ".[${i}].targetAppGroup")"
 
-  TARGET_APP_GROUP=$(echo "${BODY}" | jq -r ".[${i}].targetAppGroup")
+  TARGET_APP_GROUP=$(echo "${RESPONSE}" | jq -r ".[${i}].targetAppGroup")
 
   if [[ "${CURRENT_REPO_NAME}" == tessell-* ]]; then
     TARGET_REPO="${TARGET_APP_GROUP}-${CURRENT_REPO_NAME#tessell-}"
@@ -39,12 +40,12 @@ for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
     continue
   fi
 
-  TARGETS_COUNT=$(echo "${BODY}" | jq ".[${i}].targets | length")
+  TARGETS_COUNT=$(echo "${RESPONSE}" | jq ".[${i}].targets | length")
   TARGET_BRANCH=""
 
   for j in $(seq 0 $((TARGETS_COUNT - 1))); do
-    TARGET_TYPE=$(echo "${BODY}" | jq -r ".[${i}].targets[${j}].type")
-    TARGET_NAME=$(echo "${BODY}" | jq -r ".[${i}].targets[${j}].name")
+    TARGET_TYPE=$(echo "${RESPONSE}" | jq -r ".[${i}].targets[${j}].type")
+    TARGET_NAME=$(echo "${RESPONSE}" | jq -r ".[${i}].targets[${j}].name")
 
     if [[ "${TARGET_TYPE}" == "branch" ]]; then
       if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${TARGET_NAME}" &>/dev/null; then
@@ -53,7 +54,7 @@ for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
         break
       fi
     elif [[ "${TARGET_TYPE}" == "release_status" ]]; then
-      RELEASES_API_URL="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
+      RELEASES_API_URL="https://${CONVOY_API_ENDPOINT}/apps/${TARGET_APP_GROUP}/releases"
       RELEASES_RESPONSE=$(curl -sf "${RELEASES_API_URL}" \
         -H "action: LIST_WITH_DETAILS" \
         -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
