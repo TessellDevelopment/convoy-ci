@@ -1,6 +1,6 @@
 set -exuo pipefail
 
-API_URL="https://${CONVOY_DEV_API_ENDPOINT}/devops/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
+API_URL="http://${CONVOY_DEV_API_ENDPOINT}/devops/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
 RESPONSE=$(curl -sf -w "\n%{http_code}" "${API_URL}" \
   -H "X-Api-Key: ${CONVOY_API_KEY}" \
   -H "Content-Type: application/json" 2>/dev/null || echo -e "\n000")
@@ -54,7 +54,7 @@ for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
         break
       fi
     elif [[ "${TARGET_TYPE}" == "release_status" ]]; then
-      RELEASES_API_URL="https://${CONVOY_API_ENDPOINT}/apps/${TARGET_APP_GROUP}/releases"
+      RELEASES_API_URL="http://${CONVOY_API_ENDPOINT}/apps/${TARGET_APP_GROUP}/releases"
       RELEASES_RESPONSE=$(curl -sf "${RELEASES_API_URL}" \
         -H "action: LIST_WITH_DETAILS" \
         -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
