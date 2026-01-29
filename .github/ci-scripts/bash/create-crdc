@@ -132,8 +132,9 @@ function cherry_pick_and_push_to_target_branch() {
 }
 
 function create_pull_request() {
+  local source_repo=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
   local pr_payload=$(jq -n \
-    --arg title "CRDC: ${PR_TITLE}" \
+    --arg title "CRDC: ${PR_TITLE} (from ${REPO_OWNER}/${source_repo})" \
     --arg head "${CRDC_BRANCH_NAME}" \
     --arg base "${TARGET_BRANCH}" \
     '{title: $title, head: $head, base: $base}')
