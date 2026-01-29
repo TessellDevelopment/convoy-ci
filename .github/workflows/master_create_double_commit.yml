@@ -80,8 +80,12 @@ jobs:
               console.log("rel-0.0.0 branch exists, will create DC there");
               branches.unshift("origin/rel-0.0.0")
             }
-            // add 'main' branch to the list
-            branches.push("main")
+
+            if (prBaseBranch !== "main") {
+              // add 'main' branch to the list only if base branch is not main
+              branches.push("main")
+            }
+
             // loop through the available active branches to create DC
             console.log("prBaseBranch: " + prBaseBranch)
             console.log("prBaseBranchMinVer: " + prBaseBranchMinVer)
@@ -107,6 +111,11 @@ jobs:
                 if (dstBranch === 'rel-0.0.0') {
                   console.log("Creating DC for rel-0.0.0 (irrespective of base branch)");
                 } else {
+                  // If base branch is main, skip all other rel-* branches
+                  if (prBaseBranch === "main") {
+                    console.log("Base branch is main, skipping " + dstBranch);
+                    continue
+                  }
                   // dst branch minor version
                   dstBranchMinVer = dstBranch.split('.')[1]
                   // if minor version is more than the current branch, its a latest release and
