@@ -1,4 +1,5 @@
-set -exuo pipefail
+#!/bin/bash
+set -euo pipefail
 
 cleanup() {
   if [[ -n "${REMOTE_NAME:-}" ]]; then
@@ -180,5 +181,3 @@ for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
   cherry_pick_and_push_to_target_branch
   create_pull_request
 done
-
-exit 0
