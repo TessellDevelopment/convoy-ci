@@ -120,10 +120,12 @@ function create_crdc_branch() {
 }
 
 function cherry_pick_and_push_to_target_branch() {
+  local source_repo=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
+
   if ! git cherry-pick "${COMMIT_SHA}" 2>/dev/null; then
     echo "⚠️  Cherry-pick has conflicts, committing conflicted state"
-    git add -A 2>/dev/null || true
-    git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" 2>/dev/null || true
+    git add -A -- . ':!ci-scripts' ':!.github/ci-scripts' 2>/dev/null || true
+    git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" -m "CRDC: ${PR_TITLE} (from ${REPO_OWNER}/${source_repo})" 2>/dev/null || true
   fi
 
   git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null || true
