@@ -26,12 +26,6 @@ jobs:
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
 
-          if git show-ref --verify --quiet refs/remotes/origin/rel-0.0.0; then
-            echo "REL_0_0_0_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "REL_0_0_0_EXISTS=false" >> $GITHUB_ENV
-          fi
-
           APP_GROUP=$(yq '.appGroup' convoy.yaml)
           echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
 
@@ -64,12 +58,6 @@ jobs:
 
             // create rel branches array
             const branches = "${{ env.BRANCHES }}".split(' ')
-            // If rel-0.0.0 exists, add it to the beginning of the array
-            const rel000Exists = "${{ env.REL_0_0_0_EXISTS }}" === 'true';
-            if (rel000Exists) {
-              console.log("rel-0.0.0 branch exists, will create DC there");
-              branches.unshift("origin/rel-0.0.0")
-            }
 
             if (prBaseBranch !== "main") {
               // add 'main' branch to the list only if base branch is not main
