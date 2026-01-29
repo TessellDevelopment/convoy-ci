@@ -18,10 +18,16 @@ function fetch_crdc_mappings() {
   local http_code=$(echo "${response}" | tail -n1)
   CRDC_RESPONSE=$(echo "${response}" | sed '$d')
 
-  [[ "${http_code}" != "200" ]] && echo "❌ CRDC API failed with HTTP ${http_code}" && exit 0
+  if [[ "${http_code}" != "200" ]]; then
+    echo "❌ CRDC API failed with HTTP ${http_code}"
+    exit 0
+  fi
 
   MAPPINGS_COUNT=$(echo "${CRDC_RESPONSE}" | jq -e '. | length' 2>/dev/null || echo "0")
-  [[ "${MAPPINGS_COUNT}" == "0" ]] && echo "ℹ️  No CRDC mappings found" && exit 0
+  if [[ "${MAPPINGS_COUNT}" == "0" ]]; then
+    echo "⚠️ No CRDC mappings found"
+    exit 0
+  fi
 }
 
 function setup_remote_for_target_repo() {
@@ -40,8 +46,16 @@ function setup_remote_for_target_repo() {
   REMOTE_NAME="crdc_remote_${RANDOM}"
   local remote_url="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${TARGET_REPO}.git"
 
-  git remote add "${REMOTE_NAME}" "${remote_url}" 2>/dev/null || echo "❌ Failed to add remote for ${TARGET_REPO}" && return 1
-  git fetch "${REMOTE_NAME}" 2>/dev/null || git remote remove "${REMOTE_NAME}" 2>/dev/null && echo "❌ Failed to fetch from ${TARGET_REPO}" && return 1
+  if ! git remote add "${REMOTE_NAME}" "${remote_url}" 2>/dev/null; then
+    echo "❌ Failed to add remote for ${TARGET_REPO}"
+    return 1
+  fi
+
+  if ! git fetch "${REMOTE_NAME}" 2>/dev/null; then
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+    echo "❌ Failed to fetch from ${TARGET_REPO}"
+    return 1
+  fi
 }
 
 function determine_target_branchh() {
@@ -91,8 +105,10 @@ function create_crdc_branch() {
   CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}-crdc"
 
   echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
-  git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null || echo "❌ Failed to create branch" && return 1
-  return 0
+  if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
+    echo "❌ Failed to create branch"
+    return 1
+  fi
 }
 
 function cherry_pick_and_push_to_target_branch() {
@@ -134,9 +150,19 @@ function create_pull_request() {
 fetch_crdc_mappings
 
 for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
-  setup_remote_for_target_repo "${i}" || continue
-  determine_target_branchh "${i}" || echo "⚠️ No valid target found, skipping CRDC" && continue
-  create_crdc_branch || continue
+  if ! setup_remote_for_target_repo "${i}"; then
+    continue
+  fi
+
+  if ! determine_target_branchh "${i}"; then
+    echo "⚠️ No valid target found, skipping CRDC"
+    continue
+  fi
+
+  if ! create_crdc_branch; then
+    continue
+  fi
+
   cherry_pick_and_push_to_target_branch
   create_pull_request
 done
