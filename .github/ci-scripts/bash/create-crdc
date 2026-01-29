@@ -21,7 +21,7 @@ function fetch_crdc_mappings() {
 
   if [[ "${http_code}" != "200" ]]; then
     echo "❌ CRDC API failed with HTTP ${http_code}"
-    exit 0
+    exit 1
   fi
 
   MAPPINGS_COUNT=$(echo "${CRDC_RESPONSE}" | jq -e '. | length' 2>/dev/null || echo "0")
@@ -49,13 +49,13 @@ function setup_remote_for_target_repo() {
 
   if ! git remote add "${REMOTE_NAME}" "${remote_url}" 2>/dev/null; then
     echo "❌ Failed to add remote for ${TARGET_REPO}"
-    return 1
+    exit 1
   fi
 
   if ! git fetch "${REMOTE_NAME}" 2>/dev/null; then
     git remote remove "${REMOTE_NAME}" 2>/dev/null || true
     echo "❌ Failed to fetch from ${TARGET_REPO}"
-    return 1
+    exit 1
   fi
 }
 
@@ -111,12 +111,12 @@ function determine_target_branchh() {
 }
 
 function create_crdc_branch() {
-  CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}-crdc"
+  CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}_crdc"
 
   echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
   if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
     echo "❌ Failed to create branch"
-    return 1
+    exit 1
   fi
 }
 
@@ -159,25 +159,16 @@ Original PR: ${source_pr_url}"
     echo "⚠️  PR already exists or no diff"
   else
     echo "❌  Failed to create PR (HTTP ${pr_code})"
+    exit 1
   fi
 }
 
 fetch_crdc_mappings
 
 for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
-  if ! setup_remote_for_target_repo "${i}"; then
-    continue
-  fi
-
-  if ! determine_target_branchh "${i}"; then
-    echo "⚠️ No valid target found, skipping CRDC"
-    continue
-  fi
-
-  if ! create_crdc_branch; then
-    continue
-  fi
-
+  setup_remote_for_target_repo "${i}"
+  determine_target_branchh "${i}"
+  create_crdc_branch
   cherry_pick_and_push_to_target_branch
   create_pull_request
 done
