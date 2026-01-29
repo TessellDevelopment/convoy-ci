@@ -56,6 +56,12 @@ jobs:
               process.exit(0);
             }
 
+            // check if base branch is rel-0.0.0, no DC should be created
+            if (prBaseBranch === "rel-0.0.0") {
+              console.log("Base branch is rel-0.0.0, no DC will be created");
+              process.exit(0);
+            }
+
             // create rel branches array
             const branches = "${{ env.BRANCHES }}".split(' ')
 
