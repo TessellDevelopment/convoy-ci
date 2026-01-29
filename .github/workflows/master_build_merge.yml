@@ -869,7 +869,7 @@ jobs:
             flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
             flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
-          makeBuildAndPush() {//
+          makeBuildAndPush() {
             set -e
             installGoDependencies
             make service
@@ -878,10 +878,11 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
             make os=$OS pushprox-client
             make clean
+            FILENAME=pushprox-client-${OS}
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$FILENAME.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
-            push_release_manifest_artifacts "${ARTIFACT}.${EXTENSION}" "client-package/${ARTIFACT}.${EXTENSION}"
+            push_release_manifest_artifacts "${FILENAME}.${EXTENSION}" "client-package/${FILENAME}.${EXTENSION}"
             set +e
           }
           makeImageAndPush() {
