@@ -38,8 +38,8 @@ function setup_remote_for_target_repo() {
   echo "📋 Mapping $((mapping_index + 1))/${MAPPINGS_COUNT}: Target AppGroup: ${TARGET_APP_GROUP}"
 
   local current_repo_name=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
-  if [[ "${current_repo_name}" == tessell-* ]]; then
-    TARGET_REPO="${TARGET_APP_GROUP}-${current_repo_name#tessell-}"
+  if [[ "${current_repo_name}" == ${APP_GROUP}-* ]]; then
+    TARGET_REPO="${TARGET_APP_GROUP}-${current_repo_name#${APP_GROUP}-}"
   else
     TARGET_REPO="${TARGET_APP_GROUP}-${current_repo_name}"
   fi
@@ -51,15 +51,35 @@ function setup_remote_for_target_repo() {
     echo "❌ Failed to add remote for ${TARGET_REPO}"
     exit 1
   fi
+}
 
-  if ! git fetch "${REMOTE_NAME}" 2>/dev/null; then
-    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
-    echo "❌ Failed to fetch from ${TARGET_REPO}"
-    exit 1
+function get_branch_from_release_status() {
+  local target_name=$1
+  local releases_api_url="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
+  local releases_response=$(curl -sf "${releases_api_url}" \
+    -H "action: LIST_WITH_DETAILS" \
+    -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
+
+  local release_name=$(echo "${releases_response}" | jq -r \
+    ".releases[] | select(.dynamicStatus != null and (.dynamicStatus | index(\"${target_name}\"))) | .name" 2>/dev/null | head -n1)
+
+  if [[ -n "${release_name}" && "${release_name}" != "null" ]]; then
+    echo "  🎯 Found release '${release_name}' with status '${target_name}'"
+    if [[ "${release_name}" =~ rel-([0-9]+) ]]; then
+      local minor_version="${BASH_REMATCH[1]}"
+      echo "rel-0.${minor_version}.0"
+      return 0
+    else
+      echo "  ❌ Release name '${release_name}' does not match expected format 'rel-<number>'" >&2
+      return 1
+    fi
+  else
+    echo "  ⚠️ No release found with status '${target_name}'" >&2
+    return 1
   fi
 }
 
-function determine_target_branchh() {
+function determine_target_branch() {
   local mapping_index=$1
 
   TARGET_BRANCH=""
@@ -71,38 +91,20 @@ function determine_target_branchh() {
     local target_name=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].name")
 
     if [[ "${target_type}" == "branch" ]]; then
-      if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${target_name}" &>/dev/null; then
-        echo "  ✅ Branch '${target_name}' exists"
-        TARGET_BRANCH="${target_name}"
+      TARGET_BRANCH="${target_name}"
+    elif [[ "${target_type}" == "release_status" ]]; then
+      TARGET_BRANCH=$(get_branch_from_release_status "${target_name}")
+      if [[ $? -ne 0 ]]; then
+        continue
+      fi
+    fi
+
+    if [[ -n "${TARGET_BRANCH}" ]]; then
+      if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${TARGET_BRANCH}" &>/dev/null; then
+        echo "  ✅ Branch '${TARGET_BRANCH}' exists"
         return 0
       else
-        echo " ⚠️ Branch '${target_name}' does not exist in ${TARGET_REPO}"
-      fi
-    elif [[ "${target_type}" == "release_status" ]]; then
-      local releases_api_url="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
-      local releases_response=$(curl -sf "${releases_api_url}" \
-        -H "action: LIST_WITH_DETAILS" \
-        -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
-
-      local release_name=$(echo "${releases_response}" | jq -r \
-        ".releases[] | select(.dynamicStatus != null and (.dynamicStatus | index(\"${target_name}\"))) | .name" 2>/dev/null | head -n1)
-
-      if [[ -n "${release_name}" && "${release_name}" != "null" ]]; then
-        echo "  🎯 Found release '${release_name}' with status '${target_name}'"
-        if [[ "${release_name}" =~ rel-([0-9]+) ]]; then
-          local minor_version="${BASH_REMATCH[1]}"
-          local formatted_branch="rel-0.${minor_version}.0"
-
-          if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${formatted_branch}" &>/dev/null; then
-            echo "  ✅ Branch '${formatted_branch}' exists (from release '${release_name}')"
-            TARGET_BRANCH="${formatted_branch}"
-            return 0
-          else
-            echo "  ⚠️ Branch '${formatted_branch}' does not exist in ${TARGET_REPO}"
-          fi
-        fi
-      else
-        echo "  ⚠️ No release found with status '${target_name}'"
+        echo "  ⚠️ Branch '${TARGET_BRANCH}' does not exist in ${TARGET_REPO}"
       fi
     fi
   done
@@ -117,7 +119,12 @@ function create_crdc_branch() {
 
   if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${CRDC_BRANCH_NAME}" &>/dev/null; then
     echo "⚠️  Branch ${CRDC_BRANCH_NAME} already exists on remote, checking it out"
-    git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${CRDC_BRANCH_NAME}" 2>/dev/null || exit 1
+    if ! git checkout "${CRDC_BRANCH_NAME}" 2>/dev/null; then
+      if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${CRDC_BRANCH_NAME}" 2>/dev/null; then
+        echo "❌ Failed to checkout existing branch ${CRDC_BRANCH_NAME}"
+        exit 1
+      fi
+    fi
   elif ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
     echo "❌ Failed to create branch"
     exit 1
