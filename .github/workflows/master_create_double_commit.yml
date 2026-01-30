@@ -9,7 +9,8 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: non-build
     env:
-       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
+      CI_BRANCH: main
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -25,10 +26,13 @@ jobs:
           echo "BRANCHES=${br_arr[@]}" >> $GITHUB_ENV
           echo "MAILID=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
 
+          APP_GROUP=$(yq '.appGroup' convoy.yaml)
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
+
       - name: Pull Create
         id: create_dc
         uses: actions/github-script@v7.0.1
-        env: 
+        env:
           PR_TITLE: ${{github.event.pull_request.title}}
         with:
           github-token: ${{ secrets.CIPIPELINE_GITHUB_TOKEN  }}
@@ -52,10 +56,20 @@ jobs:
               process.exit(0);
             }
 
+            // check if base branch is rel-0.0.0, no DC should be created
+            if (prBaseBranch === "rel-0.0.0") {
+              console.log("Base branch is rel-0.0.0, no DC will be created");
+              process.exit(0);
+            }
+
             // create rel branches array
             const branches = "${{ env.BRANCHES }}".split(' ')
-            // add 'main' branch to the list
-            branches.push("main")
+
+            if (prBaseBranch !== "main") {
+              // add 'main' branch to the list only if base branch is not main
+              branches.push("main")
+            }
+
             // loop through the available active branches to create DC
             console.log("prBaseBranch: " + prBaseBranch)
             console.log("prBaseBranchMinVer: " + prBaseBranchMinVer)
@@ -66,8 +80,15 @@ jobs:
                 continue
               }
               console.log(" Iterating " + branches[branch])
-              dstBranch = branches[branch].trim()
+              let originalDstBranch = branches[branch].trim()
+              dstBranch = originalDstBranch
               console.log("dstBranch:" + dstBranch)
+
+              if (prBaseBranch === "main" && originalDstBranch !== "origin/rel-0.0.0") {
+                console.log("Base branch is main, skipping " + dstBranch);
+                continue
+              }
+
               // check if its a forward active branch
               if (dstBranch != "main") {
                 // remove the 'origin' from the remote branch name
@@ -78,12 +99,16 @@ jobs:
                    continue
                 }
 
-                // dst branch minor version
-                dstBranchMinVer = dstBranch.split('.')[1]
-                // if minor version is more than the current branch, its a latest release and
-                // we need to create DC
-                if (parseInt(dstBranchMinVer) <= parseInt(prBaseBranchMinVer)) {
-                  continue
+                if (dstBranch === 'rel-0.0.0') {
+                  console.log("Creating DC for rel-0.0.0 (irrespective of base branch)");
+                } else {
+                  // dst branch minor version
+                  dstBranchMinVer = dstBranch.split('.')[1]
+                  // if minor version is more than the current branch, its a latest release and
+                  // we need to create DC
+                  if (parseInt(dstBranchMinVer) <= parseInt(prBaseBranchMinVer)) {
+                    continue
+                  }
                 }
               }
               // new branch name
@@ -187,6 +212,34 @@ jobs:
               }
             }
 
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+          
+      - name: Create Cross-Repo Double Commits (CRDC)
+        id: create_crdc
+        env:
+          APP_GROUP: ${{ env.APP_GROUP }}
+          COMMIT_SHA: ${{ github.sha }}
+          CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
+          CONVOY_API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
+          CONVOY_RELEASE_MGMT_API_KEY: ${{ secrets.CONVOY_RELEASE_MGMT_API_KEY }}
+          CURRENT_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+          MAILID: ${{ env.MAILID }}
+          PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          ./ci-scripts/bash/create-crdc
 
       - name: Slack Notification
         if: failure()
@@ -195,4 +248,3 @@ jobs:
            status: ${{ job.status }}
            steps: ${{ toJson(steps) }}
            channel: ${{ secrets.SLACK_DEVOPS_CHANNEL  }}
-        
