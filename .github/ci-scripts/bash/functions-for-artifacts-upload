@@ -18,7 +18,8 @@ function upload_to_nexus_tessell_artifacts() {
   local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-}
   validate_inputs "1 2" "$@"
 
-  local response_with_status_code=$(upload_to_nexus ${local_abs_path_to_src} "tessell-artifacts/${dest_path_without_bucket}")
+  local ARTIFACTS_REPO="${APP_GROUP}-artifacts"
+  local response_with_status_code=$(upload_to_nexus ${local_abs_path_to_src} "${ARTIFACTS_REPO}/${dest_path_without_bucket}")
   echo ${response_with_status_code}
 
   local status_code=$(echo "${response_with_status_code}" | tail -n1)
