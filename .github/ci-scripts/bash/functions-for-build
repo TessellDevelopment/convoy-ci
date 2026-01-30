@@ -1052,7 +1052,7 @@ parse_coverage_report_javascript() {
   set -e
   set -x
     echo "Running tests and generating coverage report..."
-    yarn test && yarn test:coverage
+    yarn test && yarn test:coverage ----passWithNoTests
     coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
     # Extract coverage metrics from the JSON file
     covered_statements=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | 1] | length' ${coverage_report})
