@@ -561,7 +561,6 @@ jobs:
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
@@ -951,6 +950,7 @@ jobs:
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
+            RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
@@ -960,7 +960,7 @@ jobs:
             else 
               manifestLabel="${LABEL}"
             fi
-            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
+            releaseManifest=$(curl --silent --location "${RELEASE_MANIFEST_URL}/${manifestLabel}")
             for DIR in "${DIRECTORIES[@]}"; do
               CHECKSUM=""
               DIR=${DIR%/}
@@ -1160,7 +1160,6 @@ jobs:
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
