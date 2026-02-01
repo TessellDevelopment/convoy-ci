@@ -831,6 +831,7 @@ make_service() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
+  NAME="${NAME#${APP_GROUP}-}"
   if [ "${NAME}" == "${ARTIFACT}" ]; then
       NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
       OS="windows"
