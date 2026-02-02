@@ -1,0 +1,193 @@
+#!/bin/bash
+set -exuo pipefail
+
+cleanup() {
+  if [[ -n "${REMOTE_NAME:-}" ]]; then
+    git checkout "${PR_BASE_BRANCH}" 2>/dev/null || git checkout main 2>/dev/null || true
+    git remote remove "${REMOTE_NAME}" 2>/dev/null || true
+  fi
+}
+
+trap cleanup EXIT
+
+function fetch_crdc_mappings() {
+  local api_url="http://${CONVOY_API_ENDPOINT}/devops/git-metadata/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
+  local response=$(curl -sf -w "\n%{http_code}" "${api_url}" \
+    -H "X-Api-Key: ${CONVOY_API_KEY}" \
+    -H "Content-Type: application/json" 2>/dev/null || echo -e "\n000")
+
+  local http_code=$(echo "${response}" | tail -n1)
+  CRDC_RESPONSE=$(echo "${response}" | sed '$d')
+
+  if [[ "${http_code}" != "200" ]]; then
+    echo "❌ CRDC API failed with HTTP ${http_code}"
+    exit 1
+  fi
+
+  MAPPINGS_COUNT=$(echo "${CRDC_RESPONSE}" | jq -e '. | length' 2>/dev/null || echo "0")
+  if [[ "${MAPPINGS_COUNT}" == "0" ]]; then
+    echo "⚠️ No CRDC mappings found"
+    exit 0
+  fi
+}
+
+function setup_remote_for_target_repo() {
+  local mapping_index=$1
+
+  TARGET_APP_GROUP=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targetAppGroup")
+  echo "📋 Mapping $((mapping_index + 1))/${MAPPINGS_COUNT}: Target AppGroup: ${TARGET_APP_GROUP}"
+
+  local current_repo_name=$(echo "${CURRENT_REPO}" | cut -d'/' -f2)
+  if [[ "${current_repo_name}" == ${APP_GROUP}-* ]]; then
+    TARGET_REPO="${TARGET_APP_GROUP}-${current_repo_name#${APP_GROUP}-}"
+  else
+    TARGET_REPO="${TARGET_APP_GROUP}-${current_repo_name}"
+  fi
+
+  REMOTE_NAME="crdc_remote_${RANDOM}"
+  local remote_url="https://${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${TARGET_REPO}.git"
+
+  if ! git remote add "${REMOTE_NAME}" "${remote_url}" 2>/dev/null; then
+    echo "❌ Failed to add remote for ${TARGET_REPO}"
+    exit 1
+  fi
+}
+
+function get_branch_from_release_status() {
+  local target_name=$1
+  local releases_api_url="https://api.convoy.tessell.cloud/apps/${TARGET_APP_GROUP}/releases"
+  local releases_response=$(curl -sf "${releases_api_url}" \
+    -H "action: LIST_WITH_DETAILS" \
+    -H "x-api-key: ${CONVOY_RELEASE_MGMT_API_KEY}" 2>/dev/null || echo "{}")
+
+  local release_name=$(echo "${releases_response}" | jq -r \
+    ".releases[] | select(.dynamicStatus != null and (.dynamicStatus | index(\"${target_name}\"))) | .name" 2>/dev/null | head -n1)
+
+  if [[ -n "${release_name}" && "${release_name}" != "null" ]]; then
+    echo "  🎯 Found release '${release_name}' with status '${target_name}'"
+    if [[ "${release_name}" =~ rel-([0-9]+) ]]; then
+      local minor_version="${BASH_REMATCH[1]}"
+      echo "rel-0.${minor_version}.0"
+      return 0
+    else
+      echo "  ❌ Release name '${release_name}' does not match expected format 'rel-<number>'" >&2
+      return 1
+    fi
+  else
+    echo "  ⚠️ No release found with status '${target_name}'" >&2
+    return 1
+  fi
+}
+
+function determine_target_branch() {
+  local mapping_index=$1
+
+  TARGET_BRANCH=""
+  local targets_count=$(echo "${CRDC_RESPONSE}" | jq ".[${mapping_index}].targets | length")
+
+  for j in $(seq 0 $((targets_count - 1))); do
+    echo "🔄 Checking target $((j + 1))/${targets_count}..."
+    local target_type=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].type")
+    local target_name=$(echo "${CRDC_RESPONSE}" | jq -r ".[${mapping_index}].targets[${j}].name")
+
+    if [[ "${target_type}" == "branch" ]]; then
+      TARGET_BRANCH="${target_name}"
+    elif [[ "${target_type}" == "release_status" ]]; then
+      TARGET_BRANCH=$(get_branch_from_release_status "${target_name}")
+      if [[ $? -ne 0 ]]; then
+        continue
+      fi
+    fi
+
+    if [[ -n "${TARGET_BRANCH}" ]]; then
+      if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${TARGET_BRANCH}" &>/dev/null; then
+        echo "  ✅ Branch '${TARGET_BRANCH}' exists"
+        return 0
+      else
+        echo "  ⚠️ Branch '${TARGET_BRANCH}' does not exist in ${TARGET_REPO}"
+      fi
+    fi
+  done
+
+  return 1
+}
+
+function create_crdc_branch() {
+  CRDC_BRANCH_NAME="${PR_SOURCE_BRANCH}-${TARGET_BRANCH}_crdc"
+
+  echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
+
+  if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${CRDC_BRANCH_NAME}" &>/dev/null; then
+    echo "⚠️  Branch ${CRDC_BRANCH_NAME} already exists on remote, checking it out"
+    if ! git checkout "${CRDC_BRANCH_NAME}" 2>/dev/null; then
+      if ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${CRDC_BRANCH_NAME}" 2>/dev/null; then
+        echo "❌ Failed to checkout existing branch ${CRDC_BRANCH_NAME}"
+        exit 1
+      fi
+    fi
+  elif ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
+    echo "❌ Failed to create branch"
+    exit 1
+  fi
+}
+
+function cherry_pick_and_push_to_target_branch() {
+  if ! git cherry-pick "${COMMIT_SHA}" 2>/dev/null; then
+    echo "⚠️  Cherry-pick has conflicts, committing conflicted state"
+    git add -A -- . ':!ci-scripts' ':!.github/ci-scripts' 2>/dev/null || true
+    git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" -m "CRDC: ${PR_TITLE}" 2>/dev/null || true
+  fi
+
+  git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null || true
+}
+
+function create_pull_request() {
+  local source_pr_url="https://github.com/${CURRENT_REPO}/pull/${PR_NUMBER}"
+  local pr_body="Cross-repo double commit from ${CURRENT_REPO}
+
+Original PR: ${source_pr_url}"
+
+  local pr_payload=$(jq -n \
+    --arg title "CRDC: ${PR_TITLE}" \
+    --arg body "${pr_body}" \
+    --arg head "${CRDC_BRANCH_NAME}" \
+    --arg base "${TARGET_BRANCH}" \
+    '{title: $title, body: $body, head: $head, base: $base}')
+
+  local pr_response=$(curl -sf -w "\n%{http_code}" -X POST \
+    "https://api.github.com/repos/${REPO_OWNER}/${TARGET_REPO}/pulls" \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    -d "${pr_payload}" 2>/dev/null || echo -e "\n000")
+
+  local pr_code=$(echo "${pr_response}" | tail -n1)
+  local pr_body=$(echo "${pr_response}" | sed '$d')
+
+  if [[ "${pr_code}" == "201" ]]; then
+    local pr_url=$(echo "${pr_body}" | jq -r '.html_url')
+    echo "✅ PR created: ${pr_url}"
+  elif [[ "${pr_code}" == "422" ]]; then
+    echo "⚠️  PR already exists or no diff between branches"
+  else
+    echo "❌  Failed to create PR (HTTP ${pr_code})"
+    echo "Response: ${pr_body}"
+    exit 1
+  fi
+}
+
+fetch_crdc_mappings
+
+for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
+  setup_remote_for_target_repo "${i}"
+
+  if ! determine_target_branchh "${i}"; then
+    echo "⚠️ No valid target found for mapping $((i + 1)), skipping"
+    continue
+  fi
+
+  create_crdc_branch
+  cherry_pick_and_push_to_target_branch
+  create_pull_request
+done
+
+exit 0
