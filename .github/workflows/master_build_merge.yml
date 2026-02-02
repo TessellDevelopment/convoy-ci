@@ -759,7 +759,7 @@ jobs:
               generate_checksum "$ARTIFACT.$EXTENSION"
             else
               awsConfigureProdAssets
-              mvnDeploy "$ARTIFACT" "${EXTENSION}" "$ARTIFACT.$EXTENSION" "${APP_GROUP}.functions" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "${EXTENSION}" "$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.functions" "${LATEST_TAG}"
               push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
             fi
             if $changed_dir; then
