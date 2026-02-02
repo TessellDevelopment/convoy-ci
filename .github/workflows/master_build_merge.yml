@@ -744,15 +744,16 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             changed_dir=false
             if [ ! -f "Makefile" ]; then
-              cd tessell; 
+              cd tessell;
               changed_dir=true;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
-            BUILD_GENERATED_FILE_NAME=tessell-task-handler-${OS}-${CLOUD}
+            BASE_NAME=$(echo "$ARTIFACT" | sed "s/-${OS}-${CLOUD}$//")
+            BUILD_GENERATED_FILE_NAME=${BASE_NAME}-${OS}-${CLOUD}
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
               push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
