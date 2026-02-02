@@ -753,7 +753,8 @@ jobs:
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
             BASE_NAME=$(echo "$ARTIFACT" | sed "s/-${OS}-${CLOUD}$//")
-            BUILD_GENERATED_FILE_NAME=${BASE_NAME}-${OS}-${CLOUD}
+            NAME="${BASE_NAME#${APP_GROUP}-}"
+            BUILD_GENERATED_FILE_NAME=tessell-${NAME}-${OS}-${CLOUD}
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
               push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
