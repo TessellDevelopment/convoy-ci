@@ -128,7 +128,9 @@ check_convoy_yaml() {
 check_flyway() {
   if [ -d "flyway" ]; then
     echo "The 'flyway' directory exists in this repository."
-    DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+    REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+    BASE_NAME=${REPO_NAME%-service}
+    DOCKER_FLYWAY_IMAGE_NAME="${BASE_NAME}-flyway-migration"
     docker tag ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
     docker push ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
   else
