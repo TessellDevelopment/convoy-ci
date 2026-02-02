@@ -303,12 +303,16 @@ EOL
 docker_build() {
   set -e
   IMAGE="${1}"
-  FILE="${4}"
+  if [[ $# -eq 2 ]]; then
+    FILE="${2}"
+  else
+    FILE="${4}"
+  fi
   if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
     FILE="./Dockerfile"
   fi
   required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   docker build -f ${FILE} -t ${IMAGE} \
               --build-arg GITHUB_USER=${GITHUB_USER} \
               --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
@@ -323,8 +327,16 @@ docker_build() {
 docker_build_and_push() {
   set -e
   IMAGE="${1}"
-  VERSION="${3}"
-  FILE="${4}"
+  if [[ $# -eq 2 ]]; then
+    VERSION=""
+    FILE="${2}"
+  elif [[ $# -eq 3 ]]; then
+    VERSION=""
+    FILE="${3}"
+  else
+    VERSION="${3}"
+    FILE="${4}"
+  fi
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" && -n "${VERSION}" ]]; then
     TAG=${VERSION}
@@ -333,7 +345,7 @@ docker_build_and_push() {
     FILE="./Dockerfile"
   fi
   required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   docker build -f ${FILE} -t ${IMAGE} \
               --build-arg GITHUB_USER=${GITHUB_USER} \
               --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
