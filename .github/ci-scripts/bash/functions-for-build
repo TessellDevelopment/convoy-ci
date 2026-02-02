@@ -220,18 +220,18 @@ convoy_build_and_push() {
     
   elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
     aws_configure_tessellops_artifacts
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} --profile tessellops
 
   elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
 
   elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "tessell-artifacts/citest/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
@@ -256,7 +256,7 @@ convoy_codegen_build_and_push() {
   convoy_codegen_build $@
   set -e
   ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "${APP_GROUP}.code-generator" "${VERSION}"
   set +e
 }
 
@@ -433,8 +433,9 @@ frp_build_and_push() {
   EXTENSION="${2}"
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
-    ARTIFACT="tessell-frpc-${OS}"
-    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
+    BUILD_GENERATED_FILE_NAME="tessell-frpc-${OS}"
+    ARTIFACT="${APP_GROUP}-frpc-${OS}"
+    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.frp" "${LATEST_TAG}"
     push_release_manifest_artifacts
   done
   set +e
@@ -637,7 +638,7 @@ gradlew_ui_build_and_push() {
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
-    -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
+    -Pnexus_push_repo_raw_ops=="${APP_GROUP}-artifacts" \
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
@@ -650,6 +651,11 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
+  if [[ ${APP_GROUP} == gcpcore ]]; then
+    echo "Skipping image vulnerability scanning for gcpcore appGroup"
+    set +e
+    return 0
+  fi
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
@@ -794,10 +800,10 @@ jar_build_and_push() {
   EXTENSION="${2}"
   VERSION="${3}"
   required_inputs="1 2 3"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   ./mvnw clean deploy -Drevision=${VERSION} -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
     -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
-    -DgroupId=tessellops -DartifactId=${ARTIFACT} \
+    -DgroupId=${APP_GROUP} -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
   generate_checksum $ARTIFACT "${ARTIFACT}-${VERSION}.${EXTENSION}"
   set +e
@@ -825,6 +831,7 @@ make_service() {
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
   NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
+  NAME="${NAME#${APP_GROUP}-}"
   if [ "${NAME}" == "${ARTIFACT}" ]; then
       NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
       OS="windows"
@@ -834,8 +841,10 @@ make_service() {
   ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
   echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
   if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}
     make service os=${OS}
   else
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}-${ENGINE}
     make service os=${OS} engine=${ENGINE}
   fi
   set +e
@@ -846,8 +855,8 @@ make_service_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
-  push_release_manifest_artifacts
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.${NAME}" "${LATEST_TAG}"
+  push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   set +e
 }
 
@@ -858,7 +867,7 @@ mvn_deploy() {
   GROUP_ID="${4}"
   VERSION="${5}"
   required_inputs="1 2 3 4 5"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
       -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
       -DgroupId=${GROUP_ID} -DartifactId=${ARTIFACT_ID} -Dversion=${VERSION} \
@@ -884,7 +893,7 @@ mvnw_build_and_push() {
     generate_checksum $ARTIFACT
   else
     aws_configure_tessellops_artifacts
-    push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+    push_to_nexus "./target/function.zip" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
     aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip --profile tessellops
     generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
@@ -950,7 +959,7 @@ ops_terraform_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
@@ -965,7 +974,7 @@ ops_ui_build_and_push() {
   EXT="${2}"
   sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
   gradlew_ui_build
-  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
   generate_checksum $ARTIFACT "tessellops-ui-${LATEST_TAG}.zip"
   set +e
 }
@@ -1171,7 +1180,7 @@ push_terraform_modules() {
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
-    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
+    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     ! ${DEV_BUILD} || return
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
@@ -1369,7 +1378,7 @@ software_def_build_and_push() {
     git diff HEAD~1 --compact-summary > ../current_pr_diff
     cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
-      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
+      URL_PATH="${APP_GROUP}-artifacts/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
@@ -1379,7 +1388,7 @@ software_def_build_and_push() {
   else
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
-  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  push_to_nexus "./common_manifest.json" "${APP_GROUP}-artifacts/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
   set +e
 }
 
@@ -1470,8 +1479,8 @@ tsm_zip_build_and_push() {
   EXTENSION="${2}"
   VERSION="${3}"
   required_inputs="1 2 3"
-  validate_inputs "${required_inputs}" "$@" 
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "tessell.tsm.infra" "${VERSION}"
+  validate_inputs "${required_inputs}" "$@"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}.tsm.infra" "${VERSION}"
   set +e
 }
 
@@ -1500,7 +1509,7 @@ ui_build_and_push() {
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
   set -e
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "${APP_GROUP}.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
@@ -1557,7 +1566,7 @@ vss_tar_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "${APP_GROUP}.vss" "${LATEST_TAG}"
   push_release_manifest_artifacts
   set +e
 }
