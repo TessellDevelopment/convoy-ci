@@ -450,7 +450,7 @@ frp_build_and_push() {
     BUILD_GENERATED_FILE_NAME="tessell-frpc-${OS}"
     ARTIFACT="${APP_GROUP}-frpc-${OS}"
     mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.frp" "${LATEST_TAG}"
-    push_release_manifest_artifacts
+    push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   done
   set +e
 }
