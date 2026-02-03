@@ -875,7 +875,13 @@ jobs:
             make service
             ARTIFACT="$1"
             EXTENSION="$2"
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+              OS="linux"
+            elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
+              OS="windows"
+            else
+              OS="linux"
+            fi
             make os=$OS pushprox-client
             make clean
             BUILD_GENERATED_FILE_NAME=pushprox-client-${OS}
