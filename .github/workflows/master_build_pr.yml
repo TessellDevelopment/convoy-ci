@@ -682,17 +682,17 @@ jobs:
           }
           build() {
             type="$1"
-            check=$(yq ".generates.${type} // \"\"" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              echo "Skipping build for ${type}"
-              return
-            fi
-            echo "Building ${type}"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version // ""' convoy.yaml)
             language=$(yq '.language // ""' convoy.yaml)
+            echo "Building ${type}"
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
+              return
+            fi
+            check=$(yq ".generates.${type} // \"\"" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              echo "Skipping build for ${type}"
               return
             fi
             yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
