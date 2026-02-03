@@ -1363,7 +1363,7 @@ setup_packer_env() {
   configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
-  if [[ "$APP_GROUP" == "tessell" ]]; then
+  if [[ "${APP_GROUP}" == "tessell" ]]; then
     sm_artifact_name="software-image-manifest"
   else
     sm_artifact_name="${APP_GROUP}-software-image-manifest"
