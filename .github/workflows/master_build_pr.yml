@@ -569,8 +569,14 @@ jobs:
             make service
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            validateInputs "$requiredInputs" "$@"
+            if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+              OS="linux"
+            elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
+              OS="windows"
+            else
+              OS="linux"
+            fi
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
