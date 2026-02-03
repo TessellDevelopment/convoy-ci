@@ -133,6 +133,8 @@ jobs:
                     element["version"] = module_data.get('version')
                     version = module_data.get('version')
                     element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
+                    if APP_GROUP != "tessell":
+                      element["path"] = f"{APP_GROUP}-artifacts/{LABEL}/{APP_GROUP}-{object['name']}/{APP_GROUP}-{object['name']}-{version}.{object['extension']}"
                     artifacts.append(element)
               return artifacts
 

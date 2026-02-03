@@ -1193,11 +1193,16 @@ push_release_manifest_artifacts() {
 
 push_terraform_modules() {
   local artifact_dest_path=${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+  if [[ ${APP_GROUP} != tessell ]]; then
+    local artifact_dest_path=${LABEL}/${APP_GROUP}-${DIR}/${APP_GROUP}-${DIR}-${VERSION}.zip
+  fi
   local release=$(echo ${LABEL} | cut -d'.' -f2)
-
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
+    if [[ ${APP_GROUP} != tessell ]]; then
+      mvn_deploy "${APP_GROUP}-${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
+    fi
     mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     ! ${DEV_BUILD} || return
