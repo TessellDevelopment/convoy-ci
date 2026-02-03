@@ -957,7 +957,7 @@ jobs:
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
-            RELEASE_MANIFEST_URL= http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
+            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
