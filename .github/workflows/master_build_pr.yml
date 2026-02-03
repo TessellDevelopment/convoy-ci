@@ -631,9 +631,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
-            VERSION="$3"
-            requiredInputs="1 2 3"
-            validateInputs "$requiredInputs" "$@" 
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@"
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
