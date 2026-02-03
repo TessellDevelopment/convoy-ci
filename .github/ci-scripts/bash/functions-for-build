@@ -1202,8 +1202,9 @@ push_terraform_modules() {
   else
     if [[ ${APP_GROUP} != tessell ]]; then
       mvn_deploy "${APP_GROUP}-${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
+    else
+      mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
     fi
-    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     ! ${DEV_BUILD} || return
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
