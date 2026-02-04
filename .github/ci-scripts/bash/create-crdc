@@ -180,7 +180,7 @@ fetch_crdc_mappings
 for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
   setup_remote_for_target_repo "${i}"
 
-  if ! determine_target_branchh "${i}"; then
+  if ! determine_target_branch "${i}"; then
     echo "⚠️ No valid target found for mapping $((i + 1)), skipping"
     continue
   fi
