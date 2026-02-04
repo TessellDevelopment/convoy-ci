@@ -46,6 +46,15 @@ aws_configure_tessellops_artifacts() {
 bash_build() {
   set -e
   DIR="${1}"
+  if [[ ! -d "${DIR}" ]]; then
+    ARTIFACT="${1}"
+    DIR=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .directory" convoy.yaml)
+    if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+      echo "❌ Error: Directory not provided and not found in convoy.yaml for artifact: ${ARTIFACT}"
+      exit 1
+    fi
+    echo "Using directory from convoy.yaml: ${DIR}"
+  fi
   export PATH=$PATH:/home/github/.local/bin
   ./$DIR/build.sh
   set +e
@@ -1697,12 +1706,22 @@ zip_directory() {
 
 zip_file() {
   set -e
-  DIR=${1}
+  DIR="${1}"
+  ARTIFACT=${DIR}
+  if [[ ! -d ${DIR} ]]; then
+    ARTIFACT="${1}"
+    DIR=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .directory" convoy.yaml)
+    if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+      echo "❌ Error: Directory not provided and not found in convoy.yaml for artifact: ${ARTIFACT}"
+      exit 1
+    fi
+    echo "Using directory from convoy.yaml: ${DIR}"
+  fi
   BASE_DIR=$PWD
   cd ${DIR}
-  zip -r ${BASE_DIR}/${DIR}.zip ./
+  zip -r ${BASE_DIR}/${ARTIFACT}.zip ./
   cd ${BASE_DIR}
-  set +e  
+  set +e
 }
 
 zip_file_and_push() {
