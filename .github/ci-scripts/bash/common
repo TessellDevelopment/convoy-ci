@@ -10,7 +10,9 @@ function die() {
 }
 
 function set_app_group() {
-  APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+  if [ -f convoy.yaml ]; then
+    APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+  fi
 }
 
 function ensure_accessability_to_upload_locations() {
