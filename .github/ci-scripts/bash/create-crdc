@@ -117,6 +117,11 @@ function create_crdc_branch() {
 
   echo "🔀 Creating CRDC branch: ${CRDC_BRANCH_NAME} → ${TARGET_REPO}"
 
+  if ! git fetch "${REMOTE_NAME}" 2>/dev/null; then
+    echo "❌ Failed to fetch from remote ${TARGET_REPO}"
+    exit 1
+  fi
+
   if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${CRDC_BRANCH_NAME}" &>/dev/null; then
     echo "⚠️  Branch ${CRDC_BRANCH_NAME} already exists on remote, checking it out"
     if ! git checkout "${CRDC_BRANCH_NAME}" 2>/dev/null; then
@@ -126,7 +131,7 @@ function create_crdc_branch() {
       fi
     fi
   elif ! git checkout -b "${CRDC_BRANCH_NAME}" "${REMOTE_NAME}/${TARGET_BRANCH}" 2>/dev/null; then
-    echo "❌ Failed to create branch"
+    echo "❌ Failed to create branch from ${REMOTE_NAME}/${TARGET_BRANCH}"
     exit 1
   fi
 }
@@ -138,7 +143,10 @@ function cherry_pick_and_push_to_target_branch() {
     git -c core.editor=true cherry-pick --continue 2>/dev/null || git commit --no-edit --author="${MAILID}" -m "CRDC: ${PR_TITLE}" 2>/dev/null || true
   fi
 
-  git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null || true
+  if ! git push -u -f "${REMOTE_NAME}" "${CRDC_BRANCH_NAME}" 2>/dev/null; then
+    echo "❌ Failed to push branch ${CRDC_BRANCH_NAME} to ${TARGET_REPO}"
+    exit 1
+  fi
 }
 
 function create_pull_request() {
@@ -182,12 +190,18 @@ for i in $(seq 0 $((MAPPINGS_COUNT - 1))); do
 
   if ! determine_target_branch "${i}"; then
     echo "⚠️ No valid target found for mapping $((i + 1)), skipping"
+    git remote remove "${REMOTE_NAME}" 2>/dev/null
+    REMOTE_NAME=""
     continue
   fi
 
   create_crdc_branch
   cherry_pick_and_push_to_target_branch
   create_pull_request
+
+  git checkout "${PR_BASE_BRANCH}" 2>/dev/null
+  git remote remove "${REMOTE_NAME}" 2>/dev/null
+  REMOTE_NAME=""
 done
 
 exit 0
