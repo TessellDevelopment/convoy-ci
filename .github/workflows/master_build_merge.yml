@@ -930,7 +930,7 @@ jobs:
           pythonApiClientBuildAndPush() {
             set -e
             if ${DEV_BUILD}; then
-              bash setup --version 0.0.0 --upload
+              bash setup --version ${LATEST_TAG} --upload
             else
               bash setup --version ${LATEST_TAG} --upload --prod
             fi
