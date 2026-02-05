@@ -130,11 +130,11 @@ jobs:
                     element["releaseManifestKey"] = object["releaseManifestKey"] 
                     element["name"] = object["name"]
                     if APP_GROUP != "tessell":
-                      element["name"] = f"{APP_GROUP}-{object["name"]}"
+                      element["name"] = f"{APP_GROUP}-{object['name']}"
                     element["extension"] = object["extension"]
                     element["version"] = module_data.get('version')
                     version = module_data.get('version')
-                    element["path"] = f"tessell-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}.{object['extension']}"
+                    element["path"] = f"tessell-artifacts/{LABEL}/{element['name']}/{element['name']}-{version}.{object['extension']}"
                     artifacts.append(element)
               return artifacts
 
