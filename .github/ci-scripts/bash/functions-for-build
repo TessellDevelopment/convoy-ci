@@ -231,13 +231,13 @@ convoy_build_and_push() {
     
   elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
     aws_configure_tessellops_artifacts
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} --profile tessellops
 
   elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
 
   elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
@@ -661,7 +661,7 @@ gradlew_ui_build_and_push() {
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
-    -Pnexus_push_repo_raw_ops=="${APP_GROUP}-artifacts" \
+    -Pnexus_push_repo_raw_ops=="${NEXUS_ARTIFACT_BUCKET}" \
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
@@ -920,7 +920,7 @@ mvnw_build_and_push() {
     generate_checksum $ARTIFACT
   else
     aws_configure_tessellops_artifacts
-    push_to_nexus "./target/function.zip" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+    push_to_nexus "./target/function.zip" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
     aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip --profile tessellops
     generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
@@ -986,7 +986,7 @@ ops_terraform_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
@@ -1001,7 +1001,7 @@ ops_ui_build_and_push() {
   EXT="${2}"
   sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
   gradlew_ui_build
-  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${APP_GROUP}-artifacts/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
   generate_checksum $ARTIFACT "tessellops-ui-${LATEST_TAG}.zip"
   set +e
 }
@@ -1416,7 +1416,7 @@ software_def_build_and_push() {
     git diff HEAD~1 --compact-summary > ../current_pr_diff
     cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
-      URL_PATH="${APP_GROUP}-artifacts/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
+      URL_PATH="${NEXUS_ARTIFACT_BUCKET}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
@@ -1426,7 +1426,7 @@ software_def_build_and_push() {
   else
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
-  push_to_nexus "./common_manifest.json" "${APP_GROUP}-artifacts/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
   set +e
 }
 
