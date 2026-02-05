@@ -264,7 +264,7 @@ jobs:
                         if part:
                           key, value = part.split(':')
                           checksum_map[key] = value
-                  
+
                       for artifact in payload["artifacts"]:
                         key = artifact["name"]
                         type = artifact["type"]
@@ -272,8 +272,12 @@ jobs:
                           if key in checksum_map:
                             artifact["checksum"] = checksum_map[key]
                           else:
-                            print(f"Checksum not found for artifact: {key}")
-                            exit(1)
+                            key_without_prefix = key.removeprefix(f"{APP_GROUP}-")
+                            if key_without_prefix in checksum_map:
+                              artifact["checksum"] = checksum_map[key_without_prefix]
+                            else:
+                              print(f"Checksum not found for artifact: {key}")
+                              exit(1)
 
             print(json.dumps(payload, indent=4))
             post_request(payload)
