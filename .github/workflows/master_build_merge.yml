@@ -929,7 +929,11 @@ jobs:
           }
           pythonApiClientBuildAndPush() {
             set -e
-            bash setup --version ${LATEST_TAG} --upload
+            if ${DEV_BUILD}; then
+              bash setup --version ${LATEST_TAG} --upload
+            else
+              bash setup --version ${LATEST_TAG} --upload --prod
+            fi
             set +e
           }
           pythonApiTemplatesBuildAndPush() {
