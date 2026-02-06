@@ -111,6 +111,7 @@ jobs:
               const content = fs.readFileSync('./convoy.yaml', 'utf8');
               const data = yaml.load(content);
               var language = data.language
+              var appGroup = data.appGroup
               if(language === 'terraform'){
                 modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
                 pathsArray = modifiedFiles.split(" ");
@@ -130,6 +131,9 @@ jobs:
                   const contentDir = fs.readFileSync(path, 'utf8');
                   const dataDir = yaml.load(contentDir);
                   exporter = dataDir.generates.artifacts[0].name
+                  if (appGroup !== 'tessell'){
+                    exporter = `${appGroup}-${exporter}`
+                  }
                   version = dataDir.version
                   try{
                     checkVersion('${{vars.NEXUS_PUSH_REPOS_M2}}',exporter,version);
