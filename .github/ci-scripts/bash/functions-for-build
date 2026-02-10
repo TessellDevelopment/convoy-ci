@@ -680,7 +680,7 @@ image_scan(){
     return 0
   fi
   RETRIES=50
-  TIMEOUT=600s
+  TIMEOUT=900s
   echo "Running trivy scan for ${IMAGE}:latest with timeout ${TIMEOUT}"
   echo "trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest --timeout ${TIMEOUT}"
   for ((i=1; i<=RETRIES; i++)); do
@@ -705,6 +705,7 @@ image_scan(){
   echo "Running dockle scan for ${IMAGE}:latest with timeout ${TIMEOUT}"
   echo "dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}"
   dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
+  echo "Running python script to post scan results to Convoy"
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
