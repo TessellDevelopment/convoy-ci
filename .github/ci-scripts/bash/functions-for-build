@@ -680,7 +680,7 @@ image_scan(){
     return 0
   fi
   RETRIES=50
-  TIMEOUT=1000s
+  TIMEOUT=600s
   echo "Running trivy scan for ${IMAGE}:latest with timeout ${TIMEOUT}"
   echo "trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest --timeout ${TIMEOUT}"
   for ((i=1; i<=RETRIES; i++)); do
