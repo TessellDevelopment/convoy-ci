@@ -705,7 +705,7 @@ image_scan(){
   echo "Running dockle scan for ${IMAGE}:latest with timeout ${TIMEOUT}"
   docker image ls -a
   IMAGE_ID=$(docker images -q ${IMAGE}:latest)
-  dockle ${IMAGE_ID}
+  docker save ${IMAGE}:latest -o image.tar
 
   echo "dockle -f json -o dockle_image_scan_result.json ${IMAGE_ID} --timeout ${TIMEOUT}"
   dockle --no-pull -f json -o dockle_image_scan_result.json ${IMAGE_ID} --timeout ${TIMEOUT}
