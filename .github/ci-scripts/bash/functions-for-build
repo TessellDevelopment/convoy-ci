@@ -708,7 +708,7 @@ image_scan(){
   docker save ${IMAGE}:latest -o image.tar
 
   echo "dockle -f json -o dockle_image_scan_result.json ${IMAGE_ID} --timeout ${TIMEOUT}"
-  dockle --no-pull -f json -o dockle_image_scan_result.json ${IMAGE_ID} --timeout ${TIMEOUT}
+  dockle --no-pull -f json -o dockle_image_scan_result.json image.tar --timeout ${TIMEOUT}
   echo "Running python script to post scan results to Convoy"
   python3 ./ci-scripts/python/image_scan.py
   set +e
