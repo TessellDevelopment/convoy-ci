@@ -700,6 +700,8 @@ image_scan(){
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
   fi
+  echo "Running dockle scan for ${IMAGE}:latest with timeout ${TIMEOUT}"
+  echo "dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}"
   dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
   python3 ./ci-scripts/python/image_scan.py
   set +e
