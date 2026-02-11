@@ -138,12 +138,13 @@ jobs:
         run: |
           get_software_image_manifest_name() {
               if [ "${APP_GROUP}" = "tessell" ]; then
-                SM_NAME="software-image-manifest"
+                name="software-image-manifest"
               else
-                SM_NAME="${APP_GROUP}-software-image-manifest"
+                name="${APP_GROUP}-software-image-manifest"
               fi
               echo $name
             }
+          SM_NAME=$(get_software_image_manifest_name)
           echo "SM_NAME=$SM_NAME" >> $GITHUB_ENV
           mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/${SM_NAME}/${SM_NAME}-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software-image-manifest.json
 
