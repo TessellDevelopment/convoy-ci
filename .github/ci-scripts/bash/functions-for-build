@@ -702,7 +702,7 @@ image_scan(){
   fi
   docker save ${IMAGE}:latest -o image.tar
   dockle -f json -o dockle_image_scan_result.json --input image.tar --timeout ${TIMEOUT}
-  rm  image.tar
+  rm image.tar
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
