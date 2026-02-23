@@ -71,7 +71,7 @@ jobs:
         run: |
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
           echo "$APP_GROUP"
-
+          echo "APP_GROUP=$APP_GROUP" >> $GITHUB_ENV
           if [[ "${{ env.BASE_BRANCH }}" == "main" || "${{ env.BASE_BRANCH }}" == rel-* ]]; then
             URL="http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/$APP_GROUP/release-manifests/${{ env.BASE_BRANCH }}"
           elif [[ "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == "main" || "${{ env.SOFTWARE_IMAGE_BASE_RELEASE }}" == rel-* ]]; then
@@ -142,8 +142,18 @@ jobs:
 
       - name: Download the software-image-manifest
         if: ${{ !startsWith(env.SOURCE_BRANCH,'rel-') && env.SOURCE_BRANCH != 'main' && inputs.workflowType == 'build' }}
-        run: |          
-          mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/software-image-manifest/software-image-manifest-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software-image-manifest.json
+        run: |
+          get_software_image_manifest_name() {
+              if [ "${APP_GROUP}" = "tessell" ]; then
+                name="software-image-manifest"
+              else
+                name="${APP_GROUP}-software-image-manifest"
+              fi
+              echo $name
+            }
+          SM_NAME=$(get_software_image_manifest_name)
+          echo "SM_NAME=$SM_NAME" >> $GITHUB_ENV
+          mc cp "minio_ci/tessell-artifacts-dev/${{ env.LABEL }}/${SM_NAME}/${SM_NAME}-${{ env.SOFTWARE_IMAGE_BASE_LATEST_RELEASE }}.json" software-image-manifest.json
 
 
       - name: Set Pull repository
@@ -254,7 +264,7 @@ jobs:
           }
 
           src_file="./output.json"
-          dest_path="tessell-artifacts-devtest/software-image-manifest/software-image-manifest-${{github.ref_name}}.json"
+          dest_path="tessell-artifacts-devtest/${SM_NAME}/${SM_NAME}-${{github.ref_name}}.json"
 
           curl -v -u ${{secrets.CIPIPELINE_NEXUS_USERNAME}}:${{secrets.CIPIPELINE_NEXUS_PASSWORD}} \
                 --upload-file $src_file \

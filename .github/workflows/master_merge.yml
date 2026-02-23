@@ -164,7 +164,7 @@ jobs:
       TAG: ${{needs.create-tag.outputs.tag}}
 
   create-double-commit:
-    if: startsWith(github.event.pull_request.base.ref, 'rel') && always()
+    if: always()
     needs: build
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_create_double_commit.yml@main
     secrets: inherit

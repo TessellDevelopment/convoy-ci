@@ -9,6 +9,16 @@ function die() {
   exit 1
 }
 
+function set_app_group() {
+  if [ -f convoy.yaml ]; then
+    APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+    NEXUS_ARTIFACT_BUCKET=${APP_GROUP}-artifacts
+    if [[ ${APP_GROUP} == "gcpcore" || ${APP_GROUP} == "citest" ]]; then
+      NEXUS_ARTIFACT_BUCKET=tessell-artifacts
+    fi
+  fi
+}
+
 function ensure_accessability_to_upload_locations() {
   local deployment_stage
 
@@ -24,3 +34,5 @@ function ensure_accessability_to_upload_locations() {
 
   # TODO: Add check for Nexus access
 }
+
+set_app_group
