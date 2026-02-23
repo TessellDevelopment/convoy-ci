@@ -69,7 +69,6 @@ jobs:
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-component
@@ -77,7 +76,6 @@ jobs:
       NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
       NEXUS_PULL_REPOS_PY: tessell-py-component
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
-      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
@@ -246,7 +244,6 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
       NEXUS_ADDR: https://nexus.tessell.cloud
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
@@ -348,7 +345,7 @@ jobs:
             requiredInputs="1 2 5"
             validateInputs "$requiredInputs" "$@" 
             awsConfigureTessellArtifacts
-            pushToNexus "$FILE_PATH" "${{env.NEXUS_ARTIFACT_REPO}}/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
+            pushToNexus "$FILE_PATH" "${APP_GROUP}-artifacts/${{env.LABEL}}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             aws s3 cp $FILE_PATH "s3://${{vars.ARTIFACTS_DEV_S3}}/${LABEL}/$ARTIFACT/$ARTIFACT-${LATEST_TAG}.$EXT"
             set +e
           }
@@ -394,16 +391,22 @@ jobs:
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             cd ..
             elasticTarBuild
-            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
-            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
-            mvnDeploy "filebeat-linux" "tar.gz" $FILE_PATH_LINUX "tessell.filebeat" "${LATEST_TAG}"
-            mvnDeploy "filebeat-windows" "tar.gz" $FILE_PATH_WINDOWS "tessell.filebeat" "${LATEST_TAG}"
             awsConfigureProdAssets
-            EXTENSION="tar.gz"
+            FILE_PATH_LINUX="./filebeat/build/distributions/filebeat-linux.tar.gz"
             ARTIFACT="filebeat-linux"
-            push_release_manifest_artifacts "filebeat-linux.tar.gz" "$FILE_PATH_LINUX"
+            if [[ ${APP_GROUP} != tessell ]]; then
+              ARTIFACT="${APP_GROUP}-filebeat-linux"
+            fi
+            EXTENSION="tar.gz"
+            mvnDeploy "${ARTIFACT}" "tar.gz" ${FILE_PATH_LINUX} "${APP_GROUP}.filebeat" "${LATEST_TAG}"
+            push_release_manifest_artifacts "filebeat-linux.tar.gz" "${FILE_PATH_LINUX}"
+            FILE_PATH_WINDOWS="./filebeat/build/distributions/filebeat-windows.tar.gz"
             ARTIFACT="filebeat-windows"
-            push_release_manifest_artifacts "filebeat-windows.tar.gz" "$FILE_PATH_WINDOWS"
+            if [[ ${APP_GROUP} != tessell ]]; then
+              ARTIFACT="${APP_GROUP}-filebeat-windows"
+            fi
+            mvnDeploy "${ARTIFACT}" "tar.gz" ${FILE_PATH_WINDOWS} "${APP_GROUP}.filebeat" "${LATEST_TAG}"
+            push_release_manifest_artifacts "filebeat-windows.tar.gz" "${FILE_PATH_WINDOWS}"
             set +e
           }
           elasticTarBuild() {
@@ -528,6 +531,8 @@ jobs:
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -538,14 +543,12 @@ jobs:
       LATEST_TAG: ${{inputs.tag}}
       NAMESPACE: "convoy"
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
       NEXUS_PULL_REPOS_PY: tessell-py-development
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
@@ -557,7 +560,6 @@ jobs:
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
@@ -676,14 +678,15 @@ jobs:
             agentBuild "$@"
             set -e
             EXTENSION="$2"
+            BUILD_GENERATED_FILE_NAME="tessell-${SERVICE}-pkg-${OS}"
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
-              generate_checksum "$ARTIFACT.$EXTENSION" 
+              generate_checksum "$ARTIFACT.$EXTENSION"
             else
-              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$ARTIFACT.$EXTENSION" "tessell.agent" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.agent" "${LATEST_TAG}"
               awsConfigureProdAssets
-              push_release_manifest_artifacts "$ARTIFACT.$EXTENSION" "package/$ARTIFACT.$EXTENSION"
-            fi 
+              push_release_manifest_artifacts "$BUILD_GENERATED_FILE_NAME.$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION"
+            fi
             set +e
           }
           awsConfigureTessellArtifacts() {
@@ -741,22 +744,25 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             changed_dir=false
             if [ ! -f "Makefile" ]; then
-              cd tessell; 
+              cd tessell;
               changed_dir=true;
             fi
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
+            BASE_NAME=$(echo "$ARTIFACT" | sed "s/-${OS}-${CLOUD}$//")
+            NAME="${BASE_NAME#${APP_GROUP}-}"
+            BUILD_GENERATED_FILE_NAME=tessell-${NAME}-${OS}-${CLOUD}
             make OS=$OS CLOUD=$CLOUD nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} package
             if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
               push_to_gcloud "$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
-              generate_checksum "$ARTIFACT.$EXTENSION" 
+              generate_checksum "$ARTIFACT.$EXTENSION"
             else
               awsConfigureProdAssets
-              mvnDeploy "$ARTIFACT" "tar" "$ARTIFACT.tar" "tessell.functions" "${LATEST_TAG}"
-              push_release_manifest_artifacts
+              mvnDeploy "$ARTIFACT" "${EXTENSION}" "$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.functions" "${LATEST_TAG}"
+              push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
             fi
             if $changed_dir; then
               cd ..;
@@ -869,13 +875,20 @@ jobs:
             make service
             ARTIFACT="$1"
             EXTENSION="$2"
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+              OS="linux"
+            elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
+              OS="windows"
+            else
+              OS="linux"
+            fi
             make os=$OS pushprox-client
             make clean
+            BUILD_GENERATED_FILE_NAME=pushprox-client-${OS}
             ls -lrta client-package
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$ARTIFACT.$EXTENSION" "tessell.pushprox" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "client-package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.pushprox" "${LATEST_TAG}"
             awsConfigureProdAssets
-            push_release_manifest_artifacts "${ARTIFACT}.${EXTENSION}" "client-package/${ARTIFACT}.${EXTENSION}"
+            push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "client-package/${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
             set +e
           }
           makeImageAndPush() {
@@ -916,7 +929,11 @@ jobs:
           }
           pythonApiClientBuildAndPush() {
             set -e
-            bash setup --version ${LATEST_TAG} --upload
+            if ${DEV_BUILD}; then
+              bash setup --version ${LATEST_TAG} --upload
+            else
+              bash setup --version ${LATEST_TAG} --upload --prod
+            fi
             set +e
           }
           pythonApiTemplatesBuildAndPush() {
@@ -924,10 +941,10 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
-            mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.tessell" "${LATEST_TAG}"
+            mvnDeploy "$ARTIFACT" "$EXTENSION" "./${ARTIFACT_FILE}" "com.${APP_GROUP}" "${LATEST_TAG}"
             set +e
           }
           setupOpa() {
@@ -944,6 +961,7 @@ jobs:
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
+            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
@@ -953,7 +971,7 @@ jobs:
             else 
               manifestLabel="${LABEL}"
             fi
-            releaseManifest=$(curl --silent --location "${{env.RELEASE_MANIFEST_URL}}/${manifestLabel}")
+            releaseManifest=$(curl --silent --location "${RELEASE_MANIFEST_URL}/${manifestLabel}")
             for DIR in "${DIRECTORIES[@]}"; do
               CHECKSUM=""
               DIR=${DIR%/}
@@ -1141,7 +1159,6 @@ jobs:
       LABEL: ${{inputs.label}}
       LATEST_TAG: ${{inputs.tag}}
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_ARTIFACT_REPO: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_PULL_REPOS_M2: tessell-m2-development
@@ -1149,14 +1166,11 @@ jobs:
       NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_REPO_TESSELLOPS_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELLOPS_ARTIFACTS}}
-      NEXUS_REPO_TESSELL_ARTIFACTS: ${{vars.NEXUS_REPO_TESSELL_ARTIFACTS}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_MANIFEST_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/tessell/release-manifests
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"

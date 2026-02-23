@@ -177,8 +177,8 @@ jobs:
       - name: Setup Trivy and Dockle
         run: |
           setupTrivyDockle() {
-            wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb
-            sudo dpkg -i trivy_0.48.3_Linux-64bit.deb
+            wget https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.deb
+            sudo dpkg -i trivy_0.69.1_Linux-64bit.deb
             curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
             sudo dpkg -i dockle.deb && rm dockle.deb
             python -m pip install slack-sdk==3.26.2 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
@@ -314,12 +314,14 @@ jobs:
       CI_BRANCH: main
       CI_PHASE: preMerge
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -568,8 +570,14 @@ jobs:
             make service
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
-            OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $3}')
+            validateInputs "$requiredInputs" "$@"
+            if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+              OS="linux"
+            elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
+              OS="windows"
+            else
+              OS="linux"
+            fi
             make os=$OS pushprox-client
             make clean
             ls -lrta client-package
@@ -624,9 +632,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             EXTENSION="$2"
-            VERSION="$3"
-            requiredInputs="1 2 3"
-            validateInputs "$requiredInputs" "$@" 
+            requiredInputs="1 2"
+            validateInputs "$requiredInputs" "$@"
             ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
             zipDirectory "openapi-templates" "${ARTIFACT_FILE}"
             set +e
@@ -681,17 +688,17 @@ jobs:
           }
           build() {
             type="$1"
-            check=$(yq ".generates.${type} // \"\"" convoy.yaml)
-            if [[ -z "$check" ]]; then
-              echo "Skipping build for ${type}"
-              return
-            fi
-            echo "Building ${type}"
             git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             version=$(yq '.version // ""' convoy.yaml)
             language=$(yq '.language // ""' convoy.yaml)
+            echo "Building ${type}"
             if [[ "$language" == "terraform" ]]; then
               terraformBuild
+              return
+            fi
+            check=$(yq ".generates.${type} // \"\"" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              echo "Skipping build for ${type}"
               return
             fi
             yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
