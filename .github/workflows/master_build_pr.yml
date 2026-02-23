@@ -386,6 +386,15 @@ jobs:
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
 
+      - name: Login gcloud
+        id: auth
+        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
+
       - name: Login to docker
         uses: docker/login-action@v3.0.0
         with:

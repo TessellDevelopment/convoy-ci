@@ -1385,7 +1385,6 @@ setup_packer_env() {
 software_def_build() {
   set -e
   setup_packer_env
-  export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
