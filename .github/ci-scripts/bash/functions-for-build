@@ -1188,6 +1188,7 @@ push_release_manifest_artifacts() {
   local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
   local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   local push_to=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .pushTo // \"s3\"" convoy.yaml)
+  [[ -z "${push_to}" || "${push_to}" == "null" ]] && push_to="s3"
   local release=$(echo ${LABEL} | cut -d'.' -f2)
 
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
