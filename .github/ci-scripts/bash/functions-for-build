@@ -1338,16 +1338,22 @@ run_python_unit_test() {
   initialise_coverage 'test-venv'
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
   source_path=${venv_path}/lib/python${python_version}/site-packages/
-  include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
+  include=$(yq '.codeCoverage.report.include // [] | join(",")' convoy.yaml)
   pushd ${source_path}
   echo "Running unit tests"
   python -m coverage run --branch --source "." -m pytest tests
   echo "Generating code coverage report"
-  python -m coverage report --skip-empty --include="${include}"
-  python -m coverage html --include="${include}"
-  python -m coverage json --include="${include}"
+  if [[ -n "${include}" ]]; then
+    python -m coverage report --skip-empty --include="${include}"
+    python -m coverage html --include="${include}"
+    python -m coverage json --include="${include}"
+  else
+    python -m coverage report --skip-empty
+    python -m coverage html
+    python -m coverage json
+  fi
   popd
-  deactivate 
+  deactivate
 }
 
 setup_qa_env() {

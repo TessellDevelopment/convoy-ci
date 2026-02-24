@@ -401,6 +401,23 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Get language from convoy.yaml
+        id: convoy-language
+        shell: bash
+        run: |
+          language=$(yq '.language // ""' convoy.yaml 2>/dev/null)
+          echo "language=$language" >> $GITHUB_OUTPUT
+
+      - name: Check Python lint
+        if: ${{ steps.convoy-language.outputs.language == 'python' }}
+        shell: bash
+        run: |
+          lintCheck() {
+            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          }
+          lintCheck
+
       - name: Build
         shell: bash
         run: |
@@ -451,7 +468,6 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@" 
-            lintCheck
             gradlewPackagePlugin
             set +e
           }
@@ -512,14 +528,9 @@ jobs:
               -Pnexus_password="${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}"
             set +e
           }
-          lintCheck() {
-            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-          }
           pythonDockerBuild() {
             set -e
             IMAGE="$1"
-            lintCheck
             gradlewDocker
             imageScan $IMAGE
             set +e
@@ -567,10 +578,6 @@ jobs:
             configureJava
             gradlewMaven
             set +e
-          }
-          lintCheck() {
-            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
           }
           makeBuild() {
             set -e
@@ -758,6 +765,7 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
+          configurePythonVersionIfRequired
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
