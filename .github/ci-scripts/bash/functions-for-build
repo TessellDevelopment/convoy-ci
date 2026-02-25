@@ -1193,6 +1193,7 @@ push_release_manifest_artifacts() {
   echo "push_to: ${push_to}"
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
   echo "Artifact ${source_file_name} uploaded to ${artifact_dest_path} using ${push_to}"
+  echo " ${DEV_BUILD}"
   ! ${DEV_BUILD} || return
   [[ ${push_to} == "s3" ]] && aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
 
