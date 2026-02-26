@@ -1,0 +1,62 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  test-bash-scripts:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: Install bats-core
+        run: |
+          git clone --depth 1 --branch v1.11.1 \
+            https://github.com/bats-core/bats-core.git /tmp/bats-core
+          sudo /tmp/bats-core/install.sh /usr/local
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Install kcov
+        run: sudo apt-get install -y kcov
+
+      - name: Run unit tests with coverage
+        run: |
+          kcov --include-path=.github/ci-scripts/bash \
+               ./coverage \
+               bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
+
+      - name: Print coverage report
+        run: |
+          coverage_file="./coverage/bats/coverage.json"
+          if [ ! -f "$coverage_file" ]; then
+            coverage_file=$(find ./coverage -name "coverage.json" | head -1)
+          fi
+          if [ -z "$coverage_file" ] || [ ! -f "$coverage_file" ]; then
+            echo "No coverage data found."
+            exit 1
+          fi
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Bash Script Coverage Report"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          percent=$(jq -r '.percent_covered' "$coverage_file")
+          covered=$(jq -r '.covered_lines'   "$coverage_file")
+          total=$(jq -r '.total_lines'       "$coverage_file")
+          printf "  Overall : %s%% (%s / %s lines)\n" "$percent" "$covered" "$total"
+          echo ""
+          echo "  Per-file:"
+          jq -r '.files[] | "  " + (.file | split("/") | last) + ": " + .percent_covered + "%"' \
+            "$coverage_file"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

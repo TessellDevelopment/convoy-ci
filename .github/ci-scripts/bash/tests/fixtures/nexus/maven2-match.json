@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "repository": "m2-releases",
+      "format": "maven2",
+      "name": "db-controller",
+      "version": "1.4.295"
+    }
+  ],
+  "continuationToken": null
+}
