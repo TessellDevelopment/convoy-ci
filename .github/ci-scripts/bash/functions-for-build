@@ -1670,6 +1670,7 @@ validate_inputs() {
   #     exit 1
   #   fi
   # done
+  true
 }
 
 yarn_build() {

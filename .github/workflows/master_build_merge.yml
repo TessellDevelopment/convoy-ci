@@ -76,6 +76,7 @@ jobs:
       NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
       NEXUS_PULL_REPOS_PY: tessell-py-component
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
+      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
