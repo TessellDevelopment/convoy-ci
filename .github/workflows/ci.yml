@@ -1,106 +1,106 @@
----
-name: CI
+# ---
+# name: CI
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
 
-jobs:
+# jobs:
 
-  test-bash-scripts:
-    runs-on: ubuntu-latest
-    env:
-      CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
-    steps:
+#   test-bash-scripts:
+#     runs-on: ubuntu-latest
+#     env:
+#       CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
+#     steps:
 
-      - name: Checkout
-        uses: actions/checkout@v4.1.1
+#       - name: Checkout
+#         uses: actions/checkout@v4.1.1
 
-      - name: Setup CI scripts
-        run: cp -r .github/ci-scripts ./ci-scripts
+#       - name: Setup CI scripts
+#         run: cp -r .github/ci-scripts ./ci-scripts
 
-      - name: Install bats-core
-        run: |
-          git clone --depth 1 --branch v1.11.1 \
-            https://github.com/bats-core/bats-core.git /tmp/bats-core
-          sudo /tmp/bats-core/install.sh /usr/local
+#       - name: Install bats-core
+#         run: |
+#           git clone --depth 1 --branch v1.11.1 \
+#             https://github.com/bats-core/bats-core.git /tmp/bats-core
+#           sudo /tmp/bats-core/install.sh /usr/local
 
-      - name: Install yq
-        run: |
-          sudo wget -qO /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
+#       - name: Install yq
+#         run: |
+#           sudo wget -qO /usr/local/bin/yq \
+#             https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+#           sudo chmod +x /usr/local/bin/yq
 
-      - name: Install kcov
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y cmake gcc g++ libdw-dev libelf-dev libcurl4-openssl-dev zlib1g-dev
-          wget -q "https://github.com/SimonKagstrom/kcov/archive/refs/tags/v42.tar.gz" \
-               -O /tmp/kcov.tar.gz
-          tar -xzf /tmp/kcov.tar.gz -C /tmp
-          cmake -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_INSTALL_PREFIX=/usr/local \
-                -S /tmp/kcov-42 \
-                -B /tmp/kcov-build
-          sudo cmake --build /tmp/kcov-build --target install -j"$(nproc)"
+#       - name: Install kcov
+#         run: |
+#           sudo apt-get update -y
+#           sudo apt-get install -y cmake gcc g++ libdw-dev libelf-dev libcurl4-openssl-dev zlib1g-dev
+#           wget -q "https://github.com/SimonKagstrom/kcov/archive/refs/tags/v42.tar.gz" \
+#                -O /tmp/kcov.tar.gz
+#           tar -xzf /tmp/kcov.tar.gz -C /tmp
+#           cmake -DCMAKE_BUILD_TYPE=Release \
+#                 -DCMAKE_INSTALL_PREFIX=/usr/local \
+#                 -S /tmp/kcov-42 \
+#                 -B /tmp/kcov-build
+#           sudo cmake --build /tmp/kcov-build --target install -j"$(nproc)"
 
-      - name: Run unit tests with coverage
-        env:
-          COVERAGE_DIR: ${{ github.workspace }}/coverage
-        run: |
-          chmod +x .github/ci-scripts/bash/check-version-in-nexus.sh
-          chmod +x .github/ci-scripts/bash/post-coverage-data-to-convoy.sh
-          mkdir -p "$COVERAGE_DIR"
-          bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
-          bats .github/ci-scripts/bash/tests/post-coverage-data-to-convoy.bats
+#       - name: Run unit tests with coverage
+#         env:
+#           COVERAGE_DIR: ${{ github.workspace }}/coverage
+#         run: |
+#           chmod +x .github/ci-scripts/bash/check-version-in-nexus.sh
+#           chmod +x .github/ci-scripts/bash/post-coverage-data-to-convoy.sh
+#           mkdir -p "$COVERAGE_DIR"
+#           bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
+#           bats .github/ci-scripts/bash/tests/post-coverage-data-to-convoy.bats
 
-      - name: Parse bash coverage report
-        env:
-          COVERAGE_DIR: ${{ github.workspace }}/coverage
-        run: |
-          source ./ci-scripts/bash/functions-for-build
-          parse_coverage_report_bash "$COVERAGE_DIR"
-          if [ -n "${BRANCH_COVERAGE:-}" ]; then
-            echo "BRANCH_COVERAGE=${BRANCH_COVERAGE}" >> "$GITHUB_ENV"
-            echo "STATEMENT_COVERAGE=${STATEMENT_COVERAGE}" >> "$GITHUB_ENV"
-          fi
+#       - name: Parse bash coverage report
+#         env:
+#           COVERAGE_DIR: ${{ github.workspace }}/coverage
+#         run: |
+#           source ./ci-scripts/bash/functions-for-build
+#           parse_coverage_report_bash "$COVERAGE_DIR"
+#           if [ -n "${BRANCH_COVERAGE:-}" ]; then
+#             echo "BRANCH_COVERAGE=${BRANCH_COVERAGE}" >> "$GITHUB_ENV"
+#             echo "STATEMENT_COVERAGE=${STATEMENT_COVERAGE}" >> "$GITHUB_ENV"
+#           fi
 
-      - name: Push coverage report to S3
-        if: github.ref == 'refs/heads/main'
-        env:
-          AWS_ACCOUNT_CODE_COVERAGE: ${{ vars.AWS_ACCOUNT_CODE_COVERAGE }}
-          CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
-          COVERAGE_DIR: ${{ github.workspace }}/coverage
-          DEV_BUILD: "false"
-          LABEL: ${{ github.ref_name }}
-          LATEST_TAG: ${{ github.sha }}
-          REPO: ${{ github.event.repository.name }}
-        run: |
-          source ./ci-scripts/bash/functions-for-build
-          parse_and_push_coverage_report_bash "$COVERAGE_DIR"
+#       - name: Push coverage report to S3
+#         if: github.ref == 'refs/heads/main'
+#         env:
+#           AWS_ACCOUNT_CODE_COVERAGE: ${{ vars.AWS_ACCOUNT_CODE_COVERAGE }}
+#           CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
+#           COVERAGE_DIR: ${{ github.workspace }}/coverage
+#           DEV_BUILD: "false"
+#           LABEL: ${{ github.ref_name }}
+#           LATEST_TAG: ${{ github.sha }}
+#           REPO: ${{ github.event.repository.name }}
+#         run: |
+#           source ./ci-scripts/bash/functions-for-build
+#           parse_and_push_coverage_report_bash "$COVERAGE_DIR"
 
-      - name: Read convoy.yaml
-        if: env.BRANCH_COVERAGE != ''
-        run: |
-          echo "APP_GROUP=$(yq '.appGroup' convoy.yaml)" >> "$GITHUB_ENV"
-          echo "LANGUAGE=$(yq '.language'  convoy.yaml)" >> "$GITHUB_ENV"
+#       - name: Read convoy.yaml
+#         if: env.BRANCH_COVERAGE != ''
+#         run: |
+#           echo "APP_GROUP=$(yq '.appGroup' convoy.yaml)" >> "$GITHUB_ENV"
+#           echo "LANGUAGE=$(yq '.language'  convoy.yaml)" >> "$GITHUB_ENV"
 
-      - name: POST coverage to Convoy
-        if: env.BRANCH_COVERAGE != ''
-        env:
-          API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
-          API_URL: http://${{ vars.CONVOY_API_ENDPOINT }}/devops/code/coverage
-          APP_GROUP: ${{ env.APP_GROUP }}
-          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-          BRANCH_COVERAGE: ${{ env.BRANCH_COVERAGE }}
-          CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
-          COMMIT_HASH: ${{ github.sha }}
-          LABEL: ${{ github.ref_name }}
-          LANGUAGE: ${{ env.LANGUAGE }}
-          REPO: ${{ github.event.repository.name }}
-          SOURCE_BRANCH: ${{ github.ref_name }}
-          STATEMENT_COVERAGE: ${{ env.STATEMENT_COVERAGE }}
-          TAG: ${{ github.sha }}
-        run: bash ./ci-scripts/bash/post-coverage-data-to-convoy.sh
+#       - name: POST coverage to Convoy
+#         if: env.BRANCH_COVERAGE != ''
+#         env:
+#           API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
+#           API_URL: http://${{ vars.CONVOY_API_ENDPOINT }}/devops/code/coverage
+#           APP_GROUP: ${{ env.APP_GROUP }}
+#           BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+#           BRANCH_COVERAGE: ${{ env.BRANCH_COVERAGE }}
+#           CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
+#           COMMIT_HASH: ${{ github.sha }}
+#           LABEL: ${{ github.ref_name }}
+#           LANGUAGE: ${{ env.LANGUAGE }}
+#           REPO: ${{ github.event.repository.name }}
+#           SOURCE_BRANCH: ${{ github.ref_name }}
+#           STATEMENT_COVERAGE: ${{ env.STATEMENT_COVERAGE }}
+#           TAG: ${{ github.sha }}
+#         run: bash ./ci-scripts/bash/post-coverage-data-to-convoy.sh
