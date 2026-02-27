@@ -1163,16 +1163,7 @@ parse_and_push_coverage_report_java() {
     configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "coverage.zip" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
   fi
 }
-create_npmrc() {
-  rm ~/.npmrc
-  TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
-  echo "@tessell:registry=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/" >> ~/.npmrc
-  echo "always-auth=true" >> ~/.npmrc
-  echo "registry=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_NPM}/" >> ~/.npmrc
-  echo "strict-ssl=false" >> ~/.npmrc
-  echo "email=ci-pipeline@tessell.com" >> ~/.npmrc
-  echo "_auth=${TOKEN}" >> ~/.npmrc
-}
+
 pnpm_build() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
@@ -1187,7 +1178,7 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  configure_npmrc_yarnrc
+  configure_npmrc
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
