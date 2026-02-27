@@ -1,2 +1,10 @@
 language: bash
 appGroup: tessell
+runner: non-build
+ci:
+  bestPractices:
+    jiraValidation:
+      jiraIdSource: BRANCH_NAME_PREFIX
+      matchingRule: ANY
+    enforceNewLineAtEOF: false
+    enforceYamlSeparator: false
