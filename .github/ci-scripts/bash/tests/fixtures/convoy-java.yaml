@@ -3,4 +3,4 @@ version: "1.4.295"
 appGroup: tessell
 generates:
   artifacts:
-    - name: db-controller
+    - name: svc-bulk-create-attach-empty-volume-azure

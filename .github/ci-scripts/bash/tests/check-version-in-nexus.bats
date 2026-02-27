@@ -7,7 +7,8 @@
 # Run locally:
 #   bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
 
-SCRIPT="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)/check-version-in-nexus.sh"
+SCRIPT_DIR="$(cd "${BATS_TEST_DIRNAME}/.." && pwd)"
+SCRIPT="${SCRIPT_DIR}/check-version-in-nexus.sh"
 FIXTURES="${BATS_TEST_DIRNAME}/fixtures"
 
 # ── test lifecycle ────────────────────────────────────────────────────────────
@@ -37,6 +38,20 @@ teardown() {
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+# Runs the script under kcov when COVERAGE_DIR is set, otherwise runs bare bash.
+# kcov merges data across invocations into the same output directory.
+run_script() {
+  if [ -n "${COVERAGE_DIR:-}" ]; then
+    run kcov \
+      --include-path="${SCRIPT_DIR}" \
+      --exclude-path="${SCRIPT_DIR}/tests" \
+      "${COVERAGE_DIR}" \
+      bash "$@"
+  else
+    run bash "$@"
+  fi
+}
+
 # Stubs curl to return the contents of the given JSON file, ignoring all args.
 _mock_curl() {
   local response_file="$1"
@@ -64,17 +79,17 @@ EOF
 # independently of the script, to document the fix for the grep false-positive.
 
 @test "jq/maven2: exact artifact name returns count 1" {
-  run jq -r --arg name "db-controller" \
+  run jq -r --arg name "svc-bulk-create-attach-empty-volume-azure" \
     '[.items[] | select(.name == $name)] | length' \
     "${FIXTURES}/nexus/maven2-match.json"
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 }
 
-@test "jq/maven2: superstring 'db-controller-extra' does NOT match 'db-controller'" {
-  # grep 'db-controller' would match 'db-controller-extra' (substring).
-  # jq select(.name == $name) must not.
-  run jq -r --arg name "db-controller" \
+@test "jq/maven2: superstring 'gcpcore-svc-bulk-...' does NOT match 'svc-bulk-...'" {
+  # grep 'svc-bulk-create-attach-empty-volume-azure' would match the gcpcore- prefixed
+  # variant (substring). jq select(.name == $name) must not.
+  run jq -r --arg name "svc-bulk-create-attach-empty-volume-azure" \
     '[.items[] | select(.name == $name)] | length' \
     "${FIXTURES}/nexus/maven2-similar.json"
   [ "$status" -eq 0 ]
@@ -82,7 +97,7 @@ EOF
 }
 
 @test "jq/maven2: no match returns count 0" {
-  run jq -r --arg name "db-controller" \
+  run jq -r --arg name "svc-bulk-create-attach-empty-volume-azure" \
     '[.items[] | select(.name == $name)] | length' \
     "${FIXTURES}/nexus/empty.json"
   [ "$status" -eq 0 ]
@@ -129,7 +144,7 @@ EOF
 # ── script: missing convoy.yaml ───────────────────────────────────────────────
 
 @test "script: exits 0 and skips when convoy.yaml is absent" {
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"convoy.yaml not found"* ]]
 }
@@ -140,7 +155,7 @@ EOF
   cp "${FIXTURES}/convoy-java.yaml" convoy.yaml
   _mock_curl "${FIXTURES}/nexus/empty.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS"* ]]
 }
@@ -149,17 +164,17 @@ EOF
   cp "${FIXTURES}/convoy-java.yaml" convoy.yaml
   _mock_curl "${FIXTURES}/nexus/maven2-match.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 1 ]
   [[ "$output" == *"FAIL"* ]]
 }
 
 @test "script/java: superstring artifact in Nexus does not block merge (no false positive)" {
-  # Nexus contains 'db-controller-extra'; checking for 'db-controller' should pass.
+  # Nexus contains 'gcpcore-svc-bulk-...'; checking for 'svc-bulk-...' should pass.
   cp "${FIXTURES}/convoy-java.yaml" convoy.yaml
   _mock_curl "${FIXTURES}/nexus/maven2-similar.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS"* ]]
 }
@@ -167,7 +182,7 @@ EOF
 @test "script/java: exits 0 when version field is missing in convoy.yaml" {
   cp "${FIXTURES}/convoy-java-no-version.yaml" convoy.yaml
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"missing"* ]]
 }
@@ -178,7 +193,7 @@ EOF
   cp "${FIXTURES}/convoy-python.yaml" convoy.yaml
   _mock_curl "${FIXTURES}/nexus/empty.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS"* ]]
 }
@@ -189,7 +204,7 @@ EOF
   cp "${FIXTURES}/convoy-python.yaml" convoy.yaml
   _mock_curl "${FIXTURES}/nexus/python-hyphen.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 1 ]
   [[ "$output" == *"FAIL"* ]]
 }
@@ -200,7 +215,7 @@ EOF
   cp "${FIXTURES}/convoy-terraform.yaml" convoy.yaml
   export MODIFIED_FILES=""
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"skipping"* ]]
 }
@@ -212,7 +227,7 @@ EOF
   _mock_curl "${FIXTURES}/nexus/empty.json"
   export MODIFIED_FILES="module-alpha/main.tf module-alpha/variables.tf"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS"* ]]
 }
@@ -224,7 +239,7 @@ EOF
   _mock_curl "${FIXTURES}/nexus/maven2-tf-match.json"
   export MODIFIED_FILES="module-alpha/main.tf"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 1 ]
   [[ "$output" == *"FAIL"* ]]
 }
@@ -243,7 +258,7 @@ EOF
   chmod +x "${MOCK_BIN}/curl"
   export MODIFIED_FILES="module-alpha/main.tf module-alpha/outputs.tf module-alpha/variables.tf"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   call_count=$(wc -l < "${TEST_DIR}/curl_calls")
   [ "$call_count" -eq 1 ]
@@ -255,7 +270,7 @@ EOF
   # causing a non-zero exit. A clean exit proves no API call was attempted.
   export MODIFIED_FILES=".github/workflows/ci.yml convoy.yaml README.md .gitignore"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
 }
 
@@ -267,7 +282,7 @@ EOF
     "${FIXTURES}/nexus/paginated-p1-empty.json" \
     "${FIXTURES}/nexus/empty.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PASS"* ]]
 }
@@ -278,7 +293,7 @@ EOF
     "${FIXTURES}/nexus/paginated-p1-empty.json" \
     "${FIXTURES}/nexus/maven2-match.json"
 
-  run bash "$SCRIPT"
+  run_script "$SCRIPT"
   [ "$status" -eq 1 ]
   [[ "$output" == *"FAIL"* ]]
 }

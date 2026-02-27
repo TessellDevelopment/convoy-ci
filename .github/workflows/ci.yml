@@ -42,15 +42,14 @@ jobs:
           sudo cmake --build /tmp/kcov-build --target install -j"$(nproc)"
 
       - name: Run unit tests with coverage
+        env:
+          COVERAGE_DIR: ${{ github.workspace }}/coverage
         run: |
-          kcov --include-path="$(pwd)/.github/ci-scripts/bash" \
-               --exclude-path="$(pwd)/.github/ci-scripts/bash/tests" \
-               ./coverage \
-               bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
+          bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
 
       - name: Print coverage report
         run: |
-          coverage_file="./coverage/bats/coverage.json"
+          coverage_file="./coverage/kcov-merged/coverage.json"
           if [ ! -f "$coverage_file" ]; then
             coverage_file=$(find ./coverage -name "coverage.json" | head -1)
           fi
