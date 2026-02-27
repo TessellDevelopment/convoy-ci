@@ -1183,8 +1183,6 @@ pnpm_build() {
   set +e
 }
 
-
-
 pnpm_build_and_push() {
   set -e
   ARTIFACT="${1}"
@@ -1203,7 +1201,6 @@ pnpm_build_and_push() {
   npm publish
   popd
   set +e
-
 }
 
 provider_build() {
