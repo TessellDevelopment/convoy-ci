@@ -1187,7 +1187,7 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  create_npmrc
+  configure_npmrc_yarnrc
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
