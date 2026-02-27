@@ -1177,7 +1177,7 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  configure_npmrc "${NEXUS_REPO_NPM}"
+  configure_npmrc "tessell-repos-npm-development"
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
@@ -1203,11 +1203,13 @@ pnpm_build_and_push() {
     exit 1
   fi
   pnpm_build "$@"
+  set -e
   pushd ${DIR}
   pnpm pack
   npm publish
   popd
   set +e
+
 }
 
 provider_build() {
