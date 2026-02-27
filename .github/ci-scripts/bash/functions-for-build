@@ -1177,7 +1177,7 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  configure_npmrc
+  configure_npmrc "${NEXUS_REPO_NPM}"
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
