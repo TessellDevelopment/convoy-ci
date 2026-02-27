@@ -1,6 +1,6 @@
 language: bash
 appGroup: tessell
-runner: non-build
+runner: amd
 ci:
   bestPractices:
     jiraValidation:
