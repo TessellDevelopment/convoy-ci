@@ -1168,8 +1168,7 @@ pnpm_build() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   VERSION="${3}"
-  DIR="${4}"
-  required_inputs="1 2 3 4"
+  required_inputs="1 2 3"
   set -e
   validate_inputs "${required_inputs}" "$@" 
   DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
