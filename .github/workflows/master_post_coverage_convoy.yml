@@ -24,6 +24,7 @@
       runs-on: non-build
       env:
         BRANCH_COVERAGE: "${{inputs.BRANCH_COVERAGE}}"
+        CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
         LABEL: "${{inputs.LABEL}}"
         SLACK_WEBHOOK_URL: ${{ secrets.CONVOY_ALERTS_SLACK_URL }}
         STATEMENT_COVERAGE: "${{inputs.STATEMENT_COVERAGE}}"

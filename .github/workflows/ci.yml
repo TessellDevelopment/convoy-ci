@@ -11,6 +11,8 @@ jobs:
 
   test-bash-scripts:
     runs-on: ubuntu-latest
+    env:
+      CODE_COVERAGE_S3: ${{ vars.CODE_COVERAGE_S3 }}
     steps:
 
       - name: Checkout
