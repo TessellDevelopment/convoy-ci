@@ -1173,8 +1173,7 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  # configure_npmrc "tessell-repos-npm-development"
-  configure_npmrc "${NEXUS_REPO_NPM}"
+  configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
@@ -1191,15 +1190,11 @@ pnpm_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   VERSION="${3}"
-  echo "ARTIFACT: ${ARTIFACT}"
-  echo "EXTENSION: ${EXTENSION}"
-  echo "VERSION: ${VERSION}"
-  echo "NEXUS_REPO_NPM: ${NEXUS_PUSH_REPOS_NPM}"
   required_inputs="1 2 3"
   validate_inputs "${required_inputs}" "$@" 
   DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
   if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
-    echo "❌ Error: Directory not found in convoy.yaml for artifact: ${ARTIFACT}"
+    echo "Error: Directory not found in convoy.yaml for artifact: ${ARTIFACT}"
     exit 1
   fi
   pnpm_build $ARTIFACT $EXTENSION $VERSION
