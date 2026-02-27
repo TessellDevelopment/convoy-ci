@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "repository": "m2-releases",
+      "format": "maven2",
+      "name": "tf-module",
+      "version": "2.1.0"
+    }
+  ],
+  "continuationToken": null
+}

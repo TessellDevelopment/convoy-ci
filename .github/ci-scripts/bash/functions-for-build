@@ -1031,6 +1031,8 @@ parse_coverage_report() {
     parse_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_coverage_report_go "$@"
+  elif [[ "${language}" == "bash" ]]; then
+    parse_coverage_report_bash "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1045,6 +1047,8 @@ parse_and_push_coverage_report() {
     parse_and_push_coverage_report_python "$@"
   elif [[ "${language}" == "go" ]]; then
     parse_and_push_coverage_report_go "$@"
+  elif [[ "${language}" == "bash" ]]; then
+    parse_and_push_coverage_report_bash "$@"
   else
     echo "Code coverage currently not supported for ${language} based repositories"
   fi
@@ -1080,6 +1084,42 @@ parse_coverage_report_go() {
   export BRANCH_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
   export STATEMENT_COVERAGE="${COVERED_BLOCKS} ${MISSED_BLOCKS} ${TOTAL_BLOCKS} ${COVERAGE}"
   flag=1
+}
+
+parse_coverage_report_bash() {
+  local coverage_dir=${GITHUB_WORKSPACE}/coverage
+  run_bash_unit_test $coverage_dir
+  local coverage_file="${coverage_dir}/kcov-merged/coverage.json"
+  if [ ! -f "${coverage_file}" ]; then
+    coverage_file=$(find "${coverage_dir}" -name "coverage.json" | head -1)
+  fi
+  if [ -z "${coverage_file}" ] || [ ! -f "${coverage_file}" ]; then
+    echo "No kcov coverage data found. Skipping coverage report parsing."
+    return
+  fi
+  local covered total missed percentage
+  covered=$(jq -r '.covered_lines' "${coverage_file}")
+  total=$(jq -r '.total_lines' "${coverage_file}")
+  missed=$((total - covered))
+  percentage=$(jq -r '.percent_covered' "${coverage_file}" | awk '{print int($1)}')
+  export BRANCH_COVERAGE="${covered} ${missed} ${total} ${percentage}"
+  export STATEMENT_COVERAGE="${covered} ${missed} ${total} ${percentage}"
+  echo "BRANCH_COVERAGE=\"${BRANCH_COVERAGE}\""
+  echo "STATEMENT_COVERAGE=\"${STATEMENT_COVERAGE}\""
+  coverage_html="${coverage_dir}/kcov-merged"
+  flag=1
+}
+
+parse_and_push_coverage_report_bash() {
+  flag=0
+  local coverage_dir="${1:-coverage}"
+  parse_coverage_report_bash "${coverage_dir}"
+  if [[ ${DEV_BUILD} == false && ${flag} -eq 1 ]]; then
+    echo "Pushing coverage report to S3"
+    local coverage_zip="coverage-bash.zip"
+    (cd "${coverage_html}" && zip -r "${OLDPWD}/${coverage_zip}" .)
+    configure_and_push_aws ${AWS_ACCOUNT_CODE_COVERAGE} ${CODE_COVERAGE_S3} "${coverage_zip}" "s3://${CODE_COVERAGE_S3}/${LABEL}/${REPO}/coverage-report-${LATEST_TAG}.zip"
+  fi
 }
 
 parse_and_push_coverage_report_go() {
@@ -1334,6 +1374,14 @@ qa_build_and_push(){
   set +e
 }
 
+run_bash_unit_test() {
+  COVERAGE_DIR=$1
+  chmod +x .github/ci-scripts/bash/check-version-in-nexus.sh
+  chmod +x .github/ci-scripts/bash/post-coverage-data-to-convoy.sh
+  mkdir -p
+  bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
+  bats .github/ci-scripts/bash/tests/post-coverage-data-to-convoy.bats
+}
 run_python_unit_test() {
   initialise_coverage 'test-venv'
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")

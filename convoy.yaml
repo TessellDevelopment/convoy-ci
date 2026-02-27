@@ -1,0 +1,10 @@
+language: bash
+appGroup: tessell
+runner: amd
+ci:
+  bestPractices:
+    jiraValidation:
+      jiraIdSource: BRANCH_NAME_PREFIX
+      matchingRule: ANY
+    enforceNewLineAtEOF: false
+    enforceYamlSeparator: false
