@@ -41,7 +41,7 @@ jobs:
     needs: convoy-check
     runs-on: non-build
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-4297
     steps:
 
       - uses: actions/checkout@v4.1.1
