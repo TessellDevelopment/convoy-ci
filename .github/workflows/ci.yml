@@ -29,7 +29,16 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       - name: Install kcov
-        run: sudo apt-get install -y kcov
+        run: |
+          sudo apt-get install -y cmake gcc g++ libdw-dev libelf-dev libcurl4-openssl-dev zlib1g-dev
+          wget -q "https://github.com/SimonKagstrom/kcov/archive/refs/tags/v42.tar.gz" \
+               -O /tmp/kcov.tar.gz
+          tar -xzf /tmp/kcov.tar.gz -C /tmp
+          cmake -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr/local \
+                -S /tmp/kcov-42 \
+                -B /tmp/kcov-build
+          sudo cmake --build /tmp/kcov-build --target install -j"$(nproc)"
 
       - name: Run unit tests with coverage
         run: |
