@@ -267,6 +267,13 @@ parseCoverageReportJava() {
 parseAndPushCoverageReportJava() {
   parse_and_push_coverage_report_java "$@"
 }
+pnpmBuild() {
+  pnpm_build "$@"
+}
+
+pnpmBuildAndPush() {
+  pnpm_build_and_push "$@"
+}
 
 providerBuild() {
   provider_build "$@"
