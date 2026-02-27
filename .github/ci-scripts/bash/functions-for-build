@@ -185,16 +185,12 @@ configure_npmrc(){
   REPO="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@" 
-  set -e
-  if [[ -f ~/.npmrc ]]; then
-    rm ~/.npmrc
-  fi
+  rm ~/.npmrc
   TOKEN=$(echo -n "${NEXUS_USERNAME}:${NEXUS_PASSWORD}" | base64 -w 0)
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:_auth = ${TOKEN}" >> ~/.npmrc
   echo "//${NEXUS_SERVER_ENDPOINT}/repository/:always-auth = true" >> ~/.npmrc 
   echo "@tessell:registry=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${REPO}" >> ~/.npmrc
   cat ~/.npmrc
-  set +e
 }
 
 configure_npmrc_yarnrc() {
@@ -1177,7 +1173,8 @@ pnpm_build() {
     exit 1
   fi
   pushd ${DIR}
-  configure_npmrc "tessell-repos-npm-development"
+  # configure_npmrc "tessell-repos-npm-development"
+  configure_npmrc "${NEXUS_REPO_NPM}"
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
@@ -1194,7 +1191,10 @@ pnpm_build_and_push() {
   ARTIFACT="${1}"
   EXTENSION="${2}"
   VERSION="${3}"
-
+  echo "ARTIFACT: ${ARTIFACT}"
+  echo "EXTENSION: ${EXTENSION}"
+  echo "VERSION: ${VERSION}"
+  echo "NEXUS_REPO_NPM: ${NEXUS_REPO_NPM}"
   required_inputs="1 2 3"
   # validate_inputs "${required_inputs}" "$@" 
   DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
@@ -1205,7 +1205,6 @@ pnpm_build_and_push() {
   pnpm_build "$@"
   set -e
   pushd ${DIR}
-  pnpm pack
   npm publish
   popd
   set +e
@@ -1664,15 +1663,14 @@ vss_tar_build_and_push() {
 }
 
 validate_inputs() {
-  # local required=($1)
-  # shift
-  # for index in "${required[@]}"; do
-  #   if [ -z "${!index}" ]; then
-  #     echo "Error: Required Argument at index ${index} is null or empty."
-  #     exit 1
-  #   fi
-  # done
-  true
+  local required=($1)
+  shift
+  for index in "${required[@]}"; do
+    if [ -z "${!index}" ]; then
+      echo "Error: Required Argument at index ${index} is null or empty."
+      exit 1
+    fi
+  done
 }
 
 yarn_build() {
