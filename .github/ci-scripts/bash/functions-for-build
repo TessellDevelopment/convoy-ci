@@ -1160,6 +1160,49 @@ parse_and_push_coverage_report_java() {
   fi
 }
 
+pnpm_build() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
+  if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+    echo "❌ Error: Directory not found in convoy.yaml for artifact: ${ARTIFACT}"
+    exit 1
+  fi
+  pushd ${DIR}
+  configure_npmrc "${NEXUS_PUSH_REPOS_NPM}"
+  corepack enable
+  corepack prepare pnpm@9.0.0 --activate
+  CI=true pnpm install
+  pnpm build
+  pnpm pack
+  popd
+  set +e
+}
+
+pnpm_build_and_push() {
+  set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  VERSION="${3}"
+  required_inputs="1 2 3"
+  validate_inputs "${required_inputs}" "$@" 
+  DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
+  if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+    echo "Error: Directory not found in convoy.yaml for artifact: ${ARTIFACT}"
+    exit 1
+  fi
+  pnpm_build $ARTIFACT $EXTENSION $VERSION
+  set -e
+  pushd ${DIR}
+  npm publish
+  popd
+  set +e
+}
+
 provider_build() {
   set -e
   ARTIFACT="${1}"
