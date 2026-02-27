@@ -43,8 +43,8 @@ jobs:
 
       - name: Run unit tests with coverage
         run: |
-          kcov --include-path=.github/ci-scripts/bash \
-               --exclude-path=.github/ci-scripts/bash/tests \
+          kcov --include-path="$(pwd)/.github/ci-scripts/bash" \
+               --exclude-path="$(pwd)/.github/ci-scripts/bash/tests" \
                ./coverage \
                bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
 

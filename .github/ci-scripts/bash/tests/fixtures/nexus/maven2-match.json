@@ -1,10 +1,1247 @@
 {
   "items": [
     {
-      "repository": "m2-releases",
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6N2Y2Mzc5ZDMyZjhkZDc4ZmU5NDRlYzRmNTcyMzVmZjk",
+      "repository": "tessell-repos-m2-component",
       "format": "maven2",
-      "name": "db-controller",
-      "version": "1.4.295"
+      "group": "org.openapi",
+      "name": "openapi-generator-gofiber-generator",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZTAyYzQ1MmJiZmI5YzM3NjQxYzYzYWNkMzRjZjcwMTk",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "fd5cb9f1f9f02b9f5e6afebf6996bdd153464478",
+            "sha256": "1938bdc0d6f42e9962271ac4de1bb090ea3c16966c86de2e6327f90262bfb02b",
+            "sha512": "71b7ffa2c0838edcf13538ef175ec67dc23914ef9748220cfb6a9ba7583b1b03726bb55842065ee675c17926f34286e22fe48ade31a6a56686e2a8e6723f5388",
+            "md5": "4e58153ea3e3b9c71743480eed046402"
+          },
+          "contentType": "application/java-archive",
+          "lastModified": "2024-05-02T23:57:11.758+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 6694,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar",
+            "groupId": "org.openapi",
+            "classifier": "tests",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar.md5",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZTAyYzQ1MmJiZmI5YzM3NmQ4NGIxZmIzMjYwMGQzYjc",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "59aba8ff259777b9a5df69f81328514a200d4773",
+            "sha256": "6415b001072ffeb33c0cb0fef6abbda332c002a31afa07b5b255548791d87af2",
+            "sha512": "fd5624e7226076cfe356ffe9145bd4cc0e64bc997e1444e99ddc1079840ad88d553314fa0c90dd64f2053762328aff3fb8fd9a19061fb0f3bb2f15493a4c650d",
+            "md5": "bd5ab4a2a29b78ef4d9de72e3a810f92"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:57:16.142+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.md5",
+            "groupId": "org.openapi",
+            "classifier": "tests",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar.sha1",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6-tests.jar.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6NDEzNDhlYzlmYjdjYzNkZDkyYjU4ZWZkMDMwN2NmOTc",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "ed28722b2e237afb477dd08de11776b89fdae687",
+            "sha256": "b1810f8af2d294a0d509d313474c3412c0281946def951ea3062d321caabac56",
+            "sha512": "7c562b74e7388582f3c7ff40882dab4c6fc69af1ee1d231a71ecbc974a20c6178bf4273efa5309e573d5e94efc9fac24d41a3b8b75cb309f92198778f2269b44",
+            "md5": "5f56732373c35d5ab6ff896d95ac3bac"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:57:13.932+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.sha1",
+            "groupId": "org.openapi",
+            "classifier": "tests",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZTAyYzQ1MmJiZmI5YzM3NmNmMTc3NGU3ZDU0NmQzNzU",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "367e3763e3a26dde81014d32620b5ff6e6c81faa",
+            "sha256": "ee1d8cbb56793e9b15ae1315fa57dcf5d63d63120871a0f5a89400cf2a4c0441",
+            "sha512": "c0174755279b86ed2381f906c3aa29db9c2643b1bbe15103dfe0648e7b82df54f732954692509126509c7437e9f8149f36f608b50ef45c916241b6549b40a0b7",
+            "md5": "73f261b0ce83a06e13656222309f843d"
+          },
+          "contentType": "application/java-archive",
+          "lastModified": "2024-05-02T23:56:46.957+00:00",
+          "lastDownloaded": "2024-06-24T03:38:04.484+00:00",
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 999689,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar.md5",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZTAyYzQ1MmJiZmI5YzM3NjY1NjZlOTBkMjJjYjY3ZmM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f4fc4adbe62fe212c69a7440f5104c77955e4f82",
+            "sha256": "093104d363508f384d9ac9e1063d6b0387acdcd1b58d0daeef29c1a21679f187",
+            "sha512": "6bdbd0f51a5145a3b35383fd3fb731354937bfde28a67f8d626a2dfe2f8cf860b3fbedadc77214bba1c8cbaf04e3f72353e6be47df22f14e85f1738c477d987f",
+            "md5": "af57c3cd7b30107280efef3421b961c3"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:56:51.480+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.md5",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar.sha1",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.jar.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6NDEzNDhlYzlmYjdjYzNkZGM0NzAzYTI2YjRhMjVlMTc",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "c424fe3cc344a10fc7e5d74d2bce2b8505194098",
+            "sha256": "764d85996682fcdae7d796ededc6df5a15baf5d722d4cf5818e32b07b400419d",
+            "sha512": "78a81f3c7ad3e071d640c7c28ed68c716852d487382cc1609d7f3ff4f204b44353bf918ade49505b0c6a57865edd4dee9f0f7dc1e18b8a80bfa9c036fb57bdcf",
+            "md5": "da8d747707b95ce345e9cf1acbbc2dc6"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:56:49.296+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.sha1",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6NDEzNDhlYzlmYjdjYzNkZDBhZmVjNDEyOWExNjY5MjQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "9cab971f66d36a83d3046d3295bf7937644bdaf9",
+            "sha256": "426747a51d90a5475ee8871f2d581108a844bc1ecd702725a9bc2ca6ec0ecff3",
+            "sha512": "99539d8d4737dd6e66ce5c4866c9c41dbeef6b83eeb5c3fb47dccc038e84e21e5ae583a32aaf1178d34ceb8d91b393967a2acf152d4c0f487a597dad627b5ff1",
+            "md5": "9069a47d802a922ca318319ccec58f80"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2024-05-02T23:56:53.740+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 3937,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom.md5",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6NDEzNDhlYzlmYjdjYzNkZDNhNGM2MjRiNTI2ZTQ1MzQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "6d0bcc973519c26e674f90b9a09730004b226c84",
+            "sha256": "1743d110f888ba5d4723dbb840776a7ddcaca693f975ae63f193ce19646bd995",
+            "sha512": "aa28413634cfb12c288ba2193e87a19b69e450342f725e950861997b2d98f06dd279ec0c3a17d25ab0e307606d265acd9b1ccd07e7d094ef2e00602550e63396",
+            "md5": "8986f8ca22f68bcdd2d5737cafc5f7b6"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:56:57.602+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom.sha1",
+          "path": "org/openapi/openapi-generator-gofiber-generator/0.1.6/openapi-generator-gofiber-generator-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZTAyYzQ1MmJiZmI5YzM3Njg0YWQ5MjUwMDc4NjIxMWY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "e2e98a36b9405941914cca0ece04281f913e0910",
+            "sha256": "04a54b9e8f9dd14639e8247faeadf4d07571271a2fc350a75f75fab16bc4f96c",
+            "sha512": "6708c13733a3210045c8503714f453eb2cc5dcb84984948b23cda5772e257ca36c654b163d1facae5fda88453dec10ab22091cdf13b318c8c16825f97ea8d1b6",
+            "md5": "3d7109553367cc527d426292c205809e"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2024-05-02T23:56:55.608+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "3.7.100.241",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "org.openapi",
+            "artifactId": "openapi-generator-gofiber-generator",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6OTEyZDBmZTdiODE5MjM5Mjg2MmZlODExM2VjNDRhZTc",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "gcpcore.terraform_modules",
+      "name": "gcpcore-tenant-infra-base-operations",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzBjYTMxYzU0ZDQ5MDllOTk",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "a555e16cd2d24e05e98adf6d6555874c54e7e16b",
+            "sha256": "7f0177220eef1876eabed496fb4d9677c937c7e7077be6a89352e8baaa9a6633",
+            "sha512": "c573b439149573c9a560f174b0cd1f402b447d0e679c421dedda80da0103afa95340fdc43cdc1fc50a79601172f46ec639f9728a77006e497e9ce9050f754553",
+            "md5": "5fcb8cdecb31b3d1d5004f18db2dcdb4"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2026-02-05T11:02:35.570+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.41.195",
+          "fileSize": 464,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzRmYWVjZmI1MjQ0MzI3Yjg",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "2cc668723f1aff84343b97caa4356af0c14033fa",
+            "sha256": "9da7fbe9d8a8a298c8d40d37966b13181e35d492fde3ee7788fff1c426f3043f",
+            "sha512": "9d4b4a491375c05798057c290a98bd451206556206dfd4a860897e7212a558a51b971bd6ed1eb5b8138699afa0518f89cc29693df7d3fc6e4f494ed500c0d012",
+            "md5": "90f812227379e6fc6f7aa9d1cffdd873"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-05T11:02:36.252+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.41.195",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTI2OGRjZTVkMzYyZDgwZTk",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "ed7eef47a876f34a4741d0cfb55b2678ab861160",
+            "sha256": "b65ae5f845c7d321583ac932f9b5164de838846a86235c252483fd3a3f451312",
+            "sha512": "154383bd84dfa9966a37d2f70f86db729bd94ae73f56f07fc6fef6ff7c3824ee8ee61daa720e20aaeccd6e1bf8373a32e0def04c3cfbf3d40af051d582a4183b",
+            "md5": "c16158362b2352c24f00221ebb1db525"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-05T11:02:35.898+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.41.195",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTZkMTAwMWY0YzZkMWY2NjI",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "15e970731913d3d7ae47e9507e105ffbbe8431c9",
+            "sha256": "52e4709bb2821fbe61819781e62c855e3ac7e3453248efb3cf82541dd02ff5d5",
+            "sha512": "16b1ab4d96229460d914194b6ba383939165178e0fcc1482c3bd8c9ebbb7afde360fdfc0fba8ccf075c1cb983fcc41fb5ee0d810175ba69d9380e703d0f89c2c",
+            "md5": "e121047ab613bf22b08af49695cb153e"
+          },
+          "contentType": "application/zip",
+          "lastModified": "2026-02-05T11:02:34.544+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.244",
+          "fileSize": 3364,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTM4OTQ2NjdhZWUwZDAzZmQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "00d95759d3ee1a71a5d7e749a23a65930df3f1da",
+            "sha256": "5e413a2a02ffbb2f3525ad6ec68c009df138f04298435b3cf3f26ce9bb100ed8",
+            "sha512": "e7a10946f05c083827b89ea5592a0f97a3d8f891782a6e80971b444eec98291457102e1502a22ad06e66cfdc59331a3c0cd95b86a86c2cd7cb15e4293203c0ec",
+            "md5": "c5ff8427a0f9c0146d1bcb1a443c24e8"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-05T11:02:35.245+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.244",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-tenant-infra-base-operations/0.1.6/gcpcore-tenant-infra-base-operations-0.1.6.zip.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzBhOTJhNTI4NmQyZWIyNzU",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "9f1c75097580e52964d320a0053c7edc53f34c8d",
+            "sha256": "484cbfa10433d0bcf74ca8163e88e49990f27876a8aca8ca3ecef7e679370b83",
+            "sha512": "db613e993a9e9a8afb40cf2ee7ea4be5fb20fb9ea6ed8680d7e747c00ba81fc5924bc744953e9f3ea91bdffe7a0505d1679f4aab163344f1e51a00d8c7f8986e",
+            "md5": "2648ec84dfb0685a6fe84cddd2645d6b"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-05T11:02:34.888+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.244",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-tenant-infra-base-operations",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6N2Y2Mzc5ZDMyZjhkZDc4ZjYwZmVlMDk2MTY5MTJiMjY",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "gcpcore.terraform_modules",
+      "name": "gcpcore-aws-tailscale-exit-node",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTVmNGJlZmZkYjVlNTFhYTE",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "a36ca0e727bb4dcc3374e9398a842673f0738f25",
+            "sha256": "48f26e6757518d1521c3777120ecc7a7e9fea523e1398dea6c82167a5f69ef2c",
+            "sha512": "1d27daa43bc253f78b752e4e8ba9750e663a556c6fdf85d443d609b6dc5e7db547f4c838fcdee9f3fa11f551466ec43a51ea71820515bfcba1b1f5d784bc36d4",
+            "md5": "0cabc70f0313939a4ab59b5a315937b8"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2026-02-09T05:57:25.418+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 459,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWQxMjdhMzFlZDYxMjk0ZGU",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b009a6a819c8bc60ecb3f1c934bc7f9db5cc29aa",
+            "sha256": "cf49cfcbeea5ed0d427559850771b1517d8054d9148821097de8a72db6c0095f",
+            "sha512": "af47c48c427314135ae50befad06bb6a74c558a3bd1a5a16df2065dbb9da707ad8ddf8a02b24b88d3d9b7c566c13575c05156dd0d20f2f361e4d914456776aa2",
+            "md5": "7ea6ee8dcc82d9b932a1b3c0faa3f578"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:25.747+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzVkOTZhYmZiYzc5YzNmYzY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "a344e1aff8ecc2fdf69d2efffd27921fca38a70b",
+            "sha256": "95141361de00d76312456d1e6b1a9f52b1f4d8675747899279ae490fd01e5518",
+            "sha512": "1a7e3e4e2d20aee1b04ce5601c5ce28ad8a1fb082fab19e987bd2050af666023273e28dad23405f70a716b4e17ccddbd48990719d1b6332b56996d2cc441273b",
+            "md5": "dc33946ea58df7347327a47e9eded63b"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:25.608+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzU0MWVkMWRlZjBhNDc4YWM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "026ac900d42d75510ff43bb29c433679963183e8",
+            "sha256": "a05dddc21b3469b42657d7bc93cc094f16b3ba3ed6ffe291bd0ee5f46aaefb76",
+            "sha512": "eeeb100803feb0a04f64c0e474a18b356376399a410e0aaa6e95c9588487e0e3feab5128757e46f463bb92d8fe7807c259057b3e014df553f30fcbf5abab7a89",
+            "md5": "df7798113349b35f206199152c94cec3"
+          },
+          "contentType": "application/zip",
+          "lastModified": "2026-02-09T05:57:25.021+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 5766,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzdhODk0NDE4NzVhY2Q3ZTE",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "01a660db67d5a1a95bb7bb06f2ad7d8f95bd4838",
+            "sha256": "d254d8b0994df270e2b906dd8f23477195b1ec728cb1974d1d81f8fed1d6fb54",
+            "sha512": "b7d8511d1e01892cdabb089865b66ae2f57e651cf5c871b54d43031a8dd164b3a6c7bbe5c3af6dede7b092d81041449c50610a7f1653ace50a2abac6731dd2c1",
+            "md5": "72b319235de36883dc6e6f512bdb43bb"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:25.298+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-aws-tailscale-exit-node/0.1.6/gcpcore-aws-tailscale-exit-node-0.1.6.zip.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTcyZTA1YzI4MTlmYWE4MmU",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "43d4af2477a0d6f779917e4fde0cf739259f9aaa",
+            "sha256": "d10dea7ee05e63233b3bbd921f37a73176ea060e775b28edd4bd6a6b494f107e",
+            "sha512": "98365f67ac575c98637571d25f329e92dd1a59bab051b7c63ae09f84e56c922ff961a535e9b8b8576e2b9f5b2b42fdc8568d19d8514642b5f933602fb7cd3c2e",
+            "md5": "4a8421b69754c51ba4f0715568a9c776"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:25.164+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-aws-tailscale-exit-node",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6N2Y2Mzc5ZDMyZjhkZDc4ZmIzYWYzN2M3ZDk5ZWExZmM",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "gcpcore.terraform_modules",
+      "name": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzkwMDA4NDgzNzI4MjMzYTQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "c0f65314c5be4f701a85ec28f940ba15d0554563",
+            "sha256": "b3e7deb615f9534e4d2ac5c2bc4204aa42974ffeb314e59843948335c3a37fc6",
+            "sha512": "04c0414142b17e2a1d2b145a86d44a8285f61142806f0f6e0528a030b8b225b21f74e8952ac6ba91f2fd2b5106792df75f6054d17f6a2b73c24af00ec0d6537e",
+            "md5": "9890b2be87824e4a3fb563d26bcd6ac5"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2026-02-09T05:57:47.250+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 477,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzhkYjNkN2RlOTA4NTY2Yjg",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "6b8ffe475073beef0091e2cbb8baa67766c6ce25",
+            "sha256": "ba4cfd339e133e9b13f9509893b292b1dfd536a553715ef760f2539701d8e6be",
+            "sha512": "cbb8bc9c6205d3d552d1c83a39a944fec535d2c9819e3ca14a075e4d98cd18e9a3454926f0a5aa07adfa717d270a840c1ea484b6d9dbe66af8c991d15176736b",
+            "md5": "06a009d535bcec2352ccbbea92df8676"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:47.536+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTBiNzJkZmQzZWZmZDJiZmQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "1aac5b6cf41608b858eb474c5119670c0837a89b",
+            "sha256": "933a51eaff001cc6e59b863a2f44c4bb3635f8c7104f84e92c79f2352f7a7d57",
+            "sha512": "0385a1f8c6fed6d1ed277ac8a82ab73edebfe375e771173d9b6eae1b62cb1507909351fd1bd05c6902c7fc1e7017928dfd11ac9b4113853db758929eba1fc561",
+            "md5": "49d13c6f6d1b78a7a4aa42787b51d41e"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:47.405+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWUyN2Y4NmUyMjFjM2YwMWI",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "e9f25a3137b4e6f57931c397d156a5fb2dab5701",
+            "sha256": "2d5cee395869226ccd0b72d9fbd83b77b0b62c5b445150487c27888cf8f9a9fd",
+            "sha512": "1c6c4aad0dfb7f8fe9dda51de66f9879f7066b5f9f626836409878407379d098b768823e839f5475b04069d3896231171274c637b9cbba21f254ea0d20cdb1fc",
+            "md5": "396a62a9085eb09ee4a6e6cf0eb0fc49"
+          },
+          "contentType": "application/zip",
+          "lastModified": "2026-02-09T05:57:46.863+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 4134,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.md5",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWRkMWQ3Y2JmOTQ2M2Q2MzM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "7845ca5744e0e295b645097421037c38ea7eb322",
+            "sha256": "b18b776e99d96bcf626c84f81a75a03c121f0dd00f7645464f11d9de10cf9724",
+            "sha512": "2069c1e8908dcf992176e61ff14a7a6c328ee82f81333737c4c72b44023f4ffe786618488f4492a353bad4f6925fa558fc3c10b506a0075945181814dbe1b06a",
+            "md5": "2fcdca3de730a6cb7261cb30cebbd61f"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:47.134+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.md5",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.sha1",
+          "path": "gcpcore/terraform_modules/gcpcore-svc-bulk-create-attach-empty-volume-azure/0.1.6/gcpcore-svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzMzZDE4Y2MzM2JhMzk0NGE",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "c4e0e4b42463086697c27bc89d3f641d900d3eb8",
+            "sha256": "8b8528d07cf374849bde3de670cc54c506779a35072f485478729ed83b605337",
+            "sha512": "0075a7082c46623b413acb7b1407922de5b71f513992bef3ddf00fded8f7a7bea994bd14c68f86af580af06eac035db3f565abfcbae8b2f58585787201f25287",
+            "md5": "55539fbc670740f8b090c313b137021d"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-09T05:57:47.009+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.18.130",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.sha1",
+            "groupId": "gcpcore.terraform_modules",
+            "artifactId": "gcpcore-svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6OTEyZDBmZTdiODE5MjM5MjJhMmYxMDMxMzk3ZjQzNWI",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "convoy.code-generator",
+      "name": "convoy-api-spec-transpiler",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWVlMGIwZjYzNTkzODFiNDM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "721e2465118989bc8f9b99bc2cf2c22d92ff4a2c",
+            "sha256": "ba5eb71de715b824f2d1fbfd6b0eec4a0d84264b90dd92b96601d99f4e8c1c14",
+            "sha512": "9472a086195d2183653e64abd8c16aedd6254f0144d96c64b197f495de8888d57485a22c389e7fd7c072d3ff73eefda3aa734fe8238d0e075ee68d20e181a642",
+            "md5": "b6bff0211816778a243e65ea99e2e38c"
+          },
+          "contentType": "application/java-archive",
+          "lastModified": "2025-12-06T00:27:21.619+00:00",
+          "lastDownloaded": "2026-02-15T17:05:22.830+00:00",
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 345777,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar.md5",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTNhZWY3NzFjNzg5NTY2OGQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "37a7d6132966a7345b58cb2ad035867378b889b5",
+            "sha256": "d3af41296b308ed48d03d8a72ce1dd902b62ca5273590965b8aa18e2777b8077",
+            "sha512": "9d1086b1c2232579a3c99a28d08bb7a1ae35cd7344a93f587b6e715bc2e3ba17967bb493f05b12ba555144555bed74067a867c9e38c9295387a16292aa760d4f",
+            "md5": "cf30f818f6f3d9ce8cc38fac619b0579"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:27:21.899+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.md5",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar.sha1",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.jar.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzY3MDA1ZGFlOWM5OWU0MTY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "eebf08cb03816ec2854377d957d6374c2c787651",
+            "sha256": "730ad2ac53887397d226e1561639898204ff8eb9d695e0bb75a8f8058935549b",
+            "sha512": "579cbd0d06623002109c73cdd9528aa556cb253a1b759122052ce817885cb7a97b82375a6431ce5e92a6bf430ac896fdb08a845f382f2ed108b34075401f914b",
+            "md5": "3c0bd463a07dc81b8ea9ea25da7b3cc1"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:27:21.762+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.sha1",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzg0ZDBlMzYxOGRlZDhlMDY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "6f0685da5e9e660263fda38c9ddd137ff4ccf4e7",
+            "sha256": "bb01be0616727d39bc95a155783fe419e190ae0cd02d7257cecd1234624d986c",
+            "sha512": "95343729a821546d59194d4ca141c64fb4a575ca39cdc7b4025aa7dda2f28d20e224c7ef488e88440518680af26fb037366857ad9d93ad0a457b14140068d360",
+            "md5": "474ffad14f24e09aa9a5a96f90cf33e8"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2025-12-06T00:27:22.008+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 421,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom.md5",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzE4Nzc4YzI4NWQxMDEyNDM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "518ef8b4fe8bedbd753795babbce3b79e355eb9d",
+            "sha256": "2b7cb233727d3eaff53cf9eae1aa58275620ea8ee316880419ad4f67f38fdf39",
+            "sha512": "965fe7b77f7c40faed82482c07f0ec257d92bb05816bbf4e3c7597186c03c015ca49ac8d564acac7de264b6cb247e85d69211f8935631edf6f8f369346abe24e",
+            "md5": "8255dc0723c32c0f55b2126106f97094"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:27:22.266+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom.sha1",
+          "path": "convoy/code-generator/convoy-api-spec-transpiler/0.1.6/convoy-api-spec-transpiler-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTU1ZDQ3NTM1OTJlYjY1ZjI",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "c9fc065ec72497557aa5e0d608cc1f5799ec71bc",
+            "sha256": "f07411e84e2d75762a804bbb7191180da1db488b6ac5e3f2ee2cbd67cb6d953e",
+            "sha512": "df621fd880091d5c784e7246c8c9ab97a891360b0b28664c281f8da19e12f6015505e12bafe14f6b32431744c1e8873bb076a0fe2466701d6fe305a9bd2e3425",
+            "md5": "b43b177fc66a799319ddb477d15681d9"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:27:22.145+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-api-spec-transpiler",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6N2Y2Mzc5ZDMyZjhkZDc4ZjFjMWJmYzUxMGU4ZDMxMWY",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "convoy.code-generator",
+      "name": "convoy-openapi-code-generator",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTUxM2YzZTRmMjg4YTdiMTU",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "affb696cb1f9736effed455b109f1248a4ffe0b6",
+            "sha256": "b254d26c45e760b699cd4e0a411f2f5bae1498d2680cad59dd86d48ffd0a80d1",
+            "sha512": "3669bc34b10a1ebad3cb7ad845ab4d384a2a6c9980259621a76a272d8f87e3db707e7377c921353531bbc37fad2d4178d51fa8e1febb22b52bf80d295e10dd28",
+            "md5": "9d1b167fc7168d724ed9c2f1428eecdc"
+          },
+          "contentType": "application/java-archive",
+          "lastModified": "2025-12-06T00:28:43.833+00:00",
+          "lastDownloaded": "2026-02-15T17:05:22.959+00:00",
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 998272,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar.md5",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTIwODRlYWE1ZGMxYjI3Yzc",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f9af25225de359d0a450ba77982124994fd14c5d",
+            "sha256": "b0628330fe1e07f5b7aad13e7754650466a2d890e913dcf5ed3aec6a64669184",
+            "sha512": "82d297a58afbbef796ba1ed4da6faf8ce7f8e86cccb83101076f18981b8728ec60107595c7eeebff100350d74fa42b0a32f43b9a55a6f96287206742a1a4348d",
+            "md5": "e0df194f7fe99873945de092fcadab93"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:28:44.159+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.md5",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar.sha1",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.jar.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzY2ZTMyNzExMzQwOTdiYzc",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "efd4315e11c13aaa836adc5549c77e3fabc11506",
+            "sha256": "6dff3ecb279f3e40ed092501f1f26c076855fd76d34df73e05268aae4d4fb665",
+            "sha512": "4bc7ae31dcd6671aa827e4dd7a24ccf862ccf405c9588ba3e71f2c8a3141b8bd9a9f4e15c588ff355e2532be6882a4b5515af16249c1e069313914a533388c74",
+            "md5": "349e76da183165953e6af7a16ce8149c"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:28:44.048+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "jar.sha1",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzhkMzFkZTZiNjhmZGRlNmQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "70f773b75c747c7411a6c5dcbe086d770ee8b616",
+            "sha256": "f9d22f0aca21c2c961c2c9eb6bb2ac6dd315748331fbe75ed16cdb7e74c0eed1",
+            "sha512": "c1fffd7aa93743101eed6ab79146de8a62b7103ff793da31faaa5907b52d05c9e9764e0f15bce2aa1b557ad9cd9196d17cee6f04fe94327322cd6f0d45701d5d",
+            "md5": "5484427d00d20bdff2f663ae30a860e6"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2025-12-06T00:28:44.275+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 424,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom.md5",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzE5OTRjMjM0N2FlZmFmMjM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "6f35f15432b90c3c6ad43bd8647a4594d018a77f",
+            "sha256": "f8ce50edbc259724aae31abefa240ceea33d194495c312949d02cc068a14881f",
+            "sha512": "be49e77f0df35129cfe288df30ea3576dc509ef472c35b7fe2b6f1049ca6b4713598cb17b801004f281fa1e63ac7100f8b334b66e88bb372693c5802f55a797b",
+            "md5": "e39839903f179f2b62f360f896e5c890"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:28:44.534+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom.sha1",
+          "path": "convoy/code-generator/convoy-openapi-code-generator/0.1.6/convoy-openapi-code-generator-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTk4NDI3NjY1NzA3MTJlNmY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "784b4bf40abffa509cfebba1bcfa631105927c37",
+            "sha256": "a191eeace14ccf0f4c6e8a8d8b7d8eb6e332c44bea2970f4395105b1b30c720a",
+            "sha512": "d844c8e823c1acdaee2062648ad77e109a8290139c10f4716a0bc29e36ee2573738ece66cb21bed55d1c43cb0b732569cbb088f5bcfffdd4c3f9d168cfe170f1",
+            "md5": "85facf15fa0d61a35d7a35a4e632235f"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2025-12-06T00:28:44.413+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.33.50",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "convoy.code-generator",
+            "artifactId": "convoy-openapi-code-generator",
+            "version": "0.1.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6OTEyZDBmZTdiODE5MjM5MjczMGQ3N2YzZWZlOTJhNDk",
+      "repository": "tessell-repos-m2-component",
+      "format": "maven2",
+      "group": "tessell.terraform_modules",
+      "name": "svc-bulk-create-attach-empty-volume-azure",
+      "version": "0.1.6",
+      "assets": [
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzVlNTliMDhiNWI4NzQxOGY",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "955c1b88f6de80042529270a15f5dbde56fb4fe1",
+            "sha256": "f6928b4911ee5bdb878346a7caae579f929ade24b5511be21613cdba09e51cda",
+            "sha512": "1ee96050177d5f0a4c8da8d414e0de3e062fe20c3fa3ea0e957d4cc12caa7fb6a32f2a83802bf6f4e9b5812ec5b52993968111444abfc42a612e00ccd95dde09",
+            "md5": "d719cce0bca097952cf054b7f00133f0"
+          },
+          "contentType": "application/xml",
+          "lastModified": "2026-02-25T13:07:40.339+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.7",
+          "fileSize": 469,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.md5",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzU1MmU2ZDE1MjY1ZmNhMGQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f4924387ddfdcf921a3ef0a2f166c7c38c458f5d",
+            "sha256": "0f6ce561953807bb89e3e81680f60a10dfaacfe1e237c880d1e5d31695cddde8",
+            "sha512": "8b7c23a300a3e3ac3191adcdfb9145699bcf915a318edb4a3ead89e1e708627600e03e88e203efd0372f776e5839ada5d59f304c8be757085308ddb1d54dc349",
+            "md5": "d35f1e54e7fd04a5da0fd4855a3bc7d0"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-25T13:07:40.989+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.7",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.md5",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.sha1",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.pom.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWVhMWQ2MWY0NTczMzg4OTM",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f1a9810ec1f4828a95747fc50f9130f7176bd6cc",
+            "sha256": "2303ae2cbf5c829f0949524ddba39e0c484f6851c0cfe1608eae99a36a6cc02a",
+            "sha512": "02c4cdec4911beef1d66d05b3c92582d6514c3f568047c902aca2adac8e46af36d8608c25cd2d26b95d4ba58a683db0c066d3712f28fe5d86faa43591ca23a84",
+            "md5": "618e28a1927e37c8b4d50c5b65f4fcf6"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-25T13:07:40.663+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.28.7",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "pom.sha1",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMWJjOGY1OTRlNGNkOTE4M2Y",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "bbadf42de6f1a8db105c2cae8415c74441b44ba3",
+            "sha256": "247e07a22eb904e5773b5ec86a0f980a1e9598cfe0a9d592b96f6d015f5037fb",
+            "sha512": "dbb967fb2f7157799771b76d14663f3541dbb6af7f96fc6d6192fe9172946348caa016367a56a7a0f2179dd8a55583c3c85c66f8a1d87e2bc86a1c3656d933f2",
+            "md5": "3e208613244eac1fccc8b419909c2c39"
+          },
+          "contentType": "application/zip",
+          "lastModified": "2026-02-25T13:07:39.120+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.20.55",
+          "fileSize": 4046,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.md5",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.md5",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6ZGJlODBkNDM0MmNkN2JjMTZiNzhkZWMxZjRhMDc0MzQ",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b907776827a92b206140be008dfc1dcf621f694c",
+            "sha256": "f3c531dbe30e77e779363d6f3a360b68c9620fe71b13b059bf16ebd7197c918d",
+            "sha512": "3b62e8c0e8b674d9e3c30aad68bb4c83da3a5574e5a604fbf15e21ffe228b5fabd95a532530ce7f4c4acfbc86ca16c62427f1a4a15969bd0bf4a861e09d23d87",
+            "md5": "c920fc8004d0b3fb4245edcc816d025e"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-25T13:07:39.956+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.20.55",
+          "fileSize": 32,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.md5",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        },
+        {
+          "downloadUrl": "https://nexus.tessell.cloud/repository/tessell-repos-m2-component/tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.sha1",
+          "path": "tessell/terraform_modules/svc-bulk-create-attach-empty-volume-azure/0.1.6/svc-bulk-create-attach-empty-volume-azure-0.1.6.zip.sha1",
+          "id": "dGVzc2VsbC1yZXBvcy1tMi1jb21wb25lbnQ6YzM1ZWQyZjA5NWM2OGExNzc1OTc5OGI3MTAzMDIzZTE",
+          "repository": "tessell-repos-m2-component",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "239cf717dcda856033ca1cd0f89aa2c67deeaffb",
+            "sha256": "b60756413fe308a0cc39d6292b7a6a7883fa1abef541bfa71bd688035573ef86",
+            "sha512": "349a99453ca6807d240dc120daed859026f4324e9ffa40e52372996fac499db68520a4864f8ecb4c601997118be40e9d265c5e32c88a18e2cc69161390a0526c",
+            "md5": "dd2c738e2611b702d5914a9af39d2c96"
+          },
+          "contentType": "text/plain",
+          "lastModified": "2026-02-25T13:07:39.551+00:00",
+          "lastDownloaded": null,
+          "uploader": "cipipeline",
+          "uploaderIp": "10.0.20.55",
+          "fileSize": 40,
+          "blobCreated": null,
+          "maven2": {
+            "extension": "zip.sha1",
+            "groupId": "tessell.terraform_modules",
+            "artifactId": "svc-bulk-create-attach-empty-volume-azure",
+            "version": "0.1.6"
+          }
+        }
+      ]
     }
   ],
   "continuationToken": null
