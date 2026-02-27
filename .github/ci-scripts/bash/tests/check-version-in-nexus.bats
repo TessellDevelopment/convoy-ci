@@ -42,11 +42,14 @@ teardown() {
 # kcov merges data across invocations into the same output directory.
 run_script() {
   if [ -n "${COVERAGE_DIR:-}" ]; then
+    # Execute the script directly (not via 'bash script.sh') so kcov reads the
+    # #!/bin/bash shebang and activates its BASH_ENV injection engine rather than
+    # treating 'bash' as an opaque ELF binary with no script coverage info.
     run kcov \
       --include-path="${SCRIPT_DIR}" \
       --exclude-path="${SCRIPT_DIR}/tests" \
       "${COVERAGE_DIR}" \
-      bash "$@"
+      "$@"
   else
     run bash "$@"
   fi

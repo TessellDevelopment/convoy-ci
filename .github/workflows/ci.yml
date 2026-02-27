@@ -45,7 +45,19 @@ jobs:
         env:
           COVERAGE_DIR: ${{ github.workspace }}/coverage
         run: |
+          chmod +x .github/ci-scripts/bash/check-version-in-nexus.sh
+          mkdir -p "$COVERAGE_DIR"
           bats .github/ci-scripts/bash/tests/check-version-in-nexus.bats
+
+      - name: Debug coverage output
+        if: always()
+        run: |
+          echo "=== Coverage directory structure ==="
+          find ./coverage -type f -name "*.json" 2>/dev/null || echo "No coverage files found"
+          echo ""
+          echo "=== First coverage.json content ==="
+          first=$(find ./coverage -name "coverage.json" | head -1)
+          [ -n "$first" ] && cat "$first" || echo "No coverage.json found"
 
       - name: Print coverage report
         run: |
