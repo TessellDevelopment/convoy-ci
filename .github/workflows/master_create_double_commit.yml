@@ -9,7 +9,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: non-build
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-4303
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - uses: actions/checkout@v4.1.1
@@ -227,7 +227,7 @@ jobs:
         env:
           APP_GROUP: ${{ env.APP_GROUP }}
           COMMIT_SHA: ${{ github.sha }}
-          CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
+          CONVOY_DEV_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
           CONVOY_API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
           CONVOY_RELEASE_MGMT_API_KEY: ${{ secrets.CONVOY_RELEASE_MGMT_API_KEY }}
           CURRENT_REPO: ${{ github.repository }}
