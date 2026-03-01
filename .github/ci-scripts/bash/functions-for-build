@@ -724,7 +724,7 @@ initialise_coverage() {
   if [ -f "requirements_test.txt" ]; then
     python -m pip install -r requirements_test.txt --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   fi
-  python -m pip list | grep tessell
+  python -m pip list | grep tessell || true
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
