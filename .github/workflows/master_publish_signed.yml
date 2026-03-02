@@ -1,0 +1,62 @@
+---
+name: Publish Signed Windows Artifacts
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      label:
+        required: true
+        type: string
+
+jobs:
+  publish-signed-artifacts:
+    runs-on: self-hosted
+    env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      LATEST_TAG: ${{ inputs.tag }}
+      LABEL: ${{ inputs.label }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          git clone https://${{ secrets.CIPIPELINE_GITHUB_TOKEN }}@github.com/TessellDevelopment/convoy-ci.git
+          cp -r convoy-ci/ci-scripts .
+
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-windows-artifacts
+          path: signed
+
+      - name: Publish signed artifacts
+        run: |
+          source ./ci-scripts/bash/functions-for-build
+          APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+          
+          for tarFile in signed/*.tar; do
+            ARTIFACT_NAME=$(basename "$tarFile" .tar)
+            
+            if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
+              push_to_gcloud "$tarFile" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT_NAME}/${ARTIFACT_NAME}-${LATEST_TAG}.tar"
+              generate_checksum "$ARTIFACT_NAME.tar"
+            else
+              mvnDeploy "$ARTIFACT_NAME" "tar" "$tarFile" "${APP_GROUP}.agent" "${LATEST_TAG}"
+              awsConfigureProdAssets
+              push_release_manifest_artifacts "$(basename $tarFile)" "$tarFile"
+            fi
+          done
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}

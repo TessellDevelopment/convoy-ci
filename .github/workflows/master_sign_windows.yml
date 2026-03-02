@@ -1,0 +1,82 @@
+---
+name: Sign Windows Artifacts
+on:
+  workflow_call:
+
+jobs:
+  sign-windows-artifacts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download unsigned artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-windows-artifacts
+          path: unsigned
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+          tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+          client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+
+      - name: Install Azure Code Signing tool
+        run: |
+          Invoke-WebRequest -Uri https://www.nuget.org/api/v2/package/Microsoft.Trusted.Signing.Client -OutFile signtool.zip
+          Expand-Archive signtool.zip -DestinationPath signtool
+          
+      - name: Sign Windows binaries
+        shell: pwsh
+        run: |
+          $artifacts = Get-Content unsigned/artifacts-to-sign.txt
+          
+          foreach ($artifact in $artifacts) {
+            $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
+            
+            foreach ($tarFile in $tarFiles) {
+              # Extract tar
+              New-Item -ItemType Directory -Force -Path "extracted"
+              tar -xf $tarFile.FullName -C extracted/
+              
+              # Sign .exe files
+              $exeFiles = Get-ChildItem extracted -Recurse -Filter "*.exe"
+              
+              foreach ($exe in $exeFiles) {
+                Write-Host "Signing $($exe.FullName)"
+                
+                & signtool/tools/net8.0/any/AzureSignTool.exe sign `
+                  --azure-key-vault-url "https://${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}.vault.azure.net" `
+                  --azure-key-vault-client-id "${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}" `
+                  --azure-key-vault-client-secret "${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}" `
+                  --azure-key-vault-tenant-id "${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}" `
+                  --azure-key-vault-certificate "${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}" `
+                  --timestamp-rfc3161 "http://timestamp.digicert.com" `
+                  --timestamp-digest sha256 `
+                  --file-digest sha256 `
+                  --verbose `
+                  $exe.FullName
+              }
+              
+              # Repackage tar
+              New-Item -ItemType Directory -Force -Path "signed"
+              tar -czf "signed/$($tarFile.Name)" -C extracted .
+              Remove-Item -Recurse -Force extracted
+            }
+          }
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-windows-artifacts
+          path: signed/
+          retention-days: 1
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
