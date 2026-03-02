@@ -91,3 +91,18 @@
         tag: ${{needs.find-latest-tag.outputs.tag}}
         label: ${{needs.build-file.outputs.label}}
         dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
+
+    sign-windows-artifacts:
+      needs: build
+      if: needs.build.outputs.NEEDS_SIGNING == 'true'
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_sign_windows.yml@TDEVOPS-3868_win_ci
+      secrets: inherit
+
+    publish-signed-artifacts:
+      needs: [build, sign-windows-artifacts]
+      if: needs.build.outputs.NEEDS_SIGNING == 'true'
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_publish_signed.yml@TDEVOPS-3868_win_ci
+      secrets: inherit
+      with:
+        tag: ${{needs.find-latest-tag.outputs.tag}}
+        label: ${{needs.build-file.outputs.label}}
