@@ -18,10 +18,7 @@ jobs:
       - name: Azure login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
-          tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
-          client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
-          subscription-id: d8b78095-94e4-4733-9926-e5f04afb03bd
+          creds: '{"clientId":"${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}","clientSecret":"${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}","subscriptionId":"d8b78095-94e4-4733-9926-e5f04afb03bd","tenantId":"${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}"}'
 
       - name: Install Azure Code Signing tool
         run: |
