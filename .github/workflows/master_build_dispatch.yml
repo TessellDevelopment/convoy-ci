@@ -99,7 +99,7 @@
       secrets: inherit
 
     publish-signed-artifacts:
-      needs: [sign-windows-artifacts]
+      needs: [build-file, find-latest-tag, sign-windows-artifacts]
       if: needs.build.outputs.NEEDS_SIGNING == 'true'
       uses: TessellDevelopment/convoy-ci/.github/workflows/master_publish_signed.yml@TDEVOPS-3868_win_ci
       secrets: inherit
