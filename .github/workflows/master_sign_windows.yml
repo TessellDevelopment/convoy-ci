@@ -21,6 +21,7 @@ jobs:
           client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
           tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
           client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+          subscription-id: d8b78095-94e4-4733-9926-e5f04afb03bd
 
       - name: Install Azure Code Signing tool
         run: |
