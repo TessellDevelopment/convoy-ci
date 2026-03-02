@@ -123,13 +123,13 @@ jobs:
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
 
           for tarFile in signed/*.tar; do
-            ARTIFACT_NAME=$(basename "$tarFile" .tar)
+            ARTIFACT=$(basename "$tarFile" .tar)
             
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
-              push_to_gcloud "$tarFile" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT_NAME}/${ARTIFACT_NAME}-${LATEST_TAG}.tar"
-              generate_checksum "$ARTIFACT_NAME.tar"
+              push_to_gcloud "$tarFile" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.tar"
+              generate_checksum "$ARTIFACT.tar"
             else
-              mvnDeploy "$ARTIFACT_NAME" "tar" "$tarFile" "${APP_GROUP}.agent" "${LATEST_TAG}"
+              mvnDeploy "$ARTIFACT" "tar" "$tarFile" "${APP_GROUP}.agent" "${LATEST_TAG}"
               awsConfigureProdAssets
               push_release_manifest_artifacts "$(basename $tarFile)" "$tarFile"
             fi
