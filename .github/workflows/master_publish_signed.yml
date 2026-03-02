@@ -19,6 +19,7 @@ jobs:
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
       LATEST_TAG: ${{ inputs.tag }}
       LABEL: ${{ inputs.label }}
+      CI_BRANCH: TDEVOPS-3868_win_ci
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,8 +27,13 @@ jobs:
 
       - name: Setup CI Scripts
         run: |
-          git clone https://${{ secrets.CIPIPELINE_GITHUB_TOKEN }}@github.com/TessellDevelopment/convoy-ci.git
-          cp -r convoy-ci/ci-scripts .
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Download signed artifacts
         uses: actions/download-artifact@v4
