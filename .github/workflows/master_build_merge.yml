@@ -12,6 +12,10 @@ on:
       label:
         required: true
         type: string
+      dev_build:
+        required: false
+        default: false
+        type: boolean
     outputs:
       ARTIFACT_CHECKSUMS:
         description: 'Consolidated Checksum of generated artifacts'
