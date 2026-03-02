@@ -9,11 +9,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download unsigned artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: unsigned-windows-artifacts
-          path: unsigned
+      # - name: Download unsigned artifacts
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: unsigned-windows-artifacts
+      #     path: unsigned
 
       - name: Azure login
         uses: azure/login@v2
