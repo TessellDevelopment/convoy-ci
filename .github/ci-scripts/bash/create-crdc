@@ -11,7 +11,7 @@ cleanup() {
 trap cleanup EXIT
 
 function fetch_crdc_mappings() {
-  local api_url="http://${CONVOY_DEV_API_ENDPOINT}/devops/git-metadata/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
+  local api_url="http://${CONVOY_API_ENDPOINT}/devops/git-metadata/crdc?sourceAppGroup=${APP_GROUP}&sourceBranch=${PR_BASE_BRANCH}"
   local response=$(curl -sf -w "\n%{http_code}" "${api_url}" \
     -H "X-Api-Key: ${CONVOY_API_KEY}" \
     -H "Content-Type: application/json" 2>/dev/null || echo -e "\n000")
