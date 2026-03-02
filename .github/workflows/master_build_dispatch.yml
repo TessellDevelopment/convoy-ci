@@ -93,7 +93,7 @@
     #     dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
 
     sign-windows-artifacts:
-      # needs: build
+      needs: build-file
       if: needs.build.outputs.NEEDS_SIGNING == 'true'
       uses: TessellDevelopment/convoy-ci/.github/workflows/master_sign_windows.yml@TDEVOPS-3868_win_ci
       secrets: inherit
