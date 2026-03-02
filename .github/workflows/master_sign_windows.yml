@@ -28,23 +28,30 @@ jobs:
       - name: Sign Windows binaries
         shell: pwsh
         run: |
+          $signToolPath = Join-Path $PWD "signtool\tools\net8.0\any\AzureSignTool.exe"
+          
+          if (-not (Test-Path $signToolPath)) {
+            Write-Error "AzureSignTool not found at: $signToolPath"
+            exit 1
+          }
+          
+          Write-Host "Using signing tool: $signToolPath"
+          
           $artifacts = Get-Content unsigned/artifacts-to-sign.txt
           
           foreach ($artifact in $artifacts) {
             $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
             
             foreach ($tarFile in $tarFiles) {
-              # Extract tar
               New-Item -ItemType Directory -Force -Path "extracted"
               tar -xf $tarFile.FullName -C extracted/
               
-              # Sign .exe files
               $exeFiles = Get-ChildItem extracted -Recurse -Filter "*.exe"
               
               foreach ($exe in $exeFiles) {
                 Write-Host "Signing $($exe.FullName)"
                 
-                & signtool/tools/net8.0/any/AzureSignTool.exe sign `
+                & $signToolPath sign `
                   --azure-key-vault-url "https://${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}.vault.azure.net" `
                   --azure-key-vault-client-id "${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}" `
                   --azure-key-vault-client-secret "${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}" `
@@ -57,7 +64,6 @@ jobs:
                   $exe.FullName
               }
               
-              # Repackage tar
               New-Item -ItemType Directory -Force -Path "signed"
               tar -czf "signed/$($tarFile.Name)" -C extracted .
               Remove-Item -Recurse -Force extracted
