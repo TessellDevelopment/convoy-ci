@@ -82,19 +82,19 @@
       uses: TessellDevelopment/convoy-ci/.github/workflows/master_sonar_scan.yml@TDEVOPS-3868_win_ci
       secrets: inherit
   
-    # build:
-    #   needs: [build-file,find-latest-tag]
-    #   uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3868_win_ci
-    #   secrets: inherit
-    #   with:
-    #     type: ${{needs.build-file.outputs.type}}
-    #     tag: ${{needs.find-latest-tag.outputs.tag}}
-    #     label: ${{needs.build-file.outputs.label}}
-    #     dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
+    build:
+      needs: [build-file,find-latest-tag]
+      uses: TessellDevelopment/convoy-ci/.github/workflows/master_build_merge.yml@TDEVOPS-3868_win_ci
+      secrets: inherit
+      with:
+        type: ${{needs.build-file.outputs.type}}
+        tag: ${{needs.find-latest-tag.outputs.tag}}
+        label: ${{needs.build-file.outputs.label}}
+        dev_build: ${{ needs.build-file.outputs.dev_build == 'true' }}
 
     sign-windows-artifacts:
-      needs: build-file
-      # if: needs.build.outputs.NEEDS_SIGNING == 'true'
+      needs: build
+      if: needs.build.outputs.NEEDS_SIGNING == 'true'
       uses: TessellDevelopment/convoy-ci/.github/workflows/master_sign_windows.yml@TDEVOPS-3868_win_ci
       secrets: inherit
 
