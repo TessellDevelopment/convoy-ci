@@ -50,7 +50,7 @@ jobs:
           azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
           azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
           azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
-          endpoint: https://${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}.codesigning.azure.net
+          endpoint: https://eus.codesigning.azure.net/
           signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
           certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
           files-folder: extracted
