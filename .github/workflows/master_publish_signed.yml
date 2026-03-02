@@ -43,9 +43,12 @@ jobs:
 
       - name: Publish signed artifacts
         run: |
+          set +e
+          echo "CI_BRANCH=${{env.CI_BRANCH}}"
+          echo "source ./ci-scripts/bash/functions-for-build"
           source ./ci-scripts/bash/functions-for-build
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-          
+
           for tarFile in signed/*.tar; do
             ARTIFACT_NAME=$(basename "$tarFile" .tar)
             
