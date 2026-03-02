@@ -1105,6 +1105,7 @@ jobs:
           echo "ARTIFACT_CHECKSUMS=$ARTIFACT_CHECKSUMS" >> $GITHUB_OUTPUT
           echo "BRANCH_COVERAGE=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
           echo "STATEMENT_COVERAGE=$STATEMENT_COVERAGE" >> $GITHUB_OUTPUT
+          echo "signing needs to be done is ${NEEDS_SIGNING}"
           echo "NEEDS_SIGNING=${NEEDS_SIGNING:-false}" >> $GITHUB_OUTPUT
 
       - uses: actions/upload-artifact@v4
