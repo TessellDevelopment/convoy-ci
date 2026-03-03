@@ -56,6 +56,7 @@ jobs:
           certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
           files-folder: extracted
           files-folder-filter: exe
+          files-folder-recurse: true
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.digicert.com
           timestamp-digest: SHA256
