@@ -26,21 +26,22 @@ jobs:
       - name: Extract and sign binaries
         shell: pwsh
         run: |
-          $artifacts = Get-Content unsigned/artifacts-to-sign.txt
+          $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
           
-          foreach ($artifact in $artifacts) {
-            $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
+          foreach ($tarFile in $tarFiles) {
+            # Create unique extraction directory for each tar
+            $artifactName = $tarFile.BaseName
+            $extractDir = "extracted/$artifactName"
             
-            foreach ($tarFile in $tarFiles) {
-              New-Item -ItemType Directory -Force -Path "extracted"
-              tar -xf $tarFile.FullName -C extracted/
-              
-              # Find all .exe files to sign
-              $exeFiles = Get-ChildItem extracted -Recurse -Filter "*.exe"
-              
-              foreach ($exe in $exeFiles) {
-                Write-Host "Preparing to sign: $($exe.FullName)"
-              }
+            Write-Host "Extracting $($tarFile.Name) to $extractDir"
+            New-Item -ItemType Directory -Force -Path $extractDir
+            tar -xf $tarFile.FullName -C $extractDir
+            
+            # Find all .exe files in this specific artifact
+            $exeFiles = Get-ChildItem $extractDir -Recurse -Filter "*.exe"
+            
+            foreach ($exe in $exeFiles) {
+              Write-Host "Preparing to sign: $($exe.FullName)"
             }
           }
 
@@ -62,12 +63,17 @@ jobs:
       - name: Repackage signed artifacts
         shell: pwsh
         run: |
-          $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
+          New-Item -ItemType Directory -Force -Path "signed"
           
-          foreach ($tarFile in $tarFiles) {
-            New-Item -ItemType Directory -Force -Path "signed"
-            tar -cf "signed/$($tarFile.Name)" -C extracted .
-            Remove-Item -Recurse -Force extracted
+          # Get all artifact directories
+          $artifactDirs = Get-ChildItem extracted -Directory
+          
+          foreach ($artifactDir in $artifactDirs) {
+            $artifactName = $artifactDir.Name
+            $tarFileName = "$artifactName.tar"
+            
+            Write-Host "Repackaging $artifactName into $tarFileName"
+            tar -cf "signed/$tarFileName" -C $artifactDir.FullName .
           }
 
       - name: Upload signed artifacts
