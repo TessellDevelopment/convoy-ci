@@ -21,7 +21,6 @@ jobs:
       LABEL: ${{ inputs.label }}
       CI_BRANCH: TDEVOPS-3868_win_ci
 
-
       ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
@@ -31,28 +30,28 @@ jobs:
       AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_PHASE: postMerge
-      CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-      GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GH_API_URL: ${{vars.GH_API_URL}}
-      GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      NAMESPACE: "convoy"
+      # BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+      # BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+      # CI_PHASE: postMerge
+      # CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
+      # CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+      # CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
+      # CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+      # DEV_BUILD: ${{inputs.dev_build}}
+      # DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
+      # DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+      # DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+      # DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
+      # DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      # DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      # DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      # GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
+      # GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      # GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+      # GH_API_URL: ${{vars.GH_API_URL}}
+      # GOPATH: /home/github/go
+      # IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      # NAMESPACE: "convoy"
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
       NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
@@ -62,36 +61,25 @@ jobs:
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
-      PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
-      PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
-      PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
-      PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
-      PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      RELEASE_PATH: ${{inputs.label}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      REPOSITORY: "${{github.repository}}"
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
-      TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
-      TESSELL_TERRAFORM_MODULES_TERLS_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
-      TESSELL_TERRAFORM_MODULES_BARC_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
-      TESSELL_TERRAFORM_MODULES_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
-      TESSELL_TERRAFORM_MODULES_BETA_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
+      # PR_NUMBER: ${{ github.event.pull_request.number }}
+      # RELEASE_PATH: ${{inputs.label}}
+      # REPO: "${{github.event.pull_request.base.repo.name}}"
+      # REPOSITORY: "${{github.repository}}"
+      # SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      # TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+      # TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
+      # TESSELL_TERRAFORM_MODULES_TERLS_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
+      # TESSELL_TERRAFORM_MODULES_BARC_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
+      # TESSELL_TERRAFORM_MODULES_STAGE_S3: ${{vars.TESSELL_ARTIFACTS_TF_STAGE_S3}}
+      # TESSELL_TERRAFORM_MODULES_BETA_S3: ${{vars.TESSELL_ARTIFACTS_TF_PROD_S3}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
       TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
       TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
-      TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
-      TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
-      TESSELLOPS_APP_NAME: ${{vars.TESSELLOPS_APP_NAME}}
-      TS_API_KEY: ${{ secrets.TS_API_KEY }}
-      TS_TAILNET: ${{ secrets.TS_TAILNET }}
 
     steps:
       - uses: actions/checkout@v4
