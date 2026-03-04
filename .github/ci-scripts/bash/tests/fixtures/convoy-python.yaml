@@ -1,0 +1,5 @@
+language: python
+version: "1.0.0"
+generates:
+  artifacts:
+    - name: my-package
