@@ -1268,9 +1268,11 @@ jobs:
             IMAGE="$1"
             FILE="$4"
             requiredInputs="1 4"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             docker buildx build --push -f $FILE --no-cache -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} --platform=linux/amd64,linux/arm64 .
             docker build --push -f $FILE --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG} .
+            DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} | grep "Digest:" | head -1 | awk '{print $2}')
+            ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
             set +e
           }
           dockerMilvusBuildAndPush() {
@@ -1293,6 +1295,8 @@ jobs:
                                 --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                                 --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
+            DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} | grep "Digest:" | head -1 | awk '{print $2}')
+            ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
             set +e
           }
           dockerPullAndPush() {

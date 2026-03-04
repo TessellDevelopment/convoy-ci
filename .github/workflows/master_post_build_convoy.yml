@@ -262,7 +262,7 @@ jobs:
                       parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
                       for part in parts:
                         if part:
-                          key, value = part.split(':')
+                          key, value = part.split(':', 1)
                           checksum_map[key] = value
 
                       for artifact in payload["artifacts"]:
@@ -277,6 +277,16 @@ jobs:
                               artifact["checksum"] = checksum_map[key_without_prefix]
                             else:
                               print(f"Checksum not found for artifact: {key}")
+                              exit(1)
+                        elif type == "dockerImages":
+                          if key in checksum_map:
+                            artifact["checksum"] = checksum_map[key]
+                          else:
+                            key_without_prefix = key.removeprefix(f"{APP_GROUP}-")
+                            if key_without_prefix in checksum_map:
+                              artifact["checksum"] = checksum_map[key_without_prefix]
+                            else:
+                              print(f"Checksum not found for docker image: {key}")
                               exit(1)
 
             print(json.dumps(payload, indent=4))

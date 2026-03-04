@@ -371,6 +371,7 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  generate_docker_checksum "${IMAGE}" "${TAG}"
 }
 
 download_binary_from_source() {
@@ -541,6 +542,17 @@ generate_checksum() {
   ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
 }
 
+generate_docker_checksum() {
+  IMAGE="${1}"
+  TAG="${2}"
+  DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKERHUB_ORG}/${IMAGE}:${TAG} 2>/dev/null | cut -d'@' -f2)
+  if [[ -z "${DIGEST}" ]]; then
+    echo "Docker image digest not found for ${IMAGE}:${TAG}"
+    return 1
+  fi
+  ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
+}
+
 generate_sts_session_token() {
   AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
   BUCKET_ACCOUNT=${1}
@@ -600,6 +612,7 @@ go_docker_build_and_push() {
   ./setup -g -i
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
   check_flyway ${IMAGE}
   set +e
 }
@@ -1290,6 +1303,7 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
   set +e
 }
 
