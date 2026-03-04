@@ -43,15 +43,6 @@ jobs:
         run: |
           echo "SOURCE_BRANCH=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
 
-      # - name: Check specific file changes
-      #   if: endsWith(github.event.pull_request.base.repo.name, 'helm-svc-defns')
-      #   id: helm-files
-      #   uses: tj-actions/changed-files@v42.0.2
-      #   with:
-      #     files: |
-      #       Chart.yaml
-      #       services/**
-
       - uses: technote-space/workflow-conclusion-action@v3.0.3
         if: ${{ startsWith(env.SOURCE_BRANCH,'rel-') || env.SOURCE_BRANCH == 'main' }}
         with:
@@ -63,6 +54,16 @@ jobs:
         with:
           name: generated-artifacts
           path: /tmp
+      
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: POST API to Convoy
         env:
@@ -87,7 +88,7 @@ jobs:
             set -a
             [[ ${IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED} == true ]] && source ${CONTENT_FOR_GITHUB_OUTPUT}
             set +a
-            python3 .github/ci-scripts/python/post_build_convoy.py
+            python3 ./ci-scripts/python/post_build_convoy.py
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
