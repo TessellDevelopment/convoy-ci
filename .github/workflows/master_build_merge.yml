@@ -33,7 +33,43 @@ on:
         value: ${{ (jobs.build-amd.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED) }}
       STATEMENT_COVERAGE:
         description: 'Statement coverage parameters of the repository'
-        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }} 
+        value: ${{ (jobs.build-ui.outputs.STATEMENT_COVERAGE) || (jobs.build-amd.outputs.STATEMENT_COVERAGE) || (jobs.build-ubuntu-latest.outputs.STATEMENT_COVERAGE) || (jobs.build-arm.outputs.STATEMENT_COVERAGE) }}
+
+env:
+  ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+  ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+  ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+  ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+  AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
+  AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+  AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
+  AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
+  AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
+  BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
+  CI_BRANCH: main
+  CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+  CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+  DEV_BUILD: ${{inputs.dev_build}}
+  DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
+  DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
+  DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+  GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+  GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+  LABEL: ${{inputs.label}}
+  LATEST_TAG: ${{inputs.tag}}
+  NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+  NEXUS_PULL_REPOS_M2: tessell-m2-component
+  NEXUS_PULL_REPOS_PY: tessell-py-component
+  NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+  NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+  PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+  PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+  REPO: "${{github.event.pull_request.base.repo.name}}"
+  REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
+
 jobs:
 
   build-ui:
@@ -44,46 +80,13 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
-      AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
-      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
-      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
-      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
-      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-component
-      NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
       NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_PULL_REPOS_PY: tessell-py-component
       NEXUS_PUSH_REPOS_PY: tessell-repos-py-component
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
@@ -215,50 +218,17 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
-      AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
-      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
-      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
-      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
-      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: main
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
       CONVOY_MINIO_ENDPOINT: https://minio.convoy.tessell.cloud
       CONVOY_MINIO_SECRET_KEY: ${{secrets.CONVOY_MINIO_SECRET_KEY}}
-      DEV_BUILD: ${{inputs.dev_build}}
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GOPATH: /home/runner/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
       MC_ALIAS_FOR_CONVOY_MINIO: minio_ci
       NEXUS_ADDR: https://nexus.tessell.cloud
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-component
-      NEXUS_PULL_REPOS_PY: tessell-py-component
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
@@ -507,67 +477,34 @@ jobs:
       IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED: ${{ steps.build.outputs.IS_CONTENT_FOR_GITHUB_OUTPUT_POPULATED }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
-      AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
-      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
       AWS_ACCOUNT_TESSELL_DEVOPS: ${{vars.AWS_ACCOUNT_TESSELL_DEVOPS}}
-      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
-      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
-      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: main
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
       NAMESPACE: "convoy"
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-component
-      NEXUS_PULL_REPOS_PY: tessell-py-component
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
       NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
       PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
       PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
       PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
       TESSELL_TERRAFORM_MODULES_TERLS_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
       TESSELL_TERRAFORM_MODULES_BARC_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
@@ -1129,57 +1066,24 @@ jobs:
       BRANCH_COVERAGE: ${{ steps.build.outputs.BRANCH_COVERAGE }}
       STATEMENT_COVERAGE: ${{ steps.build.outputs.STATEMENT_COVERAGE }}
     env:
-      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
-      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
       ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
-      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
-      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
-      AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
-      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
-      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
-      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
-      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
-      BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: main
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEV_BUILD: ${{inputs.dev_build}}
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
-      DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
-      DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      LABEL: ${{inputs.label}}
-      LATEST_TAG: ${{inputs.tag}}
       NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-component
-      NEXUS_PULL_REPOS_PY: tessell-py-component
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
-      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
       REPOSITORY: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
       TESSELL_APP_NAME: ${{vars.TESSELL_APP_NAME}}
       TESSELL_TERRAFORM_MODULES_TERLS_S3: ${{vars.TESSELL_ARTIFACTS_TF_DEV_S3}}
       TESSELL_TERRAFORM_MODULES_BARC_S3: ${{vars.TESSELL_ARTIFACTS_TF_QA_S3}}
