@@ -1,5 +1,9 @@
 #!/bin/bash
 
+agentBuild() {
+  agent_build "$@"
+}
+
 awsConfigureDevqaInfra() {
   aws_configure_devqa_infra "$@"
 }
@@ -48,6 +52,10 @@ checkFlyway() {
   check_flyway "$@"
 }
 
+cloneHelmTemplate() {
+  clone_helm_template "$@"
+}
+
 configureAndPushAWS() {
   configure_and_push_aws "$@"
 }
@@ -56,8 +64,16 @@ createTFBackend() {
   create_tf_backend "$@"
 }
 
+createPipConf() {
+  create_pip_conf "$@"
+}
+
 configureGoVersionIfRequired() {
   configure_go_version_if_required "$@"
+}
+
+configureJava() {
+  configure_java "$@"
 }
 
 configureNpmrc() {
@@ -88,6 +104,10 @@ convoyGoLibraryBuild() {
   convoy_go_library_build "$@"
 }
 
+dbPluginBuild() {
+  db_plugin_build "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
@@ -100,12 +120,32 @@ dockerBuildAndPush() {
   docker_build_and_push "$@"
 }
 
+dockerMilvusBuild() {
+  docker_milvus_build "$@"
+}
+
+dockerMultiBuild() {
+  docker_multi_build "$@"
+}
+
 elasticAgentBuild() {
   elastic_agent_build "$@"
 }
 
 elasticAgentBuildAndPush() {
   elastic_agent_build_and_push "$@"
+}
+
+elasticBuild() {
+  elastic_build "$@"
+}
+
+elasticConf() {
+  elastic_conf "$@"
+}
+
+elasticTarBuild() {
+  elastic_tar_build "$@"
 }
 
 folderContentAndPush() {
@@ -118,6 +158,10 @@ frpBuild() {
 
 frpBuildAndPush() {
   frp_build_and_push "$@"
+}
+
+functionBuild() {
+  function_build "$@"
 }
 
 generateChecksum() {
@@ -148,8 +192,28 @@ gradlewBuildAndPush() {
   gradlew_build_and_push "$@"
 }
 
+gradlewDocker() {
+  gradlew_docker "$@"
+}
+
 gradlewDockerTag() {
   gradlew_docker_tag "$@"
+}
+
+gradlewMaven() {
+  gradlew_maven "$@"
+}
+
+gradlewMavenDocker() {
+  gradlew_maven_docker "$@"
+}
+
+gradlewPackagePlugin() {
+  gradlew_package_plugin "$@"
+}
+
+gradlewPythonwheel() {
+  gradlew_python_wheel "$@"
 }
 
 gradlewUIBuild() {
@@ -160,9 +224,26 @@ gradlewUIBuildAndPush() {
   gradlew_ui_build_and_push "$@"
 }
 
+helmChartBuild() {
+  helm_chart_build "$@"
+}
+
+helmTemplateBuild() {
+  helm_template_build "$@"
+}
+
 imageScan(){
   image_scan "$@"
 }
+
+infraProvisionBuild() {
+  infra_provision_build "$@"
+}
+
+installAwsCli() {
+  install_aws_cli "$@"
+}
+
 
 installGoDependencies() {
  install_go_dependencies "$@"
@@ -184,6 +265,26 @@ jarBuildAndPush() {
   jar_build_and_push "$@"
 }
 
+javaApiClientBuild() {
+  java_api_client_build "$@"
+}
+
+javaDockerBuild() {
+  java_docker_build "$@"
+}
+
+javaLibraryBuild() {
+  java_library_build "$@"
+}
+
+lintCheck() {
+  lint_check "$@"
+}
+
+makeBuild() {
+  make_build "$@"
+}
+
 makeDockerImage() {
   make_docker_image "$@"
 }
@@ -192,12 +293,20 @@ makeDockerImageAndPush() {
   make_docker_image_and_push "$@"
 }
 
+makeImage() {
+  make_image "$@"
+}
+
 makeService() {
   make_service "$@"
 }
 
 makeServiceAndPush() {
   make_service_and_push "$@"
+}
+
+modifiedDir() {
+  modified_dir "$@"
 }
 
 mvnDeploy() {
@@ -218,6 +327,10 @@ npmBuild() {
 
 npmBuildAndPush() {
   npm_build_and_push "$@"
+}
+
+opaBuild() {
+  opa_build "$@"
 }
 
 opsImageBuild() {
@@ -292,6 +405,18 @@ pushToNexus() {
   push_to_nexus "$@"
 }
 
+pythonApiClientBuild() {
+  python_api_client_build "$@"
+}
+
+pythonApiTemplatesBuild() {
+  python_api_templates_build "$@"
+}
+
+pythonDockerBuild() {
+  python_docker_build "$@"
+}
+
 pythonDockerBuildAndPush() {
   python_docker_build_and_push "$@"
 }
@@ -312,13 +437,21 @@ pythonSetupBuildAndPush() {
   python_setup_build_and_push "$@"
 }
 
+qaBuild() {
+  qa_build "$@"
+}
+
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 
 
 runPythonUnitTest(){
   run_python_unit_test "$@"
-} 
+}
+
+setupOpa() {
+  setup_opa "$@"
+}
 
 setupQAEnv() {
   setup_qa_env "$@"
@@ -326,6 +459,10 @@ setupQAEnv() {
 
 setupPackerEnv() {
   setup_packer_env "$@"
+}
+
+setupTrivyDockle() {
+  setup_trivy_dockle "$@"
 }
 
 softwareDefBuild() {
@@ -350,6 +487,10 @@ terraformApply() {
 
 terraformApplyAndPush() {
   terraform_apply_and_push "$@"
+}
+
+terraformBuild() {
+  terraform_build "$@"
 }
 
 terraformZipBuild() {
