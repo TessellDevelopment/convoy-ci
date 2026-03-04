@@ -142,6 +142,7 @@ check_flyway() {
     DOCKER_FLYWAY_IMAGE_NAME="${BASE_NAME}-flyway-migration"
     docker tag ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
     docker push ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+    generate_docker_checksum "${DOCKER_FLYWAY_IMAGE_NAME}" "${TAG}"
   else
     echo "The 'flyway' directory does not exists in this repository."
   fi
@@ -875,7 +876,9 @@ make_docker_image() {
 
 make_docker_image_and_push() {
   set -e
+  IMAGE=${1}
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
+  generate_docker_checksum  "${IMAGE}" "${LATEST_TAG}
   set +e
 }
 

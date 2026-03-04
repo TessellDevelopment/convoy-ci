@@ -364,6 +364,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           elasticConf() {
@@ -391,6 +392,7 @@ jobs:
             echo "------------ Building Image ------------------"
             docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             cd ..
             elasticTarBuild
             awsConfigureProdAssets
@@ -436,6 +438,7 @@ jobs:
             IMAGE="$1"
             gradlewDockerTag
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           lintCheck() {
@@ -860,6 +863,7 @@ jobs:
             configureJava
             gradlewMavenDocker
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           javaLibraryBuildAndPush() {
@@ -900,6 +904,7 @@ jobs:
             make image
             docker tag $IMAGE:latest ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
             docker push ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           modifiedDir() {
@@ -1294,7 +1299,8 @@ jobs:
                                 --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                                 --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
-            generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
+            DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} | grep "Digest:" | head -1 | awk '{print $2}')
+            ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
             set +e
           }
           dockerPullAndPush() {
