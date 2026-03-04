@@ -695,6 +695,15 @@ image_scan(){
     done
   fi
 
+  # Feature flag: run vulnerability scan only for PRs targeting main
+  if [[ "${ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY:-false}" == "true" ]]; then
+    if [[ "${GITHUB_BASE_REF:-}" != "main" ]]; then
+      echo "Skipping Trivy scan: ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY is true and base branch is '${GITHUB_BASE_REF:-}', not 'main'"
+      set +e
+      return 0
+    fi
+  fi
+
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
