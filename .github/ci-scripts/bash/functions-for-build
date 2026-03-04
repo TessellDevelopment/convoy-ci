@@ -3,6 +3,21 @@
 source ./ci-scripts/bash/functions-for-artifacts-upload
 source ./ci-scripts/bash/functions-for-build-camel-case
 
+agent_build() {
+  set -e
+  install_go_dependencies
+  ARTIFACT="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+  SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
+  echo $OS
+  echo $SERVICE
+  echo "Building Service"
+  make os=$OS nexus_protocol=${NEXUS_PROTOCOL} nexus_server_endpoint=${NEXUS_SERVER_ENDPOINT} $SERVICE
+  set +e
+}
+
 assert_base_branch_commit_success() {
   echo "Checking base branch ${GITHUB_BASE_REF} commit build status"
   base_branch_commit=$(git log origin/${GITHUB_BASE_REF} -n 1 --format="%h")
@@ -147,6 +162,31 @@ check_flyway() {
   fi
 }
 
+clone_helm_template() {
+  GITHUB_WORKSPACE=$(pwd)
+  CHART_GITHUB_LOCATION=$GITHUB_WORKSPACE
+  TEMPLATE_REPO_GITHUB_LOCATION=$GITHUB_WORKSPACE/../convoy-helm-template
+  echo "$CHART_GITHUB_LOCATION"
+  echo "$TEMPLATE_REPO_GITHUB_LOCATION"
+  echo "TEMPLATE_REPO_GITHUB_LOCATION=$TEMPLATE_REPO_GITHUB_LOCATION"
+  echo "Cloning convoy-helm-template"
+  rm -rf $TEMPLATE_REPO_GITHUB_LOCATION
+  template_version=$(yq --exit-status '.convoy-helm-template' Chart.yaml)
+  if [ $? -eq 0 ]; then
+      echo "convoy-helm-template version: $template_version"
+  else
+      echo "convoy-helm-template version not found.Exiting."
+      exit 1
+  fi
+  git clone --branch $template_version https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY_OWNER}/convoy-helm-template.git $TEMPLATE_REPO_GITHUB_LOCATION
+  echo "Copying the service values file"
+  cp -r $CHART_GITHUB_LOCATION/services/* $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/values/apps/
+  cp -r $CHART_GITHUB_LOCATION/Chart.yaml $TEMPLATE_REPO_GITHUB_LOCATION/helm-chart/Chart.yaml
+  set -e
+  cd $TEMPLATE_REPO_GITHUB_LOCATION/scripts
+  ls -lrta ../helm-chart/values/apps/
+}
+
 configure_python_version_if_required() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
@@ -178,6 +218,11 @@ configure_go_version_if_required() {
   echo "GOROOT = ${GOROOT}"
   echo "PATH = ${PATH}"
   go version
+}
+
+configure_java() {
+  echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+  echo "PATH=/usr/lib/jvm/java-17-openjdk-amd64/bin:$PATH" >> $GITHUB_ENV
 }
 
 configure_npmrc(){
@@ -309,6 +354,25 @@ create_tf_backend() {
 EOL
 }
 
+create_pip_conf() {
+  echo "[global]" > pip.conf
+  echo "index =  ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple" >> pip.conf
+  echo "index-url = ${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple" >> pip.conf
+  echo "extra-index-url = https://pypi.org/simple" >> pip.conf
+  sudo cp pip.conf /etc/pip.conf
+  cat /etc/pip.conf
+}
+
+db_plugin_build() {
+  set -e
+  ARTIFACT="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  lint_check
+  gradlew_package_plugin
+  set +e
+}
+
 docker_build() {
   set -e
   IMAGE="${1}"
@@ -363,6 +427,40 @@ docker_build_and_push() {
               --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
               --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} .
   docker_tag_and_push "${IMAGE}" "${TAG}"
+  set +e
+}
+
+docker_milvus_build() {
+  docker buildx rm multi-platform-builder
+  docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+  set -e
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  AGENT_VERSION=$(yq '.tessellAgentVersion' convoy.yaml)
+  TASKHANDLER_VERSION=$(yq '.taskHandlerVersion' convoy.yaml)
+  docker buildx build --no-cache -t $IMAGE \
+                      --platform linux/amd64 \
+                      --build-arg HANDLER_TAG=$TASKHANDLER_VERSION \
+                      --build-arg AGENT_TAG=$AGENT_VERSION \
+                      --build-arg NEXUS_USERNAME=${NEXUS_USERNAME} \
+                      --build-arg NEXUS_PASSWORD=${NEXUS_PASSWORD} \
+                      --build-arg GITHUB_USER=${GITHUB_USER} \
+                      --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
+                      --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
+                      --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
+  set +e
+}
+
+docker_multi_build() {
+  docker buildx rm multi-platform-builder
+  docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+  set -e
+  IMAGE="$1"
+  FILE="$4"
+  requiredInputs="1 4"
+  validate_inputs "$requiredInputs" "$@"
+  docker buildx build -f $FILE --no-cache -t $IMAGE --platform=linux/amd64,linux/arm64 .
   set +e
 }
 
@@ -444,6 +542,54 @@ elastic_agent_build_and_push() {
   set +e
 }
 
+elastic_build() {
+  set -e
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  elastic_conf
+  echo "----------------------------------------------"
+  echo "----------- Building Service -----------------"
+  export GOPATH=/home/runner/go/bin
+  export PATH=/go/bin:/usr/local/go/bin:/opt/maven/bin:/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/runner/go/bin
+  cd filebeat
+  mage package
+  cp ./build/golang-crossbuild/filebeat-linux-amd64 ./filebeat
+  echo "----------------------------------------------"
+  echo "------------ Building Image ------------------"
+  docker build -t $IMAGE .
+  cd ..
+  elastic_tar_build
+  set +e
+}
+
+elastic_conf() {
+  git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+  install_go_dependencies
+  git clone https://github.com/magefile/mage
+  cd mage
+  go run bootstrap.go
+  cd ..
+}
+
+elastic_tar_build() {
+  echo "----------------------------------------------"
+  echo "---------- Creating Tar Files -----------------"
+  PACKAGES_DIR=./filebeat/build/distributions/
+  mkdir -p $PACKAGES_DIR
+  cp ./filebeat/tessell-filebeat-linux.yml $PACKAGES_DIR/filebeat.yml
+  cp ./filebeat/build/golang-crossbuild/filebeat-linux-amd64 $PACKAGES_DIR/filebeat
+  cp ./filebeat/filebeat.service $PACKAGES_DIR/filebeat.service
+  pushd $PACKAGES_DIR
+  tar -zcvf filebeat-linux.tar.gz filebeat.yml filebeat filebeat.service
+  popd
+  cp ./filebeat/tessell-filebeat-windows.yml $PACKAGES_DIR/filebeat.yml
+  cp ./filebeat/build/golang-crossbuild/filebeat-windows-amd64.exe $PACKAGES_DIR/filebeat.exe
+  pushd $PACKAGES_DIR
+  tar -zcvf filebeat-windows.tar.gz filebeat.yml filebeat.exe
+  popd
+}
+
 frp_build() {
   set -e
   ./setup -b
@@ -472,6 +618,27 @@ folder_content_and_push() {
   local recursive=$(echo $artifact_json | jq -r .recursive)
   upload_folder_to_gcloud "$folder_path" "$recursive" "$RELEASE_LABEL" "$RELEASE_VERSION"
   generate_checksum $ARTIFACT.zip
+}
+
+function_build() {
+  set -e
+  ARTIFACT="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  changed_dir=false
+  if [ ! -f "Makefile" ]; then
+    cd tessell;
+    changed_dir=true;
+  fi
+  OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
+  CLOUD=$(echo "$ARTIFACT" | awk -F'[-]' '{print $5}')
+  echo $OS
+  echo $CLOUD
+  make OS=$OS CLOUD=$CLOUD nexus_protocol=${NEXUS_PROTOCOL} nexus_server_endpoint=${NEXUS_SERVER_ENDPOINT} package
+  if $changed_dir; then
+    cd ..;
+  fi
+  set +e
 }
 
 get_base_branch_commit_from_pr_number() {
@@ -629,11 +796,51 @@ gradlew_build_and_push() {
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}"
 }
 
+gradlew_docker() {
+  set -e
+  ./gradlew pythonWheel docker --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
 gradlew_docker_tag() {
   ./gradlew dockerTag --console plain \
     -Pnexus_username="${NEXUS_USERNAME}" \
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pdockerhub_org="${DOCKERHUB_ORG}"
+}
+
+gradlew_maven() {
+  set -e
+  ./gradlew mavenPackage --refresh-dependencies --console plain \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+  set +e
+}
+
+gradlew_maven_docker() {
+  ./gradlew mavenPackage docker --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}" \
+    -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
+    -Pdockerhub_org="${DOCKERHUB_ORG}"
+}
+
+gradlew_package_plugin() {
+  ./gradlew packagePlugin --console plain -Pversion=0.0.0 \
+    -Pnexus_push_username="${NEXUS_USERNAME}" \
+    -Pnexus_push_password="${NEXUS_PASSWORD}" \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
+}
+
+gradlew_python_wheel() {
+  ./gradlew pythonWheel docker --console plain \
+    -Pnexus_username="${NEXUS_USERNAME}" \
+    -Pnexus_password="${NEXUS_PASSWORD}"
 }
 
 gradlew_ui_build() {
@@ -669,6 +876,31 @@ gradlew_ui_build_and_push() {
   build_file_name=$(find . -type f -regex ".*${lib}-.*\.zip" -exec basename {} \;)
   push_release_manifest_artifacts ${build_file_name} "./build/libs/${build_file_name}"
   set +e
+}
+
+helm_chart_build() {
+  set -e
+  CHART_NAME="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  cd scripts
+  ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
+  cd ..
+  set +e
+}
+
+helm_template_build() {
+  # if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
+  set -e
+  CHART_NAME="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  clone_helm_template
+  echo "Running package and push"
+  ./package-and-push --no-push -n $CHART_NAME -v 0.0.0
+  cd $GITHUB_WORKSPACE
+  set +e
+  # fi
 }
 
 image_scan(){
@@ -723,6 +955,19 @@ image_scan(){
   set +e
 }
 
+infra_provision_build() {
+  set -e
+  lint_check
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  mkdir -p build/tools
+  wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/6.0.0/openapi-generator-cli-6.0.0.jar -O build/tools/openapi-generator-cli-6.0.0.jar
+  gradlew_python_wheel
+  image_scan $IMAGE
+  set +e
+}
+
 initialise_coverage() {
   echo "Setting up virtual environment for running unit tests."
   venv_name=${1}
@@ -753,6 +998,13 @@ initialize_python_build_env() {
   configure_python_version_if_required
   install_python_dependencies "$ARTIFACT"
   lintCheck
+}
+
+install_aws_cli() {}
+  curl -L -o install-aws.sh https://raw.githubusercontent.com/unfor19/install-aws-cli-action/master/entrypoint.sh
+  chmod +x install-aws.sh
+  sudo ./install-aws.sh "v2" "amd64"
+  rm install-aws.sh
 }
 
 install_go_dependencies() {
@@ -850,6 +1102,55 @@ jar_build_and_push() {
   set +e
 }
 
+java_api_client_build() {
+  set -e
+  mvn package -Drevision=0.0.0 -Dnexus-url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
+  set +e
+}
+
+java_docker_build() {
+  set -e
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  configure_java
+  gradlew_maven_docker
+  image_scan $IMAGE
+  set +e
+}
+
+java_library_build() {
+  set -e
+  configure_java
+  gradlew_maven
+  set +e
+}
+
+lint_check() {
+  flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+  flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+}
+
+make_build() {
+  set -e
+  install_go_dependencies
+  make service
+  ARTIFACT="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+    OS="linux"
+  elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
+    OS="windows"
+  else
+    OS="linux"
+  fi
+  make os=$OS pushprox-client
+  make clean
+  ls -lrta client-package
+  set +e
+}
+
 make_docker_image() {
   set -e
   IMAGE="${1}"
@@ -863,6 +1164,16 @@ make_docker_image() {
 make_docker_image_and_push() {
   set -e
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
+  set +e
+}
+
+make_image() {
+  set -e
+  IMAGE="$1"
+  requiredInputs="1"
+  validate_inputs "$requiredInputs" "$@"
+  make image
+  image_scan $IMAGE
   set +e
 }
 
@@ -903,6 +1214,12 @@ make_service_and_push() {
   mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.${NAME}" "${LATEST_TAG}"
   push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   set +e
+}
+
+modified_dir() {
+  directories=$(echo ${ALL_CHANGED_AND_MODIFIED_FILES} | tr ' ' '\n' | awk -F'/' '{print $1}' | sort -u)
+  directories=$(echo $directories | tr '\n' ' ')
+  echo "$directories"
 }
 
 mvn_deploy() {
@@ -974,7 +1291,23 @@ npm_build_and_push() {
   validate_inputs "${required_inputs}" "$@" 
   yq ".version = \"${version}\"" package.json > tmp_package.json
   mv tmp_package.json package.json
-  npm publish   
+  npm publish
+  set +e
+}
+
+opa_build() {
+  set -e
+  ARTIFACT="$1"
+  EXTENSION="$2"
+  requiredInputs="1 2"
+  file_name="${ARTIFACT}.${EXTENSION}"
+  setup_opa
+  mkdir -p bundles
+  if [[ $ARTIFACT == *"wasm"* ]]; then
+    ~/opa build -t wasm policies --output bundles/${file_name}
+  else
+    ~/opa build policies --output bundles/${file_name}
+  fi
   set +e
 }
 
@@ -1283,6 +1616,33 @@ push_to_nexus() {
   validate_reponse_code "${HTTP_CODE}" "201"
 }
 
+python_api_client_build() {
+  set -e
+  bash setup --version 0.0.0
+  set +e
+}
+
+python_api_templates_build() {
+  set -e
+  ARTIFACT="$1"
+  EXTENSION="$2"
+  requiredInputs="1 2"
+  validate_inputs "$requiredInputs" "$@"
+  ARTIFACT_FILE="${ARTIFACT}.${EXTENSION}"
+  zip_directory "openapi-templates" "${ARTIFACT_FILE}"
+  set +e
+}
+
+python_docker_build() {
+  set -e
+  IMAGE="$1"
+  rm pip.conf
+  lint_check
+  gradlew_python_wheel
+  image_scan $IMAGE
+  set +e
+}
+
 python_docker_build_and_push() {
   set -e
   IMAGE="$1"
@@ -1330,6 +1690,26 @@ python_setup_build_and_push() {
     dist/${underscore_artifact_name}-${VERSION}-py3-none-any.${EXTENSION}
 }
 
+qa_build() {
+  set -e
+  requiredInputs="1 3"
+  validate_inputs "$requiredInputs" "$@"
+  setup_qa_env
+  export GITHUB_TOKEN="${GITHUB_TOKEN}"
+  cp configs/qabusiness.json config.json
+  source qavenv/bin/activate
+  make clients -B
+  source qavenv/bin/activate
+  python3 ./main.py ./testcases -s -v --dry-run --run-long-tests --business-edition
+  deactivate
+  # if [[ ${CHANGED_FILES_ANY_MODIFIED} == 'true' ]]; then
+  cd scripts
+  docker_build "$@"
+  cd ..
+  # fi
+  set +e
+}
+
 qa_build_and_push(){
   set -e
   required_inputs="1 3"
@@ -1363,7 +1743,15 @@ run_python_unit_test() {
   python -m coverage html --include="${include}"
   python -m coverage json --include="${include}"
   popd
-  deactivate 
+  deactivate
+}
+
+setup_opa() {
+  curl -L -o ~/opa https://openpolicyagent.org/downloads/v0.61.0/opa_linux_amd64_static
+  chmod 755 ~/opa
+  curl -L -o ~/opa_darwin_amd64 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64
+  curl -L -o ~/opa_darwin_amd64.sha256 https://openpolicyagent.org/downloads/v0.61.0/opa_darwin_amd64.sha256
+  ~/opa version
 }
 
 setup_qa_env() {
@@ -1396,6 +1784,14 @@ setup_packer_env() {
   else
     sm_artifact_name="${APP_GROUP}-software-image-manifest"
   fi
+}
+
+setup_trivy_dockle() {
+  wget https://github.com/aquasecurity/trivy/releases/download/v0.69.2/trivy_0.69.2_Linux-64bit.deb
+  sudo dpkg -i trivy_0.69.2_Linux-64bit.deb
+  curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
+  sudo dpkg -i dockle.deb && rm dockle.deb
+  python -m pip install slack-sdk==3.26.2 --trusted-host ${NEXUS_SERVER_ENDPOINT}
 }
 
 software_def_build() {
@@ -1504,6 +1900,29 @@ terraform_apply_and_push() {
   cd terraform
   terraform apply -auto-approve
   cd ..
+  set +e
+}
+
+terraform_build() {
+  set -e
+  modified_dir
+  BASE_DIR=$PWD
+  BUILD_DIR=$BASE_DIR/build
+  mkdir -p $BUILD_DIR
+  DIRECTORIES=$(modified_dir)
+  EXCLUDE_DIR=("build" ".github" ".gitignore" "convoy.yaml" "README.md" "ci-scripts" "docs" "scripts")
+  for DIR in $DIRECTORIES
+  do
+    if [[ " ${EXCLUDE_DIR[*]} " != *"$DIR"* ]]; then
+      echo "building  ${DIR}"
+      ARTIFACT_FILE=$BUILD_DIR/${DIR}.zip
+      cd $BASE_DIR/$DIR
+      VERSION=$(yq .version convoy.yaml)
+      download_binary_from_source
+      terraform_zip_build $PWD $ARTIFACT_FILE
+    fi
+  done
+  ls -lrta $BUILD_DIR
   set +e
 }
 
