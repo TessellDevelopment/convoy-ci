@@ -14,5 +14,5 @@ on:
 
 jobs:
   master-ci-pr:
-    uses: ./.github/workflows/master_pr.yml
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_pr.yml@TDEVOPS-4297
     secrets: inherit
