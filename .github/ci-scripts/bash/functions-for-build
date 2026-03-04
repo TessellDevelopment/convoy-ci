@@ -545,7 +545,7 @@ generate_checksum() {
 generate_docker_checksum() {
   IMAGE="${1}"
   TAG="${2}"
-  DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKERHUB_ORG}/${IMAGE}:${TAG} 2>/dev/null | cut -d'@' -f2)
+  DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/${IMAGE}:${TAG} | grep "Digest:" | head -1 | awk '{print $2}')
   if [[ -z "${DIGEST}" ]]; then
     echo "Docker image digest not found for ${IMAGE}:${TAG}"
     return 1
