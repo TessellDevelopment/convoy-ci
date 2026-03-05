@@ -34,6 +34,7 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
+      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
@@ -115,6 +116,7 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
+      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
@@ -177,8 +179,8 @@ jobs:
       - name: Setup Trivy and Dockle
         run: |
           setupTrivyDockle() {
-            wget https://github.com/aquasecurity/trivy/releases/download/v0.69.1/trivy_0.69.1_Linux-64bit.deb
-            sudo dpkg -i trivy_0.69.1_Linux-64bit.deb
+            wget https://github.com/aquasecurity/trivy/releases/download/v0.69.2/trivy_0.69.2_Linux-64bit.deb
+            sudo dpkg -i trivy_0.69.2_Linux-64bit.deb
             curl -L -o dockle.deb https://github.com/goodwithtech/dockle/releases/download/v0.4.14/dockle_0.4.14_Linux-64bit.deb
             sudo dpkg -i dockle.deb && rm dockle.deb
             python -m pip install slack-sdk==3.26.2 --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}};
@@ -350,6 +352,7 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
       REPOSITORY: "${{github.repository}}"
+      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -386,6 +389,15 @@ jobs:
       - name: Check All file changes
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
+
+      - name: Login gcloud
+        id: auth
+        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
+          token_format: access_token
+          create_credentials_file: true
 
       - name: Login to docker
         uses: docker/login-action@v3.0.0
@@ -789,6 +801,7 @@ jobs:
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       REPO: "${{github.repository}}"
+      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:

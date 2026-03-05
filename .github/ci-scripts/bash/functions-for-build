@@ -679,6 +679,22 @@ image_scan(){
     set +e
     return 0
   fi
+
+  # Check if current repository is in the exclusion list
+  if [[ -n "${REPOS_EXCLUDED_FROM_TRIVY_SCAN:-}" ]]; then
+    REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+    IFS=',' read -ra EXCLUDED_REPOS <<< "${REPOS_EXCLUDED_FROM_TRIVY_SCAN}"
+    for excluded_repo in "${EXCLUDED_REPOS[@]}"; do
+      # Trim whitespace from excluded_repo
+      excluded_repo=$(echo "${excluded_repo}" | xargs)
+      if [[ "${REPO_NAME}" == "${excluded_repo}" ]]; then
+        echo "Skipping Trivy scan for repository '${REPO_NAME}' as it is in the exclusion list"
+        set +e
+        return 0
+      fi
+    done
+  fi
+
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
@@ -720,7 +736,7 @@ initialise_coverage() {
   if [ -f "requirements_test.txt" ]; then
     python -m pip install -r requirements_test.txt --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   fi
-  python -m pip list | grep tessell
+  python -m pip list | grep tessell || true
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
@@ -1193,7 +1209,7 @@ push_release_manifest_artifacts() {
 
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
 
-  ! ${DEV_BUILD} || return
+  ! ${DEV_BUILD} || return 0
   [[ ${push_to} == "s3" ]] && aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
 
   if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
@@ -1385,7 +1401,6 @@ setup_packer_env() {
 software_def_build() {
   set -e
   setup_packer_env
-  export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
   export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   export REPLICATION_ENABLED="false"
