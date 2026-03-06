@@ -324,6 +324,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
@@ -360,7 +361,6 @@ jobs:
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
       TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
-      ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
