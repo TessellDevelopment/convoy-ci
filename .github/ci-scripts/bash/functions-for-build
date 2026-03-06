@@ -1419,11 +1419,8 @@ software_def_build() {
       return
     fi
   fi
-  if [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]]; then
-    validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run --is_e2e_test
-  else
-    validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run
-  fi
+  [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]] && e2e_flag="--is_e2e_test" || e2e_flag=""
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run ${e2e_flag}
   set +e
 }
 
