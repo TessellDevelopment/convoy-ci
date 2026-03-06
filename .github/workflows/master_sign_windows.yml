@@ -1,0 +1,93 @@
+---
+name: Sign Windows Artifacts
+on:
+  workflow_call:
+
+jobs:
+  sign-windows-artifacts:
+    runs-on: windows-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download unsigned artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-windows-artifacts
+          path: unsigned
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}","clientSecret":"${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}","subscriptionId":"d8b78095-94e4-4733-9926-e5f04afb03bd","tenantId":"${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}"}'
+
+      - name: Extract and sign binaries
+        shell: pwsh
+        run: |
+          $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
+          
+          foreach ($tarFile in $tarFiles) {
+            # Create unique extraction directory for each tar
+            $artifactName = $tarFile.BaseName
+            $extractDir = "extracted/$artifactName"
+            
+            Write-Host "Extracting $($tarFile.Name) to $extractDir"
+            New-Item -ItemType Directory -Force -Path $extractDir
+            tar -xf $tarFile.FullName -C $extractDir
+            
+            # Find all .exe files in this specific artifact
+            $exeFiles = Get-ChildItem $extractDir -Recurse -Filter "*.exe"
+            
+            foreach ($exe in $exeFiles) {
+              Write-Host "Preparing to sign: $($exe.FullName)"
+            }
+          }
+
+      - name: Sign artifacts with Azure Trusted Signing
+        uses: azure/artifact-signing-action@v1
+        with:
+          azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+          azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+          files-folder: extracted
+          files-folder-filter: exe
+          files-folder-recurse: true
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.digicert.com
+          timestamp-digest: SHA256
+
+      - name: Repackage signed artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "signed"
+          
+          # Get all artifact directories
+          $artifactDirs = Get-ChildItem extracted -Directory
+          
+          foreach ($artifactDir in $artifactDirs) {
+            $artifactName = $artifactDir.Name
+            $tarFileName = "$artifactName.tar"
+            
+            Write-Host "Repackaging $artifactName into $tarFileName"
+            tar -cf "signed/$tarFileName" -C $artifactDir.FullName .
+          }
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-windows-artifacts
+          path: signed/
+          retention-days: 1
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}

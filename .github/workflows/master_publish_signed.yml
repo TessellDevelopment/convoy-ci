@@ -1,0 +1,118 @@
+---
+name: Publish Signed Windows Artifacts
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      label:
+        required: true
+        type: string
+
+jobs:
+  publish-signed-artifacts:
+    runs-on: self-hosted
+    env:
+      ARTIFACTS_DEV_ACCESS_KEY: ${{ secrets.ARTIFACTS_DEV_ACCESS_KEY }}
+      ARTIFACTS_DEV_SECRET_KEY: ${{ secrets.ARTIFACTS_DEV_SECRET_KEY }}
+      ARTIFACTS_DEV_S3: ${{vars.ARTIFACTS_DEV_S3}}
+      LATEST_TAG: ${{ inputs.tag }}
+      LABEL: ${{ inputs.label }}
+      CI_BRANCH: TDEVOPS-3868_win_ci
+
+      ARTIFACTS_UPLOAD_ACCESS_KEY: ${{ secrets.ARTIFACTS_UPLOAD_ACCESS_KEY }}
+      ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
+      AWS_ACCOUNT_CODE_COVERAGE: ${{vars.AWS_ACCOUNT_CODE_COVERAGE}}
+      AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
+      AWS_ACCOUNT_TESSELL_DEV: ${{vars.AWS_ACCOUNT_TESSELL_DEV}}
+      AWS_ACCOUNT_TESSELL_DEVOPS: ${{vars.AWS_ACCOUNT_TESSELL_DEVOPS}}
+      AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
+      AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
+      AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
+      NEXUS_ADDR: http://nexus.nexus.svc.cluster.local
+      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+      NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
+      NEXUS_PULL_REPOS_M2: tessell-m2-component
+      NEXUS_PULL_REPOS_PY: tessell-py-component
+      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+      NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
+      PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
+      TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
+      TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
+      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
+      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
+      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
+      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
+
+      azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+      azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+      azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+      endpoint: https://eus.codesigning.azure.net/
+      signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+      certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
+      - name: Write signing config to file
+        run: |
+          cat > signing-config.txt <<EOF
+          azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+          azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+          EOF
+          cat signing-config.txt
+
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-windows-artifacts
+          path: signed
+
+      - name: Publish signed artifacts
+        run: |
+          set +e
+          echo "CI_BRANCH=${{env.CI_BRANCH}}"
+          echo "source ./ci-scripts/bash/functions-for-build"
+          source ./ci-scripts/bash/functions-for-build
+          APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
+
+          for tarFile in signed/*.tar; do
+            ARTIFACT=$(basename "$tarFile" .tar)
+            
+            if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
+              push_to_gcloud "$tarFile" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.tar"
+              generate_checksum "$ARTIFACT.tar"
+            else
+              mvnDeploy "$ARTIFACT" "tar" "$tarFile" "${APP_GROUP}.agent" "${LATEST_TAG}"
+              awsConfigureProdAssets
+              push_release_manifest_artifacts "$(basename $tarFile)" "$tarFile"
+            fi
+          done
+
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
