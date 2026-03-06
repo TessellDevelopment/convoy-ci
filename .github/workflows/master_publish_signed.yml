@@ -48,6 +48,13 @@ jobs:
       TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
       TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
 
+      azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+      azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+      azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+      endpoint: https://eus.codesigning.azure.net/
+      signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+      certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,6 +69,18 @@ jobs:
           git pull
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
+      - name: Write signing config to file
+        run: |
+          cat > signing-config.txt <<EOF
+          azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+          azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+          endpoint: https://eus.codesigning.azure.net/
+          signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+          EOF
+          cat signing-config.txt
 
       - name: Download signed artifacts
         uses: actions/download-artifact@v4
