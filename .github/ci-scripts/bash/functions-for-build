@@ -698,9 +698,11 @@ image_scan(){
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
+    rm -rf trivy_image_scan_result.json
     output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --ignore-unfixed --scanners vuln ${IMAGE}:latest 2>&1 || true)
     exit_code=$?
     echo ${output}
+    
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
         echo "Encountered TOOMANYREQUESTS error. Retrying."
         sleep 15
