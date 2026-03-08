@@ -74,9 +74,21 @@ jobs:
           for archiveFile in signed/*; do
             filename=$(basename "$archiveFile")
             
-            ARTIFACT=$(echo "$filename" | sed -E 's/\.(tar|tar\.gz|tgz|zip)$//')
-            EXTENSION="${archiveFile##*.}"
-          
+            # Detect extension properly (handle .tar.gz, .tar, .zip, .exe, etc.)
+            if [[ "$filename" =~ \.tar\.gz$ ]]; then
+              ARTIFACT=$(echo "$filename" | sed 's/\.tar\.gz$//')
+              EXTENSION="tar.gz"
+            elif [[ "$filename" =~ \.tgz$ ]]; then
+              ARTIFACT=$(echo "$filename" | sed 's/\.tgz$//')
+              EXTENSION="tgz"
+            elif [[ "$filename" =~ \.tar$ ]]; then
+              ARTIFACT=$(echo "$filename" | sed 's/\.tar$//')
+              EXTENSION="tar"
+            elif [[ "$filename" =~ \.zip$ ]]; then
+              ARTIFACT=$(echo "$filename" | sed 's/\.zip$//')
+              EXTENSION="zip"
+            fi
+            
             # Use shared function for pushing
             push_agent_artifact "$ARTIFACT" "$EXTENSION" "$archiveFile" "$filename"
           done
