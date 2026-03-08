@@ -26,20 +26,24 @@ jobs:
       - name: Extract and sign binaries
         shell: pwsh
         run: |
-          $tarFiles = Get-ChildItem unsigned -Filter "*.tar"
+          $archiveFiles = Get-ChildItem unsigned -Include *.tar,*.tar.gz,*.tgz,*.zip -Recurse
           
-          foreach ($tarFile in $tarFiles) {
-            # Create unique extraction directory for each tar
-            $artifactName = $tarFile.BaseName
+          foreach ($archive in $archiveFiles) {
+            $artifactName = $archive.BaseName -replace '\.tar$',''
             $extractDir = "extracted/$artifactName"
             
-            Write-Host "Extracting $($tarFile.Name) to $extractDir"
+            Write-Host "Extracting $($archive.Name) to $extractDir"
             New-Item -ItemType Directory -Force -Path $extractDir
-            tar -xf $tarFile.FullName -C $extractDir
             
-            # Find all .exe files in this specific artifact
+            # Handle different archive formats
+            if ($archive.Extension -eq '.zip') {
+              Expand-Archive -Path $archive.FullName -DestinationPath $extractDir
+            } else {
+              # Handle .tar, .tar.gz, .tgz
+              tar -xf $archive.FullName -C $extractDir
+            }
+            
             $exeFiles = Get-ChildItem $extractDir -Recurse -Filter "*.exe"
-            
             foreach ($exe in $exeFiles) {
               Write-Host "Preparing to sign: $($exe.FullName)"
             }
@@ -66,15 +70,24 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path "signed"
           
-          # Get all artifact directories
           $artifactDirs = Get-ChildItem extracted -Directory
           
           foreach ($artifactDir in $artifactDirs) {
             $artifactName = $artifactDir.Name
-            $tarFileName = "$artifactName.tar"
             
-            Write-Host "Repackaging $artifactName into $tarFileName"
-            tar -cf "signed/$tarFileName" -C $artifactDir.FullName .
+            # Determine original archive format from unsigned folder
+            $originalArchive = Get-ChildItem unsigned -Filter "$artifactName*" | Select-Object -First 1
+            $extension = $originalArchive.Extension
+            
+            Write-Host "Repackaging $artifactName with original format: $extension"
+            
+            if ($extension -eq '.zip') {
+              Compress-Archive -Path "$($artifactDir.FullName)\*" -DestinationPath "signed/$artifactName.zip"
+            } else {
+              # Preserve original tar format (.tar, .tar.gz, .tgz)
+              $outputFile = "signed/$($originalArchive.Name)"
+              tar -czf $outputFile -C $artifactDir.FullName .
+            }
           }
 
       - name: Upload signed artifacts

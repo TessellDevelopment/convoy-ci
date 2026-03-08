@@ -690,15 +690,7 @@ jobs:
               echo "$1" >> staging/artifacts-to-sign.txt
               echo "NEEDS_SIGNING=true" >> $GITHUB_OUTPUT
             else
-              # Original push logic for non-Windows artifacts
-              if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
-                push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
-                generate_checksum "$ARTIFACT.$EXTENSION"
-              else
-                mvnDeploy "$ARTIFACT" "$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "${APP_GROUP}.agent" "${LATEST_TAG}"
-                awsConfigureProdAssets
-                push_release_manifest_artifacts "$BUILD_GENERATED_FILE_NAME.$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION"
-              fi
+              push_agent_artifact "$1" "$EXTENSION" "package/$BUILD_GENERATED_FILE_NAME.$EXTENSION" "$BUILD_GENERATED_FILE_NAME"
             fi
             set +e
           }

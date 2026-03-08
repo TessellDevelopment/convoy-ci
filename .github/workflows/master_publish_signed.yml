@@ -43,17 +43,6 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       TESSELL_GCP_APP_NAME: ${{ vars.TESSELL_GCP_APP_NAME }}
       TESSELL_GCP_ARTIFACTS_BUCKET: ${{ vars.TESSELL_GCP_ARTIFACTS_BUCKET }}
-      TESSELL_GCP_DOCKERHUB_ORG: ${{vars.TESSELL_GCP_DOCKERHUB_ORG}}
-      TESSELL_GCP_PROJECT_ID: ${{vars.TESSELL_GCP_PROJECT_ID}}
-      TESSELL_GCP_REGION: ${{vars.TESSELL_GCP_REGION}}
-      TESSELL_GCP_SERVICE_ACCOUNT_NAME: ${{vars.TESSELL_GCP_SERVICE_ACCOUNT_NAME}}
-
-      azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
-      azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
-      azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
-      endpoint: https://eus.codesigning.azure.net/
-      signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
-      certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
 
     steps:
       - uses: actions/checkout@v4
@@ -70,18 +59,6 @@ jobs:
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
-      - name: Write signing config to file
-        run: |
-          cat > signing-config.txt <<EOF
-          azure-tenant-id: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
-          azure-client-id: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
-          azure-client-secret: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
-          endpoint: https://eus.codesigning.azure.net/
-          signing-account-name: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
-          certificate-profile-name: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
-          EOF
-          cat signing-config.txt
-
       - name: Download signed artifacts
         uses: actions/download-artifact@v4
         with:
@@ -91,22 +68,17 @@ jobs:
       - name: Publish signed artifacts
         run: |
           set +e
-          echo "CI_BRANCH=${{env.CI_BRANCH}}"
-          echo "source ./ci-scripts/bash/functions-for-build"
           source ./ci-scripts/bash/functions-for-build
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
 
-          for tarFile in signed/*.tar; do
-            ARTIFACT=$(basename "$tarFile" .tar)
+          for archiveFile in signed/*; do
+            filename=$(basename "$archiveFile")
             
-            if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
-              push_to_gcloud "$tarFile" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.tar"
-              generate_checksum "$ARTIFACT.tar"
-            else
-              mvnDeploy "$ARTIFACT" "tar" "$tarFile" "${APP_GROUP}.agent" "${LATEST_TAG}"
-              awsConfigureProdAssets
-              push_release_manifest_artifacts "$(basename $tarFile)" "$tarFile"
-            fi
+            ARTIFACT=$(echo "$filename" | sed -E 's/\.(tar|tar\.gz|tgz|zip)$//')
+            EXTENSION="${archiveFile##*.}"
+          
+            # Use shared function for pushing
+            push_agent_artifact "$ARTIFACT" "$EXTENSION" "$archiveFile" "$filename"
           done
 
       - name: Slack Notification

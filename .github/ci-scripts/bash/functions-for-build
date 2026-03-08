@@ -1691,6 +1691,25 @@ zip_build() {
   set +e
 }
 
+  push_agent_artifact() {
+    local ARTIFACT="${1}"
+    local EXTENSION="${2}"
+    local FILE_PATH="${3}"
+    local ARTIFACT_DISPLAY_NAME="${4:-${ARTIFACT}}"
+    
+    required_inputs="1 2 3"
+    validate_inputs "${required_inputs}" "$@"
+    
+    if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
+      push_to_gcloud "${FILE_PATH}" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}"
+      generate_checksum "$(basename ${FILE_PATH})"
+    else
+      mvnDeploy "${ARTIFACT}" "${EXTENSION}" "${FILE_PATH}" "${APP_GROUP}.agent" "${LATEST_TAG}"
+      awsConfigureProdAssets
+      push_release_manifest_artifacts "${ARTIFACT_DISPLAY_NAME}.${EXTENSION}" "${FILE_PATH}"
+    fi
+}
+
 zip_build_and_push() {
   zip_build "$@"
   set -e
