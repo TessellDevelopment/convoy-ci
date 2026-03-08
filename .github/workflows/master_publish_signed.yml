@@ -70,11 +70,9 @@ jobs:
           set +e
           source ./ci-scripts/bash/functions-for-build
           APP_GROUP=$(yq '.appGroup // "tessell"' convoy.yaml)
-
           for archiveFile in signed/*; do
             filename=$(basename "$archiveFile")
             
-            # Detect extension properly (handle .tar.gz, .tar, .zip, .exe, etc.)
             if [[ "$filename" =~ \.tar\.gz$ ]]; then
               ARTIFACT=$(echo "$filename" | sed 's/\.tar\.gz$//')
               EXTENSION="tar.gz"

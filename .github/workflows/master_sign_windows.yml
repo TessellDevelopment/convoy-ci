@@ -77,16 +77,24 @@ jobs:
             
             # Determine original archive format from unsigned folder
             $originalArchive = Get-ChildItem unsigned -Filter "$artifactName*" | Select-Object -First 1
-            $extension = $originalArchive.Extension
+            $originalName = $originalArchive.Name
             
-            Write-Host "Repackaging $artifactName with original format: $extension"
+            Write-Host "Repackaging $artifactName preserving original format: $originalName"
             
-            if ($extension -eq '.zip') {
-              Compress-Archive -Path "$($artifactDir.FullName)\*" -DestinationPath "signed/$artifactName.zip"
+            if ($originalName -match '\.zip$') {
+              Compress-Archive -Path "$($artifactDir.FullName)\*" -DestinationPath "signed/$originalName"
+            } elseif ($originalName -match '\.tar\.gz$') {
+              # Create gzipped tar with correct extension
+              tar -czf "signed/$originalName" -C $artifactDir.FullName .
+            } elseif ($originalName -match '\.tgz$') {
+              # Create gzipped tar with .tgz extension
+              tar -czf "signed/$originalName" -C $artifactDir.FullName .
+            } elseif ($originalName -match '\.tar$') {
+              # Create uncompressed tar
+              tar -cf "signed/$originalName" -C $artifactDir.FullName .
             } else {
-              # Preserve original tar format (.tar, .tar.gz, .tgz)
-              $outputFile = "signed/$($originalArchive.Name)"
-              tar -czf $outputFile -C $artifactDir.FullName .
+              Write-Error "Unknown archive format: $originalName"
+              exit 1
             }
           }
 
