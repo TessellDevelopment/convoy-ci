@@ -142,6 +142,7 @@ check_flyway() {
     DOCKER_FLYWAY_IMAGE_NAME="${BASE_NAME}-flyway-migration"
     docker tag ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
     docker push ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
+    generate_docker_checksum "${DOCKER_FLYWAY_IMAGE_NAME}" "${TAG}"
   else
     echo "The 'flyway' directory does not exists in this repository."
   fi
@@ -371,6 +372,7 @@ docker_tag_and_push() {
   TAG="${2}"
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${TAG}
+  generate_docker_checksum "${IMAGE}" "${TAG}"
 }
 
 download_binary_from_source() {
@@ -541,6 +543,17 @@ generate_checksum() {
   ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
 }
 
+generate_docker_checksum() {
+  IMAGE="${1}"
+  TAG="${2}"
+  DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/${IMAGE}:${TAG} | grep "Digest:" | head -1 | awk '{print $2}')
+  if [[ -z "${DIGEST}" ]]; then
+    echo "Docker image digest not found for ${IMAGE}:${TAG}"
+    return 1
+  fi
+  ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
+}
+
 generate_sts_session_token() {
   AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
   BUCKET_ACCOUNT=${1}
@@ -600,6 +613,7 @@ go_docker_build_and_push() {
   ./setup -g -i
   docker tag ${IMAGE}:latest ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
   docker push ${DOCKERHUB_ORG}/${IMAGE}:${LATEST_TAG}
+  generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
   check_flyway ${IMAGE}
   set +e
 }
@@ -871,7 +885,9 @@ make_docker_image() {
 
 make_docker_image_and_push() {
   set -e
+  IMAGE=${1}
   make docker_image_push DOCKER_REPO=${DOCKERHUB_ORG} TAG=${LATEST_TAG}
+  generate_docker_checksum  "${IMAGE}" "${LATEST_TAG}
   set +e
 }
 
@@ -1299,6 +1315,7 @@ python_docker_build_and_push() {
   validate_inputs "$required_inputs" "$@"
   gradlew_docker_tag
   docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+  generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
   set +e
 }
 
