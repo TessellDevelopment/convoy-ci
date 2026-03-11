@@ -693,7 +693,7 @@ jobs:
             BUILD_GENERATED_FILE_NAME="tessell-${SERVICE}-pkg-${OS}"
             SIGN_ENABLED=$(yq ".generates.artifacts[] | select(.name == \"$1\") | .signFiles.enabled // false" convoy.yaml)
             if [[ "$SIGN_ENABLED" == "true" ]]; then
-              echo "Signing enabled for ${ARTIFACT.$EXTENSION}"
+              echo "Signing enabled for $ARTIFACT.$EXTENSION"
               signWindowsBinaries "$ARTIFACT.$EXTENSION"
             fi
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
