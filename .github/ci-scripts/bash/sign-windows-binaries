@@ -2,6 +2,9 @@
 set -euo pipefail
 
 # ─── Required environment variables ───────────────────────────────────────────
+SIGNADMIN_USER='EC2AMAZ-F0UBAFP\signadmin'
+SIGNADMIN_PASSWORD='YourStrongPassword123!'
+
 required_vars=(
   S3_BUCKET TAR_FILE
   INSTANCE_ID AWS_REGION
@@ -17,8 +20,6 @@ for var in "${required_vars[@]}"; do
   fi
 done
 
-SIGNADMIN_USER='signadmin'
-SIGNADMIN_PASSWORD='YourStrongPassword123!'
 # ─── Generate unique build ID for this job ─────────────────────────────────────
 BUILD_ID="signing-$(date +%Y%m%d-%H%M%S)-$$"
 BUILD_DIR="C:\\\\build-${BUILD_ID}"
