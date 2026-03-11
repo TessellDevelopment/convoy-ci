@@ -1415,12 +1415,12 @@ sign_windows_binaries() {
   export AWS_REGION="ap-south-1"
   export S3_BUCKET="ci-windows-binary"
   export SIGNED_TAR_FILE="${TAR_FILE%.tar}-signed.tar"
+  export BUILD_ID="signing-$(date +%Y%m%d-%H%M%S)-$$"
 
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
-  aws s3 cp "${TAR_FILE}" "s3://${S3_BUCKET}/${TAR_FILE}"
+  aws s3 mv "${TAR_FILE}" "s3://${S3_BUCKET}/${TAR_FILE}-${BUILD_ID}"
   bash ./ci-scripts/bash/sign-windows-binaries
-  rm -rf "${TAR_FILE}"
-  aws s3 cp "s3://${S3_BUCKET}/${SIGNED_TAR_FILE}" "${TAR_FILE}"
+  aws s3 mv "s3://${S3_BUCKET}/${SIGNED_TAR_FILE}" "${TAR_FILE}"
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   set +e
 }
