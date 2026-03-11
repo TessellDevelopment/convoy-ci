@@ -41,7 +41,6 @@ CMD6="tar -cf '${BUILD_DIR_PS}\\output.tar' -C '${BUILD_DIR_PS}' artifacts"
 CMD7="aws s3 mv '${BUILD_DIR_PS}\\output.tar' s3://${S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
 CMD8="if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${BUILD_DIR_PS}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${BUILD_DIR_PS}' }"
 
-# Use jq to build valid JSON - handles all special characters including ! in passwords
 jq -n \
   --arg instance "$INSTANCE_ID" \
   --arg c1 "$CMD1" \
@@ -63,41 +62,18 @@ jq -n \
 # ─── Send command ──────────────────────────────────────────────────────────────
 COMMAND_ID=$(aws ssm send-command \
   --cli-input-json "file:///tmp/ssm-trigger-${BUILD_ID}.json" \
-  --region "$AWS_REGION" \
-  --query 'Command.CommandId' \
+  --region "$AWS_REGION"  \
+  --query 'Command.CommandId' --timeout-seconds 180 \
   --output text)
 
 echo "📋 SSM Command ID: $COMMAND_ID"
 
-# ─── Wait for completion ───────────────────────────────────────────────────────
 echo "⏳ Waiting for command to complete (timeout: 3min)..."
-WAIT_TIMEOUT=180
-WAIT_ELAPSED=0
-
-while true; do
-  STATUS=$(aws ssm get-command-invocation \
-    --command-id "$COMMAND_ID" \
-    --instance-id "$INSTANCE_ID" \
-    --query 'Status' \
-    --output text \
-    --region "$AWS_REGION" 2>/dev/null || echo "Pending")
-
-  echo "   Status: $STATUS (${WAIT_ELAPSED}s / ${WAIT_TIMEOUT}s)"
-
-  if [[ "$STATUS" == "Success" || "$STATUS" == "Failed" || "$STATUS" == "TimedOut" || "$STATUS" == "Cancelled" ]]; then
-    break
-  fi
-
-  if [[ $WAIT_ELAPSED -ge $WAIT_TIMEOUT ]]; then
-    echo "❌ Timed out waiting for SSM command after ${WAIT_TIMEOUT}s"
-    echo "   Command ID: $COMMAND_ID"
-    echo "   Build dir kept for debugging: ${BUILD_DIR_PS}"
-    exit 1
-  fi
-
-  sleep 15
-  WAIT_ELAPSED=$((WAIT_ELAPSED + 15))
-done
+# Wait for completion
+aws ssm wait command-executed \
+  --command-id "$COMMAND_ID" \
+  --instance-id "$INSTANCE_ID" \
+  --region "$AWS_REGION"
 
 # ─── Fetch and clean output ────────────────────────────────────────────────────
 OUTPUT_FILE="/tmp/ssm-output-${BUILD_ID}.txt"
@@ -149,8 +125,5 @@ fi
 
 # ─── Cleanup local temp files only on success ──────────────────────────────────
 rm -f "$TRIGGER_FILE" "$OUTPUT_FILE" "$ERROR_FILE"
+echo "✅ Signing pipeline completed successfully for ${TAR_FILE}"
 
-echo ""
-echo "✅ Signing pipeline completed successfully"
-echo "   Build ID        : $BUILD_ID"
-echo "   Signed artifact : s3://$S3_BUCKET/$SIGNED_TAR_FILE"
