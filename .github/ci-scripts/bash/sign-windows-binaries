@@ -32,25 +32,6 @@ echo "   TAR file  : $S3_BUCKET/$TAR_FILE"
 echo "   Output    : $S3_BUCKET/$SIGNED_TAR_FILE"
 
 # ─── Build SSM command payload ─────────────────────────────────────────────────
-# cat > /tmp/ssm-trigger-${BUILD_ID}.json << EOF
-# {
-#   "InstanceIds": ["$INSTANCE_ID"],
-#   "DocumentName": "AWS-RunPowerShellScript",
-#   "Parameters": {
-#     "commands": [
-#       "New-Item -ItemType Directory -Force -Path '${BUILD_DIR_PS}\\artifacts'; Write-Output 'Build dir ready: ${BUILD_DIR_PS}'",
-#       "aws s3 cp s3://$S3_BUCKET/$TAR_FILE '${BUILD_DIR_PS}\\input.tar' --no-progress",
-#       "tar -xf '${BUILD_DIR_PS}\\input.tar' -C '${BUILD_DIR_PS}\\artifacts'",
-#       "\$artifactsDir = '${BUILD_DIR_PS}\\artifacts'; \$signDone = '${BUILD_DIR_PS}\\sign-done.txt'; \$signJob = '${BUILD_DIR_PS}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$env:AZURE_TENANT_ID = \"$AZURE_TENANT_ID\"', '\$env:AZURE_CLIENT_ID = \"$AZURE_CLIENT_ID\"', '\$env:AZURE_CLIENT_SECRET = \"$AZURE_CLIENT_SECRET\"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += \"Invoke-TrustedSigning -Endpoint '$SIGNING_ENDPOINT' -CodeSigningAccountName '$SIGNING_ACCOUNT_NAME' -CertificateProfileName '$SIGNING_PROFILE_NAME' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null\" }; \$lines += '\$exes = Get-ChildItem -Path \"${BUILD_DIR_PS}\\\\artifacts\" -Filter \"*.exe\" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; Write-Output \"\$(\$e.Name): \$(\$sig.Status)\" }'; \$lines += \"Set-Content '${BUILD_DIR_PS}\\\\sign-done.txt' done\"; \$lines | Out-File '${BUILD_DIR_PS}\\sign-job.ps1' -Encoding utf8; Write-Output \"Sign script created with \$(\$exeFiles.Count) exe files\"",
-#       "schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; schtasks /create /tn \"CodeSign-${BUILD_ID}\" /tr \"powershell.exe -NonInteractive -ExecutionPolicy Bypass -File '${BUILD_DIR_PS}\\sign-job.ps1'\" /sc once /st 00:00 /ru \"$SIGNADMIN_USER\" /rp \"$SIGNADMIN_PASSWORD\" /rl highest /f; schtasks /run /tn \"CodeSign-${BUILD_ID}\"; \$timeout = 300; \$elapsed = 0; while (!(Test-Path '${BUILD_DIR_PS}\\sign-done.txt') -and \$elapsed -lt \$timeout) { Start-Sleep 10; \$elapsed += 10 }; if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { Write-Output 'SIGNING_SUCCESS' } else { Write-Output 'SIGNING_TIMEOUT'; exit 1 }",
-#       "tar -cf '${BUILD_DIR_PS}\\output.tar' -C '${BUILD_DIR_PS}' artifacts",
-#       "aws s3 cp '${BUILD_DIR_PS}\\output.tar' s3://$S3_BUCKET/$SIGNED_TAR_FILE --no-progress; Write-Output 'UPLOAD_SUCCESS'",
-#       "if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${BUILD_DIR_PS}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${BUILD_DIR_PS}' }"
-#     ]
-#   }
-# }
-# EOF
-# ─── Build SSM command payload ─────────────────────────────────────────────────
 CMD1="New-Item -ItemType Directory -Force -Path '${BUILD_DIR_PS}\\artifacts'; Write-Output 'Build dir ready: ${BUILD_DIR_PS}'"
 CMD2="aws s3 cp s3://${S3_BUCKET}/${TAR_FILE} '${BUILD_DIR_PS}\\input.tar' --no-progress"
 CMD3="tar -xf '${BUILD_DIR_PS}\\input.tar' -C '${BUILD_DIR_PS}\\artifacts'"
@@ -177,6 +158,3 @@ echo ""
 echo "✅ Signing pipeline completed successfully"
 echo "   Build ID        : $BUILD_ID"
 echo "   Signed artifact : s3://$S3_BUCKET/$SIGNED_TAR_FILE"
-
-
-### ------------------------------------------------------------ ###
