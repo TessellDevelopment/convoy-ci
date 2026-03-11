@@ -1410,11 +1410,11 @@ setup_packer_env() {
 sign_windows_binaries() {
   set -e
   # Sign the Windows binaries
-  TAR_FILE="${1}"
-  INSTANCE_ID="i-03e9dc96e469139a8"
-  AWS_REGION="ap-south-1"
-  S3_BUCKET="ci-windows-binary"
-  SIGNED_TAR_FILE="${TAR_FILE%.tar}-signed.tar"
+  export TAR_FILE="${1}"
+  export INSTANCE_ID="i-03e9dc96e469139a8"
+  export AWS_REGION="ap-south-1"
+  export S3_BUCKET="ci-windows-binary"
+  export SIGNED_TAR_FILE="${TAR_FILE%.tar}-signed.tar"
 
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
   aws s3 cp "${TAR_FILE}" "s3://${S3_BUCKET}/${TAR_FILE}"
