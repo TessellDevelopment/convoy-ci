@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ─── Required environment variables ───────────────────────────────────────────
 required_vars=(
-  S3_BUCKET TAR_FILE SIGNED_TAR_FILE
+  S3_BUCKET TAR_FILE
   INSTANCE_ID AWS_PROFILE AWS_REGION
   AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET
   SIGNING_ACCOUNT_NAME SIGNING_PROFILE_NAME SIGNING_ENDPOINT
@@ -17,6 +17,8 @@ for var in "${required_vars[@]}"; do
   fi
 done
 
+SIGNADMIN_USER='signadmin'
+SIGNADMIN_PASSWORD='YourStrongPassword123!'
 # ─── Generate unique build ID for this job ─────────────────────────────────────
 BUILD_ID="signing-$(date +%Y%m%d-%H%M%S)-$$"
 BUILD_DIR="C:\\\\build-${BUILD_ID}"
@@ -63,7 +65,6 @@ jq -n \
 # ─── Send command ──────────────────────────────────────────────────────────────
 COMMAND_ID=$(aws ssm send-command \
   --cli-input-json "file:///tmp/ssm-trigger-${BUILD_ID}.json" \
-  --profile "$AWS_PROFILE" \
   --region "$AWS_REGION" \
   --query 'Command.CommandId' \
   --output text)
@@ -81,7 +82,6 @@ while true; do
     --instance-id "$INSTANCE_ID" \
     --query 'Status' \
     --output text \
-    --profile "$AWS_PROFILE" \
     --region "$AWS_REGION" 2>/dev/null || echo "Pending")
 
   echo "   Status: $STATUS (${WAIT_ELAPSED}s / ${WAIT_TIMEOUT}s)"
@@ -111,7 +111,6 @@ aws ssm get-command-invocation \
   --instance-id "$INSTANCE_ID" \
   --query 'StandardOutputContent' \
   --output text \
-  --profile "$AWS_PROFILE" \
   --region "$AWS_REGION" | tr -d '\r' > "$OUTPUT_FILE"
 
 aws ssm get-command-invocation \
@@ -119,7 +118,6 @@ aws ssm get-command-invocation \
   --instance-id "$INSTANCE_ID" \
   --query 'StandardErrorContent' \
   --output text \
-  --profile "$AWS_PROFILE" \
   --region "$AWS_REGION" | tr -d '\r' > "$ERROR_FILE"
 
 echo ""

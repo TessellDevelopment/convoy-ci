@@ -328,6 +328,10 @@ setupPackerEnv() {
   setup_packer_env "$@"
 }
 
+signWindowsBinaries() {
+  sign_windows_binaries "$@"
+}
+
 softwareDefBuild() {
   software_def_build "$@"
 }
