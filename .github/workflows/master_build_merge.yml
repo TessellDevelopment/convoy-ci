@@ -694,7 +694,7 @@ jobs:
             SIGN_ENABLED=$(yq ".generates.artifacts[] | select(.name == \"$1\") | .signFiles.enabled // false" convoy.yaml)
             if [[ "$SIGN_ENABLED" == "true" ]]; then
               echo "Signing enabled for $ARTIFACT.$EXTENSION"
-              signWindowsBinaries "$ARTIFACT.$EXTENSION"
+              signWindowsBinaries "package/$ARTIFACT.$EXTENSION"
             fi
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
