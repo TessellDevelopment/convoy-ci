@@ -44,7 +44,7 @@ CMD4="\$artifactsDir = '${BUILD_DIR_PS}\\artifacts'; \$signDone = '${BUILD_DIR_P
 CMD5="schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; schtasks /create /tn \"CodeSign-${BUILD_ID}\" /tr \"powershell.exe -NonInteractive -ExecutionPolicy Bypass -File '${BUILD_DIR_PS}\\sign-job.ps1'\" /sc once /st 00:00 /ru \"${WINDOWS_SIGNING_ADMIN_USER}\" /rp \"${WINDOWS_SIGNING_ADMIN_PASSWORD}\" /rl highest /f; schtasks /run /tn \"CodeSign-${BUILD_ID}\"; \$timeout = 300; \$elapsed = 0; while (!(Test-Path '${BUILD_DIR_PS}\\sign-done.txt') -and \$elapsed -lt \$timeout) { Start-Sleep 10; \$elapsed += 10 }; if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { Write-Output 'SIGNING_SUCCESS' } else { Write-Output 'SIGNING_TIMEOUT'; exit 1 }"
 CMD6="tar -cf '${BUILD_DIR_PS}\\output.tar' -C '${BUILD_DIR_PS}' artifacts"
 CMD7="aws s3 mv '${BUILD_DIR_PS}\\output.tar' s3://${WINDOWS_SIGNING_S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
-# CMD8="if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${BUILD_DIR_PS}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${BUILD_DIR_PS}' }"
+CMD8="if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${BUILD_DIR_PS}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${BUILD_DIR_PS}' }"
 
 jq -n \
   --arg instance "$WINDOWS_SIGNING_INSTANCE_ID" \
@@ -55,11 +55,12 @@ jq -n \
   --arg c5 "$CMD5" \
   --arg c6 "$CMD6" \
   --arg c7 "$CMD7" \
+  --arg c8 "$CMD8" \
   '{
     InstanceIds: [$instance],
     DocumentName: "AWS-RunPowerShellScript",
     Parameters: {
-      commands: [$c1, $c2, $c3, $c4, $c5, $c6, $c7]
+      commands: [$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]
     }
   }' > "/tmp/ssm-trigger-${BUILD_ID}.json"
 
