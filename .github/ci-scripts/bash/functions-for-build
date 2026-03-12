@@ -1494,7 +1494,7 @@ sign_windows_binaries_via_ssm() {
 
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
   
-  aws s3 mv "${TAR_FILE}" "s3://${WINDOWS_SIGNING_S3_BUCKET}/${TAR_FILE##*/}-${BUILD_ID}" 
+  aws s3 mv "${TAR_FILE}" "s3://${WINDOWS_SIGNING_S3_BUCKET}/${TAR_FILE}-${BUILD_ID}" 
   bash ./ci-scripts/bash/sign-windows-binaries-via-ssm  
   aws s3 mv "s3://${WINDOWS_SIGNING_S3_BUCKET}/${SIGNED_TAR_FILE##*/}-${BUILD_ID}" "${TAR_FILE}"
   
