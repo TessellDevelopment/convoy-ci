@@ -520,13 +520,13 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
 
-      SIGNING_ACCOUNT_NAME: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
-      SIGNING_PROFILE_NAME: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
-      SIGNING_ENDPOINT: "https://eus.codesigning.azure.net/"
+      WINDOWS_SIGNING_ACCOUNT_NAME: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
+      WINDOWS_SIGNING_PROFILE_NAME: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
+      WINDOWS_SIGNING_ENDPOINT: "https://eus.codesigning.azure.net/"
 
-      AZURE_TENANT_ID: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
-      AZURE_CLIENT_ID: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
-      AZURE_CLIENT_SECRET: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
+      WINDOWS_SIGNING_AZURE_TENANT_ID: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
+      WINDOWS_SIGNING_AZURE_CLIENT_ID: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
+      WINDOWS_SIGNING_AZURE_CLIENT_SECRET: ${{ secrets.TESSELL_CODESIGNER_CLIENT_SECRET }}
 
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
@@ -694,7 +694,7 @@ jobs:
             SIGN_ENABLED=$(yq ".generates.artifacts[] | select(.name == \"$1\") | .signFiles.enabled // false" convoy.yaml)
             if [[ "$SIGN_ENABLED" == "true" ]]; then
               echo "Signing enabled for $ARTIFACT.$EXTENSION"
-              signWindowsBinaries "package/$ARTIFACT.$EXTENSION"
+              signWindowsArtifact "$1"
             fi
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"

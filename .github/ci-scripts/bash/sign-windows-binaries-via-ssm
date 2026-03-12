@@ -2,15 +2,20 @@
 set -euo pipefail
 
 # ─── Required environment variables ───────────────────────────────────────────
-SIGNADMIN_USER='EC2AMAZ-F0UBAFP\signadmin'
-SIGNADMIN_PASSWORD='YourStrongPassword123!'
 
 required_vars=(
-  S3_BUCKET TAR_FILE
-  INSTANCE_ID AWS_REGION
-  AZURE_TENANT_ID AZURE_CLIENT_ID AZURE_CLIENT_SECRET
-  SIGNING_ACCOUNT_NAME SIGNING_PROFILE_NAME SIGNING_ENDPOINT
-  SIGNADMIN_USER SIGNADMIN_PASSWORD
+  WINDOWS_SIGNING_S3_BUCKET
+  TAR_FILE
+  WINDOWS_SIGNING_INSTANCE_ID
+  WINDOWS_SIGNING_AWS_REGION
+  WINDOWS_SIGNING_AZURE_TENANT_ID
+  WINDOWS_SIGNING_AZURE_CLIENT_ID
+  WINDOWS_SIGNING_AZURE_CLIENT_SECRET
+  WINDOWS_SIGNING_ACCOUNT_NAME
+  WINDOWS_SIGNING_PROFILE_NAME
+  WINDOWS_SIGNING_ENDPOINT
+  WINDOWS_SIGNING_ADMIN_USER
+  WINDOWS_SIGNING_ADMIN_PASSWORD
 )
 
 for var in "${required_vars[@]}"; do
@@ -35,7 +40,7 @@ echo "   Output    : $S3_BUCKET/$SIGNED_TAR_FILE-${BUILD_ID}"
 CMD1="New-Item -ItemType Directory -Force -Path '${BUILD_DIR_PS}\\artifacts'; Write-Output 'Build dir ready: ${BUILD_DIR_PS}'"
 CMD2="aws s3 mv s3://${S3_BUCKET}/${TAR_FILE}-${BUILD_ID} '${BUILD_DIR_PS}\\input.tar' --no-progress"
 CMD3="tar -xf '${BUILD_DIR_PS}\\input.tar' -C '${BUILD_DIR_PS}\\artifacts'"
-CMD4="\$artifactsDir = '${BUILD_DIR_PS}\\artifacts'; \$signDone = '${BUILD_DIR_PS}\\sign-done.txt'; \$signJob = '${BUILD_DIR_PS}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$env:AZURE_TENANT_ID = \"${AZURE_TENANT_ID}\"', '\$env:AZURE_CLIENT_ID = \"${AZURE_CLIENT_ID}\"', '\$env:AZURE_CLIENT_SECRET = \"${AZURE_CLIENT_SECRET}\"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += \"Invoke-TrustedSigning -Endpoint '${SIGNING_ENDPOINT}' -CodeSigningAccountName '${SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null\" }; \$lines += '\$exes = Get-ChildItem -Path \"${BUILD_DIR_PS}\\\\artifacts\" -Filter \"*.exe\" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; Write-Output \"\$(\$e.Name): \$(\$sig.Status)\" }'; \$lines += \"Set-Content '${BUILD_DIR_PS}\\\\sign-done.txt' done\"; \$lines | Out-File '${BUILD_DIR_PS}\\sign-job.ps1' -Encoding utf8; Write-Output \"Sign script created with \$(\$exeFiles.Count) exe files\""
+CMD4="\$artifactsDir = '${BUILD_DIR_PS}\\artifacts'; \$signDone = '${BUILD_DIR_PS}\\sign-done.txt'; \$signJob = '${BUILD_DIR_PS}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$env:AZURE_TENANT_ID = \"${WINDOWS_SIGNING_AZURE_TENANT_ID}\"', '\$env:AZURE_CLIENT_ID = \"${WINDOWS_SIGNING_AZURE_CLIENT_ID}\"', '\$env:AZURE_CLIENT_SECRET = \"${WINDOWS_SIGNING_AZURE_CLIENT_SECRET}\"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += \"Invoke-TrustedSigning -Endpoint '${WINDOWS_SIGNING_ENDPOINT}' -CodeSigningAccountName '${WINDOWS_SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${WINDOWS_SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null\" }; \$lines += '\$exes = Get-ChildItem -Path \"${BUILD_DIR_PS}\\\\artifacts\" -Filter \"*.exe\" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; Write-Output \"\$(\$e.Name): \$(\$sig.Status)\" }'; \$lines += \"Set-Content '${BUILD_DIR_PS}\\\\sign-done.txt' done\"; \$lines | Out-File '${BUILD_DIR_PS}\\sign-job.ps1' -Encoding utf8; Write-Output \"Sign script created with \$(\$exeFiles.Count) exe files\""
 CMD5="schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; schtasks /create /tn \"CodeSign-${BUILD_ID}\" /tr \"powershell.exe -NonInteractive -ExecutionPolicy Bypass -File '${BUILD_DIR_PS}\\sign-job.ps1'\" /sc once /st 00:00 /ru \"${SIGNADMIN_USER}\" /rp \"${SIGNADMIN_PASSWORD}\" /rl highest /f; schtasks /run /tn \"CodeSign-${BUILD_ID}\"; \$timeout = 300; \$elapsed = 0; while (!(Test-Path '${BUILD_DIR_PS}\\sign-done.txt') -and \$elapsed -lt \$timeout) { Start-Sleep 10; \$elapsed += 10 }; if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { Write-Output 'SIGNING_SUCCESS' } else { Write-Output 'SIGNING_TIMEOUT'; exit 1 }"
 CMD6="tar -cf '${BUILD_DIR_PS}\\output.tar' -C '${BUILD_DIR_PS}' artifacts"
 CMD7="aws s3 mv '${BUILD_DIR_PS}\\output.tar' s3://${S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID} --no-progress; Write-Output 'UPLOAD_SUCCESS'"

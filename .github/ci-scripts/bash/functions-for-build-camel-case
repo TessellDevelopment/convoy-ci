@@ -328,8 +328,8 @@ setupPackerEnv() {
   setup_packer_env "$@"
 }
 
-signWindowsBinaries() {
-  sign_windows_binaries "$@"
+signWindowsArtifact() {
+  sign_windows_artifact "$@"
 }
 
 softwareDefBuild() {
