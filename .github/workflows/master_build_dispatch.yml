@@ -2,12 +2,6 @@
   name: Master CI Build Dispatch Workflows
   on:
     workflow_call:
-      inputs:
-        dev_build:
-          description: 'Determine whether dispatch is on dev branch or not'
-          required: false
-          default: false
-          type: boolean 
   jobs:
     build-file:
       runs-on: non-build
