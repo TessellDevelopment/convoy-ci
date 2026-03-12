@@ -1439,7 +1439,6 @@ sign_windows_artifact_file() {
   
   echo "🔐 Signing: ${ARTIFACT_NAME}"
   
-  # Convert to .tar if needed
   if [[ "${ARTIFACT_NAME}" =~ \.tar$ ]]; then
     TEMP_TAR="${ARTIFACT_PATH}"
   else
@@ -1456,11 +1455,8 @@ sign_windows_artifact_file() {
     
     tar -cf "${TEMP_TAR}" -C "${WORK_DIR}/extracted" .
   fi
-  
-  # Sign
-  sign_windows_binaries_via_ssm "${TEMP_TAR}"
-  
-  # Convert back if needed
+    sign_windows_binaries_via_ssm "${TEMP_TAR}"
+
   if [[ "${NEEDS_CONVERSION}" == "true" ]]; then
     rm -rf "${WORK_DIR}/signed-extracted"
     mkdir -p "${WORK_DIR}/signed-extracted"
@@ -1485,11 +1481,6 @@ sign_windows_artifact_file() {
 sign_windows_binaries_via_ssm() {
   set -e
   export TAR_FILE="${1}"
-  # export WINDOWS_SIGNING_INSTANCE_ID="i-03e9dc96e469139a8"
-  # export WINDOWS_SIGNING_AWS_REGION="ap-south-1"
-  # export WINDOWS_SIGNING_S3_BUCKET="ci-windows-binary"
-  # export WINDOWS_SIGNING_ADMIN_USER='EC2AMAZ-F0UBAFP\signadmin'
-  # export WINDOWS_SIGNING_ADMIN_PASSWORD='YourStrongPassword123!'
   export SIGNED_TAR_FILE="${TAR_FILE%.tar}-signed.tar"
 
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
