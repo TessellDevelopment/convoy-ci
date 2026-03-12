@@ -107,13 +107,6 @@ cat "$ERROR_FILE"
 echo "──────────────────────────────────────────────"
 
 # ─── Verify success ────────────────────────────────────────────────────────────
-if [[ "$STATUS" != "Success" ]]; then
-  echo "❌ SSM command status: $STATUS"
-  echo "   Build dir kept for debugging: ${BUILD_DIR_PS}"
-  rm -f "$TRIGGER_FILE"
-  exit 1
-fi
-
 if ! grep -q "SIGNING_SUCCESS" "$OUTPUT_FILE"; then
   echo "❌ Signing did not complete successfully"
   echo "   Build dir kept for debugging: ${BUILD_DIR_PS}"
