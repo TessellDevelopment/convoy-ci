@@ -1484,8 +1484,7 @@ sign_windows_artifact_file() {
 
 sign_windows_binaries_via_ssm() {
   set -e
-  local TAR_FILE="${1}"
-  
+  export TAR_FILE="${1}"
   export WINDOWS_SIGNING_INSTANCE_ID="i-03e9dc96e469139a8"
   export WINDOWS_SIGNING_AWS_REGION="ap-south-1"
   export WINDOWS_SIGNING_S3_BUCKET="ci-windows-binary"
