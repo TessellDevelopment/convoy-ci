@@ -1453,8 +1453,7 @@ sign_windows_artifact_file() {
     sign_windows_binaries_via_ssm "${TEMP_TAR}"
 
   if [[ "${NEEDS_CONVERSION}" == "true" ]]; then
-    rm -rf "${WORK_DIR}/signed-extracted"
-    mkdir -p "${WORK_DIR}/signed-extracted"
+    rm -rf "${WORK_DIR}/signed-extracted"; mkdir -p "${WORK_DIR}/signed-extracted"
     tar -xf "${TEMP_TAR}" -C "${WORK_DIR}/signed-extracted"
     
     if [[ "${ARTIFACT_NAME}" =~ \.(tar\.gz|tgz)$ ]]; then

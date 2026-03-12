@@ -1,11 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# ─── Required environment variables ───────────────────────────────────────────
-
 required_vars=(
-  WINDOWS_SIGNING_S3_BUCKET
   TAR_FILE
+  WINDOWS_SIGNING_S3_BUCKET
   WINDOWS_SIGNING_INSTANCE_ID
   WINDOWS_SIGNING_AWS_REGION
   WINDOWS_SIGNING_AZURE_TENANT_ID
@@ -20,21 +18,14 @@ required_vars=(
 
 for var in "${required_vars[@]}"; do
   if [[ -z "${!var:-}" ]]; then
-    echo "❌ Required environment variable '$var' is not set"
+    echo "❌ Required environment variable '${var}' is not set"
     exit 1
   fi
 done
 
-# ─── Generate unique build ID for this job ─────────────────────────────────────
 BUILD_DIR_PS="C:\\build-${BUILD_ID}"
-SIGNADMIN_PASSWORD_JSON=$(echo "$WINDOWS_SIGNING_ADMIN_PASSWORD" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
-# ─── Log job details ───────────────────────────────────────────────────────────
 echo "🚀 Starting Windows signing pipeline"
-echo "   Instance  : $WINDOWS_SIGNING_INSTANCE_ID"
-echo "   Build ID  : $BUILD_ID"
-echo "   TAR file  : $WINDOWS_SIGNING_S3_BUCKET/$TAR_FILE-${BUILD_ID}"
-echo "   Output    : $WINDOWS_SIGNING_S3_BUCKET/$SIGNED_TAR_FILE-${BUILD_ID}"
 
 # ─── Build SSM command payload ─────────────────────────────────────────────────
 CMD1="New-Item -ItemType Directory -Force -Path '${BUILD_DIR_PS}\\artifacts'; Write-Output 'Build dir ready: ${BUILD_DIR_PS}'"
@@ -71,16 +62,12 @@ COMMAND_ID=$(aws ssm send-command \
   --query 'Command.CommandId' --timeout-seconds 180 \
   --output text)
 
-echo "📋 SSM Command ID: $COMMAND_ID"
-
 echo "⏳ Waiting for command to complete (timeout: 3min)..."
-# Wait for completion
 aws ssm wait command-executed \
   --command-id "$COMMAND_ID" \
   --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
   --region "$WINDOWS_SIGNING_AWS_REGION"
 
-# ─── Fetch and clean output ────────────────────────────────────────────────────
 OUTPUT_FILE="/tmp/ssm-output-${BUILD_ID}.txt"
 ERROR_FILE="/tmp/ssm-error-${BUILD_ID}.txt"
 TRIGGER_FILE="/tmp/ssm-trigger-${BUILD_ID}.json"
@@ -106,7 +93,6 @@ echo "─── Errors ───────────────────
 cat "$ERROR_FILE"
 echo "──────────────────────────────────────────────"
 
-# ─── Verify success ────────────────────────────────────────────────────────────
 if ! grep -q "SIGNING_SUCCESS" "$OUTPUT_FILE"; then
   echo "❌ Signing did not complete successfully"
   echo "   Build dir kept for debugging: ${BUILD_DIR_PS}"
@@ -121,7 +107,6 @@ if ! grep -q "UPLOAD_SUCCESS" "$OUTPUT_FILE"; then
   exit 1
 fi
 
-# ─── Cleanup local temp files only on success ──────────────────────────────────
 rm -f "$TRIGGER_FILE" "$OUTPUT_FILE" "$ERROR_FILE"
 echo "✅ Signing pipeline completed successfully for ${TAR_FILE}"
 
