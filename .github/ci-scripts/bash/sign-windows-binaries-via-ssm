@@ -31,23 +31,23 @@ SIGNADMIN_PASSWORD_JSON=$(echo "$WINDOWS_SIGNING_ADMIN_PASSWORD" | sed 's/\\/\\\
 
 # ─── Log job details ───────────────────────────────────────────────────────────
 echo "🚀 Starting Windows signing pipeline"
-echo "   Instance  : $INSTANCE_ID"
+echo "   Instance  : $WINDOWS_SIGNING_INSTANCE_ID"
 echo "   Build ID  : $BUILD_ID"
-echo "   TAR file  : $S3_BUCKET/$TAR_FILE-${BUILD_ID}"
-echo "   Output    : $S3_BUCKET/$SIGNED_TAR_FILE-${BUILD_ID}"
+echo "   TAR file  : $WINDOWS_SIGNING_S3_BUCKET/$TAR_FILE-${BUILD_ID}"
+echo "   Output    : $WINDOWS_SIGNING_S3_BUCKET/$SIGNED_TAR_FILE-${BUILD_ID}"
 
 # ─── Build SSM command payload ─────────────────────────────────────────────────
 CMD1="New-Item -ItemType Directory -Force -Path '${BUILD_DIR_PS}\\artifacts'; Write-Output 'Build dir ready: ${BUILD_DIR_PS}'"
-CMD2="aws s3 mv s3://${S3_BUCKET}/${TAR_FILE}-${BUILD_ID} '${BUILD_DIR_PS}\\input.tar' --no-progress"
+CMD2="aws s3 mv s3://${WINDOWS_SIGNING_S3_BUCKET}/${TAR_FILE}-${BUILD_ID} '${BUILD_DIR_PS}\\input.tar' --no-progress"
 CMD3="tar -xf '${BUILD_DIR_PS}\\input.tar' -C '${BUILD_DIR_PS}\\artifacts'"
 CMD4="\$artifactsDir = '${BUILD_DIR_PS}\\artifacts'; \$signDone = '${BUILD_DIR_PS}\\sign-done.txt'; \$signJob = '${BUILD_DIR_PS}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$env:AZURE_TENANT_ID = \"${WINDOWS_SIGNING_AZURE_TENANT_ID}\"', '\$env:AZURE_CLIENT_ID = \"${WINDOWS_SIGNING_AZURE_CLIENT_ID}\"', '\$env:AZURE_CLIENT_SECRET = \"${WINDOWS_SIGNING_AZURE_CLIENT_SECRET}\"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += \"Invoke-TrustedSigning -Endpoint '${WINDOWS_SIGNING_ENDPOINT}' -CodeSigningAccountName '${WINDOWS_SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${WINDOWS_SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null\" }; \$lines += '\$exes = Get-ChildItem -Path \"${BUILD_DIR_PS}\\\\artifacts\" -Filter \"*.exe\" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; Write-Output \"\$(\$e.Name): \$(\$sig.Status)\" }'; \$lines += \"Set-Content '${BUILD_DIR_PS}\\\\sign-done.txt' done\"; \$lines | Out-File '${BUILD_DIR_PS}\\sign-job.ps1' -Encoding utf8; Write-Output \"Sign script created with \$(\$exeFiles.Count) exe files\""
 CMD5="schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; schtasks /create /tn \"CodeSign-${BUILD_ID}\" /tr \"powershell.exe -NonInteractive -ExecutionPolicy Bypass -File '${BUILD_DIR_PS}\\sign-job.ps1'\" /sc once /st 00:00 /ru \"${WINDOWS_SIGNING_ADMIN_USER}\" /rp \"${WINDOWS_SIGNING_ADMIN_PASSWORD}\" /rl highest /f; schtasks /run /tn \"CodeSign-${BUILD_ID}\"; \$timeout = 300; \$elapsed = 0; while (!(Test-Path '${BUILD_DIR_PS}\\sign-done.txt') -and \$elapsed -lt \$timeout) { Start-Sleep 10; \$elapsed += 10 }; if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { Write-Output 'SIGNING_SUCCESS' } else { Write-Output 'SIGNING_TIMEOUT'; exit 1 }"
 CMD6="tar -cf '${BUILD_DIR_PS}\\output.tar' -C '${BUILD_DIR_PS}' artifacts"
-CMD7="aws s3 mv '${BUILD_DIR_PS}\\output.tar' s3://${S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
+CMD7="aws s3 mv '${BUILD_DIR_PS}\\output.tar' s3://${WINDOWS_SIGNING_S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
 CMD8="if (Test-Path '${BUILD_DIR_PS}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${BUILD_DIR_PS}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${BUILD_DIR_PS}' }"
 
 jq -n \
-  --arg instance "$INSTANCE_ID" \
+  --arg instance "$WINDOWS_SIGNING_INSTANCE_ID" \
   --arg c1 "$CMD1" \
   --arg c2 "$CMD2" \
   --arg c3 "$CMD3" \
@@ -67,7 +67,7 @@ jq -n \
 # ─── Send command ──────────────────────────────────────────────────────────────
 COMMAND_ID=$(aws ssm send-command \
   --cli-input-json "file:///tmp/ssm-trigger-${BUILD_ID}.json" \
-  --region "$AWS_REGION"  \
+  --region "$WINDOWS_SIGNING_AWS_REGION"  \
   --query 'Command.CommandId' --timeout-seconds 180 \
   --output text)
 
@@ -77,8 +77,8 @@ echo "⏳ Waiting for command to complete (timeout: 3min)..."
 # Wait for completion
 aws ssm wait command-executed \
   --command-id "$COMMAND_ID" \
-  --instance-id "$INSTANCE_ID" \
-  --region "$AWS_REGION"
+  --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
+  --region "$WINDOWS_SIGNING_AWS_REGION"
 
 # ─── Fetch and clean output ────────────────────────────────────────────────────
 OUTPUT_FILE="/tmp/ssm-output-${BUILD_ID}.txt"
@@ -87,17 +87,17 @@ TRIGGER_FILE="/tmp/ssm-trigger-${BUILD_ID}.json"
 
 aws ssm get-command-invocation \
   --command-id "$COMMAND_ID" \
-  --instance-id "$INSTANCE_ID" \
+  --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
   --query 'StandardOutputContent' \
   --output text \
-  --region "$AWS_REGION" | tr -d '\r' > "$OUTPUT_FILE"
+  --region "$WINDOWS_SIGNING_AWS_REGION" | tr -d '\r' > "$OUTPUT_FILE"
 
 aws ssm get-command-invocation \
   --command-id "$COMMAND_ID" \
-  --instance-id "$INSTANCE_ID" \
+  --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
   --query 'StandardErrorContent' \
   --output text \
-  --region "$AWS_REGION" | tr -d '\r' > "$ERROR_FILE"
+  --region "$WINDOWS_SIGNING_AWS_REGION" | tr -d '\r' > "$ERROR_FILE"
 
 echo ""
 echo "─── Output ───────────────────────────────────"
