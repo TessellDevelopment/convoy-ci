@@ -1193,6 +1193,7 @@ pnpm_build() {
   required_inputs="1 2 3"
   validate_inputs "${required_inputs}" "$@" 
   DIR=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .path" convoy.yaml)
+  VERSION=$(yq eval ".generates.artifacts[] | select(.name == \"$ARTIFACT\") | .version" convoy.yaml)
   if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
     echo "❌ Error: Directory not found in convoy.yaml for artifact: ${ARTIFACT}"
     exit 1
@@ -1202,6 +1203,8 @@ pnpm_build() {
   corepack enable
   corepack prepare pnpm@9.0.0 --activate
   CI=true pnpm install
+  echo "Inline update of version in package.json to ${VERSION}"
+  yq -i ".version = \"${VERSION}\"" package.json
   pnpm build
   pnpm pack
   popd
