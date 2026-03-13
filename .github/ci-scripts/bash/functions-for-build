@@ -679,6 +679,31 @@ image_scan(){
     set +e
     return 0
   fi
+
+  # Check if current repository is in the exclusion list
+  if [[ -n "${REPOS_EXCLUDED_FROM_TRIVY_SCAN:-}" ]]; then
+    REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+    IFS=',' read -ra EXCLUDED_REPOS <<< "${REPOS_EXCLUDED_FROM_TRIVY_SCAN}"
+    for excluded_repo in "${EXCLUDED_REPOS[@]}"; do
+      # Trim whitespace from excluded_repo
+      excluded_repo=$(echo "${excluded_repo}" | xargs)
+      if [[ "${REPO_NAME}" == "${excluded_repo}" ]]; then
+        echo "Skipping Trivy scan for repository '${REPO_NAME}' as it is in the exclusion list"
+        set +e
+        return 0
+      fi
+    done
+  fi
+
+  # Feature flag: run vulnerability scan only for PRs targeting main
+  if [[ "${ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY:-false}" == "true" ]]; then
+    if [[ "${GITHUB_BASE_REF:-}" != "main" ]]; then
+      echo "Skipping Trivy scan: ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY is true and base branch is '${GITHUB_BASE_REF:-}', not 'main'"
+      set +e
+      return 0
+    fi
+  fi
+
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
@@ -720,7 +745,7 @@ initialise_coverage() {
   if [ -f "requirements_test.txt" ]; then
     python -m pip install -r requirements_test.txt --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   fi
-  python -m pip list | grep tessell
+  python -m pip list | grep tessell || true
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
