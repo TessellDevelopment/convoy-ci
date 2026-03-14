@@ -20,6 +20,8 @@ jobs:
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
+      GITHUB_BASE_REF: ${{ github.base_ref }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -102,6 +104,8 @@ jobs:
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
+      GITHUB_BASE_REF: ${{ github.base_ref }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -325,11 +329,12 @@ jobs:
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
+      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
+      GITHUB_BASE_REF: ${{ github.base_ref }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      GITHUB_BASE_REF: ${{ github.base_ref }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -788,6 +793,8 @@ jobs:
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
+      GITHUB_BASE_REF: ${{ github.base_ref }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
