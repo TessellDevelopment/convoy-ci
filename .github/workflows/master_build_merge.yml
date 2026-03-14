@@ -164,7 +164,7 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -172,13 +172,16 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction ext file _version <<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: ${_version}"
               echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
+              "${buildFunction}AndPush" $name $ext ${_version} $file 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -453,7 +456,7 @@ jobs:
             cat $HOME/.m2/settings.xml
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -461,15 +464,18 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction ext file _version<<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: ${_version}"
               echo "dockerFile: $file"
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
-              "${buildFunction}AndPush" $name $ext $version $file 
+              "${buildFunction}AndPush" $name $ext ${_version} $file 
               echo "Artifact $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -1026,7 +1032,7 @@ jobs:
               terraformBuildAndPush
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildAndPushFunction, .buildFunction, .buildTool, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -1047,14 +1053,17 @@ jobs:
                 fi
               fi
 
-              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file <<< "${artifactData}"
-              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
+              IFS=',' read -r name buildAndPushFunction buildFunction buildTool ext file _version <<< "${artifactData}"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${_version} DOCKERFILE_PATH=${file}
               echo "Name: ${name}"
               echo "buildAndPushFunction: ${buildAndPushFunction}"
               echo "buildFunction: ${buildFunction}"
               echo "buildTool: ${buildTool}"
               echo "Ext: ${ext}"
-              echo "Version: ${version}"
+              echo "Version: ${_version}"
               echo "dockerFile: ${file}"
 
               if [[ -n ${buildAndPushFunction:-} ]]; then
@@ -1062,7 +1071,7 @@ jobs:
                 ${buildAndPushFunction}
                 set +e
               elif [[ -n ${buildFunction} ]]; then
-                ${buildFunction}AndPush ${name} ${ext} ${version} ${file}
+                ${buildFunction}AndPush ${name} ${ext} ${_version} ${file}
               elif [[ -n ${buildTool:-} ]]; then
                 set -e
                 $(yq .post-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
@@ -1315,7 +1324,7 @@ jobs:
             fi
             version=$(yq '.version' convoy.yaml)
             environments=("dev" "qa" "stage" "prod")
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -1323,13 +1332,16 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction ext file _version<<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: ${_version}"
               echo "dockerFile: $file"
-              "${buildFunction}AndPush" $name $ext $version $file 
+              "${buildFunction}AndPush" $name $ext ${_version} $file 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
