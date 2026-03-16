@@ -748,11 +748,15 @@ initialise_coverage() {
   python -m pip list | grep tessell || true
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
+  echo test_dir=${test_dir}
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
     test_dir=$(find . -type d -name "tests" 2>/dev/null | head -n 1)
   fi
+  echo test_dir=${test_dir}
   rm -rf ${source_path}/tests
+  echo "deleted tests folder"
   cp -r ${test_dir} pytest.ini ${source_path}
+  echo "returning from initialise_coverage"
 }
 
 initialize_python_build_env() {
@@ -1360,8 +1364,11 @@ qa_build_and_push(){
 }
 
 run_python_unit_test() {
+  set -x
   initialise_coverage 'test-venv'
+  echo "Finding python version"
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  echo "Python version is ${python_version}"
   source_path=${venv_path}/lib/python${python_version}/site-packages/
   include=$(yq '.codeCoverage.report.include | join(",")' convoy.yaml)
   pushd ${source_path}
