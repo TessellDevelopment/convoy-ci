@@ -1411,6 +1411,8 @@ software_def_build() {
   set -e
   setup_packer_env
   export WORKDIR="/tmp/software_manifest_workdir"
+  export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  export REPLICATION_ENABLED="false"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
   assert_base_branch_commit_success
@@ -1426,7 +1428,8 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]] && e2e_flag="--is_e2e_test" || e2e_flag=""
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run ${e2e_flag}
   set +e
 }
 
@@ -1435,6 +1438,7 @@ software_def_build_and_push() {
   setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
   export CUSTOM_TAGS='{"TESSELL_ENVIRONMENT": "PRODUCTION", "TESSELL_CREATED_BY": "Convoy"}'
+  export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
