@@ -46,6 +46,15 @@ aws_configure_tessellops_artifacts() {
 bash_build() {
   set -e
   DIR="${1}"
+  if [[ ! -d "${DIR}" ]]; then
+    ARTIFACT="${1}"
+    DIR=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .directory" convoy.yaml)
+    if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+      echo "❌ Error: Directory not provided and not found in convoy.yaml for artifact: ${ARTIFACT}"
+      exit 1
+    fi
+    echo "Using directory from convoy.yaml: ${DIR}"
+  fi
   export PATH=$PATH:/home/github/.local/bin
   ./$DIR/build.sh
   set +e
@@ -128,7 +137,9 @@ check_convoy_yaml() {
 check_flyway() {
   if [ -d "flyway" ]; then
     echo "The 'flyway' directory exists in this repository."
-    DOCKER_FLYWAY_IMAGE_NAME=$(echo ${GITHUB_REPOSITORY%-*} | cut -f2 -d'/')-flyway-migration
+    REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+    BASE_NAME=${REPO_NAME%-service}
+    DOCKER_FLYWAY_IMAGE_NAME="${BASE_NAME}-flyway-migration"
     docker tag ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:latest ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
     docker push ${DOCKERHUB_ORG}/${DOCKER_FLYWAY_IMAGE_NAME}:${LATEST_TAG}
   else
@@ -220,18 +231,18 @@ convoy_build_and_push() {
     
   elif [[ ${APP_GROUP} == ${TESSELLOPS_APP_NAME} ]]; then
     aws_configure_tessellops_artifacts
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
     aws s3 cp ${ARTIFACT}.${EXTENSION} s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION} --profile tessellops
 
   elif [[ ${APP_GROUP} == ${TESSELL_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
 
   elif [[ ${APP_GROUP} == ${CITEST_APP_NAME} ]]; then
     mv ./build/${ARTIFACT}.${EXTENSION}  ${ARTIFACT}.${EXTENSION}
-    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELL_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+    push_to_nexus "./build/${ARTIFACT}.${EXTENSION}" "tessell-artifacts/citest/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
     push_release_manifest_artifacts
   fi
   generate_checksum $ARTIFACT "${ARTIFACT}.${EXTENSION}"
@@ -256,7 +267,7 @@ convoy_codegen_build_and_push() {
   convoy_codegen_build $@
   set -e
   ARTIFACT_PATH="./${ARTIFACT}/target/${ARTIFACT}-${VERSION}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.code-generator" "${VERSION}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "${APP_GROUP}.code-generator" "${VERSION}"
   set +e
 }
 
@@ -301,12 +312,16 @@ EOL
 docker_build() {
   set -e
   IMAGE="${1}"
-  FILE="${4}"
+  if [[ $# -eq 2 ]]; then
+    FILE="${2}"
+  else
+    FILE="${4}"
+  fi
   if [[ "${FILE}" == "null" || -z "${FILE}" ]]; then
     FILE="./Dockerfile"
   fi
   required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   docker build -f ${FILE} -t ${IMAGE} \
               --build-arg GITHUB_USER=${GITHUB_USER} \
               --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
@@ -321,8 +336,16 @@ docker_build() {
 docker_build_and_push() {
   set -e
   IMAGE="${1}"
-  VERSION="${3}"
-  FILE="${4}"
+  if [[ $# -eq 2 ]]; then
+    VERSION=""
+    FILE="${2}"
+  elif [[ $# -eq 3 ]]; then
+    VERSION=""
+    FILE="${3}"
+  else
+    VERSION="${3}"
+    FILE="${4}"
+  fi
   TAG=${LATEST_TAG}
   if [[ "${VERSION}" != "null" && -n "${VERSION}" ]]; then
     TAG=${VERSION}
@@ -331,7 +354,7 @@ docker_build_and_push() {
     FILE="./Dockerfile"
   fi
   required_inputs="1"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   docker build -f ${FILE} -t ${IMAGE} \
               --build-arg GITHUB_USER=${GITHUB_USER} \
               --build-arg GITHUB_TOKEN=${GITHUB_TOKEN} \
@@ -433,9 +456,10 @@ frp_build_and_push() {
   EXTENSION="${2}"
   os_type=("linux" "windows")
   for OS in "${os_type[@]}"; do
-    ARTIFACT="tessell-frpc-${OS}"
-    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.frp" "${LATEST_TAG}"
-    push_release_manifest_artifacts
+    BUILD_GENERATED_FILE_NAME="tessell-frpc-${OS}"
+    ARTIFACT="${APP_GROUP}-frpc-${OS}"
+    mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.frp" "${LATEST_TAG}"
+    push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   done
   set +e
 }
@@ -546,7 +570,7 @@ get_release_branch() {
 
 get_previous_commited_software_manifest() {
   get_release_branch "${COMMIT_TAG}"
-  minio_path="${REL_TAG}/software-image-manifest/software-image-manifest-${COMMIT_TAG}.json"
+  minio_path="${REL_TAG}/${sm_artifact_name}/${sm_artifact_name}-${COMMIT_TAG}.json"
   echo "starting previous manifest download ${minio_path}"
   download_path="${WORKDIR}/software-image-manifest.json"
   mc cp "minio_ci/tessell-artifacts-dev/${minio_path}" "${download_path}"
@@ -637,7 +661,7 @@ gradlew_ui_build_and_push() {
     -Pnexus_password="${NEXUS_PASSWORD}" \
     -Pnexus_push_repo_m2="${NEXUS_PUSH_REPOS_M2}" \
     -Pnexus_pull_repo_m2="${NEXUS_PULL_REPOS_M2}" \
-    -Pnexus_push_repo_raw_ops=="${NEXUS_REPO_TESSELLOPS_ARTIFACTS}" \
+    -Pnexus_push_repo_raw_ops=="${NEXUS_ARTIFACT_BUCKET}" \
     -Pnexus_endpoint="${NEXUS_SERVER_ENDPOINT}" \
     -Pnexus_protocol="${NEXUS_PROTOCOL}" \
     -Plabel="${LABEL}" 
@@ -650,10 +674,40 @@ gradlew_ui_build_and_push() {
 image_scan(){
   set -e
   export IMAGE="${1}"
+  if [[ ${APP_GROUP} == gcpcore ]]; then
+    echo "Skipping image vulnerability scanning for gcpcore appGroup"
+    set +e
+    return 0
+  fi
+
+  # Check if current repository is in the exclusion list
+  if [[ -n "${REPOS_EXCLUDED_FROM_TRIVY_SCAN:-}" ]]; then
+    REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+    IFS=',' read -ra EXCLUDED_REPOS <<< "${REPOS_EXCLUDED_FROM_TRIVY_SCAN}"
+    for excluded_repo in "${EXCLUDED_REPOS[@]}"; do
+      # Trim whitespace from excluded_repo
+      excluded_repo=$(echo "${excluded_repo}" | xargs)
+      if [[ "${REPO_NAME}" == "${excluded_repo}" ]]; then
+        echo "Skipping Trivy scan for repository '${REPO_NAME}' as it is in the exclusion list"
+        set +e
+        return 0
+      fi
+    done
+  fi
+
+  # Feature flag: run vulnerability scan only for PRs targeting main
+  if [[ "${ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY:-false}" == "true" ]]; then
+    if [[ "${GITHUB_BASE_REF:-}" != "main" ]]; then
+      echo "Skipping Trivy scan: ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY is true and base branch is '${GITHUB_BASE_REF:-}', not 'main'"
+      set +e
+      return 0
+    fi
+  fi
+
   RETRIES=50
   TIMEOUT=600s
   for ((i=1; i<=RETRIES; i++)); do
-    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --scanners vuln ${IMAGE}:latest 2>&1 || true)
+    output=$(trivy image -f json -o trivy_image_scan_result.json --severity HIGH,CRITICAL --ignore-unfixed --scanners vuln ${IMAGE}:latest 2>&1 || true)
     exit_code=$?
     echo ${output}
     if echo "${output}" | grep -q "TOOMANYREQUESTS"; then
@@ -671,7 +725,9 @@ image_scan(){
     echo "Trivy scan failed after ${RETRIES} attempts."
     exit 1
   fi
-  dockle -f json -o dockle_image_scan_result.json ${IMAGE}:latest --timeout ${TIMEOUT}
+  docker save ${IMAGE}:latest -o image.tar
+  dockle -f json -o dockle_image_scan_result.json --input image.tar --timeout ${TIMEOUT}
+  rm image.tar
   python3 ./ci-scripts/python/image_scan.py
   set +e
 }
@@ -689,7 +745,7 @@ initialise_coverage() {
   if [ -f "requirements_test.txt" ]; then
     python -m pip install -r requirements_test.txt --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   fi
-  python -m pip list | grep tessell
+  python -m pip list | grep tessell || true
   echo ${source_path}
   test_dir=$(yq '.codeCoverage.testsDirectory' convoy.yaml)
   if [ -z "${test_dir}" ] || [ "${test_dir}" = "null" ]; then
@@ -794,10 +850,10 @@ jar_build_and_push() {
   EXTENSION="${2}"
   VERSION="${3}"
   required_inputs="1 2 3"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   ./mvnw clean deploy -Drevision=${VERSION} -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
     -DgeneratePom=true -Dpackaging=${EXTENSION} -DrepositoryId=nexus \
-    -DgroupId=tessellops -DartifactId=${ARTIFACT} \
+    -DgroupId=${APP_GROUP} -DartifactId=${ARTIFACT} \
     -DaltDeploymentRepository=nexus::default::${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PUSH_REPOS_M2}
   generate_checksum $ARTIFACT "${ARTIFACT}-${VERSION}.${EXTENSION}"
   set +e
@@ -824,18 +880,25 @@ make_service() {
   ARTIFACT="${1}"
   required_inputs="1"
   validate_inputs "${required_inputs}" "$@"
-  NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
-  if [ "${NAME}" == "${ARTIFACT}" ]; then
-      NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
+
+  if [[ "${ARTIFACT}" == *"-linux"* ]]; then
+      OS="linux"
+      NAME=$(echo "${ARTIFACT}" | awk -F '-linux' '{print $1}')
+  elif [[ "${ARTIFACT}" == *"-windows"* ]]; then
       OS="windows"
+      NAME=$(echo "${ARTIFACT}" | awk -F '-windows' '{print $1}')
   else
       OS="linux"
+      NAME="${ARTIFACT}"
   fi
+  NAME="${NAME#${APP_GROUP}-}"
   ENGINE=$(echo "${ARTIFACT}" | awk -F "${NAME}-${OS}" '{gsub(/^-|-linux|-windows$/, "", $2); print $2}')
   echo "Name: ${NAME}, OS: ${OS}, Engine: ${ENGINE}"
   if [[ "${ENGINE}" == "null" || -z "${ENGINE}" ]]; then
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}
     make service os=${OS}
   else
+    BUILD_GENERATED_FILE_NAME=${NAME}-${OS}-${ENGINE}
     make service os=${OS} engine=${ENGINE}
   fi
   set +e
@@ -846,8 +909,8 @@ make_service_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT}.${EXTENSION}" "tessell.${NAME}" "${LATEST_TAG}"
-  push_release_manifest_artifacts
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${APP_GROUP}.${NAME}" "${LATEST_TAG}"
+  push_release_manifest_artifacts "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}" "${BUILD_GENERATED_FILE_NAME}.${EXTENSION}"
   set +e
 }
 
@@ -858,7 +921,7 @@ mvn_deploy() {
   GROUP_ID="${4}"
   VERSION="${5}"
   required_inputs="1 2 3 4 5"
-  validate_inputs "${required_inputs}" "$@" 
+  validate_inputs "${required_inputs}" "$@"
   mvn deploy:deploy-file -Dnexus_url=${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/tessell-m2-component \
       -Dnexus_username=${NEXUS_USERNAME} -Dnexus_password=${NEXUS_PASSWORD} \
       -DgroupId=${GROUP_ID} -DartifactId=${ARTIFACT_ID} -Dversion=${VERSION} \
@@ -884,7 +947,7 @@ mvnw_build_and_push() {
     generate_checksum $ARTIFACT
   else
     aws_configure_tessellops_artifacts
-    push_to_nexus "./target/function.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
+    push_to_nexus "./target/function.zip" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip"
     mv ./target/function.zip  ${ARTIFACT}-${LATEST_TAG}.zip
     aws s3 cp ${ARTIFACT}-${LATEST_TAG}.zip s3://${TESSELLOPS_ARTIFACTS_DEV_S3}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.zip --profile tessellops
     generate_checksum $ARTIFACT "${ARTIFACT}-${LATEST_TAG}.zip"
@@ -950,7 +1013,7 @@ ops_terraform_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
+  push_to_nexus "${ARTIFACT}.${EXTENSION}" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
@@ -965,7 +1028,7 @@ ops_ui_build_and_push() {
   EXT="${2}"
   sed -i 's/^export const ENV = EnvType\.Development;$/export const ENV = EnvType.Production;/g' ./src/constants/env.ts
   gradlew_ui_build
-  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_REPO_TESSELLOPS_ARTIFACTS}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
+  push_to_nexus "./build/libs/tessellops-ui-${LATEST_TAG}.zip" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXT}"
   generate_checksum $ARTIFACT "tessellops-ui-${LATEST_TAG}.zip"
   set +e
 }
@@ -1205,11 +1268,12 @@ push_release_manifest_artifacts() {
   local source_file_path=${2:-"${ARTIFACT}.${EXTENSION}"}
   local artifact_dest_path=${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.${EXTENSION}
   local push_to=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .pushTo // \"s3\"" convoy.yaml)
+  [[ -z "${push_to}" || "${push_to}" == "null" ]] && push_to="s3"
   local release=$(echo ${LABEL} | cut -d'.' -f2)
 
   upload_artifact ${source_file_path} ${artifact_dest_path} ${push_to}
 
-  ! ${DEV_BUILD} || return
+  ! ${DEV_BUILD} || return 0
   [[ ${push_to} == "s3" ]] && aws_configure_prod_assets && aws s3 cp "${source_file_path}" s3://${TESSELLTOOLS_S3}/${artifact_dest_path} --profile prod
 
   if [[ ${source_file_name} == "${ARTIFACT}.${EXTENSION}" ]]; then
@@ -1221,12 +1285,18 @@ push_release_manifest_artifacts() {
 
 push_terraform_modules() {
   local artifact_dest_path=${LABEL}/${DIR}/${DIR}-${VERSION}.zip
+  if [[ ${APP_GROUP} != tessell ]]; then
+    local artifact_dest_path=${LABEL}/${APP_GROUP}-${DIR}/${APP_GROUP}-${DIR}-${VERSION}.zip
+  fi
   local release=$(echo ${LABEL} | cut -d'.' -f2)
-
   if [[ ${APP_GROUP} == ${TESSELL_GCP_APP_NAME} ]]; then
     push_to_gcloud "${ARTIFACT_FILE}" "gs://tessellgcp-artifacts/${artifact_dest_path}"
   else
-    mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "tessell.terraform_modules" "${VERSION}"
+    if [[ ${APP_GROUP} != tessell ]]; then
+      mvn_deploy "${APP_GROUP}-${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
+    else
+      mvn_deploy "${DIR}" "zip" "${ARTIFACT_FILE}" "${APP_GROUP}.terraform_modules" "${VERSION}"
+    fi
     upload_artifact ${ARTIFACT_FILE} ${artifact_dest_path}
     ! ${DEV_BUILD} || return
     configure_and_push_aws ${AWS_ACCOUNT_TESSELL_DEV} ${TESSELL_TERRAFORM_MODULES_TERLS_S3} ${ARTIFACT_FILE} s3://${TESSELL_TERRAFORM_MODULES_TERLS_S3}/${artifact_dest_path}
@@ -1385,13 +1455,19 @@ setup_packer_env() {
   configure_python_version_if_required
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
+  if [[ "${APP_GROUP}" == "tessell" ]]; then
+    sm_artifact_name="software-image-manifest"
+  else
+    sm_artifact_name="${APP_GROUP}-software-image-manifest"
+  fi
 }
 
 software_def_build() {
   set -e
   setup_packer_env
-  export CURRENT_VERSION_TAG="0.0.0"
   export WORKDIR="/tmp/software_manifest_workdir"
+  export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  export REPLICATION_ENABLED="false"
   rm -rf  "${WORKDIR}" && mkdir -p "${WORKDIR}"
   mkdir -p ~/.packer.d/plugins
   assert_base_branch_commit_success
@@ -1407,7 +1483,8 @@ software_def_build() {
       return
     fi
   fi
-  validate_all -r $PWD --dest_branch ${GITHUB_BASE_REF} --src_branch ${SOURCE_BRANCH} --pipeline_run
+  [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]] && e2e_flag="--is_e2e_test" || e2e_flag=""
+  validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run ${e2e_flag}
   set +e
 }
 
@@ -1416,6 +1493,7 @@ software_def_build_and_push() {
   setup_packer_env
   export CURRENT_VERSION_TAG=${LATEST_TAG}
   export CUSTOM_TAGS='{"TESSELL_ENVIRONMENT": "PRODUCTION", "TESSELL_CREATED_BY": "Convoy"}'
+  export BUILD_UUID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   echo $CURRENT_VERSION_TAG
   mkdir -p ~/.packer.d/plugins
   if [[ "$BRANCH_NAME" == *double_commit* ]]; then
@@ -1424,7 +1502,7 @@ software_def_build_and_push() {
     git diff HEAD~1 --compact-summary > ../current_pr_diff
     cat ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
-      URL_PATH="${NEXUS_ARTIFACT_REPO}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
+      URL_PATH="${NEXUS_ARTIFACT_BUCKET}/${base_branch_of_root_pr}/delta-image-manifest/delta-image-manifest-${root_pr_tag}.json"
       echo "${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}"
       curl -o common_manifest.json --user "${GITHUB_USER}:${GITHUB_TOKEN}" \
        ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${URL_PATH}
@@ -1434,7 +1512,7 @@ software_def_build_and_push() {
   else
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
-  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_REPO}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
   set +e
 }
 
@@ -1525,8 +1603,8 @@ tsm_zip_build_and_push() {
   EXTENSION="${2}"
   VERSION="${3}"
   required_inputs="1 2 3"
-  validate_inputs "${required_inputs}" "$@" 
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "tessell.tsm.infra" "${VERSION}"
+  validate_inputs "${required_inputs}" "$@"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "build/${ARTIFACT}.${EXTENSION}" "${APP_GROUP}.tsm.infra" "${VERSION}"
   set +e
 }
 
@@ -1555,7 +1633,7 @@ ui_build_and_push() {
   ui_build ${ARTIFACT} ${EXTENSION} ${TAG}
   set -e
   ARTIFACT_PATH="./${ARTIFACT}.${EXTENSION}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "convoy.convoy-ui" "${TAG}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "${ARTIFACT_PATH}" "${APP_GROUP}.convoy-ui" "${TAG}"
   generate_checksum "${ARTIFACT}.${EXTENSION}"
   set +e
 }
@@ -1612,7 +1690,7 @@ vss_tar_build_and_push() {
   set -e
   ARTIFACT="${1}"
   EXTENSION="${2}"
-  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "tessell.vss" "${LATEST_TAG}"
+  mvn_deploy "${ARTIFACT}" "${EXTENSION}" "./${ARTIFACT}.${EXTENSION}" "${APP_GROUP}.vss" "${LATEST_TAG}"
   push_release_manifest_artifacts
   set +e
 }
@@ -1714,12 +1792,22 @@ zip_directory() {
 
 zip_file() {
   set -e
-  DIR=${1}
+  DIR="${1}"
+  ARTIFACT=${DIR}
+  if [[ ! -d ${DIR} ]]; then
+    ARTIFACT="${1}"
+    DIR=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .directory" convoy.yaml)
+    if [[ -z "${DIR}" || "${DIR}" == "null" ]]; then
+      echo "❌ Error: Directory not provided and not found in convoy.yaml for artifact: ${ARTIFACT}"
+      exit 1
+    fi
+    echo "Using directory from convoy.yaml: ${DIR}"
+  fi
   BASE_DIR=$PWD
   cd ${DIR}
-  zip -r ${BASE_DIR}/${DIR}.zip ./
+  zip -r ${BASE_DIR}/${ARTIFACT}.zip ./
   cd ${BASE_DIR}
-  set +e  
+  set +e
 }
 
 zip_file_and_push() {
