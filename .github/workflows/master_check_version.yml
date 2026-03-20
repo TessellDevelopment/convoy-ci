@@ -40,133 +40,34 @@ jobs:
     if: needs.convoy-check.outputs.check == 'true'
     needs: convoy-check
     runs-on: non-build
+    env:
+      CI_BRANCH: TDEVOPS-4297
     steps:
 
       - uses: actions/checkout@v4.1.1
         with:
-          fetch-depth: 0 
-        
+          fetch-depth: 0
+
+      - name: Setup CI Scripts
+        run: |
+          cd ~/convoy-ci
+          git checkout main
+          git pull
+          git checkout ${{env.CI_BRANCH}}
+          git pull
+          cd ~-
+          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
+
       - name: Check All file changes
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
 
-      - name: Check Version in Nexus 
-        uses: actions/github-script@v7.0.1
+      - name: Check Version in Nexus
         env:
           NEXUS_URL: ${{vars.NEXUS_PROTOCOL_LOCAL}}://${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}/service/rest/v1/search?repository
           NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-          NEXUS_PASSWORD: ${{ secrets.CIPIPELINE_NEXUS_PASSWORD}}
-        with:
-          script: |
-            const exp = require('constants');
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-            var nexusRepo;
-            var version;
-            var exporter;
-            
-            function checkVersion(nexusRepo, exporter, version){
-              console.log(nexusRepo);
-              console.log(exporter);
-              console.log(version);
-              execSync = require('child_process').execSync;
-              const output=execSync(`
-                  file="${exporter}-${version}"
-                  API_URL="$NEXUS_URL=${nexusRepo}&version=${version}"
-                  echo $API_URL
-                  echo $file
-                  response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL")
-                  check="$(echo $response | grep $file)"
-                  if [ ! -z "$check" ]
-                      then
-                          echo "Fail"
-                          exit 
-                      fi
-                  
-                  while [ "$(echo $response | jq -r '.continuationToken')" != "null" ]; do
-                      continuationToken=$(echo $response | jq -r '.continuationToken')
-                      response=$(curl -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" -X GET "$API_URL&continuationToken=$continuationToken")
-                      check="$(echo $response | grep $file)"
-                      if [ ! -z "$check" ]
-                      then
-                          echo "Fail"
-                          exit 
-                      fi
-                  done
-                  if [ -z "$check" ]
-                      then
-                          echo "Pass"
-                          exit 
-                      fi
-              `, { encoding: 'utf-8' }); 
-              console.log(output);
-              if(output.includes("Fail")){
-                throw new Error("Error: Update version, matching version file already present in Nexus")
-              }
-              else
-                console.log("Passed: No matching version present in Nexus")
-            }
-            
-            try{
-              const content = fs.readFileSync('./convoy.yaml', 'utf8');
-              const data = yaml.load(content);
-              var language = data.language
-              var appGroup = data.appGroup
-              if(language === 'terraform'){
-                modifiedFiles = "${{steps.changed-files-all.outputs.all_changed_and_modified_files}}"
-                pathsArray = modifiedFiles.split(" ");
-                dir = pathsArray.map(path => path.split("/")[0]);
-                uniqueDirectories = [...new Set(dir)];
-                modifiedDir = uniqueDirectories.join(" ");
-                console.log(modifiedDir);
-                const directories = modifiedDir.split(' ');
-                const excludeDirectories = ['.github', 'convoy.yaml','.gitignore','README.md'];
-                for (let i = 0; i < directories.length; i++) {
-                  console.log(directories[i]);
-                  const directory = directories[i];
-                  if (excludeDirectories.includes(directory)) {
-                    continue;
-                  }
-                  const path = `./${directories[i]}/convoy.yaml`
-                  const contentDir = fs.readFileSync(path, 'utf8');
-                  const dataDir = yaml.load(contentDir);
-                  exporter = dataDir.generates.artifacts[0].name
-                  if (appGroup !== 'tessell'){
-                    exporter = `${appGroup}-${exporter}`
-                  }
-                  version = dataDir.version
-                  try{
-                    checkVersion('${{vars.NEXUS_PUSH_REPOS_M2}}',exporter,version);
-                  } catch (e) {
-                    console.error(e);
-                    process.exit(1);
-                  }
-                }
-                process.exit(0);
-              }
-              else if(language === 'python'){
-                version = data.version
-                exporter = data.generates.artifacts[0].name
-                exporter = exporter.replaceAll('-','_')
-                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_PY}}'
-              }
-              else{
-                version = data.version;
-                exporter = data.generates.artifacts[0].name
-                nexusRepo = '${{vars.NEXUS_PUSH_REPOS_M2}}'
-              }
-              if(version === undefined || exporter === undefined ){
-                console.log("Required parameters not present in convoy.yaml, skipping check nexus version")
-                process.exit(0);
-              }
-            } catch(error){
-              console.log("convoy.yaml not present in repository or missing key. skipping check nexus version.")
-              console.error('Error:', error.message)
-              process.exit(0);
-            }
-            try{
-              checkVersion(nexusRepo,exporter,version)
-            } catch (e) {
-              console.error(e);
-              process.exit(1);
-            }
+          NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+          NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+          NEXUS_PUSH_REPOS_PY: ${{vars.NEXUS_PUSH_REPOS_PY}}
+          MODIFIED_FILES: ${{steps.changed-files-all.outputs.all_changed_and_modified_files}}
+        run: bash ./ci-scripts/bash/check-version-in-nexus.sh
