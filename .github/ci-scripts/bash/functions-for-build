@@ -1407,6 +1407,82 @@ setup_packer_env() {
   fi
 }
 
+sign_windows_artifact() {
+  set -e
+  local ARTIFACT_NAME="${1}"
+  
+  local SIGN_ENABLED=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT_NAME}\") | .signFiles.enabled // false" convoy.yaml)
+  [[ "${SIGN_ENABLED}" != "true" ]] && { echo "ℹ️  Signing not enabled for ${ARTIFACT_NAME}"; set +e; return 0; }
+
+  local files_to_sign=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT_NAME}\") | .signFiles.filesToSign[]" convoy.yaml)
+  [[ -z "${files_to_sign}" || "${files_to_sign}" == "null" ]] && { echo "⚠️  No filesToSign specified"; set +e; return 0; }
+  
+  echo "🔐 Signing files for: ${ARTIFACT_NAME}"
+  while IFS= read -r file_path; do
+    [[ -z "${file_path}" || "${file_path}" == "null" ]] && continue
+    [[ ! -f "${file_path}" ]] && { echo "❌ File not found: ${file_path}"; exit 1; }
+    sign_windows_artifact_file "${file_path}"
+  done <<< "${files_to_sign}"
+  echo "✅ Signing complete for: ${ARTIFACT_NAME}"
+  set +e
+}
+
+sign_windows_artifact_file() {
+  local ARTIFACT_PATH="${1}"
+  export BUILD_ID="signing-$(date +%Y%m%d-%H%M%S)-$$"
+  local ARTIFACT_NAME=$(basename "${ARTIFACT_PATH}")
+  local WORK_DIR="$(dirname "${ARTIFACT_PATH}")/signing-work-${BUILD_ID:-$$}"
+  local TEMP_TAR="${WORK_DIR}/artifact.tar"
+  local NEEDS_CONVERSION=false
+  
+  if [[ "${ARTIFACT_NAME}" =~ \.tar$ ]]; then
+    TEMP_TAR="${ARTIFACT_PATH}"
+  else
+    NEEDS_CONVERSION=true
+    mkdir -p "${WORK_DIR}/extracted"
+    
+    if [[ "${ARTIFACT_NAME}" =~ \.(tar\.gz|tgz)$ ]]; then
+      tar -xzf "${ARTIFACT_PATH}" -C "${WORK_DIR}/extracted"
+    elif [[ "${ARTIFACT_NAME}" =~ \.zip$ ]]; then
+      unzip -q "${ARTIFACT_PATH}" -d "${WORK_DIR}/extracted"
+    else
+      cp "${ARTIFACT_PATH}" "${WORK_DIR}/extracted/"
+    fi
+    tar -cf "${TEMP_TAR}" -C "${WORK_DIR}/extracted" .
+  fi
+    sign_windows_binaries_via_ssm "${TEMP_TAR}"
+
+  if [[ "${NEEDS_CONVERSION}" == "true" ]]; then
+    rm -rf "${WORK_DIR}/signed-extracted"; mkdir -p "${WORK_DIR}/signed-extracted"
+    tar -xf "${TEMP_TAR}" -C "${WORK_DIR}/signed-extracted"
+    
+    if [[ "${ARTIFACT_NAME}" =~ \.(tar\.gz|tgz)$ ]]; then
+      tar -czf "${ARTIFACT_PATH}" -C "${WORK_DIR}/signed-extracted" .
+    elif [[ "${ARTIFACT_NAME}" =~ \.zip$ ]]; then
+      (cd "${WORK_DIR}/signed-extracted" && zip -qr "${ARTIFACT_PATH}" .)
+    else
+      cp "${WORK_DIR}/signed-extracted/$(basename ${ARTIFACT_NAME})" "${ARTIFACT_PATH}" 2>/dev/null || \
+        cp "$(find "${WORK_DIR}/signed-extracted" -type f | head -n1)" "${ARTIFACT_PATH}"
+    fi
+    rm -rf "${WORK_DIR}"
+  fi
+}
+
+sign_windows_binaries_via_ssm() {
+  set -e
+  export TAR_FILE="${1}"
+  export SIGNED_TAR_FILE="${TAR_FILE%.tar}-signed.tar"
+
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
+  
+  aws s3 mv "${TAR_FILE}" "s3://${WINDOWS_SIGNING_S3_BUCKET}/${TAR_FILE}-${BUILD_ID}" 
+  bash ./ci-scripts/bash/sign-windows-binaries-via-ssm  
+  aws s3 mv "s3://${WINDOWS_SIGNING_S3_BUCKET}/${SIGNED_TAR_FILE}-${BUILD_ID}" "${TAR_FILE}"
+  
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  set +e
+}
+
 software_def_build() {
   set -e
   setup_packer_env
