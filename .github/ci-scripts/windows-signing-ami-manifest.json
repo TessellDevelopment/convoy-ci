@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "name": "windows-signing",
+      "builder_type": "amazon-ebs",
+      "build_time": 1774209731,
+      "files": null,
+      "artifact_id": "ap-south-1:ami-0d073cf564257d945",
+      "packer_run_uuid": "3a66c54f-0ad3-1a4a-33a4-155aecc08924",
+      "custom_data": null
+    }
+  ],
+  "last_run_uuid": "3a66c54f-0ad3-1a4a-33a4-155aecc08924"
+}

@@ -1,0 +1,29 @@
+# Example variables file for Windows Signing AMI
+# Copy this file to windows-signing-ami.pkrvars.hcl and customize
+
+# AWS Configuration
+aws_region  = "ap-south-1"
+aws_profile = "402291221517_AdministratorAccess"
+
+# Instance Configuration
+instance_type = "c5.2xlarge"  # Use larger instance for faster builds
+
+# Source AMI Filter
+# This will pick the latest Windows Server 2025 base AMI from AWS Marketplace
+source_ami_filter = "Windows_Server-2025-English-Full-Base-*"
+
+# AMI Naming
+ami_name_prefix = "tessell-windows-signing"
+
+# Admin User Configuration
+# ⚠️ IMPORTANT: Change these credentials before building!
+signing_admin_user     = "signadmin"
+signing_admin_password = "YourSecurePassword123!"  # Must meet Windows complexity requirements
+
+# Password Requirements:
+# - At least 8 characters
+# - Contains uppercase letters
+# - Contains lowercase letters
+# - Contains numbers
+# - Contains special characters (!@#$%^&*)
+
