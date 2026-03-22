@@ -328,9 +328,11 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
       ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
