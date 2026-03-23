@@ -55,7 +55,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test
+      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test_packer_template
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -227,7 +227,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       AWS_EC2_METADATA_DISABLED: true
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test
+      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test_packer_template
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
       CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       CONVOY_MINIO_ACCESS_KEY: ${{secrets.CONVOY_MINIO_ACCESS_KEY}}
@@ -532,7 +532,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test
+      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test_packer_template
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
@@ -603,7 +603,7 @@ jobs:
       WINDOWS_SIGNING_AWS_REGION: ${{ vars.WINDOWS_SIGNING_AWS_REGION }}
       WINDOWS_SIGNING_S3_BUCKET: ${{ vars.WINDOWS_SIGNING_S3_BUCKET }}
       # WINDOWS_SIGNING_ADMIN_USER: ${{ vars.WINDOWS_SIGNING_ADMIN_USER }}
-      WINDOWS_SIGNING_ADMIN_USER: 'EC2AMAZ-3E5TVNN\signadmin'
+      WINDOWS_SIGNING_ADMIN_USER: 'EC2AMAZ-RVBPBAN\Administrator'
       WINDOWS_SIGNING_ADMIN_PASSWORD: ${{ secrets.WINDOWS_SIGNING_ADMIN_PASSWORD }}
       WINDOWS_SIGNING_AZURE_TENANT_ID: ${{ secrets.TESSELL_CODESIGNER_TENANT_ID }}
       WINDOWS_SIGNING_AZURE_CLIENT_ID: ${{ secrets.TESSELL_CODESIGNER_CLIENT_ID }}
@@ -1167,7 +1167,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test
+      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test_packer_template
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}

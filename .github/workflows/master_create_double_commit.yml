@@ -9,7 +9,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: non-build
     env:
-      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test
+      CI_BRANCH: TDEVOPS-3868_win_ci_bash_clean_test_packer_template
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - uses: actions/checkout@v4.1.1
