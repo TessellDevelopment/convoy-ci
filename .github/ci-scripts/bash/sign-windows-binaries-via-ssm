@@ -62,11 +62,13 @@ COMMAND_ID=$(aws ssm send-command \
   --query 'Command.CommandId' --timeout-seconds 300 \
   --output text)
 
-echo "⏳ Waiting for command to complete (timeout: 5min)..."
+echo "⏳ Waiting for command to complete (timeout: 15min)..."
 aws ssm wait command-executed \
   --command-id "$COMMAND_ID" \
   --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
-  --region "$WINDOWS_SIGNING_AWS_REGION"
+  --region "$WINDOWS_SIGNING_AWS_REGION" \
+  --cli-read-timeout 900 \
+  --cli-connect-timeout 60
 
 OUTPUT_FILE="/tmp/ssm-output-${BUILD_ID}.txt"
 ERROR_FILE="/tmp/ssm-error-${BUILD_ID}.txt"
@@ -109,4 +111,3 @@ fi
 
 rm -f "$TRIGGER_FILE" "$OUTPUT_FILE" "$ERROR_FILE"
 echo "✅ Signing pipeline completed successfully for ${TAR_FILE}"
-
