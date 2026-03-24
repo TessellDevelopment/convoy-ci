@@ -110,8 +110,6 @@ create_ssm_payload() {
     }' > "$trigger_file"
 }
 
-echo "🚀 Starting Windows signing pipeline"
-
 validate_environment
 create_ssm_payload
 
@@ -139,7 +137,6 @@ invocation_response=$(aws ssm get-command-invocation \
 status=$(echo "$invocation_response" | jq -r '.Status')
 status_details=$(echo "$invocation_response" | jq -r '.StatusDetails')
 
-echo ""
 echo "─── Command Status ───────────────────────────"
 echo "Status: $status"
 echo "Details: $status_details"
