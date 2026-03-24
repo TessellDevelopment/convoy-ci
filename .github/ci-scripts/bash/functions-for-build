@@ -1457,8 +1457,9 @@ sign_windows_artifact_file() {
 sign_windows_binaries_via_ssm() {
   set -e
   local artifact_basename=$(basename "${ARTIFACT_FILE}")
-  export S3_ARTIFACT_KEY="${artifact_basename}-${BUILD_ID}"
-  export S3_SIGNED_ARTIFACT_KEY="${artifact_basename%.tar*}-signed-${BUILD_ID}.${artifact_basename##*.}"
+  export S3_ARTIFACT_KEY="unsigned/${BUILD_ID}/${artifact_basename}"
+  export S3_SIGNED_ARTIFACT_KEY="signed/${BUILD_ID}/${artifact_basename}"
+  export ARTIFACT_FILENAME="${artifact_basename}"
 
   generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
 

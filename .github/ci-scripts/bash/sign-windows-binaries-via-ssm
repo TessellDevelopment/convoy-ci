@@ -4,6 +4,7 @@ set -euo pipefail
 readonly REQUIRED_ENV_VARS=(
   S3_ARTIFACT_KEY
   S3_SIGNED_ARTIFACT_KEY
+  ARTIFACT_FILENAME
   EXTRACT_CMD
   ARCHIVE_CMD
   WINDOWS_SIGNING_S3_BUCKET
@@ -43,14 +44,12 @@ build_cmd_create_directory() {
 }
 
 build_cmd_download_from_s3() {
-  local artifact_name=$(basename "${S3_ARTIFACT_KEY}")
-  echo "aws s3 cp s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_ARTIFACT_KEY} '${build_dir_ps}\\${artifact_name}' --no-progress"
+  echo "aws s3 cp s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_ARTIFACT_KEY} '${build_dir_ps}\\${ARTIFACT_FILENAME}' --no-progress"
 }
 
 build_cmd_extract_artifact() {
-  local artifact_name=$(basename "${S3_ARTIFACT_KEY}")
-  local extract_cmd="${EXTRACT_CMD//INPUT_FILE/'${build_dir_ps}\\${artifact_name}'}"
-  extract_cmd="${extract_cmd//OUTPUT_DIR/'${build_dir_ps}\\artifacts'}"
+  local extract_cmd="${EXTRACT_CMD//INPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
+  extract_cmd="${extract_cmd//OUTPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${extract_cmd}"
 }
 
@@ -67,15 +66,13 @@ EOF
 }
 
 build_cmd_create_output_archive() {
-  local signed_artifact_name=$(basename "${S3_SIGNED_ARTIFACT_KEY}")
-  local archive_cmd="${ARCHIVE_CMD//OUTPUT_FILE/'${build_dir_ps}\\${signed_artifact_name}'}"
-  archive_cmd="${archive_cmd//INPUT_DIR/'${build_dir_ps}\\artifacts'}"
+  local archive_cmd="${ARCHIVE_CMD//OUTPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
+  archive_cmd="${archive_cmd//INPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${archive_cmd}"
 }
 
 build_cmd_upload_to_s3() {
-  local signed_artifact_name=$(basename "${S3_SIGNED_ARTIFACT_KEY}")
-  echo "aws s3 cp '${build_dir_ps}\\${signed_artifact_name}' s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_SIGNED_ARTIFACT_KEY} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
+  echo "aws s3 cp '${build_dir_ps}\\${ARTIFACT_FILENAME}' s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_SIGNED_ARTIFACT_KEY} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
 }
 
 build_cmd_cleanup() {
