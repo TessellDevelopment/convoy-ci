@@ -110,48 +110,60 @@ create_ssm_payload() {
     }' > "$trigger_file"
 }
 
+execute_ssm_command() {
+  local send_response
+  local command_id
+  local invocation_response
+  local status
+  local status_details
+
+  echo "🚀 Starting Windows signing pipeline"
+
+  send_response=$(aws ssm send-command \
+    --cli-input-json "file://${trigger_file}" \
+    --region "$WINDOWS_SIGNING_AWS_REGION" \
+    --timeout-seconds 900 \
+    --cli-read-timeout 900 \
+    --output json)
+
+  command_id=$(echo "$send_response" | jq -r '.Command.CommandId')
+  echo "📋 Command ID: $command_id"
+  echo "⏳ Waiting for command to complete (timeout: 15min)..."
+
+  aws ssm wait command-executed \
+    --command-id "$command_id" \
+    --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
+    --region "$WINDOWS_SIGNING_AWS_REGION"
+
+  invocation_response=$(aws ssm get-command-invocation \
+    --command-id "$command_id" \
+    --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
+    --region "$WINDOWS_SIGNING_AWS_REGION" \
+    --output json)
+
+  status=$(echo "$invocation_response" | jq -r '.Status')
+  status_details=$(echo "$invocation_response" | jq -r '.StatusDetails')
+
+  echo "─── Command Status ───────────────────────────"
+  echo "Status: $status"
+  echo "Details: $status_details"
+  echo "─── Output ───────────────────────────────────"
+  echo "$invocation_response" | jq -r '.StandardOutputContent' | tr -d '\r'
+  echo "─── Errors ───────────────────────────────────"
+  echo "$invocation_response" | jq -r '.StandardErrorContent' | tr -d '\r'
+  echo "──────────────────────────────────────────────"
+
+  if [[ "$status" != "Success" ]]; then
+    echo "❌ Command execution failed with status: $status"
+    echo "   Build dir kept for debugging: ${build_dir_ps}"
+    rm -f "$trigger_file"
+    exit 1
+  fi
+  rm -f "$trigger_file"
+  echo "✅ Signing pipeline completed successfully for ${S3_ARTIFACT_KEY}"
+}
+
+# Main execution
 validate_environment
 create_ssm_payload
-
-send_response=$(aws ssm send-command \
-  --cli-input-json "file://${trigger_file}" \
-  --region "$WINDOWS_SIGNING_AWS_REGION" \
-  --timeout-seconds 300 \
-  --output json)
-
-command_id=$(echo "$send_response" | jq -r '.Command.CommandId')
-echo "📋 Command ID: $command_id"
-echo "⏳ Waiting for command to complete (timeout: 5min)..."
-
-aws ssm wait command-executed \
-  --command-id "$command_id" \
-  --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
-  --region "$WINDOWS_SIGNING_AWS_REGION"
-
-invocation_response=$(aws ssm get-command-invocation \
-  --command-id "$command_id" \
-  --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
-  --region "$WINDOWS_SIGNING_AWS_REGION" \
-  --output json)
-
-status=$(echo "$invocation_response" | jq -r '.Status')
-status_details=$(echo "$invocation_response" | jq -r '.StatusDetails')
-
-echo "─── Command Status ───────────────────────────"
-echo "Status: $status"
-echo "Details: $status_details"
-echo "─── Output ───────────────────────────────────"
-echo "$invocation_response" | jq -r '.StandardOutputContent' | tr -d '\r'
-echo "─── Errors ───────────────────────────────────"
-echo "$invocation_response" | jq -r '.StandardErrorContent' | tr -d '\r'
-echo "──────────────────────────────────────────────"
-
-if [[ "$status" != "Success" ]]; then
-  echo "❌ Command execution failed with status: $status"
-  echo "   Build dir kept for debugging: ${build_dir_ps}"
-  rm -f "$trigger_file"
-  exit 1
-fi
-
-rm -f "$trigger_file"
-echo "✅ Signing pipeline completed successfully for ${S3_ARTIFACT_KEY}"
+execute_ssm_command
