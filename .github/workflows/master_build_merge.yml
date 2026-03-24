@@ -704,7 +704,7 @@ jobs:
             set -e
             EXTENSION="$2"
             BUILD_GENERATED_FILE_NAME="tessell-${SERVICE}-pkg-${OS}"
-            signWindowsArtifact "$1"
+            signWindowsArtifact "$@"
             if [[ $APP_GROUP == $TESSELL_GCP_APP_NAME ]]; then
               push_to_gcloud "package/$ARTIFACT.$EXTENSION" "gs://${TESSELL_GCP_ARTIFACTS_BUCKET}/${LABEL}/${ARTIFACT}/${ARTIFACT}-${LATEST_TAG}.$EXTENSION"
               generate_checksum "$ARTIFACT.$EXTENSION"
