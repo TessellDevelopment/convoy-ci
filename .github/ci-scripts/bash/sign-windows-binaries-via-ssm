@@ -59,7 +59,7 @@ jq -n \
 COMMAND_ID=$(aws ssm send-command \
   --cli-input-json "file:///tmp/ssm-trigger-${BUILD_ID}.json" \
   --region "$WINDOWS_SIGNING_AWS_REGION"  \
-  --query 'Command.CommandId' --timeout-seconds 300 \
+  --query 'Command.CommandId' --timeout-seconds 900 \
   --output text)
 
 echo "⏳ Waiting for command to complete (timeout: 15min)..."
