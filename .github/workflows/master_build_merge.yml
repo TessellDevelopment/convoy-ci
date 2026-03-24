@@ -530,6 +530,7 @@ jobs:
       AWS_ACCOUNT_TESSELL_QA: ${{vars.AWS_ACCOUNT_TESSELL_QA}}
       AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
       AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
+      AWS_CONVOY_EC2_ROLE: ${{vars.AWS_CONVOY_EC2_ROLE}}
       BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_BRANCH: main
