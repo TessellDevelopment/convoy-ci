@@ -145,21 +145,21 @@ function execute_ssm_command() {
   status_details=$(echo ${invocation_response} | jq -r '.StatusDetails')
 
   echo "─── Command Status ───────────────────────────"
-  echo "Status: $status"
-  echo "Details: $status_details"
+  echo "Status: ${status}"
+  echo "Details: ${status_details}"
   echo "─── Output ───────────────────────────────────"
-  echo "$invocation_response" | jq -r '.StandardOutputContent' | tr -d '\r'
+  echo ${invocation_response} | jq -r '.StandardOutputContent' | tr -d '\r'
   echo "─── Errors ───────────────────────────────────"
-  echo "$invocation_response" | jq -r '.StandardErrorContent' | tr -d '\r'
+  echo ${invocation_response} | jq -r '.StandardErrorContent' | tr -d '\r'
   echo "──────────────────────────────────────────────"
 
-  if [[ "$status" != "Success" ]]; then
-    echo "❌ Command execution failed with status: $status"
+  if [[ "${status}" != "Success" ]]; then
+    echo "❌ Command execution failed with status: ${status}"
     echo "   Build dir kept for debugging: ${build_dir_ps}"
-    rm -f "$trigger_file"
+    rm -f ${trigger_file}
     exit 1
   fi
-  rm -f "$trigger_file"
+  rm -f ${trigger_file}
   echo "✅ Signing pipeline completed successfully for ${S3_ARTIFACT_KEY}"
 }
 
