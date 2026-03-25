@@ -23,7 +23,7 @@ readonly REQUIRED_ENV_VARS=(
 readonly build_dir_ps="C:\\build-${BUILD_ID}"
 readonly trigger_file="/tmp/ssm-trigger-${BUILD_ID}.json"
 
-validate_environment() {
+function validate_environment() {
   local missing_vars=()
 
   for var in "${REQUIRED_ENV_VARS[@]}"; do
@@ -39,47 +39,47 @@ validate_environment() {
   fi
 }
 
-build_cmd_create_directory() {
+function build_cmd_create_directory() {
   echo "New-Item -ItemType Directory -Force -Path '${build_dir_ps}\\artifacts'; Write-Output 'Build dir ready: ${build_dir_ps}'"
 }
 
-build_cmd_download_from_s3() {
+function build_cmd_download_from_s3() {
   echo "aws s3 cp s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_ARTIFACT_KEY} '${build_dir_ps}\\${ARTIFACT_FILENAME}' --no-progress"
 }
 
-build_cmd_extract_artifact() {
+function build_cmd_extract_artifact() {
   local extract_cmd="${EXTRACT_CMD//INPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
   extract_cmd="${extract_cmd//OUTPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${extract_cmd}"
 }
 
-build_cmd_create_signing_script() {
+function build_cmd_create_signing_script() {
   cat <<EOF
 \$artifactsDir = '${build_dir_ps}\\artifacts'; \$signDone = '${build_dir_ps}\\sign-done.txt'; \$signJob = '${build_dir_ps}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$ErrorActionPreference = "Stop"', '\$env:AZURE_TENANT_ID = "${WINDOWS_SIGNING_AZURE_TENANT_ID}"', '\$env:AZURE_CLIENT_ID = "${WINDOWS_SIGNING_AZURE_CLIENT_ID}"', '\$env:AZURE_CLIENT_SECRET = "${WINDOWS_SIGNING_AZURE_CLIENT_SECRET}"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += "Invoke-TrustedSigning -Endpoint '${WINDOWS_SIGNING_ENDPOINT}' -CodeSigningAccountName '${WINDOWS_SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${WINDOWS_SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null" }; \$lines += '\$exes = Get-ChildItem -Path "${build_dir_ps}\\\\artifacts" -Filter "*.exe" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; if (\$sig.Status -ne "Valid") { Write-Error "Signature verification failed for \$(\$e.Name): \$(\$sig.Status)"; exit 1 } else { Write-Output "\$(\$e.Name): \$(\$sig.Status)" } }'; \$lines += "Set-Content '${build_dir_ps}\\\\sign-done.txt' done"; \$lines | Out-File '${build_dir_ps}\\sign-job.ps1' -Encoding utf8; Write-Output "Sign script created with \$(\$exeFiles.Count) exe files"
 EOF
 }
 
-build_cmd_execute_signing() {
+function build_cmd_execute_signing() {
   cat <<EOF
 schtasks /delete /tn "CodeSign-${BUILD_ID}" /f 2>\$null; schtasks /create /tn "CodeSign-${BUILD_ID}" /tr "powershell.exe -NonInteractive -ExecutionPolicy Bypass -File '${build_dir_ps}\\sign-job.ps1'" /sc once /st 00:00 /ru "${WINDOWS_SIGNING_ADMIN_USER}" /rp "${WINDOWS_SIGNING_ADMIN_PASSWORD}" /rl highest /f; schtasks /run /tn "CodeSign-${BUILD_ID}"; \$timeout = 300; \$elapsed = 0; while (!(Test-Path '${build_dir_ps}\\sign-done.txt') -and \$elapsed -lt \$timeout) { Start-Sleep 10; \$elapsed += 10 }; if (Test-Path '${build_dir_ps}\\sign-done.txt') { Write-Output 'SIGNING_SUCCESS' } else { Write-Output 'SIGNING_TIMEOUT'; exit 1 }
 EOF
 }
 
-build_cmd_create_output_archive() {
+function build_cmd_create_output_archive() {
   local archive_cmd="${ARCHIVE_CMD//OUTPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
   archive_cmd="${archive_cmd//INPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${archive_cmd}"
 }
 
-build_cmd_upload_to_s3() {
+function build_cmd_upload_to_s3() {
   echo "aws s3 cp '${build_dir_ps}\\${ARTIFACT_FILENAME}' s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_SIGNED_ARTIFACT_KEY} --no-progress; Write-Output 'UPLOAD_SUCCESS'"
 }
 
-build_cmd_cleanup() {
+function build_cmd_cleanup() {
   echo "if (Test-Path '${build_dir_ps}\\sign-done.txt') { schtasks /delete /tn \"CodeSign-${BUILD_ID}\" /f 2>\$null; Remove-Item '${build_dir_ps}' -Recurse -Force -ErrorAction SilentlyContinue; Write-Output 'CLEANUP_SUCCESS' } else { Write-Output 'CLEANUP_SKIPPED: build dir kept for debugging at ${build_dir_ps}' }"
 }
 
-create_ssm_payload() {
+function create_ssm_payload() {
   local cmd1 cmd2 cmd3 cmd4 cmd5 cmd6 cmd7 cmd8
 
   cmd1=$(build_cmd_create_directory)
@@ -92,25 +92,25 @@ create_ssm_payload() {
   cmd8=$(build_cmd_cleanup)
 
   jq -n \
-    --arg instance "$WINDOWS_SIGNING_INSTANCE_ID" \
-    --arg c1 "$cmd1" \
-    --arg c2 "$cmd2" \
-    --arg c3 "$cmd3" \
-    --arg c4 "$cmd4" \
-    --arg c5 "$cmd5" \
-    --arg c6 "$cmd6" \
-    --arg c7 "$cmd7" \
-    --arg c8 "$cmd8" \
+    --arg instance ${WINDOWS_SIGNING_INSTANCE_ID} \
+    --arg c1 ${cmd1} \
+    --arg c2 ${cmd2} \
+    --arg c3 ${cmd3} \
+    --arg c4 ${cmd4} \
+    --arg c5 ${cmd5} \
+    --arg c6 ${cmd6} \
+    --arg c7 ${cmd7} \
+    --arg c8 ${cmd8} \
     '{
       InstanceIds: [$instance],
       DocumentName: "AWS-RunPowerShellScript",
       Parameters: {
         commands: [$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]
       }
-    }' > "$trigger_file"
+    }' > ${trigger_file}
 }
 
-execute_ssm_command() {
+function execute_ssm_command() {
   local send_response
   local command_id
   local invocation_response
@@ -121,28 +121,28 @@ execute_ssm_command() {
 
   send_response=$(aws ssm send-command \
     --cli-input-json "file://${trigger_file}" \
-    --region "$WINDOWS_SIGNING_AWS_REGION" \
+    --region ${WINDOWS_SIGNING_AWS_REGION} \
     --timeout-seconds 900 \
     --cli-read-timeout 900 \
     --output json)
 
-  command_id=$(echo "$send_response" | jq -r '.Command.CommandId')
-  echo "📋 Command ID: $command_id"
+  command_id=$(echo ${send_response} | jq -r '.Command.CommandId')
+  echo "📋 Command ID: ${command_id}"
   echo "⏳ Waiting for command to complete (timeout: 15min)..."
 
   aws ssm wait command-executed \
-    --command-id "$command_id" \
-    --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
-    --region "$WINDOWS_SIGNING_AWS_REGION"
+    --command-id ${command_id} \
+    --instance-id ${WINDOWS_SIGNING_INSTANCE_ID} \
+    --region ${WINDOWS_SIGNING_AWS_REGION}
 
   invocation_response=$(aws ssm get-command-invocation \
-    --command-id "$command_id" \
-    --instance-id "$WINDOWS_SIGNING_INSTANCE_ID" \
-    --region "$WINDOWS_SIGNING_AWS_REGION" \
+    --command-id ${command_id} \
+    --instance-id ${WINDOWS_SIGNING_INSTANCE_ID} \
+    --region ${WINDOWS_SIGNING_AWS_REGION} \
     --output json)
 
-  status=$(echo "$invocation_response" | jq -r '.Status')
-  status_details=$(echo "$invocation_response" | jq -r '.StatusDetails')
+  status=$(echo ${invocation_response} | jq -r '.Status')
+  status_details=$(echo ${invocation_response} | jq -r '.StatusDetails')
 
   echo "─── Command Status ───────────────────────────"
   echo "Status: $status"
