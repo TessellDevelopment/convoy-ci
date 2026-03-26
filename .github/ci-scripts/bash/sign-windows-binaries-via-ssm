@@ -48,8 +48,8 @@ function build_cmd_download_from_s3() {
 }
 
 function build_cmd_extract_artifact() {
-  local extract_cmd="${EXTRACT_CMD//INPUT_FILE/${build_dir_ps}\\${ARTIFACT_FILENAME}}"
-  extract_cmd="${extract_cmd//OUTPUT_DIR/${build_dir_ps}\\artifacts}"
+  local extract_cmd="${EXTRACT_CMD//INPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
+  extract_cmd="${extract_cmd//OUTPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${extract_cmd}"
 }
 
@@ -66,8 +66,8 @@ EOF
 }
 
 function build_cmd_create_output_archive() {
-  local archive_cmd="${ARCHIVE_CMD//OUTPUT_FILE/${build_dir_ps}\\${ARTIFACT_FILENAME}}"
-  archive_cmd="${archive_cmd//INPUT_DIR/${build_dir_ps}\\artifacts}"
+  local archive_cmd="${ARCHIVE_CMD//OUTPUT_FILE/${build_dir_ps}\\\\${ARTIFACT_FILENAME}}"
+  archive_cmd="${archive_cmd//INPUT_DIR/${build_dir_ps}\\\\artifacts}"
   echo "${archive_cmd}"
 }
 
