@@ -163,7 +163,6 @@ function execute_ssm_command() {
   echo "✅ Signing pipeline completed successfully for ${S3_ARTIFACT_KEY}"
 }
 
-
 # Main execution
 validate_environment
 create_ssm_payload
