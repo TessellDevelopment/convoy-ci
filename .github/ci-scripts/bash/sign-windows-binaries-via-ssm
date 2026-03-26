@@ -55,7 +55,7 @@ function build_cmd_extract_artifact() {
 
 function build_cmd_create_signing_script() {
   cat <<EOF
-\$artifactsDir = '${build_dir_ps}\\artifacts'; \$signDone = '${build_dir_ps}\\sign-done.txt'; \$signJob = '${build_dir_ps}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$ErrorActionPreference = "Stop"', '\$env:AZURE_TENANT_ID = "${WINDOWS_SIGNING_AZURE_TENANT_ID}"', '\$env:AZURE_CLIENT_ID = "${WINDOWS_SIGNING_AZURE_CLIENT_ID}"', '\$env:AZURE_CLIENT_SECRET = "${WINDOWS_SIGNING_AZURE_CLIENT_SECRET}"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += "Invoke-TrustedSigning -Endpoint '${WINDOWS_SIGNING_ENDPOINT}' -CodeSigningAccountName '${WINDOWS_SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${WINDOWS_SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null" }; \$lines += '\$exes = Get-ChildItem -Path "${build_dir_ps}\\\\artifacts" -Filter "*.exe" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; if (\$sig.Status -ne "Valid") { Write-Error "Signature verification failed for \$(\$e.Name): \$(\$sig.Status)"; exit 1 } else { Write-Output "\$(\$e.Name): \$(\$sig.Status)" } }'; \$lines += "Set-Content '${build_dir_ps}\\\\sign-done.txt' done"; \$lines | Out-File '${build_dir_ps}\\sign-job.ps1' -Encoding utf8; Write-Output "Sign script created with \$(\$exeFiles.Count) exe files"
+\$artifactsDir = '${build_dir_ps}\\artifacts'; \$signDone = '${build_dir_ps}\\sign-done.txt'; \$signJob = '${build_dir_ps}\\sign-job.ps1'; \$exeFiles = Get-ChildItem -Path \$artifactsDir -Filter '*.exe' -Recurse; \$lines = @('\$ErrorActionPreference = "Stop"', '\$env:AZURE_TENANT_ID = "${WINDOWS_SIGNING_AZURE_TENANT_ID}"', '\$env:AZURE_CLIENT_ID = "${WINDOWS_SIGNING_AZURE_CLIENT_ID}"', '\$env:AZURE_CLIENT_SECRET = "${WINDOWS_SIGNING_AZURE_CLIENT_SECRET}"', 'Import-Module TrustedSigning'); foreach (\$exe in \$exeFiles) { \$lines += "Invoke-TrustedSigning -Endpoint '${WINDOWS_SIGNING_ENDPOINT}' -CodeSigningAccountName '${WINDOWS_SIGNING_ACCOUNT_NAME}' -CertificateProfileName '${WINDOWS_SIGNING_PROFILE_NAME}' -TimestampRfc3161 'http://timestamp.acs.microsoft.com' -TimestampDigest SHA256 -FileDigest SHA256 -Files '\$(\$exe.FullName)' | Out-Null" }; \$lines += '\$exes = Get-ChildItem -Path "${build_dir_ps}\\artifacts" -Filter "*.exe" -Recurse'; \$lines += 'foreach (\$e in \$exes) { \$sig = Get-AuthenticodeSignature \$e.FullName; if (\$sig.Status -ne "Valid") { Write-Error "Signature verification failed for \$(\$e.Name): \$(\$sig.Status)"; exit 1 } else { Write-Output "\$(\$e.Name): \$(\$sig.Status)" } }'; \$lines += "Set-Content '${build_dir_ps}\\sign-done.txt' done"; \$lines | Out-File '${build_dir_ps}\\sign-job.ps1' -Encoding utf8; Write-Output "Sign script created with \$(\$exeFiles.Count) exe files"
 EOF
 }
 
@@ -92,22 +92,22 @@ function create_ssm_payload() {
   cmd8=$(build_cmd_cleanup)
 
   jq -n \
-    --arg instance ${WINDOWS_SIGNING_INSTANCE_ID} \
-    --arg c1 ${cmd1} \
-    --arg c2 ${cmd2} \
-    --arg c3 ${cmd3} \
-    --arg c4 ${cmd4} \
-    --arg c5 ${cmd5} \
-    --arg c6 ${cmd6} \
-    --arg c7 ${cmd7} \
-    --arg c8 ${cmd8} \
+    --arg instance "${WINDOWS_SIGNING_INSTANCE_ID}" \
+    --arg c1 "${cmd1}" \
+    --arg c2 "${cmd2}" \
+    --arg c3 "${cmd3}" \
+    --arg c4 "${cmd4}" \
+    --arg c5 "${cmd5}" \
+    --arg c6 "${cmd6}" \
+    --arg c7 "${cmd7}" \
+    --arg c8 "${cmd8}" \
     '{
       InstanceIds: [$instance],
       DocumentName: "AWS-RunPowerShellScript",
       Parameters: {
         commands: [$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]
       }
-    }' > ${trigger_file}
+    }' > "${trigger_file}"
 }
 
 function execute_ssm_command() {
