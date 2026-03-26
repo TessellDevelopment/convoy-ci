@@ -92,22 +92,22 @@ function create_ssm_payload() {
   cmd8=$(build_cmd_cleanup)
 
   jq -n \
-    --arg instance ${WINDOWS_SIGNING_INSTANCE_ID} \
-    --arg c1 ${cmd1} \
-    --arg c2 ${cmd2} \
-    --arg c3 ${cmd3} \
-    --arg c4 ${cmd4} \
-    --arg c5 ${cmd5} \
-    --arg c6 ${cmd6} \
-    --arg c7 ${cmd7} \
-    --arg c8 ${cmd8} \
+    --arg instance "$WINDOWS_SIGNING_INSTANCE_ID" \
+    --arg c1 "${cmd1}" \
+    --arg c2 "${cmd2}" \
+    --arg c3 "${cmd3}" \
+    --arg c4 "${cmd4}" \
+    --arg c5 "${cmd5}" \
+    --arg c6 "${cmd6}" \
+    --arg c7 "${cmd7}" \
+    --arg c8 "${cmd8}" \
     '{
       InstanceIds: [$instance],
       DocumentName: "AWS-RunPowerShellScript",
       Parameters: {
         commands: [$c1, $c2, $c3, $c4, $c5, $c6, $c7, $c8]
       }
-    }' > ${trigger_file}
+    }' > "${trigger_file}"
 }
 
 function execute_ssm_command() {
