@@ -105,7 +105,7 @@ build_windows_native_artifact() {
   EXTENSION="${2}"
   check_convoy_yaml
   create_powershell_env_vars
-  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} "ec2-full-access-role-for-convoy"
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} ${AWS_CONVOY_EC2_ROLE}
 
   zip -r repo.zip . -x "target/*"
   packer build ci-scripts/windows-native-builder.pkr.hcl
@@ -1405,6 +1405,70 @@ setup_packer_env() {
   else
     sm_artifact_name="${APP_GROUP}-software-image-manifest"
   fi
+}
+
+sign_windows_artifact() {
+  set -e
+  local artifact_name="${1}"
+  local extension="${2}"
+
+  local sign_enabled=$(yq ".generates.artifacts[] | select(.name == \"${artifact_name}\") | .signFiles.enabled // false" convoy.yaml)
+  [[ "${sign_enabled}" != "true" ]] && { echo "ℹ️  Signing not enabled for ${artifact_name}"; set +e; return 0; }
+
+  local files_to_sign=$(yq ".generates.artifacts[] | select(.name == \"${artifact_name}\") | .signFiles.filesToSign[]" convoy.yaml)
+  [[ -z "${files_to_sign}" || "${files_to_sign}" == "null" ]] && { echo "⚠️  No filesToSign specified"; set +e; return 0; }
+
+  echo "🔐 Signing files for: ${artifact_name} (extension: ${extension})"
+  while IFS= read -r file_path; do
+    [[ -z "${file_path}" || "${file_path}" == "null" ]] && continue
+    [[ ! -f "${file_path}" ]] && { echo "❌ File not found: ${file_path}"; exit 1; }
+    sign_windows_artifact_file "${file_path}" "${extension}"
+  done <<< "${files_to_sign}"
+  echo "✅ Signing complete for: ${artifact_name}"
+  set +e
+}
+
+sign_windows_artifact_file() {
+  local artifact_path="${1}"
+  local extension="${2}"
+  export BUILD_ID="signing-$(date +%Y%m%d-%H%M%S)-$$"
+  export ARTIFACT_FILE="${artifact_path}"
+
+  case "${extension}" in
+    tar|tar.gz|tgz)
+      local compress_flag=""
+      [[ "${extension}" == "tar" ]] && compress_flag="" || compress_flag="z"
+      export EXTRACT_CMD="tar -x${compress_flag}f INPUT_FILE -C OUTPUT_DIR"
+      export ARCHIVE_CMD="tar -c${compress_flag}f OUTPUT_FILE -C INPUT_DIR ."
+      ;;
+    zip)
+      export EXTRACT_CMD="Expand-Archive -Force -Path INPUT_FILE -DestinationPath OUTPUT_DIR"
+      export ARCHIVE_CMD="Compress-Archive -Force -Path INPUT_DIR\\* -DestinationPath OUTPUT_FILE"
+      ;;
+    *)
+      echo "❌ Unsupported extension: ${extension}"
+      exit 1
+      ;;
+  esac
+
+  sign_windows_binaries_via_ssm
+}
+
+sign_windows_binaries_via_ssm() {
+  set -e
+  local artifact_basename=$(basename "${ARTIFACT_FILE}")
+  export S3_ARTIFACT_KEY="unsigned/${BUILD_ID}/${artifact_basename}"
+  export S3_SIGNED_ARTIFACT_KEY="signed/${BUILD_ID}/${artifact_basename}"
+  export ARTIFACT_FILENAME="${artifact_basename}"
+
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_DEVOPS} ${AWS_CONVOY_EC2_ROLE}
+
+  aws s3 cp "${ARTIFACT_FILE}" "s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_ARTIFACT_KEY}"
+  bash ./ci-scripts/bash/sign-windows-binaries-via-ssm
+  aws s3 cp "s3://${WINDOWS_SIGNING_S3_BUCKET}/${S3_SIGNED_ARTIFACT_KEY}" "${ARTIFACT_FILE}"
+
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  set +e
 }
 
 software_def_build() {
