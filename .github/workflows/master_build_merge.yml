@@ -376,6 +376,7 @@ jobs:
             validateInputs "$requiredInputs" "$@" 
             docker tag $BASE_IMAGE:latest ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           elasticConf() {
@@ -403,6 +404,7 @@ jobs:
             echo "------------ Building Image ------------------"
             docker build -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} .
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             cd ..
             elasticTarBuild
             awsConfigureProdAssets
@@ -448,6 +450,7 @@ jobs:
             IMAGE="$1"
             gradlewDockerTag
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           lintCheck() {
@@ -885,6 +888,7 @@ jobs:
             configureJava
             gradlewMavenDocker
             docker push ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           javaLibraryBuildAndPush() {
@@ -925,6 +929,7 @@ jobs:
             make image
             docker tag $IMAGE:latest ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
             docker push ${{env.DOCKERHUB_ORG}}/$IMAGE:${LATEST_TAG}
+            generate_docker_checksum ${IMAGE} ${LATEST_TAG}
             set +e
           }
           modifiedDir() {
@@ -1305,9 +1310,10 @@ jobs:
             IMAGE="$1"
             FILE="$4"
             requiredInputs="1 4"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             docker buildx build --push -f $FILE --no-cache -t ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} --platform=linux/amd64,linux/arm64 .
             docker build --push -f $FILE --no-cache -t ${{vars.TESSELL_DEV_ECR}}/$IMAGE:${LATEST_TAG} .
+            generate_docker_checksum "${IMAGE}" "${LATEST_TAG}"
             set +e
           }
           dockerMilvusBuildAndPush() {
@@ -1330,6 +1336,8 @@ jobs:
                                 --build-arg GITHUB_TOKEN=${{ secrets.CIPIPELINE_GITHUB_TOKEN }} \
                                 --build-arg NEXUS_PROTOCOL=${NEXUS_PROTOCOL} \
                                 --build-arg NEXUS_SERVER_ENDPOINT=${NEXUS_SERVER_ENDPOINT} .
+            DIGEST=$(docker buildx imagetools inspect ${DOCKERHUB_ORG}/$IMAGE:${LATEST_TAG} | grep "Digest:" | head -1 | awk '{print $2}')
+            ARTIFACT_CHECKSUMS+="${IMAGE}:${DIGEST}%"
             set +e
           }
           dockerPullAndPush() {
