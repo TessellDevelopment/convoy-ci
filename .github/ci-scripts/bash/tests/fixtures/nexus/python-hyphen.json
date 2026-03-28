@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "repository": "py-releases",
+      "format": "pypi",
+      "name": "my-package",
+      "version": "1.0.0"
+    }
+  ],
+  "continuationToken": null
+}
