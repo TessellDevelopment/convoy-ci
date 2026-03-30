@@ -158,7 +158,7 @@ jobs:
                     print("Extension Details not present")
                   if artifact_type == 'artifacts':
                     BUCKET_NAME=f"{APP_GROUP}-artifacts"
-                    if APP_GROUP == "gcpcore':
+                    if APP_GROUP == 'gcpcore':
                       print("Setting bucket name for gcpcore to tessell-artifacts")
                       BUCKET_NAME=f"tessell-artifacts"
                     element["path"] = f"{BUCKET_NAME}/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
