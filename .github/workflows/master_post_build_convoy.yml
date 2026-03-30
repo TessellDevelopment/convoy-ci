@@ -159,7 +159,7 @@ jobs:
                   if artifact_type == 'artifacts':
                     BUCKET_NAME=f"{APP_GROUP}-artifacts"
                     if APP_GROUP == "gcpcore':
-                      echo "Setting bucket name for gcpcore to tessell-artifacts"
+                      print("Setting bucket name for gcpcore to tessell-artifacts")
                       BUCKET_NAME=f"tessell-artifacts"
                     element["path"] = f"{BUCKET_NAME}/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
                   artifacts.append(element)
