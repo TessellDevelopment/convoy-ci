@@ -336,6 +336,14 @@ softwareDefBuildAndPush() {
   software_def_build_and_push "$@"
 }
 
+staticArtifactCreate() {
+  static_artifact_create "$@"
+}
+
+staticArtifactCreateAndPush() {
+  static_artifact_create_and_push "$@"
+}
+
 tailscaleBuild() {
   tailscale_build "$@"
 }
