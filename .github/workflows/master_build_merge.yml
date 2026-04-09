@@ -695,7 +695,6 @@ jobs:
           agentBuild() {
             set -e
             installGoDependencies
-            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@"
