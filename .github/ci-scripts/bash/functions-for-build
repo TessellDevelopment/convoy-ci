@@ -1473,53 +1473,37 @@ sonar_scan() {
         -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar,ci-scripts/**'
 }
 
-# static_artifact_create — sanity-check only.
-# Verifies that the S3 object declared in convoy.yaml under 'path' for this artifact
-# actually exists and is reachable. Exported env vars set by the build loop:
-#   ARTIFACT_NAME     — value of the 'name' field in convoy.yaml
-#   ARTIFACT_PATH     — value of the 'path' field (must be an s3:// URI)
-#   ARTIFACT_CHECKSUM — value of the 'checksum' field in convoy.yaml
-static_artifact_create() {
+# pythonUpgradeBundleCreate — PR sanity-check: verifies pythonArtifactPath exists and is reachable on S3.
+python_upgrade_bundle_create() {
   set -e
+  local artifact="${1}"
+  local path=$(yq ".generates.artifacts[] | select(.name == \"${artifact}\") | .pythonArtifactPath" convoy.yaml)
 
-  if [[ -z "${ARTIFACT_PATH:-}" ]]; then
-    echo "❌ ERROR: 'path' field is empty in convoy.yaml for artifact '${ARTIFACT_NAME}'" >&2
-    exit 1
-  fi
+  [[ -n "${path}" && "${path}" != "null" ]] || { echo "❌ ERROR: 'pythonArtifactPath' missing in convoy.yaml for '${artifact}'" >&2; exit 1; }
+  [[ "${path}" == s3://* ]] || { echo "❌ ERROR: 'pythonArtifactPath' must be an s3:// URI, got: '${path}'" >&2; exit 1; }
+  aws s3 ls "${path}" > /dev/null 2>&1 || { echo "❌ ERROR: S3 object not found: '${path}'" >&2; exit 1; }
 
-  if [[ "${ARTIFACT_PATH}" != s3://* ]]; then
-    echo "❌ ERROR: 'path' for artifact '${ARTIFACT_NAME}' must be an s3:// URI, got: '${ARTIFACT_PATH}'" >&2
-    exit 1
-  fi
-
-  echo "Verifying S3 object exists at: ${ARTIFACT_PATH}"
-  if ! aws s3 ls "${ARTIFACT_PATH}" > /dev/null 2>&1; then
-    echo "❌ ERROR: S3 object not found at '${ARTIFACT_PATH}' for artifact '${ARTIFACT_NAME}'" >&2
-    exit 1
-  fi
-
-  echo "✅ S3 object verified: ${ARTIFACT_PATH}"
+  echo "✅ S3 object verified: ${path}"
   set +e
 }
 
-# static_artifact_create_and_push — S3 sanity-check + payload registration.
-# Calls static_artifact_create to validate the S3 path, then appends an entry to
-# ARTIFACT_CHECKSUMS so that master_post_build_convoy.yml can POST the artifact
-# record (name, version, path, checksum) to the Convoy API.
-static_artifact_create_and_push() {
+# pythonUpgradeBundleCreateAndPush — download pythonArtifactPath, inject python-custom-wrapper/, repackage, and upload.
+python_upgrade_bundle_create_and_push() {
   set -e
+  ARTIFACT="${1}"
+  EXTENSION="${2}"
+  python_upgrade_bundle_create "$@"
 
-  static_artifact_create "$@"
+  local src_path staging_dir="${ARTIFACT}-staging" tmp_zip="${ARTIFACT}-upstream.zip"
+  src_path=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .pythonArtifactPath" convoy.yaml)
 
-  if [[ -z "${ARTIFACT_CHECKSUM:-}" ]]; then
-    echo "⚠️  WARNING: 'checksum' field is empty in convoy.yaml for artifact '${ARTIFACT_NAME}'. Registering without checksum."
-  fi
+  aws s3 cp "${src_path}" "${tmp_zip}"
+  rm -rf "${staging_dir}" && mkdir -p "${staging_dir}"
+  unzip -o "${tmp_zip}" -d "${staging_dir}" && rm -f "${tmp_zip}"
+  [[ -d "python-custom-wrapper" ]] && cp -r python-custom-wrapper/. "${staging_dir}/"
+  (cd "${staging_dir}" && zip -r "../${ARTIFACT}.${EXTENSION}" .) && rm -rf "${staging_dir}"
 
-  # Append to ARTIFACT_CHECKSUMS — format mirrors generate_checksum(): "<name>:<checksum>%"
-  ARTIFACT_CHECKSUMS+="${ARTIFACT_NAME}:${ARTIFACT_CHECKSUM:-}%"
-  export ARTIFACT_CHECKSUMS
-
-  echo "Registered artifact '${ARTIFACT_NAME}' in ARTIFACT_CHECKSUMS (path: ${ARTIFACT_PATH})"
+  push_release_manifest_artifacts
   set +e
 }
 
