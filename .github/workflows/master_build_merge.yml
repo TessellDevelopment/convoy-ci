@@ -695,9 +695,10 @@ jobs:
           agentBuild() {
             set -e
             installGoDependencies
+            git config --global url."https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
             OS=$(echo "$ARTIFACT" | awk -F'[-]' '{print $4}')
             SERVICE=$(echo "$ARTIFACT" | awk -F'[-]' '{print $2}')
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
