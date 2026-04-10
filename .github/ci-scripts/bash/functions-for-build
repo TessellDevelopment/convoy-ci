@@ -1473,7 +1473,6 @@ sonar_scan() {
         -Dsonar.exclusions='**/*.js,**/*.html,**/*.css,**/*.jar,ci-scripts/**'
 }
 
-# pythonUpgradeBundleCreate — PR sanity-check: verifies pythonArtifactPath exists and is reachable on S3.
 python_upgrade_bundle_create() {
   set -e
   local artifact="${1}"
@@ -1487,7 +1486,6 @@ python_upgrade_bundle_create() {
   set +e
 }
 
-# pythonUpgradeBundleCreateAndPush — download pythonArtifactPath, inject python-custom-wrapper/, repackage, and upload.
 python_upgrade_bundle_create_and_push() {
   set -e
   ARTIFACT="${1}"
