@@ -1477,7 +1477,7 @@ python_upgrade_bundle_create() {
   set -e
   local artifact="${1}"
   local path=$(yq ".generates.artifacts[] | select(.name == \"${artifact}\") | .pythonArtifactPath" convoy.yaml)
-
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
   [[ -n "${path}" && "${path}" != "null" ]] || { echo "❌ ERROR: 'pythonArtifactPath' missing in convoy.yaml for '${artifact}'" >&2; exit 1; }
   [[ "${path}" == s3://* ]] || { echo "❌ ERROR: 'pythonArtifactPath' must be an s3:// URI, got: '${path}'" >&2; exit 1; }
   aws s3 ls "${path}" > /dev/null 2>&1 || { echo "❌ ERROR: S3 object not found: '${path}'" >&2; exit 1; }
