@@ -1499,7 +1499,7 @@ python_upgrade_bundle_create_and_push() {
   rm -rf "${staging_dir}" && mkdir -p "${staging_dir}"
   unzip -o "${tmp_zip}" -d "${staging_dir}" && rm -f "${tmp_zip}"
   [[ -d "python-custom-wrapper" ]] && cp -r python-custom-wrapper/. "${staging_dir}/"
-  (cd "${staging_dir}" && zip -r "../${ARTIFACT}.${EXTENSION}" .) && rm -rf "${staging_dir}"
+  tar -czf "${ARTIFACT}.${EXTENSION}" -C "${staging_dir}" . && rm -rf "${staging_dir}"
 
   push_release_manifest_artifacts
   set +e
