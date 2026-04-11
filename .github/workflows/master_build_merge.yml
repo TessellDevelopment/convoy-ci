@@ -586,7 +586,7 @@ jobs:
       TESSELLOPS_APP_NAME: ${{vars.TESSELLOPS_APP_NAME}}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
-      GCP_AUTH_REPOS: ",tessell-software-library-image-defns, tessell-software-disk-builder,"
+      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
     steps:
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
