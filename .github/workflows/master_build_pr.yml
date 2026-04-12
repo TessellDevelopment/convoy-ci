@@ -366,6 +366,7 @@ jobs:
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
       TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
+      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -398,7 +399,7 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
+        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME || contains(env.GCP_AUTH_REPOS, format(',{0},', env.REPO)) }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
