@@ -60,9 +60,9 @@ function upload_artifact() {
 
   readarray -t bucket_names < <(resolve_artifact_buckets "${artifact_name}")
 
-  # ${DEV_BUILD:-false} \
-  #   && bucket_names=( tessell-artifacts-devtest ) \
-  #   || upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
+  ${DEV_BUILD:-false} \
+    && bucket_names=( tessell-artifacts-devtest ) \
+    || upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
 
   if [[ ${push_to} == convoy-minio ]]; then
     local cp_cmd='mc cp'
