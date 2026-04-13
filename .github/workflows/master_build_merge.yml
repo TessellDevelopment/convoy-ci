@@ -548,6 +548,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -597,7 +598,6 @@ jobs:
       TESSELLOPS_APP_NAME: ${{vars.TESSELLOPS_APP_NAME}}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
-      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,ci-test-repo-a,"
       WINDOWS_SIGNING_ACCOUNT_NAME: ${{ vars.TESSELL_CODESIGNER_ACCOUNT_NAME }}
       WINDOWS_SIGNING_ADMIN_USER: ${{ vars.WINDOWS_SIGNING_ADMIN_USER }}
       WINDOWS_SIGNING_ADMIN_PASSWORD: ${{ secrets.WINDOWS_SIGNING_ADMIN_PASSWORD }}
