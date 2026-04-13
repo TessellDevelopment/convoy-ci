@@ -25,12 +25,6 @@ function upload_to_nexus_tessell_artifacts() {
   validate_reponse_code "${status_code}" "201"
 }
 
-
-# resolve_artifact_buckets <artifact_name> [convoy_yaml]
-# Returns the full list of destination S3 bucket names for an artifact.
-#   - If the artifact's entry in convoy.yaml declares 'artifactBuckets', those
-#     exact bucket names are used (e.g. tessell-custom-artifacts, tessell-artifacts).
-#   - Otherwise the standard tessell-artifacts-{dev,qa,stage,prod} names are returned.
 function resolve_artifact_buckets() {
   local artifact_name="${1:-}" convoy_yaml="${2:-./convoy.yaml}" custom_buckets
 
@@ -78,7 +72,7 @@ function upload_artifact() {
     log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}${bucket_name}/${dest_path_suffix}'"
     ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}${bucket_name}/${dest_path_suffix}
   done
-  # unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
 
 
