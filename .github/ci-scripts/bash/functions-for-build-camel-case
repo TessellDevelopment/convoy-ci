@@ -336,6 +336,10 @@ setupPackerEnv() {
   setup_packer_env "$@"
 }
 
+signWindowsArtifact() {
+  sign_windows_artifact "$@"
+}
+
 softwareDefBuild() {
   software_def_build "$@"
 }
