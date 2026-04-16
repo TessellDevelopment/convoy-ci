@@ -548,7 +548,6 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -578,6 +577,7 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.repository.name}}"
+      REPOS_BUILDING_GCP_ARTIFACTS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -646,6 +646,13 @@ jobs:
             echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
 
+      - name: Check if GCP login is needed
+        id: need-gcloud-login
+        run: |
+          [[ "${APP_GROUP}" == "${TESSELL_GCP_APP_NAME}" || "${REPOS_BUILDING_GCP_ARTIFACTS}" == *",${REPO},"* ]] \
+            && echo "result=true" >> $GITHUB_OUTPUT \
+            || echo "result=false" >> $GITHUB_OUTPUT
+
       # - name: Check specific file changes
       #   id: changed-files
       #   uses: tj-actions/changed-files@v42.0.2
@@ -669,7 +676,7 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME || contains(env.GCP_AUTH_REPOS, format(',{0},', env.REPO)) }}
+        if: ${{ steps.need-gcloud-login.outputs.result == 'true' }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'

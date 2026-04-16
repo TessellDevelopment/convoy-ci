@@ -1539,32 +1539,23 @@ sonar_scan() {
 
 python_upgrade_bundle_create() {
   set -e
-  local artifact="${1}"
-  local path=$(yq ".generates.artifacts[] | select(.name == \"${artifact}\") | .pythonArtifactPath" convoy.yaml)
-  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
-  [[ -n "${path}" && "${path}" != "null" ]] || { echo "❌ ERROR: 'pythonArtifactPath' missing in convoy.yaml for '${artifact}'" >&2; exit 1; }
-  [[ "${path}" == s3://* ]] || { echo "❌ ERROR: 'pythonArtifactPath' must be an s3:// URI, got: '${path}'" >&2; exit 1; }
-  aws s3 ls "${path}" > /dev/null 2>&1 || { echo "❌ ERROR: S3 object not found: '${path}'" >&2; exit 1; }
+  local ARTIFACT="${1}"
+  local EXTENSION="${2}"
+  local staging_dir="${ARTIFACT}-staging" tmp_zip="${ARTIFACT}-upstream.zip"
+  local src_path=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .pythonArtifactPath" convoy.yaml)
+  [[ -n "${src_path}" && "${src_path}" != "null" ]] || { echo "❌ ERROR: 'pythonArtifactPath' missing in convoy.yaml for '${ARTIFACT}'" >&2; exit 1; }
 
-  echo "✅ S3 object verified: ${path}"
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
+  aws s3 cp "${src_path}" "${tmp_zip}"
+  rm -rf "${staging_dir}" && unzip -o "${tmp_zip}" -d "${staging_dir}" && rm -f "${tmp_zip}"
+  [[ -d "bundle-overlay" ]] && cp -r bundle-overlay/. "${staging_dir}/"
+  tar -czf "${ARTIFACT}.${EXTENSION}" -C "${staging_dir}" . && rm -rf "${staging_dir}"
   set +e
 }
 
 python_upgrade_bundle_create_and_push() {
-  set -e
-  ARTIFACT="${1}"
-  EXTENSION="${2}"
   python_upgrade_bundle_create "$@"
-
-  local src_path staging_dir="${ARTIFACT}-staging" tmp_zip="${ARTIFACT}-upstream.zip"
-  src_path=$(yq ".generates.artifacts[] | select(.name == \"${ARTIFACT}\") | .pythonArtifactPath" convoy.yaml)
-
-  aws s3 cp "${src_path}" "${tmp_zip}"
-  rm -rf "${staging_dir}" && mkdir -p "${staging_dir}"
-  unzip -o "${tmp_zip}" -d "${staging_dir}" && rm -f "${tmp_zip}"
-  [[ -d "bundle-overlay" ]] && cp -r bundle-overlay/. "${staging_dir}/"
-  tar -czf "${ARTIFACT}.${EXTENSION}" -C "${staging_dir}" . && rm -rf "${staging_dir}"
-
+  set -e
   push_release_manifest_artifacts
   set +e
 }
