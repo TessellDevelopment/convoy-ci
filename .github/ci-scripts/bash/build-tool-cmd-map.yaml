@@ -1,0 +1,6 @@
+pre-merge:
+  maven: mvn clean package
+  gradle: gradle clean build
+post-merge:
+  maven: mvn clean deploy
+  gradle: gradle clean publish
