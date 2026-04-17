@@ -577,7 +577,7 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
       REPO: "${{github.event.repository.name}}"
-      REPOS_BUILDING_GCP_ARTIFACTS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
+      REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
