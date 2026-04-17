@@ -360,6 +360,7 @@ jobs:
       REPO: "${{github.repository}}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
+      REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -367,7 +368,6 @@ jobs:
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
       TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
-      REPOS_BUILDING_GCP_ARTIFACTS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
