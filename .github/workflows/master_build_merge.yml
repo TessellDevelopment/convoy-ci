@@ -80,7 +80,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      REPO: "${{github.event.repository.name}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
@@ -256,7 +256,7 @@ jobs:
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PROD_ASSET_ACCESS_KEY: ${{ secrets.PROD_ASSET_ACCESS_KEY }}
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      REPO: "${{github.event.repository.name}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELLTOOLS_S3: ${{vars.TESSELL_ARTIFACTS_PROD_ASSETS_S3}}
@@ -576,7 +576,8 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      REPO: "${{github.event.repository.name}}"
+      REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -645,6 +646,13 @@ jobs:
             echo "DOCKERHUB_ORG=$DOCKERHUB_ORG" >> $GITHUB_ENV
           fi
 
+      - name: Check if GCP login is needed
+        id: need-gcloud-login
+        run: |
+          [[ "${APP_GROUP}" == "${TESSELL_GCP_APP_NAME}" || "${REPOS_BUILDING_GCP_ARTIFACTS}" == *",${REPO},"* ]] \
+            && echo "result=true" >> $GITHUB_OUTPUT \
+            || echo "result=false" >> $GITHUB_OUTPUT
+
       # - name: Check specific file changes
       #   id: changed-files
       #   uses: tj-actions/changed-files@v42.0.2
@@ -668,7 +676,7 @@ jobs:
 
       - name: Login gcloud
         id: auth
-        if: ${{ env.APP_GROUP == env.TESSELL_GCP_APP_NAME || (contains(env.REPOSITORY, 'tessell-software-library-image-defns')) }}
+        if: ${{ steps.need-gcloud-login.outputs.result == 'true' }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
@@ -1201,7 +1209,7 @@ jobs:
       PROD_ASSET_SECRET_KEY: ${{ secrets.PROD_ASSET_SECRET_KEY }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       RELEASE_PATH: ${{inputs.label}}
-      REPO: "${{github.event.pull_request.base.repo.name}}"
+      REPO: "${{github.event.repository.name}}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

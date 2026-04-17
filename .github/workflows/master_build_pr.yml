@@ -360,6 +360,7 @@ jobs:
       REPO: "${{github.repository}}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
+      REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -397,9 +398,16 @@ jobs:
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
 
+      - name: Check if GCP login is needed
+        id: need-gcloud-login
+        run: |
+          [[ "${APP_GROUP}" == "${TESSELL_GCP_APP_NAME}" || "${REPOS_BUILDING_GCP_ARTIFACTS}" == *",${REPO},"* ]] \
+            && echo "result=true" >> $GITHUB_OUTPUT \
+            || echo "result=false" >> $GITHUB_OUTPUT
+
       - name: Login gcloud
         id: auth
-        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
+        if: ${{ steps.need-gcloud-login.outputs.result == 'true' }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'

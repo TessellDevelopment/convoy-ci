@@ -312,6 +312,14 @@ pythonSetupBuildAndPush() {
   python_setup_build_and_push "$@"
 }
 
+pythonUpgradeBundleCreate() {
+  python_upgrade_bundle_create "$@"
+}
+
+pythonUpgradeBundleCreateAndPush() {
+  python_upgrade_bundle_create_and_push "$@"
+}
+
 qaBuildAndPush(){
   qa_build_and_push "$@"
 } 

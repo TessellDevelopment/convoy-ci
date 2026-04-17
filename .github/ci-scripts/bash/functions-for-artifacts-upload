@@ -25,19 +25,37 @@ function upload_to_nexus_tessell_artifacts() {
   validate_reponse_code "${status_code}" "201"
 }
 
+function resolve_artifact_buckets() {
+  local artifact_name="${1:-}" convoy_yaml="${2:-./convoy.yaml}" custom_buckets
+
+  if [[ -n "${artifact_name}" && -f "${convoy_yaml}" ]]; then
+    readarray -t custom_buckets < <(
+      yq ".generates.artifacts[] | select(.name == \"${artifact_name}\") | .artifactBuckets[]?" \
+        "${convoy_yaml}" 2>/dev/null
+    )
+  fi
+
+  if [[ ${#custom_buckets[@]} -gt 0 ]]; then
+    printf '%s\n' "${custom_buckets[@]}"
+  else
+    # Default: derive bucket names from standard deployment stages
+    for stage in dev qa stage prod; do
+      echo "tessell-artifacts-${stage}"
+    done
+  fi
+}
 
 function upload_artifact() {
-  local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3}
+  local local_abs_path_to_src=${1:-} dest_path_without_bucket=${2:-} push_to=${3:-s3} artifact_name=${4:-} bucket_names
   validate_inputs "1 2" "$@"
 
   ensure_accessability_to_upload_locations
   log "Uploading artifact from local path '${local_abs_path_to_src}' to '${dest_path_without_bucket}'."
 
-  local dest_path_prefix deployment_stage
-  local deployment_stages=( dev qa stage prod )
+  readarray -t bucket_names < <(resolve_artifact_buckets "${artifact_name}")
 
   ${DEV_BUILD:-false} \
-    && deployment_stages=( devtest ) \
+    && bucket_names=( tessell-artifacts-devtest ) \
     || upload_to_nexus_tessell_artifacts ${local_abs_path_to_src} ${dest_path_without_bucket}
 
   if [[ ${push_to} == convoy-minio ]]; then
@@ -50,9 +68,9 @@ function upload_artifact() {
 
   local dest_path_suffix=$(echo ${dest_path_without_bucket} | sed 's|^s3://tessell-artifacts-devtest/||')
 
-  for deployment_stage in ${deployment_stages[@]}; do
-    log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}'"
-    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}tessell-artifacts-${deployment_stage}/${dest_path_suffix}
+  for bucket_name in "${bucket_names[@]}"; do
+    log "Running: '${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}${bucket_name}/${dest_path_suffix}'"
+    ${cp_cmd} ${local_abs_path_to_src} ${dest_path_prefix}${bucket_name}/${dest_path_suffix}
   done
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 }
@@ -66,7 +84,7 @@ function upload_artifacts_using_src_dest_map() {
   $(yq 'has("artifacts") and .artifacts | type == "!!seq"' ${map}) || \
     die "The src-dest-map must be a yaml file consisting only one top level key 'artifacts' of type list."
 
-  [[ $(yq '[.artifacts[] | select((has("localAbsPathToSrc") and has("destPathWithoutBucket")) | not)] | length') -eq 0 ]] || \
+  [[ $(yq '[.artifacts[] | select((has("localAbsPathToSrc") and has("destPathWithoutBucket")) | not)] | length' ${map}) -eq 0 ]] || \
     die <(cat <<-EOF
 			All src-dest-map entries in the file must have both of the keys: 'localAbsPathToSrc' and 'destPathWithoutBucket'.
 			One or more entries in the current file is missing at least one of the required keys.
@@ -86,7 +104,8 @@ function upload_artifacts_using_src_dest_map() {
     local_abs_path_to_src=$(echo ${artifact} | yq '.localAbsPathToSrc')
     dest_path_without_bucket=$(echo ${artifact} | yq '.destPathWithoutBucket')
     push_to=$(echo ${artifact} | yq '.pushTo')
+    artifact_name=$(echo ${artifact} | yq '.artifactName // ""')
 
-    upload_artifact ${local_abs_path_to_src} ${dest_path_without_bucket} ${push_to}
+    upload_artifact ${local_abs_path_to_src} ${dest_path_without_bucket} ${push_to} ${artifact_name}
   done
 }
