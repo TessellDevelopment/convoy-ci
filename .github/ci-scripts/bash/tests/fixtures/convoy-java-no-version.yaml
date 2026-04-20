@@ -1,0 +1,5 @@
+language: java
+appGroup: tessell
+generates:
+  artifacts:
+    - name: db-controller
