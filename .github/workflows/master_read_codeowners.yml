@@ -27,9 +27,10 @@ jobs:
  
       - name: Extract team names from CODEOWNERS
         id: extract-teams
-        env:
-          changed-files: "${{ inputs.changed-files }}"
         run: |
+          cat > /tmp/changed_files.txt <<'CHANGED_FILES_EOF'
+          ${{ inputs.changed-files }}
+          CHANGED_FILES_EOF
           python3 - <<EOF
           import os
           import sys
@@ -51,8 +52,9 @@ jobs:
 
             team_names_cleaned = extract_team_names(team_names)
             team_patterns[file_pattern] = team_names_cleaned
-          
-          changed_files = os.environ.get('changed-files')
+
+          with open('/tmp/changed_files.txt', 'r') as f:
+            changed_files = f.read()
           changed_files_list = changed_files.split()
           changed_teams = set()
           for file_path in changed_files_list:
