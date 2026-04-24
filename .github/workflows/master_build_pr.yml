@@ -366,7 +366,7 @@ jobs:
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
       TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
-      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,"
+      GCP_AUTH_REPOS: ",tessell-software-library-image-defns,tessell-software-disk-builder,ci-test-repo-a,"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
