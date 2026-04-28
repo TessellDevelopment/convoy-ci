@@ -66,7 +66,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -74,13 +74,16 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              read -r name buildFunction ext file _version <<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: $_version"
               echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
+              $buildFunction $name $ext $_version $file 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -276,7 +279,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .filePath, .baseImage, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -284,15 +287,18 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file filePath baseImage <<< "$artifactData"
+              read -r name buildFunction ext file filePath baseImage _version <<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: $_version"
               echo "dockerFile: $file"
               echo "filePath: $filePath"
               echo "baseImage: $baseImage"
-              $buildFunction "$name" "$ext" "$version" "$file" "$filePath" "$baseImage"
+              $buildFunction "$name" "$ext" "$_version" "$file" "$filePath" "$baseImage"
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
@@ -728,7 +734,7 @@ jobs:
               echo "Skipping build for ${type}"
               return
             fi
-            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .buildTool, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/null//g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -749,17 +755,20 @@ jobs:
                 fi
               fi
 
-              IFS=',' read -r name buildFunction buildTool ext file <<< "${artifactData}"
-              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${version} DOCKERFILE_PATH=${file}
+              IFS=',' read -r name buildFunction buildTool ext file _version <<< "${artifactData}"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
+              export ARTIFACT_NAME=${name} ARTIFACT_EXTENSION=${ext} ARTIFACT_VERSION=${_version} DOCKERFILE_PATH=${file}
               echo "Name: ${name}"
               echo "buildFunction: ${buildFunction}"
               echo "buildTool: ${buildTool}"
               echo "Ext: ${ext}"
-              echo "Version: ${version}"
+              echo "Version: ${_version}"
               echo "dockerFile: ${file}"
 
               if [[ -n ${buildFunction:-} ]]; then
-                ${buildFunction} ${name} ${ext} ${version} ${file}
+                ${buildFunction} ${name} ${ext} ${_version} ${file}
               elif [[ -n ${buildTool:-} ]]; then
                 set -e
                 $(yq .pre-merge.${buildTool} ./ci-scripts/bash/build-tool-cmd-map.yaml)
@@ -879,7 +888,7 @@ jobs:
               return
             fi
             version=$(yq '.version' convoy.yaml)
-            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile, .version] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
             lineNumber=1
             while :; do
               echo ------------------------------
@@ -887,13 +896,16 @@ jobs:
               if [[ -z "$artifactData" ]]; then
                 break
               fi
-              read -r name buildFunction ext file <<< "$artifactData"
+              if [[ "${_version}" == "null" ]]; then
+                _version=${version}
+              fi
+              read -r name buildFunction ext file _version<<< "$artifactData"
               echo "Name: $name"
               echo "buildFunction: $buildFunction"
               echo "Ext: $ext"
-              echo "Version: $version"
+              echo "Version: $_version"
               echo "dockerFile: $file"
-              $buildFunction $name $ext $version $file 
+              $buildFunction $name $ext $_version $file 
               echo "$type $name done"
               echo ------------------------------
               lineNumber=$((lineNumber+1))
