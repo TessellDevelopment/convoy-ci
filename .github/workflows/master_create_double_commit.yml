@@ -221,25 +221,6 @@ jobs:
           git pull
           cd ~-
           cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-          
-      - name: Create Cross-Repo Double Commits (CRDC)
-        id: create_crdc
-        env:
-          APP_GROUP: ${{ env.APP_GROUP }}
-          COMMIT_SHA: ${{ github.sha }}
-          CONVOY_API_ENDPOINT: ${{vars.CONVOY_API_ENDPOINT}}
-          CONVOY_API_KEY: ${{ secrets.CONVOY_AUTH_TOKEN }}
-          CONVOY_RELEASE_MGMT_API_KEY: ${{ secrets.CONVOY_RELEASE_MGMT_API_KEY }}
-          CURRENT_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-          MAILID: ${{ env.MAILID }}
-          PR_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          REPO_OWNER: ${{ github.repository_owner }}
-        run: |
-          ./ci-scripts/bash/create-crdc
 
       - name: Slack Notification
         if: failure()
