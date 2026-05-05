@@ -212,16 +212,6 @@ jobs:
               }
             }
 
-      - name: Setup CI Scripts
-        run: |
-          cd ~/convoy-ci
-          git checkout main
-          git pull
-          git checkout ${{env.CI_BRANCH}}
-          git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
-
       - name: Slack Notification
         if: failure()
         uses: act10ns/slack@v2.0.0
