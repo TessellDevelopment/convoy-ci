@@ -1112,8 +1112,7 @@ parse_coverage_report_go() {
 }
 
 parse_coverage_report_javascript() {
-  set -e
-  set -x
+  set -ex
     # Check if test files exist in the project
     test_files_found=0
     if [ -d "./src" ] || [ -d "./public" ]; then
