@@ -1116,7 +1116,7 @@ parse_coverage_report_javascript() {
     # Check if test files exist in the project
     test_files_found=0
     if [ -d "./src" ] || [ -d "./public" ]; then
-      find ./src ./public -type f \( -name "*.test.js" -o -name "*.test.ts" -o -name "*.test.tsx" -o -name "*.spec.js" -o -name "*.spec.ts" -o -name "*.spec.tsx" \) 2>/dev/null | grep -q . && test_files_found=1 || true
+      find ./src ./public -type f \( -name "*.test.jsx" -o -name "*.test.js" -o -name "*.test.ts" -o -name "*.test.tsx" -o -name "*.spec.js" -o -name "*.spec.ts" -o -name "*.spec.tsx" \) 2>/dev/null | grep -q . && test_files_found=1 || true
     fi
     
     if [ ${test_files_found} -eq 0 ]; then
