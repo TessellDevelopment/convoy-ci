@@ -1142,6 +1142,7 @@ jobs:
           set +e
           sudo rm -rf target
           helm repo remove nexus-prod
+          helm repo remove nexus-dev
           docker container prune --force
           docker volume prune --force
           rm -rf ${CONTENT_FOR_GITHUB_OUTPUT}
@@ -1400,6 +1401,7 @@ jobs:
           set +e
           sudo rm -rf target
           helm repo remove nexus-prod
+          helm repo remove nexus-dev
           docker container prune --force
           docker volume prune --force
                     
