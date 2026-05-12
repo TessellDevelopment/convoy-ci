@@ -26,7 +26,8 @@ function upload_to_nexus_tessell_artifacts() {
 }
 
 function resolve_artifact_buckets() {
-  local artifact_name="${1:-}" convoy_yaml="${2:-./convoy.yaml}" custom_buckets
+  local artifact_name="${1:-}" convoy_yaml="${2:-./convoy.yaml}"
+  local -a custom_buckets=()
 
   if [[ -n "${artifact_name}" && -f "${convoy_yaml}" ]]; then
     readarray -t custom_buckets < <(
