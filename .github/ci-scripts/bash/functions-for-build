@@ -1112,7 +1112,6 @@ parse_coverage_report_go() {
 }
 
 parse_coverage_report_javascript() {
-  set -ex
     # Check if test files exist in the project
     test_files_found=0
     if [ -d "./src" ] || [ -d "./public" ]; then
@@ -1121,12 +1120,9 @@ parse_coverage_report_javascript() {
     
     if [ ${test_files_found} -eq 0 ]; then
       echo "No test files found in this repository. Skipping test execution."
-      export BRANCH_COVERAGE="0 0 0 0"
-      export STATEMENT_COVERAGE="0 0 0 0"
-      flag=0
     else
       echo "Running tests and generating coverage report..."
-      yarn test && yarn test:coverage --passWithNoTests
+      yarn test:coverage --passWithNoTests
       coverage_report=$(find . -type f -name "coverage-final.json" | head -n 1)
       # Extract coverage metrics from the JSON file
       covered_statements=$(jq '[.[] | .s | to_entries[] | select(.value > 0) | 1] | length' ${coverage_report})
@@ -1147,8 +1143,6 @@ parse_coverage_report_javascript() {
       echo "Script completed successfully!"
       flag=1
     fi
-  set +x
-  set +e
 }
 
 parse_and_push_coverage_report_javascript() {
