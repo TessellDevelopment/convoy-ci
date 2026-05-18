@@ -63,6 +63,7 @@ jobs:
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -238,6 +239,7 @@ jobs:
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GOPATH: /home/runner/go
@@ -549,6 +551,7 @@ jobs:
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
@@ -1190,6 +1193,7 @@ jobs:
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
