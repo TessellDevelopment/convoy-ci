@@ -279,14 +279,14 @@
               });
         
         - name: Check for infra terraform modules
-          if: ${{ github.repository == 'TessellDevelopment/tessell-terraform-modules' }}
+          if: ${{ github.repository == 'TessellDevelopment/ci-test-repo-a' }}
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
-            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.INFRA_CI_CD_COMMUNICATION_SLACK_URL }}
+            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           run: |
             set -x
 
