@@ -313,6 +313,8 @@
               ["tenant-infra-base"]="tessell-cluster-base-tf-module-for-aws"
               ["tenant-infra-aks"]="tessell-cluster-infra-tf-module-for-azure"
               ["tenant-infra-base-azure"]="tessell-cluster-base-tf-module-for-azure"
+              ["tenant-infra-base-operations"]="tessell-cluster-base-ops-tf-module"
+              ["tenant-infra-base-proxy-vpc-artifacts"]="tessell-cluster-base-tf-module-for-aws"
             )
 
             error_msg="❌ ERROR: Changes detected in deprecated tenant-infra modules\n\n"
