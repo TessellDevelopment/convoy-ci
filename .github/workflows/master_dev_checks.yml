@@ -283,14 +283,14 @@
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.INFRA_CI_CD_COMMUNICATION_SLACK_URL }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
-            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.INFRA_CI_CD_COMMUNICATION_SLACK_URL }}
           run: |
             if [[ ${BASE_BRANCH} != main ]]; then
               if [[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} -lt 144 ]]; then
-                echo "Skipping check for base branch: ${BASE_BRANCH}"
+                echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
                 exit 0
               fi
             fi
@@ -305,17 +305,16 @@
             )
 
             folders_pattern=$(IFS='|'; echo "${!folder_to_repo_map[*]}")
-
             changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
             tenant_infra_changes=$(echo "${changed_files}" | grep -E "^(${folders_pattern})/" || true)
 
             if [[ -z "${tenant_infra_changes}" ]]; then
-              echo "No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
+              echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
               exit 0
             fi
 
             tenant_infra_folders=$(echo "${tenant_infra_changes}" | cut -d'/' -f1 | sort -u)
-            echo "🟡 Detected tenant-infra changes: ${tenant_infra_folders}"
+            echo "⚠️ Detected tenant-infra changes: ${tenant_infra_folders}"
 
             error_msg="❌ ERROR: Changes detected in deprecated tenant-infra modules\n\n"
             error_msg+="The following tenant-infra folders have been migrated to separate repositories:\n\n"
