@@ -157,7 +157,14 @@ jobs:
                   except:
                     print("Extension Details not present")
                   if artifact_type == 'artifacts':
-                    element["path"] = f"tessell-artifacts/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
+                    BUCKET_NAME=f"{APP_GROUP}-artifacts"
+                    if APP_GROUP == 'gcpcore':
+                      print("Setting bucket name for gcpcore to tessell-artifacts")
+                      BUCKET_NAME=f"tessell-artifacts"
+                    element["path"] = f"{BUCKET_NAME}/{LABEL}/{object['name']}/{object['name']}-{version}{element['extension']}"
+                    push_to = object.get("pushTo", "s3")
+                    available_in_map = {"convoy-minio": "convoy-minio", "s3": "cloud-storage"}
+                    element["availableIn"] = available_in_map.get(push_to, "cloud-storage")
                   artifacts.append(element)
               if len(artifacts) == 0: 
                 return

@@ -22,6 +22,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -35,6 +36,7 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
@@ -106,6 +108,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -119,6 +122,7 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
@@ -314,6 +318,7 @@ jobs:
       ARTIFACTS_UPLOAD_SECRET_KEY: ${{ secrets.ARTIFACTS_UPLOAD_SECRET_KEY }}
       AWS_ACCOUNT_TESSELL_COMMON_INFRA: ${{vars.AWS_ACCOUNT_TESSELL_COMMON_INFRA}}
       AWS_ACCOUNT_TESSELL_DEVOPS: ${{vars.AWS_ACCOUNT_TESSELL_DEVOPS}}
+      AWS_CONVOY_EC2_ROLE: ${{vars.AWS_CONVOY_EC2_ROLE}}
       BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
@@ -332,6 +337,7 @@ jobs:
       ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
@@ -359,6 +365,7 @@ jobs:
       REPO: "${{github.repository}}"
       REPOSITORY: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
+      REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -396,9 +403,16 @@ jobs:
         id: changed-files-all
         uses: step-security/changed-files@v45.0.1
 
+      - name: Check if GCP login is needed
+        id: need-gcloud-login
+        run: |
+          [[ "${APP_GROUP}" == "${TESSELL_GCP_APP_NAME}" || "${REPOS_BUILDING_GCP_ARTIFACTS}" == *",${REPO},"* ]] \
+            && echo "result=true" >> $GITHUB_OUTPUT \
+            || echo "result=false" >> $GITHUB_OUTPUT
+
       - name: Login gcloud
         id: auth
-        if: ${{ contains(env.REPOSITORY, 'tessell-software-library-image-defns')  }}
+        if: ${{ steps.need-gcloud-login.outputs.result == 'true' }}
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.TESSELL_GCP_SERVICE_ACCOUNT_KEY_JSON }}'
@@ -795,6 +809,7 @@ jobs:
       DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
       ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GITHUB_BASE_REF: ${{ github.base_ref }}
+      GIT_COMMIT: ${{ github.sha }}
       GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
       GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
@@ -808,6 +823,7 @@ jobs:
       NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
       NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
       REPO: "${{github.repository}}"
       REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
