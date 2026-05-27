@@ -1649,8 +1649,10 @@ terraform_apply_and_push() {
   set -e
   terraform_apply
   ! ${DEV_BUILD} || return
+  generate_sts_session_token ${AWS_ACCOUNT_TESSELL_COMMON_INFRA}
   cd terraform
   terraform apply -auto-approve
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
   cd ..
   set +e
 }
