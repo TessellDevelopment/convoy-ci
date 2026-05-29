@@ -371,6 +371,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
+      TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
       TESSELL_WIN_SQL_DB_PASSWORD: ${{ secrets.TESSELL_WIN_SQL_DB_PASSWORD }}
     steps:
@@ -441,6 +442,34 @@ jobs:
             echo "Building Service"
             make os=$OS nexus_protocol=${{env.NEXUS_PROTOCOL}} nexus_server_endpoint=${{env.NEXUS_SERVER_ENDPOINT}} $SERVICE
             set +e
+          }
+          build() {
+            type="$1"
+            check=$(grep "$type" convoy.yaml)
+            if [[ -z "$check" ]]; then
+              return
+            fi
+            version=$(yq '.version' convoy.yaml)
+            yq e ".generates.$type[] | [.name, .buildFunction, .extension, .dockerFile] | @csv" convoy.yaml | sed 's/,/ /g' > artifacts.txt
+            lineNumber=1
+            while :; do
+              echo ------------------------------
+              artifactData=$(sed "$lineNumber!d" artifacts.txt)
+              if [[ -z "$artifactData" ]]; then
+                break
+              fi
+              read -r name buildFunction ext file <<< "$artifactData"
+              echo "Name: $name"
+              echo "buildFunction: $buildFunction"
+              echo "Ext: $ext"
+              echo "Version: $version"
+              echo "dockerFile: $file"
+              $buildFunction $name $ext $version $file 
+              echo "$type $name done"
+              echo ------------------------------
+              lineNumber=$((lineNumber+1))
+            done
+            rm artifacts.txt
           }
           cloneHelmTemplate() {
             GITHUB_WORKSPACE=$(pwd)
