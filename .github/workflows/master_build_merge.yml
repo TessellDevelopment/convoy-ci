@@ -47,7 +47,7 @@ env:
   AWS_ACCOUNT_TESSELL_STAGE: ${{vars.AWS_ACCOUNT_TESSELL_STAGE}}
   AWS_ACCOUNT_TESSELL_PROD: ${{vars.AWS_ACCOUNT_TESSELL_PROD}}
   BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
-  CI_BRANCH: TDEVOPS-4316-env-refactor
+  CI_BRANCH: main
   CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
   CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
   DEV_BUILD: ${{inputs.dev_build}}
@@ -57,7 +57,7 @@ env:
   GIT_COMMIT: ${{ github.sha }}
   GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
   GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
   LABEL: ${{inputs.label}}
   LATEST_TAG: ${{inputs.tag}}
   NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
@@ -497,7 +497,7 @@ jobs:
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
@@ -934,7 +934,7 @@ jobs:
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
-            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
+            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
@@ -1106,7 +1106,7 @@ jobs:
       CI_PHASE: postMerge
       CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
       CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
-      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DISPATCH_BRANCH_NAME: ${{ github.ref_name }}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha != '' && github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
       GH_API_URL: ${{vars.GH_API_URL}}

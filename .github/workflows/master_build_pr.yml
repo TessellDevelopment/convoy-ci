@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  CI_BRANCH: TDEVOPS-4316-env-refactor
+  CI_BRANCH: main
   CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
   CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
   CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
@@ -39,7 +39,7 @@ jobs:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
@@ -299,7 +299,7 @@ jobs:
       BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
       CI_PHASE: preMerge
-      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
+      DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
@@ -309,7 +309,7 @@ jobs:
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NAMESPACE: "convoy"
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
@@ -754,7 +754,7 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
     steps:
