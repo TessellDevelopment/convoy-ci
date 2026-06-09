@@ -33,13 +33,13 @@ env:
   REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
   SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
 jobs:
 
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
       TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
@@ -309,7 +309,6 @@ jobs:
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NAMESPACE: "convoy"
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
@@ -754,7 +753,6 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
     steps:
