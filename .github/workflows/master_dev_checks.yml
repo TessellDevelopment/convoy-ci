@@ -498,3 +498,25 @@
               echo "::error::Missing artifacts:"; printf ' - %s\n' "${missing[@]}"; exit 1
             fi
             echo "✅ All consumed artifacts are valid."
+
+        - name: Validate release specific scripts
+          shell: bash
+          run: |
+            if [[ ! -f "config.yaml" ]]; then
+              echo "No config.yaml found. Skipping validation."
+              exit 0
+            fi
+            missing=()
+            for script in $(yq '.runScripts[].preStop[].name | select(. == "release-specific-scripts/*")' config.yaml);do
+              if [[ ! -f "${script}" ]]; then
+              missing+=("$script")
+              fi
+            done
+            echo "Release scripts validated"
+            
+            if [[ ${#missing[@]} -gt 0 ]]; then
+              echo "Missing release-specific scripts:"
+              printf '  - %s\n' "${missing[@]}"
+            exit 1
+            fi
+            echo "All release-specific scripts are valid."
