@@ -614,6 +614,9 @@ jobs:
       WINDOWS_SIGNING_PROFILE_NAME: ${{ vars.TESSELL_CODESIGNER_CERT_PROFILE_NAME }}
       WINDOWS_SIGNING_S3_BUCKET: ${{ vars.WINDOWS_SIGNING_S3_BUCKET }}
     steps:
+      - name: Force failure for email test
+        run: exit 1
+
       - name: Set Repositories for Dev Build
         if: ${{ inputs.dev_build }}
         run: |
@@ -1417,3 +1420,9 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+
+  send-email-on-failure:
+    needs: [ build-ui, build-ubuntu-latest, build-amd, build-arm ]
+    if: failure()
+    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-4085
+    secrets: inherit
