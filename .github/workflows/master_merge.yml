@@ -180,6 +180,6 @@ jobs:
 
   send-mail:
     needs: create-double-commit
-    if: failure() && (contains(github.event.pull_request.head.ref, 'double_commit'))
+    if: failure()
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-4085
     secrets: inherit

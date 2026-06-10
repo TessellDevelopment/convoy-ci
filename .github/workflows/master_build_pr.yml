@@ -924,9 +924,3 @@ jobs:
           sudo rm -rf target
           docker container prune --force
           docker volume prune --force
-
-  send-email-on-failure:
-    needs: [build-ui, build-ubuntu-latest, build-amd, build-arm]
-    if: failure()
-    uses: TessellDevelopment/convoy-ci/.github/workflows/master_send_email.yml@TDEVOPS-4085
-    secrets: inherit
