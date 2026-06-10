@@ -507,7 +507,7 @@
               exit 0
             fi
             missing=()
-            for script in $(yq '(.runScripts[].preStop[].name, .executeScriptsInClusterAsWorkflows[].preStop[].supportingFiles[]) | select(. == "release-specific-scripts/*")' config.yaml);do
+            for script in $(yq '(.runScripts[].preStop[].name, .executeScriptsInClusterAsWorkflows[].preStop[].supportingFiles[]) | select(test("^release-specific-scripts/"))' config.yaml);do
               if [[ ! -f "${script}" ]]; then
               missing+=("$script")
               fi
