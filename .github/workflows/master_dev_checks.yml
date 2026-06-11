@@ -508,15 +508,22 @@
               echo "No config.yaml found. Skipping validation."
               exit 0
             fi
+            echo "BASE_SHA=${BASE_SHA}"
+            echo "HEAD=$(git rev-parse HEAD)"
+            echo "yq version: $(yq --version 2>&1 || echo 'not installed')"
             declare -A deleted_set=()
             while IFS= read -r d; do
               [[ -n "$d" ]] && deleted_set["$d"]=1
             done < <(git diff --diff-filter=D --name-only "${BASE_SHA}" -- | tr -d '\r')
+            echo "Deleted files in PR (${#deleted_set[@]}):"
+            printf '  - %s\n' "${!deleted_set[@]}"
             if (( ${#deleted_set[@]} == 0 )); then
               echo "No files deleted in this PR. Skipping."
               exit 0
             fi
             mapfile -t refs < <(yq '.. | select(tag == "!!str")' config.yaml | tr -d '\r')
+            echo "String refs found in config.yaml (${#refs[@]}):"
+            printf '  - %s\n' "${refs[@]}"
             broken=()
             for r in "${refs[@]}"; do
               [[ -z "$r" ]] && continue
