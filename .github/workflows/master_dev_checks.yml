@@ -522,7 +522,6 @@
               exit 0
             fi
             mapfile -t refs < <(yq '.. | select(tag == "!!str")' config.yaml | tr -d '\r')
-            echo "String refs found in config.yaml (${#refs[@]}):"
             printf '  - %s\n' "${refs[@]}"
             broken=()
             for r in "${refs[@]}"; do
