@@ -519,6 +519,7 @@
             mapfile -t refs < <(yq '.. | select(tag == "!!str")' config.yaml | tr -d '\r')
             broken=()
             for r in "${refs[@]}"; do
+              [[ -z "$r" ]] && continue
               [[ -n "${deleted_set[$r]:-}" ]] && broken+=("$r")
             done
             if (( ${#broken[@]} > 0 )); then
