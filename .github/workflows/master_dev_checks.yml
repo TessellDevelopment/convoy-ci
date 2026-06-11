@@ -518,3 +518,32 @@
               exit 1
             fi
             echo "All release-specific scripts are valid."
+
+        - name: Validate config.yaml references to deleted files
+          shell: bash
+          env:
+            BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          run: |
+            if [[ ! -f "config.yaml" ]]; then
+              echo "No config.yaml found. Skipping validation."
+              exit 0
+            fi
+            declare -A deleted_set=()
+            while IFS= read -r d; do
+              [[ -n "$d" ]] && deleted_set["$d"]=1
+            done < <(git diff --diff-filter=D --name-only "${BASE_SHA}" -- | tr -d '\r')
+            if (( ${#deleted_set[@]} == 0 )); then
+              echo "No files deleted in this PR. Skipping."
+              exit 0
+            fi
+            mapfile -t refs < <(yq '.. | select(tag == "!!str")' config.yaml | tr -d '\r')
+            broken=()
+            for r in "${refs[@]}"; do
+              [[ -n "${deleted_set[$r]:-}" ]] && broken+=("$r")
+            done
+            if (( ${#broken[@]} > 0 )); then
+              echo "::error::Found following missing scripts in config.yaml:"
+              printf '  - %s\n' "${broken[@]}"
+              exit 1
+            fi
+            echo "Validated config.yaml successfully"
