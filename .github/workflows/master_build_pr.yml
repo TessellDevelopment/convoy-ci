@@ -302,8 +302,6 @@ jobs:
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
