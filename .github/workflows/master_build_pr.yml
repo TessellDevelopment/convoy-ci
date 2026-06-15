@@ -8,39 +8,40 @@ on:
         required: true
         type: string
 
+env:
+  CI_BRANCH: main
+  CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
+  CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
+  CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
+  DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
+  DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
+  ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
+  GITHUB_BASE_REF: ${{ github.base_ref }}
+  GIT_COMMIT: ${{ github.sha }}
+  GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+  GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
+  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+  NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+  NEXUS_PULL_REPOS_M2: tessell-m2-development
+  NEXUS_PULL_REPOS_PY: tessell-py-development
+  NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
+  NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
+  NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
+  NEXUS_REPO_NPM: tessell-repos-npm-development
+  NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  REPO: "${{github.repository}}"
+  REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
+  SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
 
   build-ui:
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     env:
-      CI_BRANCH: main
-      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
-      GITHUB_BASE_REF: ${{ github.base_ref }}
-      GIT_COMMIT: ${{ github.sha }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      REPO: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TESSELL_UI_ENV_SECRET: "${{secrets.TESSELL_UI_ENV_SECRET}}"
     steps:
       - name: Checkout code
@@ -100,33 +101,9 @@ jobs:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     env:
-      CI_BRANCH: main
-      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
-      GITHUB_BASE_REF: ${{ github.base_ref }}
-      GIT_COMMIT: ${{ github.sha }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       IMAGE_SCAN_API_URL: http://${{vars.CONVOY_PUBLIC_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_PUBLIC}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_PUBLIC}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      REPO: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -321,54 +298,27 @@ jobs:
       AWS_CONVOY_EC2_ROLE: ${{vars.AWS_CONVOY_EC2_ROLE}}
       BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
       BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
-      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CI_BRANCH: main
       CI_PHASE: preMerge
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
       DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
       DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
       DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       ENABLE_PACKER_E2E_SCAN: ${{vars.ENABLE_PACKER_E2E_SCAN}}
-      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
       GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
-      GITHUB_BASE_REF: ${{ github.base_ref }}
-      GIT_COMMIT: ${{ github.sha }}
       GITHUB_DRAFT: ${{ github.event.pull_request.draft }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       GH_API_URL: ${{vars.GH_API_URL}}
       GOPATH: /home/github/go
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
       NAMESPACE: "convoy"
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
       PACKER_AWS_ACCESS_KEY_ID: ${{ secrets.PACKER_AWS_ACCESS_KEY_ID }}
       PACKER_AWS_SECRET_ACCESS_KEY: ${{ secrets.PACKER_AWS_SECRET_ACCESS_KEY }}
       PACKER_AZURE_CLIENT_ID: ${{ secrets.PACKER_AZURE_CLIENT_ID }}
       PACKER_AZURE_CLIENT_SECRET: ${{ secrets.PACKER_AZURE_CLIENT_SECRET }}
       PACKER_AZURE_TENANT_ID: ${{ secrets.PACKER_AZURE_TENANT_ID }}
       PACKER_AZURE_SUBSCRIPTION_ID: ${{ secrets.PACKER_AZURE_SUBSCRIPTION_ID }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      REPO: "${{github.repository}}"
       REPOSITORY: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
       REPOS_BUILDING_GCP_ARTIFACTS: "${{ vars.REPOS_BUILDING_GCP_ARTIFACTS }}"
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
       SOURCE_BRANCH: ${{ github.head_ref }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       TS_API_KEY: ${{ secrets.TS_API_KEY }}
       TS_TAILNET: ${{ secrets.TS_TAILNET }}
       TESSELL_WIN_SQL_DB_USERNAME: ${{ secrets.TESSELL_WIN_SQL_DB_USERNAME }}
@@ -801,33 +751,8 @@ jobs:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     env:
-      CI_BRANCH: main
-      CHANNEL_ID: ${{vars.CONVOY_ALERTS_SLACK_ID}}
-      CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
-      CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-      DEVOPS_TEAM: ${{vars.DEVOPS_TEAM_SLACK_ID}}
-      DOCKERHUB_ORG: ${{vars.DOCKERHUB_ORG}}
-      ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY: ${{vars.ENABLE_VULNERABILITY_SCAN_FOR_MAIN_ONLY}}
-      GITHUB_BASE_REF: ${{ github.base_ref }}
-      GIT_COMMIT: ${{ github.sha }}
-      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
-      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-      IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
-      NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
       NEXUS_PROTOCOL: ${{vars.NEXUS_PROTOCOL_LOCAL}}
-      NEXUS_PULL_REPOS_M2: tessell-m2-development
-      NEXUS_PULL_REPOS_PY: tessell-py-development
-      NEXUS_PUSH_REPOS_M2: ${{ vars.NEXUS_PUSH_REPOS_M2 }}
-      NEXUS_PUSH_REPOS_PY: ${{ vars.NEXUS_PUSH_REPOS_PY }}
-      NEXUS_PUSH_REPOS_NPM: ${{vars.NEXUS_PUSH_REPOS_NPM}}
-      NEXUS_REPO_NPM: tessell-repos-npm-development
       NEXUS_SERVER_ENDPOINT: ${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
-      NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      REPO: "${{github.repository}}"
-      REPOS_EXCLUDED_FROM_TRIVY_SCAN: ${{vars.REPOS_EXCLUDED_FROM_TRIVY_SCAN}}
-      SLACK_TOKEN: ${{secrets.SLACK_TOKEN}}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
