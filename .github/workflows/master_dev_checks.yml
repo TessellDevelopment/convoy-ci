@@ -498,3 +498,37 @@
               echo "::error::Missing artifacts:"; printf ' - %s\n' "${missing[@]}"; exit 1
             fi
             echo "✅ All consumed artifacts are valid."
+
+        - name: Validate config.yaml references to deleted files
+          shell: bash
+          env:
+            BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          run: |
+            if [[ ! -f "config.yaml" ]]; then
+              echo "No config.yaml found. Skipping validation."
+              exit 0
+            fi
+            deleted_files=$(git diff --diff-filter=D --name-only "${BASE_SHA}" -- | tr -d '\r')
+            declare -A deleted_set=()
+            while IFS= read -r d; do
+              [[ -n "$d" ]] && deleted_set["$d"]=1
+            done <<< "${deleted_files}"
+            echo "Deleted files in PR (${#deleted_set[@]}):"
+            printf '  - %s\n' "${!deleted_set[@]}"
+            if (( ${#deleted_set[@]} == 0 )); then
+              echo "No files deleted in this PR. Skipping."
+              exit 0
+            fi
+            mapfile -t refs < <(yq '.. | select(tag == "!!str")' config.yaml | tr -d '\r')
+            printf '  - %s\n' "${refs[@]}"
+            missing=()
+            for r in "${refs[@]}"; do
+              [[ -z "$r" ]] && continue
+              [[ -n "${deleted_set[$r]:-}" ]] && missing+=("$r")
+            done
+            if (( ${#missing[@]} > 0 )); then
+              echo "::error::Found following missing scripts in config.yaml:"
+              printf '  - %s\n' "${missing[@]}"
+              exit 1
+            fi
+            echo "Validated config.yaml successfully"
