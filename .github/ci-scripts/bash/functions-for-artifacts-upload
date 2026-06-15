@@ -11,7 +11,7 @@ function upload_to_nexus() {
   log "Uploading artifact from local path '${local_abs_path_to_src}' to Nexus at '${upload_path_in_nexus}'."
   curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
     --upload-file ${local_abs_path_to_src} -w "%{http_code}" \
-    ${NEXUS_ADDR}/repository/${upload_path_in_nexus}
+    ${NEXUS_PROTOCOL}://${NEXUS_SERVER_ENDPOINT}/repository/${upload_path_in_nexus}
 }
 
 function upload_to_nexus_tessell_artifacts() {
