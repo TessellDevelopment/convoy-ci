@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Exeo pipefail
+set -Eeo pipefail
 
 function build_target_branches() {
   local branches="${1}"
