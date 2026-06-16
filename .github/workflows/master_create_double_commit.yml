@@ -24,8 +24,6 @@ jobs:
           git pull
           git checkout ${{env.CI_BRANCH}}
           git pull
-          cd ~-
-          cp -r ~/convoy-ci/.github/ci-scripts ./ci-scripts
 
       - name: Create Double Commit PRs
         env:
@@ -38,7 +36,7 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          bash ./ci-scripts/bash/create-double-commit
+          bash ~/convoy-ci/.github/ci-scripts/bash/create-double-commit
 
       - name: Slack Notification
         if: failure()
