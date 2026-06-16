@@ -23,12 +23,12 @@ function handle_cherry_pick_conflicts() {
   find . -type f -name index.lock -delete 2>/dev/null || true
   git status || true
 
-  if git add . && git -c core.editor=true commit --amend --author="${MAILID}" --no-edit 2>/dev/null; then
+  if git add . -- ':!ci-scripts' && git -c core.editor=true commit --amend --author="${MAILID}" --no-edit 2>/dev/null; then
     echo "Conflicts resolved with commit amend"
     return 0
   fi
 
-  if git add . && git -c core.editor=true cherry-pick --continue 2>/dev/null; then
+  if git add . -- ':!ci-scripts' && git -c core.editor=true cherry-pick --continue 2>/dev/null; then
     echo "Cherry-pick continued successfully"
     git status || true
   else
