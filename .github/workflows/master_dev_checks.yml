@@ -6,6 +6,7 @@
   jobs:
 
     dev-checks:
+      name: "dev-checks (${{ github.event.pull_request.head.ref }})"
       runs-on: non-build
       steps:
         - name: Dump GitHub context
