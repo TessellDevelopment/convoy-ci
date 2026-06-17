@@ -168,8 +168,8 @@
               echo "Revert branch, skipping Jira Validation"
               exit 0
             fi
-            echo "{JIRA_USERNAME: $JIRA_USERNAME}" >> /tmp/env.txt
             echo "{JIRA_API_TOKEN: $JIRA_API_TOKEN}" > /tmp/env.txt
+            echo "{JIRA_USERNAME: $JIRA_USERNAME}" >> /tmp/env.txt
             echo "${{env.JIRA}}"
             python3 - <<EOF
             import os
