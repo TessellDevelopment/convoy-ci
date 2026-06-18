@@ -7,7 +7,9 @@ jobs:
 
   dev-checks:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_dev_checks.yml@TDEVOPS-4559_test
-    secrets: inherit
+    secrets:
+      JIRA_USERNAME: ${{ secrets.JIRA_USERNAME }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
   version-check:
     uses: TessellDevelopment/convoy-ci/.github/workflows/master_check_version.yml@TDEVOPS-4559_test
