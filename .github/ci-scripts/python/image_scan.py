@@ -44,7 +44,6 @@ try:
   elif response.status_code == 409:
     print(json.dumps(response.json(), indent=2))
     print("Get approval for these vulnerabilities or fix them")
-    exit(1)
   else:
     print(response.status_code)
     print(response.text)
