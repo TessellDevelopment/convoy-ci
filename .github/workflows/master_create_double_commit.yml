@@ -99,6 +99,12 @@ jobs:
                    continue
                 }
 
+                // Only create DC for branches matching rel-0.x.0 pattern
+                if (!/^rel-0\.\d+\.0$/.test(dstBranch)) {
+                  console.log("Skipping " + dstBranch + " - does not match rel-0.x.0 pattern");
+                  continue;
+                }
+
                 if (dstBranch === 'rel-0.0.0') {
                   console.log("Creating DC for rel-0.0.0 (irrespective of base branch)");
                 } else {

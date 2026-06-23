@@ -100,6 +100,11 @@ function determine_target_branch() {
     fi
 
     if [[ -n "${TARGET_BRANCH}" ]]; then
+      if [[ ! "${TARGET_BRANCH}" =~ ^rel-0\.[0-9]+\.0$ ]]; then
+        echo "  ⚠️ Skipping '${TARGET_BRANCH}' - does not match rel-0.x.0 pattern"
+        TARGET_BRANCH=""
+        continue
+      fi
       if git ls-remote --exit-code --heads "${REMOTE_NAME}" "refs/heads/${TARGET_BRANCH}" &>/dev/null; then
         echo "  ✅ Branch '${TARGET_BRANCH}' exists"
         return 0
