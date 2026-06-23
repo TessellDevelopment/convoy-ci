@@ -170,3 +170,79 @@ jobs:
               console.error(e);
               process.exit(1);
             }
+
+  suggest-version:
+    if: needs.version-check.result == 'failure' && needs.convoy-check.outputs.check == 'true'
+    needs: [convoy-check, version-check]
+    runs-on: non-build
+    steps:
+
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: step-security/changed-files@v45.0.1
+
+      - name: Install Python dependencies
+        run: pip install --quiet --upgrade requests pyyaml
+
+      - name: Suggest next version and post PR comment
+        uses: actions/github-script@v7.0.1
+        env:
+          NEXUS_USERNAME: ${{secrets.CIPIPELINE_NEXUS_USERNAME}}
+          NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
+          NEXUS_URL: ${{vars.NEXUS_PROTOCOL_LOCAL}}://${{vars.NEXUS_SERVER_ENDPOINT_LOCAL}}
+          NEXUS_PUSH_REPOS_M2: ${{vars.NEXUS_PUSH_REPOS_M2}}
+          NEXUS_PUSH_REPOS_PY: ${{vars.NEXUS_PUSH_REPOS_PY}}
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+
+            const rootContent = fs.readFileSync('./convoy.yaml', 'utf8');
+            const rootData = yaml.load(rootContent);
+            const language = rootData.language;
+
+            const excludeDirs = ['.github', 'convoy.yaml', '.gitignore', 'README.md'];
+            let dirs = [];
+
+            if (language === 'terraform') {
+              const modifiedFiles = "${{steps.changed-files.outputs.all_changed_and_modified_files}}";
+              const allDirs = [...new Set(modifiedFiles.split(' ').map(f => f.split('/')[0]))];
+              dirs = allDirs.filter(d => !excludeDirs.includes(d) && fs.existsSync(`./${d}/convoy.yaml`));
+            } else {
+              dirs = ['.'];
+            }
+
+            const nexusRepo = language === 'python'
+              ? process.env.NEXUS_PUSH_REPOS_PY
+              : process.env.NEXUS_PUSH_REPOS_M2;
+
+            let body = '## ⚠️ Convoy Version Check Failed\n\n';
+            body += 'The version in your `convoy.yaml` already exists in Nexus. ';
+            body += 'Here is the version landscape and a suggested fix:\n\n';
+
+            for (const dir of dirs) {
+              const dirArg = dir === '.' ? '' : `--dir ${dir}`;
+              try {
+                const out = execSync(
+                  `python3 scripts/suggest_version.py ${dirArg} --nexus-repo ${nexusRepo} --no-fetch --format markdown`,
+                  { encoding: 'utf-8', env: process.env }
+                );
+                body += out + '\n\n---\n\n';
+              } catch (e) {
+                body += `_Could not generate suggestion for \`${dir}\`: ${e.message}_\n\n`;
+              }
+            }
+
+            body += '_To fix: bump the version in the relevant `convoy.yaml` to the recommended patch version above._';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body,
+            });
