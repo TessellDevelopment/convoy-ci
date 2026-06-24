@@ -236,6 +236,7 @@ jobs:
                 echo "::warning::No RepoDigest for ${ref} - image may not have been pushed"
                 continue
               fi
+              repo_digest="${repo_digest##*@}"
               echo "Digest: ${repo_digest}"
               ARTIFACT_CHECKSUMS+="${name}:${repo_digest}%"
               echo "dockerImages ${name} checksum captured"
@@ -508,6 +509,7 @@ jobs:
                 echo "::warning::No RepoDigest for ${ref} - image may not have been pushed"
                 continue
               fi
+              repo_digest="${repo_digest##*@}"
               echo "Digest: ${repo_digest}"
               ARTIFACT_CHECKSUMS+="${name}:${repo_digest}%"
               echo "dockerImages ${name} checksum captured"
@@ -1073,6 +1075,7 @@ jobs:
                 echo "::warning::No RepoDigest for ${ref} - image may not have been pushed"
                 continue
               fi
+              repo_digest="${repo_digest##*@}"
               echo "Digest: ${repo_digest}"
               ARTIFACT_CHECKSUMS+="${name}:${repo_digest}%"
               echo "dockerImages ${name} checksum captured"
@@ -1288,6 +1291,7 @@ jobs:
                 continue
               fi
               echo "Digest: ${repo_digest}"
+              repo_digest="${repo_digest##*@}"
               ARTIFACT_CHECKSUMS+="${name}:${repo_digest}%"
               echo "dockerImages ${name} checksum captured"
               echo ------------------------------
