@@ -249,7 +249,7 @@ jobs:
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: failure()
+        if: false
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -521,7 +521,7 @@ jobs:
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: failure()
+        if: false
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -1107,7 +1107,7 @@ jobs:
 
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: failure()
+        if: false
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -1309,7 +1309,7 @@ jobs:
                     
       - name: Slack Notification
         uses: act10ns/slack@v2.0.0
-        if: failure()
+        if: false
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

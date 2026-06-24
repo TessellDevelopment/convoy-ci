@@ -296,4 +296,4 @@ jobs:
             status: ${{ job.status }}
             steps: ${{ toJson(steps) }}
             channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL  }}
-        if: failure()
+        if: false
