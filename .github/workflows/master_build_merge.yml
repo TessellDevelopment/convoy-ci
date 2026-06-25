@@ -113,7 +113,21 @@ env:
   WINDOWS_SIGNING_S3_BUCKET: ${{ vars.WINDOWS_SIGNING_S3_BUCKET }}
 jobs:
 
+  resolve-appgroup:
+    runs-on: non-build
+    outputs:
+      app_group: ${{ steps.read.outputs.app_group }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 1
+      - id: read
+        run: |
+          app_group=$(yq '.appGroup // ""' convoy.yaml 2>/dev/null) || app_group=""
+          echo "app_group=$app_group" >> "$GITHUB_OUTPUT"
+
   build-ui:
+    needs: resolve-appgroup
     if: ${{ inputs.type == 'ui-build' }}
     runs-on: ui-build
     outputs:
@@ -231,14 +245,15 @@ jobs:
 
 
       - name: Slack Notification
+        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
         uses: act10ns/slack@v2.0.0
-        if: failure()
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-    
+
   build-ubuntu-latest:
+    needs: resolve-appgroup
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
     outputs:
@@ -486,14 +501,15 @@ jobs:
 
 
       - name: Slack Notification
+        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
         uses: act10ns/slack@v2.0.0
-        if: failure()
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
   build-amd:
+    needs: resolve-appgroup
     if: ${{ inputs.type == 'amd' }}
     runs-on: self-hosted
     outputs:
@@ -1055,14 +1071,15 @@ jobs:
           rm -rf ${CONTENT_FOR_GITHUB_OUTPUT}
 
       - name: Slack Notification
+        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
         uses: act10ns/slack@v2.0.0
-        if: failure()
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-      
+
   build-arm:
+    needs: resolve-appgroup
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
     outputs:
@@ -1240,8 +1257,8 @@ jobs:
           docker volume prune --force
                     
       - name: Slack Notification
+        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
         uses: act10ns/slack@v2.0.0
-        if: failure()
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

@@ -25,9 +25,15 @@ jobs:
             exit 1
           fi
 
-      - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
+      - name: Resolve appGroup
         if: failure()
+        run: |
+          APP_GROUP=$(yq '.appGroup // ""' convoy.yaml 2>/dev/null) || APP_GROUP=""
+          echo "APP_GROUP=$APP_GROUP" >> "$GITHUB_ENV"
+
+      - name: Slack Notification
+        if: failure() && env.APP_GROUP != 'citest'
+        uses: act10ns/slack@v2.0.0
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
