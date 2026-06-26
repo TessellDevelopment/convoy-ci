@@ -65,8 +65,7 @@ env:
   GH_API_URL: ${{vars.GH_API_URL}}
   GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
   GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-  GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
-  GIT_COMMIT: ${{ github.sha }}
+  GIT_BASE_REF: ${{ github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
   IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
   LABEL: ${{inputs.label}}
   LATEST_TAG: ${{inputs.tag}}
