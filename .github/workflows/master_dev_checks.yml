@@ -289,7 +289,7 @@
             PR_URL: ${{ github.event.pull_request.html_url }}
           run: |
             if [[ ${BASE_BRANCH} != main ]]; then
-              if [[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} -lt 145 ]]; then
+              if [[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} -le 145 ]]; then
                 echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
                 exit 0
               fi
