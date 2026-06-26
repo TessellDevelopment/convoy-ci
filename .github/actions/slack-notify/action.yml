@@ -1,0 +1,46 @@
+name: 'Slack Notify (gated)'
+description: 'Send failure Slack notification'
+inputs:
+  steps:
+    description: 'JSON of caller steps context (toJson(steps))'
+    required: true
+  channel:
+    description: 'Slack channel to post to'
+    required: true
+  app-group:
+    description: 'Caller-resolved appGroup; if empty, action reads convoy.yaml in workspace'
+    required: false
+    default: ''
+  force:
+    description: 'If true, bypass dispatch and appGroup gating and always send'
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - id: evaluate
+      shell: bash
+      run: |
+        if [ "${{ inputs.force }}" = "true" ]; then
+          echo "send=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "send=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        ag="${{ inputs.app-group }}"
+        if [ -z "$ag" ]; then
+          ag=$(yq '.appGroup // ""' convoy.yaml 2>/dev/null) || ag=""
+        fi
+        if [ -z "$ag" ] || [ "$ag" = "citest" ]; then
+          echo "send=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "send=true" >> "$GITHUB_OUTPUT"
+        fi
+    - if: steps.decide.outputs.send == 'true'
+      uses: act10ns/slack@v2.0.0
+      with:
+        status: failure
+        steps: ${{ inputs.steps }}
+        channel: ${{ inputs.channel }}

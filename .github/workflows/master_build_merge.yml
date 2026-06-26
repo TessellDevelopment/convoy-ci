@@ -245,12 +245,12 @@ jobs:
 
 
       - name: Slack Notification
-        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
-        uses: act10ns/slack@v2.0.0
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+          app-group: ${{ needs.resolve-appgroup.outputs.app_group }}
 
   build-ubuntu-latest:
     needs: resolve-appgroup
@@ -501,12 +501,12 @@ jobs:
 
 
       - name: Slack Notification
-        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
-        uses: act10ns/slack@v2.0.0
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+          app-group: ${{ needs.resolve-appgroup.outputs.app_group }}
 
   build-amd:
     needs: resolve-appgroup
@@ -1071,12 +1071,12 @@ jobs:
           rm -rf ${CONTENT_FOR_GITHUB_OUTPUT}
 
       - name: Slack Notification
-        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
-        uses: act10ns/slack@v2.0.0
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+          app-group: ${{ needs.resolve-appgroup.outputs.app_group }}
 
   build-arm:
     needs: resolve-appgroup
@@ -1257,9 +1257,9 @@ jobs:
           docker volume prune --force
                     
       - name: Slack Notification
-        if: failure() && needs.resolve-appgroup.outputs.app_group != 'citest'
-        uses: act10ns/slack@v2.0.0
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
+          app-group: ${{ needs.resolve-appgroup.outputs.app_group }}
