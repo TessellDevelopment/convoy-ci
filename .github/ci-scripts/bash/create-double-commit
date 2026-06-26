@@ -7,7 +7,7 @@ function build_target_branches() {
   local target_branches=()
 
   for branch in ${branches}; do
-    if [[ ${branch} == 'origin/rel-'* ]]; then
+    if [[ ${branch} =~ ^origin/rel-[0-9]+\.[0-9]+\.0$ ]]; then
       local branch_min_ver=$(echo ${branch} | cut -d'/' -f2 | cut -d'.' -f2)
       if [[ ${branch_min_ver} -gt ${pr_base_branch_rel_version} ]]; then
         target_branches+=("${branch}")
@@ -103,7 +103,7 @@ function process_branch() {
 
   [[ ${dst_branch} != main ]] && dst_branch=$(echo ${dst_branch} | cut -d'/' -f2)
 
-  local pr_branch_name="${PR_HEAD_BRANCH}-${dst_branch}-double_commit"
+  local pr_branch_name="${PR_HEAD_BRANCH}-${dst_branch}-double_commit-${COMMIT_SHA:0:7}"
 
   local pr_status=$(get_dc_pr_status ${pr_branch_name} ${dst_branch})
 
@@ -142,7 +142,7 @@ function process_branch() {
 
 
 [[ "${PR_HEAD_BRANCH}" == *"double_commit"* ]] && echo "This branch is itself a double commit branch, skipping processing." && exit 0
-[[ "${PR_TITLE}" == "::NODC::"* ]] || [[ "${PR_TITLE}" == *"::NODC::" ]] && echo "NODC set in PR title, skipping DC creation." && exit 0
+[[ "${PR_TITLE,,}" == "::nodc::"* || "${PR_TITLE,,}" == *"::nodc::" ]] && echo "NODC set in PR title, skipping DC creation." && exit 0
 [[ "${PR_BASE_BRANCH}" == "main" ]] && echo "Base branch is main, skipping DC creation." && exit 0
 
 release_branches=$(git branch -r | sed 's/^ *//g' | grep 'rel-' || true)
