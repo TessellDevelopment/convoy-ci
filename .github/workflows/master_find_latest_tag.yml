@@ -137,7 +137,7 @@ jobs:
           
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4623-reduce-noise
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
