@@ -218,4 +218,3 @@ jobs:
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-          app-group: ${{ env.APP_GROUP }}
