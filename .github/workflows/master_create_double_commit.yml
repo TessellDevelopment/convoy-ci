@@ -9,7 +9,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: non-build
     env:
-      CI_BRANCH: main
+      CI_BRANCH: TDEVOPS-4623-reduce-noise
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL  }}
     steps:
       - uses: actions/checkout@v4.1.1
@@ -214,7 +214,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4623-reduce-noise
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
