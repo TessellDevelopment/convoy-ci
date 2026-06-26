@@ -330,7 +330,7 @@
                 URL1=$(echo "${NEW_REPO}" | awk '{print $2}')
                 URL2=$(echo "${NEW_REPO}" | awk '{print $4}')
                 error_msg+="  • ${FOLDER} → [${URL1##*/}](${URL1}) AND [${URL2##*/}](${URL2})\n"
-                slack_message+="  • \`${FOLDER}\` → <${URL1}|${URL1##*/}> AND <${URL2}|${URL2##*/}>\n"
+                slack_message+="  • \`${FOLDER}\` → BOTH <${URL1}|${URL1##*/}> AND <${URL2}|${URL2##*/}>\n"
               else
                 error_msg+="  • ${FOLDER} → [${NEW_REPO##*/}](${NEW_REPO})\n"
                 slack_message+="  • \`${FOLDER}\` → <${NEW_REPO}|${NEW_REPO##*/}>\n"
