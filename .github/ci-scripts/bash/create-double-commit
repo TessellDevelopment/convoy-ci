@@ -17,14 +17,18 @@ function build_target_branches() {
 
   target_branches+=("main")
 
-  local custom_branches=$(yq '.customDCBranchNames // [] | .[]' convoy.yaml)
-  for branch in ${custom_branches}; do
-    if [[ -n $(git ls-remote --heads origin ${branch}) ]]; then
-      target_branches+=("${branch}")
-    else
-      echo "⚠️  Custom DC branch '${branch}' does not exist on remote, skipping." >&2
-    fi
-  done
+  if [[ -s convoy.yaml ]]; then
+    local custom_branches=$(yq '.customDCBranchNames // [] | .[]' convoy.yaml)
+    for branch in ${custom_branches}; do
+      if [[ -n $(git ls-remote --heads origin "${branch}") ]]; then
+        target_branches+=("${branch}")
+      else
+        echo "⚠️ Custom DC branch '${branch}' does not exist on remote, skipping." >&2
+      fi
+    done
+  else
+    echo "⚠️ File 'convoy.yaml' not found"
+  fi
 
   echo "${target_branches[@]}"
 }
