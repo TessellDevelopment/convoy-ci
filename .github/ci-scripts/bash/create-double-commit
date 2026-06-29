@@ -1,0 +1,154 @@
+#!/bin/bash
+set -Eeo pipefail
+
+function build_target_branches() {
+  local branches="${1}"
+  local pr_base_branch_rel_version="${2}"
+  local target_branches=()
+
+  for branch in ${branches}; do
+    if [[ ${branch} =~ ^origin/rel-[0-9]+\.[0-9]+\.0$ ]]; then
+      local branch_min_ver=$(echo ${branch} | cut -d'/' -f2 | cut -d'.' -f2)
+      if [[ ${branch_min_ver} -gt ${pr_base_branch_rel_version} ]]; then
+        target_branches+=("${branch}")
+      fi
+    fi
+  done
+
+  target_branches+=("main")
+  echo "${target_branches[@]}"
+}
+
+function handle_cherry_pick_conflicts() {
+  find . -type f -name index.lock -delete 2>/dev/null || true
+  git status || true
+
+  if git add . && git -c core.editor=true commit --amend --author="${MAILID}" --no-edit 2>/dev/null; then
+    echo "Conflicts resolved with commit amend"
+    return 0
+  fi
+
+  if git add . && git -c core.editor=true cherry-pick --continue 2>/dev/null; then
+    echo "Cherry-pick continued successfully"
+    git status || true
+  else
+    echo "Error during git add with cherry-pick --continue"
+  fi
+
+  if git -c core.editor=true commit --amend --author="${MAILID}" --no-edit 2>/dev/null; then
+    echo "Amend the commit"
+  else
+    echo "Failed during Amending the commit."
+  fi
+}
+
+function get_dc_pr_status() {
+  local pr_branch_name=${1}
+  local dst_branch=${2}
+
+  local response=$(curl -s -w "\n%{http_code}" \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls?head=${REPO_OWNER}:${pr_branch_name}&base=${dst_branch}&state=all")
+
+  local http_code=$(echo "${response}" | tail -n1)
+  local body=$(echo "${response}" | sed '$d')
+
+  if [[ "${http_code}" == "200" ]]; then
+    local pr_count=$(echo "${body}" | jq '. | length')
+    if [[ ${pr_count} -gt 0 ]]; then
+      local pr_state=$(echo "${body}" | jq -r '.[0].state')
+      local pr_merged=$(echo "${body}" | jq -r '.[0].merged_at')
+      local pr_number=$(echo "${body}" | jq -r '.[0].number')
+
+      if [[ "${pr_merged}" != "null" ]]; then
+        echo "MERGED:${pr_number}"
+      elif [[ "${pr_state}" == "open" ]]; then
+        echo "OPEN:${pr_number}"
+      fi
+    fi
+  fi
+}
+
+function create_pull_request() {
+  local pr_branch_name=${1}
+  local dst_branch=${2}
+
+  local dc_title="Double Commit: ${PR_TITLE}"
+  local response=$(curl -s -w "\n%{http_code}" -X POST \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls" \
+    -d "{\"title\":\"${dc_title}\",\"head\":\"${pr_branch_name}\",\"base\":\"${dst_branch}\"}")
+
+  local http_code=$(echo "${response}" | tail -n1)
+
+  if [[ "${http_code}" == "201" ]]; then
+    echo "✅ Created PR successfully"
+  elif [[ "${http_code}" == "422" ]]; then
+    echo "⚠️  No diff exists, cleaning up"
+    git checkout ${PR_BASE_BRANCH} 2>/dev/null || git checkout main 2>/dev/null || true
+    git branch -D "${pr_branch_name}" 2>/dev/null || true
+  else
+    echo "❌ Error creating pull request: HTTP ${http_code}"
+  fi
+}
+
+function process_branch() {
+  local dst_branch=${1}
+
+  [[ -z ${dst_branch} ]] && return 0
+  echo "Iterating ${dst_branch}"
+
+  [[ ${dst_branch} != main ]] && dst_branch=$(echo ${dst_branch} | cut -d'/' -f2)
+
+  local pr_branch_name="${PR_HEAD_BRANCH}-${dst_branch}-double_commit-${COMMIT_SHA:0:7}"
+
+  local pr_status=$(get_dc_pr_status ${pr_branch_name} ${dst_branch})
+
+  if [[ -n "${pr_status}" ]]; then
+    local pr_state=$(echo ${pr_status} | cut -d':' -f1)
+    local pr_number=$(echo ${pr_status} | cut -d':' -f2)
+
+    if [[ "${pr_state}" == "MERGED" ]]; then
+      echo "✅ DC PR #${pr_number} already merged, skipping ${pr_branch_name}"
+      return 0
+    elif [[ "${pr_state}" == "OPEN" ]]; then
+      echo "✅ DC PR #${pr_number} already open, skipping ${pr_branch_name}"
+      return 0
+    fi
+  fi
+
+  if git ls-remote --heads origin ${pr_branch_name} | grep -q ${pr_branch_name}; then
+    echo "DC branch ${pr_branch_name} already exists but PR was closed or not created earlier, deleting and recreating"
+    git push origin --delete ${pr_branch_name} 2>/dev/null || true
+  fi
+
+  git branch -D ${pr_branch_name} 2>/dev/null || true
+  git checkout -b ${pr_branch_name} origin/${dst_branch}
+
+  if git cherry-pick ${COMMIT_SHA}; then
+    echo "Cherry-pick successful"
+  else
+    echo "Cherry-pick failed, attempting to resolve conflicts..."
+    handle_cherry_pick_conflicts
+  fi
+
+  git push -u -f origin ${pr_branch_name}
+  create_pull_request ${pr_branch_name} ${dst_branch}
+}
+
+
+
+[[ "${PR_HEAD_BRANCH}" == *"double_commit"* ]] && echo "This branch is itself a double commit branch, skipping processing." && exit 0
+[[ "${PR_TITLE,,}" == "::nodc::"* || "${PR_TITLE,,}" == *"::nodc::" ]] && echo "NODC set in PR title, skipping DC creation." && exit 0
+[[ "${PR_BASE_BRANCH}" == "main" ]] && echo "Base branch is main, skipping DC creation." && exit 0
+
+release_branches=$(git branch -r | sed 's/^ *//g' | grep 'rel-' || true)
+pr_base_branch_rel_version=$(echo ${PR_BASE_BRANCH} | cut -d'.' -f2)
+target_branches=$(build_target_branches "${release_branches}" "${pr_base_branch_rel_version}")
+
+for branch in ${target_branches}; do
+  process_branch ${branch}
+done
