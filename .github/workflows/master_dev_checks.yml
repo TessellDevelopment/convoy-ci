@@ -288,11 +288,10 @@
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
           run: |
-            if [[ ${BASE_BRANCH} != main ]]; then
-              if [[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} != 145 ]]; then
-                echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
-                exit 0
-              fi
+            # This check runs only for: main and rel-0.145.0
+            if [[ ${BASE_BRANCH} != main ]] && ([[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} != 145 ]]); then
+              echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
+              exit 0
             fi
 
             declare -A folder_to_repo_map=(
