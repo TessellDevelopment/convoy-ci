@@ -283,7 +283,7 @@
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.INFRA_CI_CD_COMMUNICATION_SLACK_URL }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
