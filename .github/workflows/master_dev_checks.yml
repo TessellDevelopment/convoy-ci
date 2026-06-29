@@ -277,6 +277,79 @@
               });
               console.log("No merge conflicts found"); 
               });
+        
+        - name: Check for infra terraform modules
+          if: ${{ github.repository == 'TessellDevelopment/tessell-terraform-modules' }}
+          env:
+            AUTHOR: ${{ github.event.pull_request.user.login }}
+            BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+            PR_NUMBER: ${{ github.event.pull_request.number }}
+            PR_TITLE: ${{ github.event.pull_request.title }}
+            PR_URL: ${{ github.event.pull_request.html_url }}
+          run: |
+            if [[ ${BASE_BRANCH} != main ]]; then
+              if [[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} != 145 ]]; then
+                echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
+                exit 0
+              fi
+            fi
+
+            declare -A folder_to_repo_map=(
+              ["tenant-infra-eks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-aws-tf-module"
+              ["tenant-infra-base"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
+              ["tenant-infra-aks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-azure-tf-module"
+              ["tenant-infra-base-azure"]="https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
+              ["tenant-infra-base-operations"]="https://github.com/TessellDevelopment/tessell-cluster-base-ops-tf-module"
+              ["tenant-infra-base-proxy-vpc-artifacts"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
+              ["tenant-infra-base-proxy-vpc-artifacts-gcp"]="BOTH https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module AND https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
+            )
+
+            folders_pattern=$(IFS='|'; echo "${!folder_to_repo_map[*]}")
+            changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
+            tenant_infra_changes=$(echo "${changed_files}" | grep -E "^(${folders_pattern})/" || true)
+
+            if [[ -z "${tenant_infra_changes}" ]]; then
+              echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
+              exit 0
+            fi
+
+            tenant_infra_folders=$(echo "${tenant_infra_changes}" | cut -d'/' -f1 | sort -u)
+            echo "⚠️ Detected tenant-infra changes: ${tenant_infra_folders}"
+
+            error_msg="❌ ERROR: Changes detected in deprecated tenant-infra modules\n\n"
+            error_msg+="The following tenant-infra folders have been migrated to separate repositories:\n\n"
+
+            slack_message="🚨 *Tenant Infra Module Migration Alert*\n\n"
+            slack_message+="Changes were attempted in deprecated \`tenant-infra-*\` modules in \`tessell-terraform-modules\`\n\n"
+            slack_message+="*Affected Modules:*\n"
+
+            for FOLDER in ${tenant_infra_folders}; do
+              NEW_REPO="${folder_to_repo_map[${FOLDER}]}"
+              if [[ "${NEW_REPO}" == BOTH* ]]; then
+                URL1=$(echo "${NEW_REPO}" | awk '{print $2}')
+                URL2=$(echo "${NEW_REPO}" | awk '{print $4}')
+                error_msg+="  • ${FOLDER} → [${URL1##*/}](${URL1}) AND [${URL2##*/}](${URL2})\n"
+                slack_message+="  • \`${FOLDER}\` → BOTH <${URL1}|${URL1##*/}> AND <${URL2}|${URL2##*/}>\n"
+              else
+                error_msg+="  • ${FOLDER} → [${NEW_REPO##*/}](${NEW_REPO})\n"
+                slack_message+="  • \`${FOLDER}\` → <${NEW_REPO}|${NEW_REPO##*/}>\n"
+              fi
+            done
+
+            slack_message+="\n*PR Details:*\n"
+            slack_message+="  • PR: <${PR_URL}|#${PR_NUMBER} - ${PR_TITLE}>\n"
+            slack_message+="  • Author: ${AUTHOR}\n"
+            slack_message+="  • Base Branch: \`${BASE_BRANCH}\`\n"
+            slack_message+="\n⚠️ Please raise a corresponding PR in *rel-145 (NOT MAIN)* of respective repository.\n"
+
+            curl -X POST "${INFRA_CI_CD_COMMUNICATION_SLACK_URL}" \
+              -H "Content-Type: application/json" \
+              -d "{\"text\": \"${slack_message}\"}" \
+              || echo "Failed to post to Slack, but continuing with workflow failure"
+
+            echo -e "\n${error_msg}"
+            exit 1
 
         - name: Check for new line at EOF
           env:
@@ -472,6 +545,7 @@
               echo "Double commit branch with name $branch is alredy exist , please merge and/or delete  the branch ";exit 1;
             fi
             done
+            
         - name: Validate Consumed Artifacts through Release Manifest
           shell: bash
           run: |
