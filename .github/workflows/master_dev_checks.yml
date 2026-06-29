@@ -341,7 +341,8 @@
             slack_message+="  • PR: <${PR_URL}|#${PR_NUMBER} - ${PR_TITLE}>\n"
             slack_message+="  • Author: ${AUTHOR}\n"
             slack_message+="  • Base Branch: \`${BASE_BRANCH}\`\n"
-            slack_message+="\n⚠️ Please raise a corresponding PR in *rel-145 (NOT MAIN)* of respective repository.\n"
+            slack_message+="\n⚠️ Please raise a corresponding PR in *${BASE_BRANCH}* of respective repository.\n"
+            slack_message+="Once you share the PR in corresponding repo, devops team will merge this PR via override post approval.\n"
 
             curl -X POST "${INFRA_CI_CD_COMMUNICATION_SLACK_URL}" \
               -H "Content-Type: application/json" \
