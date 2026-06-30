@@ -541,6 +541,27 @@ generate_checksum() {
   ARTIFACT_CHECKSUMS+="${ARTIFACT}:${checksum}%"
 }
 
+capture_docker_image_digests() {
+  [[ -f convoy.yaml ]] || return 0
+  grep -q "^[[:space:]]*dockerImages:" convoy.yaml || return 0
+  while IFS= read -r name; do
+    [[ -z "${name}" ]] && continue
+    echo ------------------------------
+    echo "Name: ${name}"
+    ref="${DOCKERHUB_ORG}/${name}:${LATEST_TAG}"
+    repo_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${ref}" 2>/dev/null || true)
+    if [[ -z "${repo_digest}" ]]; then
+      echo "::warning::No RepoDigest for ${ref} - image may not have been pushed"
+      continue
+    fi
+    repo_digest="${repo_digest##*@}"
+    echo "Digest: ${repo_digest}"
+    ARTIFACT_CHECKSUMS+="${name}:${repo_digest}%"
+    echo "dockerImages ${name} checksum captured"
+    echo ------------------------------
+  done < <(yq -r '.generates.dockerImages[].name' convoy.yaml)
+}
+
 generate_sts_session_token() {
   AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
   BUCKET_ACCOUNT=${1}
