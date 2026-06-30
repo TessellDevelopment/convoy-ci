@@ -61,7 +61,7 @@
               echo "dev_build=false" >> $GITHUB_OUTPUT
             else
               echo "Dev branch detected. Constructing dev branch tag and running dispatch build."
-              echo "dev_build=false" >> $GITHUB_OUTPUT
+              echo "dev_build=true" >> $GITHUB_OUTPUT
             fi
   
     find-latest-tag:
