@@ -65,7 +65,7 @@ env:
   GH_API_URL: ${{vars.GH_API_URL}}
   GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
   GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
-  GIT_BASE_REF: ${{ github.event.pull_request.base.sha }}
+  GIT_BASE_REF: ${{ github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
   GIT_COMMIT: ${{ github.sha }}
   IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
   LABEL: ${{inputs.label}}
@@ -232,13 +232,12 @@ jobs:
 
 
       - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: false
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-    
+
   build-ubuntu-latest:
     if: ${{ inputs.type == 'ubuntu-latest' }}
     runs-on: ubuntu-latest
@@ -488,10 +487,9 @@ jobs:
 
 
       - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: false
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
 
@@ -1058,13 +1056,12 @@ jobs:
           rm -rf ${CONTENT_FOR_GITHUB_OUTPUT}
 
       - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: false
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
-      
+
   build-arm:
     if: ${{ inputs.type == 'arm' }}
     runs-on: ARM64
@@ -1244,9 +1241,8 @@ jobs:
           docker volume prune --force
                     
       - name: Slack Notification
-        uses: act10ns/slack@v2.0.0
-        if: false
+        if: failure()
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
