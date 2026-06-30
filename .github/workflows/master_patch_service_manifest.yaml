@@ -15,7 +15,7 @@ jobs:
       - name: PATCH API to Convoy
         run: |
           set -e
-          RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/service-manifest" \
+          RESPONSE=$(curl --location --request PATCH -i -s -o /dev/null -w "%{http_code}" "http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/service-manifest" \
             --header "x-api-key: ${{secrets.CONVOY_AUTH_TOKEN}}" \
             --data '')
           echo "$RESPONSE"
