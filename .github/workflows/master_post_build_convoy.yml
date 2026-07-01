@@ -269,13 +269,13 @@ jobs:
                       parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
                       for part in parts:
                         if part:
-                          key, value = part.split(':')
+                          key, value = part.split(':', 1)
                           checksum_map[key] = value
 
                       for artifact in payload["artifacts"]:
                         key = artifact["name"]
                         type = artifact["type"]
-                        if type == "artifacts":
+                        if type in ("artifacts", "dockerImages"):
                           if key in checksum_map:
                             artifact["checksum"] = checksum_map[key]
                           else:

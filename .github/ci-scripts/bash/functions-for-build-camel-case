@@ -44,6 +44,10 @@ buildWindowsNativeArtifactAndPush() {
   build_windows_native_artifact_and_push "$@"
 }
 
+captureDockerImageDigests() {
+  capture_docker_image_digests "$@"
+}
+
 checkFlyway() {
   check_flyway "$@"
 }
