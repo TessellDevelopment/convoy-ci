@@ -16,6 +16,20 @@ function build_target_branches() {
   done
 
   target_branches+=("main")
+
+  if [[ -s convoy.yaml ]]; then
+    local custom_branches=$(yq '.customDCBranchNames // [] | .[]' convoy.yaml)
+    for branch in ${custom_branches}; do
+      if [[ -n $(git ls-remote --heads origin "${branch}") ]]; then
+        target_branches+=("${branch}")
+      else
+        echo "⚠️ Custom DC branch '${branch}' does not exist on remote, skipping." >&2
+      fi
+    done
+  else
+    echo "⚠️ File 'convoy.yaml' not found"
+  fi
+
   echo "${target_branches[@]}"
 }
 
@@ -101,7 +115,7 @@ function process_branch() {
   [[ -z ${dst_branch} ]] && return 0
   echo "Iterating ${dst_branch}"
 
-  [[ ${dst_branch} != main ]] && dst_branch=$(echo ${dst_branch} | cut -d'/' -f2)
+  [[ ${dst_branch} == origin/* ]] && dst_branch="${dst_branch#origin/}"
 
   local pr_branch_name="${PR_HEAD_BRANCH}-${dst_branch}-double_commit-${COMMIT_SHA:0:7}"
 
