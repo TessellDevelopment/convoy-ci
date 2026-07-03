@@ -347,11 +347,11 @@
 
             slack_api="https://slack.com/api"
             auth_header="Authorization: Bearer ${CONVOY_SLACK_BOT_TOKEN}"
-            oldest=$(date -d '7 days ago' +%s)
+            oldest=$(date -d '3 days ago' +%s)
             pr_messages=""
             cursor=""
 
-            echo "🔍 Searching last 7 days of channel history for PR #${PR_NUMBER}..."
+            echo "🔍 Searching last 3 days of channel history for PR #${PR_NUMBER}..."
             while true; do
               history_url="${slack_api}/conversations.history?channel=${INFRA_CI_CD_SLACK_CHANNEL_ID}&limit=200&oldest=${oldest}"
               [[ -n "${cursor}" ]] && history_url+="&cursor=${cursor}"
@@ -378,7 +378,7 @@
               [[ "$(echo "${history_response}" | jq -r '.has_more')" != "true" || -z "${cursor}" ]] && break
             done
 
-            mapfile -t pr_ts_list <<< "$(echo "${pr_messages}" | grep -v '^$')"
+            mapfile -t pr_ts_list < <(echo "${pr_messages}" | grep -v '^$')
 
             if [[ ${#pr_ts_list[@]} -eq 0 ]]; then
               echo "📨 No prior alert found for PR #${PR_NUMBER}, posting new message..."
@@ -398,11 +398,11 @@
                   || echo "⚠️ Failed to delete ts=${pr_ts_list[$i]}"
               done
 
-              echo "🧵 Replying in thread ts=${latest_ts}..."
-              curl -s -X POST "${slack_api}/chat.postMessage" \
+              echo "✏️ Editing existing alert ts=${latest_ts}..."
+              curl -s -X POST "${slack_api}/chat.update" \
                 -H "${auth_header}" -H "Content-Type: application/json" \
-                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"text\": \"${slack_message}\", \"thread_ts\": \"${latest_ts}\"}" \
-                || echo "⚠️ Failed to post thread reply, continuing..."
+                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"ts\": \"${latest_ts}\", \"text\": \"${slack_message}\"}" \
+                || echo "⚠️ Failed to update Slack message, continuing..."
             fi
 
             echo -e "\n${error_msg}"
