@@ -283,7 +283,9 @@
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-            INFRA_CI_CD_COMMUNICATION_SLACK_URL: ${{ secrets.INFRA_CI_CD_COMMUNICATION_SLACK_URL }}
+            CONVOY_SLACK_BOT_ID: ${{ secrets.CONVOY_DEV_SLACK_BOT_ID }}
+            CONVOY_SLACK_BOT_TOKEN: ${{ secrets.CONVOY_DEV_SLACK_BOT_TOKEN }}
+            INFRA_CI_CD_SLACK_CHANNEL_ID: ${{ variables.CI_ALERTS_DEV_SLACK_CHANNEL_ID }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
@@ -343,10 +345,65 @@
             slack_message+="\n⚠️ Please raise a corresponding PR in *${BASE_BRANCH}* of respective repository.\n"
             slack_message+="Once you share the PR in corresponding repo, devops team will merge this PR via override post approval.\n"
 
-            curl -X POST "${INFRA_CI_CD_COMMUNICATION_SLACK_URL}" \
-              -H "Content-Type: application/json" \
-              -d "{\"text\": \"${slack_message}\"}" \
-              || echo "Failed to post to Slack, but continuing with workflow failure"
+            slack_api="https://slack.com/api"
+            auth_header="Authorization: Bearer ${CONVOY_SLACK_BOT_TOKEN}"
+            oldest=$(date -d '7 days ago' +%s)
+            pr_messages=""
+            cursor=""
+
+            echo "🔍 Searching last 7 days of channel history for PR #${PR_NUMBER}..."
+            while true; do
+              history_url="${slack_api}/conversations.history?channel=${INFRA_CI_CD_SLACK_CHANNEL_ID}&limit=200&oldest=${oldest}"
+              [[ -n "${cursor}" ]] && history_url+="&cursor=${cursor}"
+
+              history_response=$(curl -s "${history_url}" -H "${auth_header}")
+
+              if [[ "$(echo "${history_response}" | jq -r '.ok')" != "true" ]]; then
+                echo "⚠️ Failed to fetch channel history: $(echo "${history_response}" | jq -r '.error')" >&2
+                break
+              fi
+
+              matched=$(echo "${history_response}" | jq -r \
+                --arg bot_id "${CONVOY_SLACK_BOT_ID}" \
+                --arg pr_url "${PR_URL}" \
+                '.messages[] | select(
+                  (.bot_id == $bot_id) and
+                  (.thread_ts == null or .thread_ts == .ts) and
+                  (.text | contains($pr_url))
+                ) | .ts')
+
+              [[ -n "${matched}" ]] && pr_messages+="${matched}"$'\n'
+
+              cursor=$(echo "${history_response}" | jq -r '.response_metadata.next_cursor // ""')
+              [[ "$(echo "${history_response}" | jq -r '.has_more')" != "true" || -z "${cursor}" ]] && break
+            done
+
+            mapfile -t pr_ts_list <<< "$(echo "${pr_messages}" | grep -v '^$')"
+
+            if [[ ${#pr_ts_list[@]} -eq 0 ]]; then
+              echo "📨 No prior alert found for PR #${PR_NUMBER}, posting new message..."
+              curl -s -X POST "${slack_api}/chat.postMessage" \
+                -H "${auth_header}" -H "Content-Type: application/json" \
+                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"text\": \"${slack_message}\"}" \
+                || echo "⚠️ Failed to post Slack message, continuing..."
+            else
+              latest_ts="${pr_ts_list[0]}"
+              echo "📎 Found ${#pr_ts_list[@]} prior alert(s) for PR #${PR_NUMBER}, latest ts=${latest_ts}"
+
+              for (( i=1; i<${#pr_ts_list[@]}; i++ )); do
+                echo "🗑️ Deleting duplicate alert ts=${pr_ts_list[$i]}..."
+                curl -s -X POST "${slack_api}/chat.delete" \
+                  -H "${auth_header}" -H "Content-Type: application/json" \
+                  -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"ts\": \"${pr_ts_list[$i]}\"}" \
+                  || echo "⚠️ Failed to delete ts=${pr_ts_list[$i]}"
+              done
+
+              echo "🧵 Replying in thread ts=${latest_ts}..."
+              curl -s -X POST "${slack_api}/chat.postMessage" \
+                -H "${auth_header}" -H "Content-Type: application/json" \
+                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"text\": \"${slack_message}\", \"thread_ts\": \"${latest_ts}\"}" \
+                || echo "⚠️ Failed to post thread reply, continuing..."
+            fi
 
             echo -e "\n${error_msg}"
             exit 1
