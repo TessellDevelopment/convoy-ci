@@ -4,18 +4,34 @@ set -Eeo pipefail
 function build_target_branches() {
   local branches="${1}"
   local pr_base_branch_rel_version="${2}"
-  local target_branches=()
+  local -A target_branches=()
 
   for branch in ${branches}; do
     if [[ ${branch} =~ ^origin/rel-[0-9]+\.[0-9]+\.0$ ]]; then
       local branch_min_ver=$(echo ${branch} | cut -d'/' -f2 | cut -d'.' -f2)
       if [[ ${branch_min_ver} -gt ${pr_base_branch_rel_version} ]]; then
-        target_branches+=("${branch}")
+        target_branches["${branch#origin/}"]="${branch}"
       fi
     fi
   done
 
-  target_branches+=("main")
+  target_branches["main"]="main"
+
+  if [[ -s convoy.yaml ]]; then
+    local custom_branches=$(yq '.customDCBranchNames // [] | .[]' convoy.yaml)
+    for branch in ${custom_branches}; do
+      if [[ -n "${target_branches[$branch]+_}" ]]; then
+        echo "⚠️ Duplicate branch '${branch}' skipped." >&2
+      elif [[ -n $(git ls-remote --heads origin "${branch}") ]]; then
+        target_branches["${branch}"]="${branch}"
+      else
+        echo "⚠️ Custom DC branch '${branch}' does not exist on remote, skipping." >&2
+      fi
+    done
+  else
+    echo "⚠️ File 'convoy.yaml' not found"
+  fi
+
   echo "${target_branches[@]}"
 }
 
@@ -101,7 +117,7 @@ function process_branch() {
   [[ -z ${dst_branch} ]] && return 0
   echo "Iterating ${dst_branch}"
 
-  [[ ${dst_branch} != main ]] && dst_branch=$(echo ${dst_branch} | cut -d'/' -f2)
+  [[ ${dst_branch} == origin/* ]] && dst_branch="${dst_branch#origin/}"
 
   local pr_branch_name="${PR_HEAD_BRANCH}-${dst_branch}-double_commit-${COMMIT_SHA:0:7}"
 
