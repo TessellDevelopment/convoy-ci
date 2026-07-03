@@ -26,11 +26,14 @@ runs:
           exit 0
         fi
         app_group=$(yq '.appGroup // ""' convoy.yaml 2>/dev/null) || app_group=""
-        if [ -z "$app_group" ] || [ "$app_group" = "citest" ]; then
-          echo "send=false" >> "$GITHUB_OUTPUT"
-        else
-          echo "send=true" >> "$GITHUB_OUTPUT"
-        fi
+        case "$app_group" in
+          ""|citest|misc)
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            ;;
+          *)
+            echo "send=true" >> "$GITHUB_OUTPUT"
+            ;;
+        esac
     - if: steps.evaluate.outputs.send == 'true'
       uses: act10ns/slack@v2.2.0
       with:
