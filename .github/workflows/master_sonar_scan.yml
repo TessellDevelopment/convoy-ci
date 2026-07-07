@@ -8,6 +8,8 @@ jobs:
     runs-on: self-hosted
     env:
       CI_BRANCH: main
+      GITHUB_TOKEN: ${{ secrets.CIPIPELINE_GITHUB_TOKEN }}
+      GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
