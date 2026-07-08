@@ -232,7 +232,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4524-2
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -486,7 +486,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4524-2
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -1054,7 +1054,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4524-2
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -1238,7 +1238,7 @@ jobs:
                     
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4524-2
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}

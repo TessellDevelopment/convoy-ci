@@ -283,9 +283,9 @@
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-            CONVOY_SLACK_BOT_ID: ${{ secrets.CONVOY_DEV_SLACK_BOT_ID }}
-            CONVOY_SLACK_BOT_TOKEN: ${{ secrets.CONVOY_DEV_SLACK_BOT_TOKEN }}
-            INFRA_CI_CD_SLACK_CHANNEL_ID: ${{ variables.CI_ALERTS_DEV_SLACK_CHANNEL_ID }}
+            CONVOY_SLACK_BOT_ID: ${{ secrets.CONVOY_SLACK_BOT_ID }}
+            CONVOY_SLACK_BOT_TOKEN: ${{ secrets.CONVOY_SLACK_BOT_TOKEN }}
+            INFRA_CI_CD_SLACK_ID: ${{ variables.CONVOY_ALERTS_TEST_SLACK_ID }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
