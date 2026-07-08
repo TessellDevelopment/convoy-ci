@@ -302,7 +302,7 @@
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
           run: |
-            bash ~/convoy-ci/.github/ci-scripts/bash/create-double-commit
+            bash ~/convoy-ci/.github/ci-scripts/bash/terraform-migration-infra-slack-alert
 
         - name: Check for new line at EOF
           env:

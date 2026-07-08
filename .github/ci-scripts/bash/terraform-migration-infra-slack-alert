@@ -7,8 +7,8 @@ function detect_changes() {
   tenant_infra_changes=$(echo "${changed_files}" | grep -E "^(${folders_pattern})/" || true)
 
   if [[ -z "${tenant_infra_changes}" ]]; then
-    echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
-    exit 0
+    echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}" >&2
+    return 0
   fi
 
   echo "${tenant_infra_changes}" | cut -d'/' -f1 | sort -u
@@ -60,7 +60,7 @@ function slack_call() {
 
 function fetch_existing_alerts() {
   local oldest cursor pr_messages history_url history_response matched
-  oldest=$(date -d '3 days ago' +%s)
+  oldest=$(date -d '3 days ago' +%s 2>/dev/null || date -v-3d +%s)
   cursor=""
   pr_messages=""
 
@@ -102,7 +102,7 @@ function fetch_existing_alerts() {
 function post_or_update_alert() {
   slack_payload=$(jq -n \
     --arg channel "${INFRA_CI_CD_SLACK_CHANNEL_ID}" \
-    --arg text "${slack_message}" \
+    --arg text "$(printf '%b' "${slack_message}")" \
     '{"channel": $channel, "text": $text}')
 
   if [[ ${#pr_ts_list[@]} -eq 0 ]]; then
@@ -152,6 +152,9 @@ declare -A FOLDER_TO_REPO_MAP=(
 )
 
 tenant_infra_folders=$(detect_changes)
+if [[ -z "${tenant_infra_folders}" ]]; then
+  exit 0
+fi
 build_messages "${tenant_infra_folders}"
 fetch_existing_alerts
 post_or_update_alert
