@@ -1,0 +1,159 @@
+#!/bin/bash
+set -Eeo pipefail
+
+function detect_changes() {
+  folders_pattern=$(IFS='|'; echo "${!FOLDER_TO_REPO_MAP[*]}")
+  changed_files=$(git diff --name-only "${BASE_COMMIT_SHA}...${HEAD_COMMIT_SHA}")
+  tenant_infra_changes=$(echo "${changed_files}" | grep -E "^(${folders_pattern})/" || true)
+
+  if [[ -z "${tenant_infra_changes}" ]]; then
+    echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
+    exit 0
+  fi
+
+  echo "${tenant_infra_changes}" | cut -d'/' -f1 | sort -u
+}
+
+function build_messages() {
+  local tenant_infra_folders="${1}"
+  echo "⚠️ Detected tenant-infra changes: ${tenant_infra_folders}"
+
+  error_msg="❌ ERROR: Changes detected in deprecated tenant-infra modules\n\n"
+  error_msg+="The following tenant-infra folders have been migrated to separate repositories:\n\n"
+
+  slack_message="🚨 *Tenant Infra Module Migration Alert*\n\n"
+  slack_message+="Changes were attempted in deprecated \`tenant-infra-*\` modules in \`tessell-terraform-modules\`\n\n"
+  slack_message+="*Affected Modules:*\n"
+
+  local FOLDER NEW_REPO URL1 URL2
+  for FOLDER in ${tenant_infra_folders}; do
+    NEW_REPO="${FOLDER_TO_REPO_MAP[${FOLDER}]}"
+    if [[ "${NEW_REPO}" == BOTH* ]]; then
+      URL1=$(echo "${NEW_REPO}" | awk '{print $2}')
+      URL2=$(echo "${NEW_REPO}" | awk '{print $4}')
+      error_msg+="  • ${FOLDER} → [${URL1##*/}](${URL1}) AND [${URL2##*/}](${URL2})\n"
+      slack_message+="  • \`${FOLDER}\` → BOTH <${URL1}|${URL1##*/}> AND <${URL2}|${URL2##*/}>\n"
+    else
+      error_msg+="  • ${FOLDER} → [${NEW_REPO##*/}](${NEW_REPO})\n"
+      slack_message+="  • \`${FOLDER}\` → <${NEW_REPO}|${NEW_REPO##*/}>\n"
+    fi
+  done
+
+  slack_message+="\n*PR Details:*\n"
+  slack_message+="  • PR: <${PR_URL}|#${PR_NUMBER} - ${PR_TITLE}>\n"
+  slack_message+="  • Author: ${AUTHOR}\n"
+  slack_message+="  • Base Branch: \`${BASE_BRANCH}\`\n"
+  slack_message+="\n⚠️ Please raise a corresponding PR in *${BASE_BRANCH}* of respective repository.\n"
+  slack_message+="Once you share the PR in corresponding repo, devops team will merge this PR via override post approval.\n"
+}
+
+function slack_call() {
+  local endpoint="${1}" payload="${2}" label="${3}"
+  local response
+  response=$(curl -s -X POST "https://slack.com/api/${endpoint}" \
+    -H "Authorization: Bearer ${CONVOY_SLACK_BOT_TOKEN}" -H "Content-Type: application/json" \
+    -d "${payload}")
+  if [[ "$(echo "${response}" | jq -r '.ok')" != "true" ]]; then
+    echo "⚠️ ${label}: $(echo "${response}" | jq -r '.error')" >&2
+  fi
+}
+
+function fetch_existing_alerts() {
+  local oldest cursor pr_messages history_url history_response matched
+  oldest=$(date -d '3 days ago' +%s)
+  cursor=""
+  pr_messages=""
+
+  echo "🔍 Searching last 3 days of channel history for PR #${PR_NUMBER}..."
+  while true; do
+    history_url="https://slack.com/api/conversations.history?channel=${INFRA_CI_CD_SLACK_CHANNEL_ID}&limit=200&oldest=${oldest}"
+    [[ -n "${cursor}" ]] && history_url+="&cursor=${cursor}"
+
+    history_response=$(curl -s "${history_url}" -H "Authorization: Bearer ${CONVOY_SLACK_BOT_TOKEN}" 2>/dev/null || true)
+
+    if [[ -z "${history_response}" ]] || ! echo "${history_response}" | jq -e . >/dev/null 2>&1; then
+      echo "⚠️ Failed to fetch channel history or received invalid JSON response" >&2
+      break
+    fi
+
+    if [[ "$(echo "${history_response}" | jq -r '.ok')" != "true" ]]; then
+      echo "⚠️ Failed to fetch channel history: $(echo "${history_response}" | jq -r '.error')" >&2
+      break
+    fi
+
+    matched=$(echo "${history_response}" | jq -r \
+      --arg bot_id "${CONVOY_SLACK_BOT_ID}" \
+      --arg pr_url "${PR_URL}" \
+      '.messages[] | select(
+        (.bot_id == $bot_id) and
+        (.thread_ts == null or .thread_ts == .ts) and
+        (.text | contains($pr_url))
+      ) | .ts')
+
+    [[ -n "${matched}" ]] && pr_messages+="${matched}"$'\n'
+
+    cursor=$(echo "${history_response}" | jq -r '.response_metadata.next_cursor // ""')
+    [[ "$(echo "${history_response}" | jq -r '.has_more')" != "true" || -z "${cursor}" ]] && break
+  done
+
+  mapfile -t pr_ts_list < <(echo "${pr_messages}" | grep -v '^$')
+}
+
+function post_or_update_alert() {
+  slack_payload=$(jq -n \
+    --arg channel "${INFRA_CI_CD_SLACK_CHANNEL_ID}" \
+    --arg text "${slack_message}" \
+    '{"channel": $channel, "text": $text}')
+
+  if [[ ${#pr_ts_list[@]} -eq 0 ]]; then
+    echo "📨 No prior alert found for PR #${PR_NUMBER}, posting new message..."
+    slack_call "chat.postMessage" "${slack_payload}" "Failed to post Slack message"
+  else
+    local latest_ts="${pr_ts_list[0]}"
+    echo "📎 Found ${#pr_ts_list[@]} prior alert(s) for PR #${PR_NUMBER}, latest ts=${latest_ts}"
+
+    local i delete_payload
+    for (( i=1; i<${#pr_ts_list[@]}; i++ )); do
+      echo "🗑️ Deleting duplicate alert ts=${pr_ts_list[$i]}..."
+      delete_payload=$(jq -n \
+        --arg channel "${INFRA_CI_CD_SLACK_CHANNEL_ID}" \
+        --arg ts "${pr_ts_list[$i]}" \
+        '{"channel": $channel, "ts": $ts}')
+      slack_call "chat.delete" "${delete_payload}" "Failed to delete ts=${pr_ts_list[$i]}"
+    done
+
+    echo "✏️ Editing existing alert ts=${latest_ts}..."
+    local update_payload
+    update_payload=$(echo "${slack_payload}" | jq --arg ts "${latest_ts}" '. + {"ts": $ts}')
+    slack_call "chat.update" "${update_payload}" "Failed to update Slack message"
+  fi
+}
+
+
+
+if [[ ${BASE_BRANCH} != main ]] && ([[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} != 145 ]]); then
+  echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
+  exit 0
+fi
+
+error_msg=""
+slack_message=""
+slack_payload=""
+
+declare -a pr_ts_list=()
+declare -A FOLDER_TO_REPO_MAP=(
+  ["tenant-infra-eks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-aws-tf-module"
+  ["tenant-infra-base"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
+  ["tenant-infra-aks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-azure-tf-module"
+  ["tenant-infra-base-azure"]="https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
+  ["tenant-infra-base-operations"]="https://github.com/TessellDevelopment/tessell-cluster-base-ops-tf-module"
+  ["tenant-infra-base-proxy-vpc-artifacts"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
+  ["tenant-infra-base-proxy-vpc-artifacts-gcp"]="BOTH https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module AND https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
+)
+
+tenant_infra_folders=$(detect_changes)
+build_messages "${tenant_infra_folders}"
+fetch_existing_alerts
+post_or_update_alert
+echo -e "\n${error_msg}"
+exit 1

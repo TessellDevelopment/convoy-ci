@@ -7,6 +7,8 @@
 
     dev-checks:
       runs-on: non-build
+      env:
+        CI_BRANCH: TDEVOPS-4524-2
       steps:
         - name: Dump GitHub context
           env:
@@ -17,6 +19,14 @@
         - uses: actions/checkout@v4.1.1
           with:
             fetch-depth: 0
+
+        - name: Setup CI Scripts
+          run: |
+            cd ~/convoy-ci
+            git checkout main
+            git pull
+            git checkout ${{env.CI_BRANCH}}
+            git pull
 
         - name: Code Scan for Secrets
           shell: bash
@@ -283,130 +293,16 @@
           env:
             AUTHOR: ${{ github.event.pull_request.user.login }}
             BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+            BASE_COMMIT_SHA: ${{ github.event.pull_request.base.sha }}
             CONVOY_SLACK_BOT_ID: ${{ secrets.CONVOY_SLACK_BOT_ID }}
             CONVOY_SLACK_BOT_TOKEN: ${{ secrets.CONVOY_SLACK_BOT_TOKEN }}
-            INFRA_CI_CD_SLACK_ID: ${{ variables.CONVOY_ALERTS_TEST_SLACK_ID }}
+            HEAD_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+            INFRA_CI_CD_SLACK_ID: ${{ vars.CONVOY_ALERTS_TEST_SLACK_ID }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
           run: |
-            # This check runs only for: main and rel-0.145.0
-            if [[ ${BASE_BRANCH} != main ]] && ([[ ! ${BASE_BRANCH} =~ ^rel-0\.([0-9]+)\.0$ ]] || [[ ${BASH_REMATCH[1]} != 145 ]]); then
-              echo "🟡 Skipping check for base branch: ${BASE_BRANCH}"
-              exit 0
-            fi
-
-            declare -A folder_to_repo_map=(
-              ["tenant-infra-eks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-aws-tf-module"
-              ["tenant-infra-base"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
-              ["tenant-infra-aks"]="https://github.com/TessellDevelopment/tessell-cluster-infra-azure-tf-module"
-              ["tenant-infra-base-azure"]="https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
-              ["tenant-infra-base-operations"]="https://github.com/TessellDevelopment/tessell-cluster-base-ops-tf-module"
-              ["tenant-infra-base-proxy-vpc-artifacts"]="https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module"
-              ["tenant-infra-base-proxy-vpc-artifacts-gcp"]="BOTH https://github.com/TessellDevelopment/tessell-cluster-base-aws-tf-module AND https://github.com/TessellDevelopment/tessell-cluster-base-azure-tf-module"
-            )
-
-            folders_pattern=$(IFS='|'; echo "${!folder_to_repo_map[*]}")
-            changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }})
-            tenant_infra_changes=$(echo "${changed_files}" | grep -E "^(${folders_pattern})/" || true)
-
-            if [[ -z "${tenant_infra_changes}" ]]; then
-              echo "✅ No tenant-infra changes detected in base branch: ${BASE_BRANCH}"
-              exit 0
-            fi
-
-            tenant_infra_folders=$(echo "${tenant_infra_changes}" | cut -d'/' -f1 | sort -u)
-            echo "⚠️ Detected tenant-infra changes: ${tenant_infra_folders}"
-
-            error_msg="❌ ERROR: Changes detected in deprecated tenant-infra modules\n\n"
-            error_msg+="The following tenant-infra folders have been migrated to separate repositories:\n\n"
-
-            slack_message="🚨 *Tenant Infra Module Migration Alert*\n\n"
-            slack_message+="Changes were attempted in deprecated \`tenant-infra-*\` modules in \`tessell-terraform-modules\`\n\n"
-            slack_message+="*Affected Modules:*\n"
-
-            for FOLDER in ${tenant_infra_folders}; do
-              NEW_REPO="${folder_to_repo_map[${FOLDER}]}"
-              if [[ "${NEW_REPO}" == BOTH* ]]; then
-                URL1=$(echo "${NEW_REPO}" | awk '{print $2}')
-                URL2=$(echo "${NEW_REPO}" | awk '{print $4}')
-                error_msg+="  • ${FOLDER} → [${URL1##*/}](${URL1}) AND [${URL2##*/}](${URL2})\n"
-                slack_message+="  • \`${FOLDER}\` → BOTH <${URL1}|${URL1##*/}> AND <${URL2}|${URL2##*/}>\n"
-              else
-                error_msg+="  • ${FOLDER} → [${NEW_REPO##*/}](${NEW_REPO})\n"
-                slack_message+="  • \`${FOLDER}\` → <${NEW_REPO}|${NEW_REPO##*/}>\n"
-              fi
-            done
-
-            slack_message+="\n*PR Details:*\n"
-            slack_message+="  • PR: <${PR_URL}|#${PR_NUMBER} - ${PR_TITLE}>\n"
-            slack_message+="  • Author: ${AUTHOR}\n"
-            slack_message+="  • Base Branch: \`${BASE_BRANCH}\`\n"
-            slack_message+="\n⚠️ Please raise a corresponding PR in *${BASE_BRANCH}* of respective repository.\n"
-            slack_message+="Once you share the PR in corresponding repo, devops team will merge this PR via override post approval.\n"
-
-            slack_api="https://slack.com/api"
-            auth_header="Authorization: Bearer ${CONVOY_SLACK_BOT_TOKEN}"
-            oldest=$(date -d '3 days ago' +%s)
-            pr_messages=""
-            cursor=""
-
-            echo "🔍 Searching last 3 days of channel history for PR #${PR_NUMBER}..."
-            while true; do
-              history_url="${slack_api}/conversations.history?channel=${INFRA_CI_CD_SLACK_CHANNEL_ID}&limit=200&oldest=${oldest}"
-              [[ -n "${cursor}" ]] && history_url+="&cursor=${cursor}"
-
-              history_response=$(curl -s "${history_url}" -H "${auth_header}")
-
-              if [[ "$(echo "${history_response}" | jq -r '.ok')" != "true" ]]; then
-                echo "⚠️ Failed to fetch channel history: $(echo "${history_response}" | jq -r '.error')" >&2
-                break
-              fi
-
-              matched=$(echo "${history_response}" | jq -r \
-                --arg bot_id "${CONVOY_SLACK_BOT_ID}" \
-                --arg pr_url "${PR_URL}" \
-                '.messages[] | select(
-                  (.bot_id == $bot_id) and
-                  (.thread_ts == null or .thread_ts == .ts) and
-                  (.text | contains($pr_url))
-                ) | .ts')
-
-              [[ -n "${matched}" ]] && pr_messages+="${matched}"$'\n'
-
-              cursor=$(echo "${history_response}" | jq -r '.response_metadata.next_cursor // ""')
-              [[ "$(echo "${history_response}" | jq -r '.has_more')" != "true" || -z "${cursor}" ]] && break
-            done
-
-            mapfile -t pr_ts_list < <(echo "${pr_messages}" | grep -v '^$')
-
-            if [[ ${#pr_ts_list[@]} -eq 0 ]]; then
-              echo "📨 No prior alert found for PR #${PR_NUMBER}, posting new message..."
-              curl -s -X POST "${slack_api}/chat.postMessage" \
-                -H "${auth_header}" -H "Content-Type: application/json" \
-                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"text\": \"${slack_message}\"}" \
-                || echo "⚠️ Failed to post Slack message, continuing..."
-            else
-              latest_ts="${pr_ts_list[0]}"
-              echo "📎 Found ${#pr_ts_list[@]} prior alert(s) for PR #${PR_NUMBER}, latest ts=${latest_ts}"
-
-              for (( i=1; i<${#pr_ts_list[@]}; i++ )); do
-                echo "🗑️ Deleting duplicate alert ts=${pr_ts_list[$i]}..."
-                curl -s -X POST "${slack_api}/chat.delete" \
-                  -H "${auth_header}" -H "Content-Type: application/json" \
-                  -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"ts\": \"${pr_ts_list[$i]}\"}" \
-                  || echo "⚠️ Failed to delete ts=${pr_ts_list[$i]}"
-              done
-
-              echo "✏️ Editing existing alert ts=${latest_ts}..."
-              curl -s -X POST "${slack_api}/chat.update" \
-                -H "${auth_header}" -H "Content-Type: application/json" \
-                -d "{\"channel\": \"${INFRA_CI_CD_SLACK_CHANNEL_ID}\", \"ts\": \"${latest_ts}\", \"text\": \"${slack_message}\"}" \
-                || echo "⚠️ Failed to update Slack message, continuing..."
-            fi
-
-            echo -e "\n${error_msg}"
-            exit 1
+            bash ~/convoy-ci/.github/ci-scripts/bash/create-double-commit
 
         - name: Check for new line at EOF
           env:
