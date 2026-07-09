@@ -88,6 +88,10 @@ convoyGoLibraryBuild() {
   convoy_go_library_build "$@"
 }
 
+configurePythonVersionIfRequired() {
+  configure_python_version_if_required "$@"
+}
+
 dockerBuild() {
   docker_build "$@"
 }
