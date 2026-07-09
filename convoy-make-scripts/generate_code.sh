@@ -36,9 +36,10 @@ function generate_client_code() {
 
 function download_client_spec() {
     mkdir -p client-specs
+    GITHUB_ORG=${GITHUB_ORG:-TessellDevelopment}
     for client in ${CLIENTS}; do
         curl -H "Authorization: token ${GITHUB_TOKEN}" \
-            https://raw.githubusercontent.com/TessellDevelopment/${client}/main/api-spec.yaml \
+            https://raw.githubusercontent.com/${GITHUB_ORG}/${client}/main/api-spec.yaml \
             -o "client-specs/${client}-api-spec.yaml"
     done
 }
