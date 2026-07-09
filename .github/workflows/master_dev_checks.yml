@@ -8,7 +8,7 @@
     dev-checks:
       runs-on: non-build
       env:
-        CI_BRANCH: TDEVOPS-4524-2
+        CI_BRANCH: main
       steps:
         - name: Dump GitHub context
           env:
@@ -297,7 +297,7 @@
             CONVOY_SLACK_BOT_ID: ${{ secrets.CONVOY_SLACK_BOT_ID }}
             CONVOY_SLACK_BOT_TOKEN: ${{ secrets.CONVOY_SLACK_BOT_TOKEN }}
             HEAD_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-            INFRA_CI_CD_SLACK_ID: ${{ vars.CONVOY_ALERTS_TEST_SLACK_ID }}
+            INFRA_CI_CD_SLACK_ID: ${{ vars.INFRA_CI_CD_SLACK_ID }}
             PR_NUMBER: ${{ github.event.pull_request.number }}
             PR_TITLE: ${{ github.event.pull_request.title }}
             PR_URL: ${{ github.event.pull_request.html_url }}
