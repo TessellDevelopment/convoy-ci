@@ -147,10 +147,10 @@ check_flyway() {
   fi
 }
 
-configure_python_version_if_required() {
+select_python_version() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
-  [[ -n "${required_python_version:-}" ]] || return 0
+  [[ -n "${required_python_version:-}" ]] ||        return 0
   echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
 
   if ! is_pyenv_version_installed "${required_python_version}";  then
@@ -158,6 +158,11 @@ configure_python_version_if_required() {
     pyenv install "${required_python_version}"
   fi
   pyenv local "${required_python_version}"
+}
+
+configure_python_version_if_required() {
+  select_python_version || return 0
+  [[ -f .python-version ]] || return 0
   python3 -m venv venv
   source venv/bin/activate
   python --version
@@ -734,6 +739,7 @@ image_scan(){
 
 initialise_coverage() {
   echo "Setting up virtual environment for running unit tests."
+  select_python_version
   venv_name=${1}
   venv_path=${PWD}/${venv_name}
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
