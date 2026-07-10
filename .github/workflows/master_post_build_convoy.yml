@@ -276,15 +276,14 @@ jobs:
                         key = artifact["name"]
                         type = artifact["type"]
                         if type in ("artifacts", "dockerImages"):
-                          if key in checksum_map:
-                            artifact["checksum"] = checksum_map[key]
+                          checksum = checksum_map.get(key) or checksum_map.get(key.removeprefix(f"{APP_GROUP}-"))
+                          if checksum:
+                            artifact["checksum"] = checksum
+                          elif type == "dockerImages":
+                            print(f"::warning::Digest missing for dockerImage {key}, tag {artifact.get('version', '')} will be used as reference")
                           else:
-                            key_without_prefix = key.removeprefix(f"{APP_GROUP}-")
-                            if key_without_prefix in checksum_map:
-                              artifact["checksum"] = checksum_map[key_without_prefix]
-                            else:
-                              print(f"Checksum not found for artifact: {key}")
-                              exit(1)
+                            print(f"Checksum not found for artifact: {key}")
+                            exit(1)
 
             print(json.dumps(payload, indent=4))
             post_request(payload)
