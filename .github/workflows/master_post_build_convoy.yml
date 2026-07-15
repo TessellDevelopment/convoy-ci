@@ -66,8 +66,8 @@ jobs:
 
       - name: POST API to Convoy
         env:
-          API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata/build-status
-          API_URL_REPLICATE: http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/replicate-artifacts
+          API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata/build-status
+          API_URL_REPLICATE: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/replicate-artifacts
           API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
           ARTIFACT_CHECKSUMS: ${{inputs.ARTIFACT_CHECKSUMS}}
           CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
@@ -269,22 +269,21 @@ jobs:
                       parts = ARTIFACT_CHECKSUMS.strip('%').split('%')
                       for part in parts:
                         if part:
-                          key, value = part.split(':')
+                          key, value = part.split(':', 1)
                           checksum_map[key] = value
 
                       for artifact in payload["artifacts"]:
                         key = artifact["name"]
                         type = artifact["type"]
-                        if type == "artifacts":
-                          if key in checksum_map:
-                            artifact["checksum"] = checksum_map[key]
+                        if type in ("artifacts", "dockerImages"):
+                          checksum = checksum_map.get(key) or checksum_map.get(key.removeprefix(f"{APP_GROUP}-"))
+                          if checksum:
+                            artifact["checksum"] = checksum
+                          elif type == "dockerImages":
+                            print(f"::warning::Digest missing for dockerImage {key}, tag {artifact.get('version', '')} will be used as reference")
                           else:
-                            key_without_prefix = key.removeprefix(f"{APP_GROUP}-")
-                            if key_without_prefix in checksum_map:
-                              artifact["checksum"] = checksum_map[key_without_prefix]
-                            else:
-                              print(f"Checksum not found for artifact: {key}")
-                              exit(1)
+                            print(f"Checksum not found for artifact: {key}")
+                            exit(1)
 
             print(json.dumps(payload, indent=4))
             post_request(payload)
@@ -292,7 +291,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4315-docker-checksum
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.CONVOY_ALERTS_SLACK_CHANNEL }}
