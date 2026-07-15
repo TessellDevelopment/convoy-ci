@@ -311,7 +311,7 @@ EOL
 
 docker_build() {
   set -e
-  IMAGE="${1}"
+  IMAGE="${1}"  # Image name # Version # File # Ext
   if [[ $# -eq 2 ]]; then
     FILE="${2}"
   else
