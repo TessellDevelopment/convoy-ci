@@ -147,10 +147,10 @@ check_flyway() {
   fi
 }
 
-select_python_version() {
+configure_python_version_if_required() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
-  [[ -n "${required_python_version:-}" ]] ||        return 0
+  [[ -n "${required_python_version:-}" ]] || return 0
   echo "Python version declared in convoy.yaml: ${required_python_version}" >&2
 
   if ! is_pyenv_version_installed "${required_python_version}";  then
@@ -158,13 +158,16 @@ select_python_version() {
     pyenv install "${required_python_version}"
   fi
   pyenv local "${required_python_version}"
+  python --version
 }
 
-configure_python_version_if_required() {
-  select_python_version || return 0
-  [[ -f .python-version ]] || return 0
-  python3 -m venv venv
-  source venv/bin/activate
+create_python_venv() {
+  check_convoy_yaml
+  required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
+  [[ -n "${required_python_version:-}" ]] || return 0
+  local venv_name="${1:-venv}"
+  python3 -m venv "${venv_name}"
+  source "${venv_name}/bin/activate"
   python --version
 }
 
@@ -739,7 +742,6 @@ image_scan(){
 
 initialise_coverage() {
   echo "Setting up virtual environment for running unit tests."
-  select_python_version
   venv_name=${1}
   venv_path=${PWD}/${venv_name}
   python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -765,7 +767,7 @@ initialize_python_build_env() {
   ARTIFACT="${1}"
   requiredInputs="1"
   validateInputs "$requiredInputs" "$@"
-  configure_python_version_if_required
+  create_python_venv
   install_python_dependencies "$ARTIFACT"
   lintCheck
 }
@@ -1360,6 +1362,7 @@ python_library_build() {
   set -e
   initialize_python_build_env "$@"
   gradlewPythonwheel
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1367,6 +1370,7 @@ python_library_build_and_push() {
   set -e
   initialize_python_build_env "$@"
   gradlewTwineUpload
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1474,7 +1478,7 @@ setup_qa_env() {
 
 setup_packer_env() {
   python -m pip uninstall -y packer_framework
-  configure_python_version_if_required
+  create_python_venv
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   if [[ "${APP_GROUP}" == "tessell" ]]; then
@@ -1565,12 +1569,14 @@ software_def_build() {
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
       echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
+      deactivate 2>/dev/null || true
       set +e
       return
     fi
   fi
   [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]] && e2e_flag="--is_e2e_test" || e2e_flag=""
   validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run ${e2e_flag}
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1599,6 +1605,7 @@ software_def_build_and_push() {
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  deactivate 2>/dev/null || true
   set +e
 }
 
