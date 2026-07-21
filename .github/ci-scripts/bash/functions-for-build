@@ -158,6 +158,7 @@ configure_python_version_if_required() {
     pyenv install "${required_python_version}"
   fi
   pyenv local "${required_python_version}"
+  python -m pip install --disable-pip-version-check --quiet setuptools wheel
   python --version
 }
 
