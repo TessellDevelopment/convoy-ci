@@ -424,7 +424,8 @@ jobs:
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
+            installPythonDependencies "$ARTIFACT"
             lintCheck
             gradlewPackagePlugin
             set +e

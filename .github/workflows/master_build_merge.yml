@@ -668,7 +668,8 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
+            installPythonDependencies "$ARTIFACT"
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"        
