@@ -822,7 +822,7 @@ install_python_dependencies() {
     DIR='.'
   fi
   python -m pip install --upgrade pip
-  python -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4
+  python -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4 setuptools
   if [ -f "${DIR}/requirements.txt" ]; then
     python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
