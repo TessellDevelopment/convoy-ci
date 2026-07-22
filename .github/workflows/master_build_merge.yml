@@ -668,9 +668,7 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@"
-            createPythonVenv
-            installPythonDependencies "$ARTIFACT"
+            validateInputs "$requiredInputs" "$@" 
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"        
@@ -782,7 +780,7 @@ jobs:
               DIR='.'
             fi
             python -m pip install --upgrade pip
-            python -m pip install flake8 pytest twine wheel setuptools
+            python -m pip install flake8 pytest twine wheel
             if [ -f "${DIR}/requirements.txt" ]; then
               python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple;
             fi
@@ -1022,7 +1020,6 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
-          configurePythonVersionIfRequired
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"

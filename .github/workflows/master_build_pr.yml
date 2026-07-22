@@ -424,9 +424,7 @@ jobs:
             set -e
             ARTIFACT="$1"
             requiredInputs="1"
-            validateInputs "$requiredInputs" "$@"
-            createPythonVenv
-            installPythonDependencies "$ARTIFACT"
+            validateInputs "$requiredInputs" "$@" 
             lintCheck
             gradlewPackagePlugin
             set +e
@@ -734,7 +732,6 @@ jobs:
           source ./ci-scripts/bash/functions-for-build
           [[ -n ${LATEST_TAG:-} ]] || export LATEST_TAG=0.0.0
           configureGoVersionIfRequired
-          configurePythonVersionIfRequired
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
