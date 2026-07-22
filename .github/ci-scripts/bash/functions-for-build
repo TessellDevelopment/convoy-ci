@@ -147,6 +147,15 @@ check_flyway() {
   fi
 }
 
+resolve_pyenv_python() {
+  local version="${1}"
+  local resolved
+  resolved=$(pyenv latest "${version}" 2>/dev/null) || \
+    resolved=$(pyenv versions --bare | grep -E "^${version}([.]|$)" | tail -1)
+  [[ -n "${resolved}" ]] || resolved="${version}"
+  echo "$(pyenv root)/versions/${resolved}/bin/python"
+}
+
 configure_python_version_if_required() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
@@ -157,9 +166,19 @@ configure_python_version_if_required() {
     echo "Python ${required_python_version} not found. Installing..."
     pyenv install "${required_python_version}"
   fi
-  pyenv local "${required_python_version}"
-  python3 -m venv venv
-  source venv/bin/activate
+  "$(resolve_pyenv_python "${required_python_version}")" --version
+}
+
+create_python_venv() {
+  check_convoy_yaml
+  required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
+  local venv_name="${1:-venv}"
+  if [[ -n "${required_python_version:-}" ]]; then
+    "$(resolve_pyenv_python "${required_python_version}")" -m venv "${venv_name}"
+  else
+    python3 -m venv "${venv_name}"
+  fi
+  source "${venv_name}/bin/activate"
   python --version
 }
 
@@ -736,10 +755,9 @@ initialise_coverage() {
   echo "Setting up virtual environment for running unit tests."
   venv_name=${1}
   venv_path=${PWD}/${venv_name}
-  python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+  create_python_venv "${venv_name}"
+  python_version=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
   source_path=${venv_path}/lib/python${python_version}/site-packages/
-  python -m venv ${venv_name}
-  source ${venv_name}/bin/activate
   dist_dir=$(find . -type d -name "dist" 2>/dev/null | head -n 1)
   python -m pip install "${dist_dir}"/*.whl coverage==7.5.1 requests-mock==1.12.1 pytest-env==1.1.3 pytest==8.2.0 --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple --trusted-host ${NEXUS_SERVER_ENDPOINT}
   if [ -f "requirements_test.txt" ]; then
@@ -759,7 +777,7 @@ initialize_python_build_env() {
   ARTIFACT="${1}"
   requiredInputs="1"
   validateInputs "$requiredInputs" "$@"
-  configure_python_version_if_required
+  create_python_venv
   install_python_dependencies "$ARTIFACT"
   lintCheck
 }
@@ -814,7 +832,7 @@ install_python_dependencies() {
     DIR='.'
   fi
   python -m pip install --upgrade pip
-  python -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4
+  python -m pip install flake8==5.0.4 pytest==7.1.1 twine==5.1.1 wheel==0.38.4 setuptools
   if [ -f "${DIR}/requirements.txt" ]; then
     python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   fi
@@ -1354,6 +1372,7 @@ python_library_build() {
   set -e
   initialize_python_build_env "$@"
   gradlewPythonwheel
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1361,6 +1380,7 @@ python_library_build_and_push() {
   set -e
   initialize_python_build_env "$@"
   gradlewTwineUpload
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1468,7 +1488,7 @@ setup_qa_env() {
 
 setup_packer_env() {
   python -m pip uninstall -y packer_framework
-  configure_python_version_if_required
+  create_python_venv
   python -m pip install wheel
   python -m pip install -r ./requirements.txt --trusted-host ${NEXUS_SERVER_ENDPOINT} --extra-index-url=${NEXUS_PROTOCOL}://${NEXUS_USERNAME}:${NEXUS_PASSWORD}@${NEXUS_SERVER_ENDPOINT}/repository/${NEXUS_PULL_REPOS_PY}/simple
   if [[ "${APP_GROUP}" == "tessell" ]]; then
@@ -1559,12 +1579,14 @@ software_def_build() {
     git diff origin/${GITHUB_BASE_REF} --compact-summary  > ../current_pr_diff
     if [[ ! $(diff ../root_pr_diff ../current_pr_diff) ]]; then
       echo "${BRANCH_NAME} contains double_commit and no pr diff, skipping build"
+      deactivate 2>/dev/null || true
       set +e
       return
     fi
   fi
   [[ "${ENABLE_PACKER_E2E_SCAN}" == "true" && "$GITHUB_DRAFT" != "true" ]] && e2e_flag="--is_e2e_test" || e2e_flag=""
   validate_all -r "$PWD" --dest_branch "$GITHUB_BASE_REF" --src_branch "$SOURCE_BRANCH" --pipeline_run ${e2e_flag}
+  deactivate 2>/dev/null || true
   set +e
 }
 
@@ -1593,6 +1615,7 @@ software_def_build_and_push() {
     build_all_artifacts -r $PWD --base_commit  --pipeline_run
   fi
   push_to_nexus "./common_manifest.json" "${NEXUS_ARTIFACT_BUCKET}/${LABEL}/delta-image-manifest/delta-image-manifest-${LATEST_TAG}.json"
+  deactivate 2>/dev/null || true
   set +e
 }
 

@@ -51,12 +51,12 @@ env:
   BASE_BRANCH: "${{github.event.pull_request.base.ref}}"
   BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
   CITEST_APP_NAME: ${{vars.CITEST_APP_NAME}}
-  CI_BRANCH: main
+  CI_BRANCH: TDEVOPS-4679
   CI_PHASE: postMerge
   CODE_COVERAGE_S3: ${{vars.CODE_COVERAGE_S3}}
   CONTENT_FOR_GITHUB_OUTPUT: /tmp/content-for-github-output
   CONVOY_API_KEY: ${{secrets.CONVOY_AUTH_TOKEN}}
-  DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_API_ENDPOINT}}/devops/git-metadata
+  DEVOPS_GIT_METADATA_API_ENDPOINT: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/git-metadata
   DEVQA_INFRA_ACCESS_KEY: ${{ secrets.DEVQA_INFRA_ACCESS_KEY }}
   DEVQA_INFRA_SECRET_KEY: ${{ secrets.DEVQA_INFRA_SECRET_KEY }}
   DEV_BUILD: ${{inputs.dev_build}}
@@ -67,7 +67,7 @@ env:
   GITHUB_USER: ${{ secrets.CIPIPELINE_GITHUB_USER }}
   GIT_BASE_REF: ${{ github.event.pull_request.base.sha || (inputs.dev_build && inputs.GIT_BASE_REF || '') }}
   GIT_COMMIT: ${{ github.sha }}
-  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_API_ENDPOINT}}/devops/code/vulnerabilities/validate
+  IMAGE_SCAN_API_URL: http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/code/vulnerabilities/validate
   LABEL: ${{inputs.label}}
   LATEST_TAG: ${{inputs.tag}}
   NEXUS_PASSWORD: ${{secrets.CIPIPELINE_NEXUS_PASSWORD}}
@@ -232,7 +232,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4679
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -486,7 +486,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4679
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -668,7 +668,9 @@ jobs:
             ARTIFACT="$1"
             EXTENSION="$2"
             requiredInputs="1 2"
-            validateInputs "$requiredInputs" "$@" 
+            validateInputs "$requiredInputs" "$@"
+            createPythonVenv
+            installPythonDependencies "$ARTIFACT"
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
             mv "build/$PLUGIN_NAME-${LATEST_TAG}.$EXTENSION" "$ARTIFACT.$EXTENSION"        
@@ -780,7 +782,7 @@ jobs:
               DIR='.'
             fi
             python -m pip install --upgrade pip
-            python -m pip install flake8 pytest twine wheel
+            python -m pip install flake8 pytest twine wheel setuptools
             if [ -f "${DIR}/requirements.txt" ]; then
               python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple;
             fi
@@ -902,7 +904,7 @@ jobs:
             mkdir -p $BUILD_DIR
             DIRECTORIES=($(ls -d */))
             EXCLUDE_DIR=("build",".github",".gitignore","convoy.yaml","README.md","ci-scripts","docs","scripts")
-            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
+            RELEASE_MANIFEST_URL=http://${{vars.CONVOY_DEV_API_ENDPOINT}}/devops/applications/app-groups/${APP_GROUP}/release-manifests
             MODIFIED_DIRECTORIES=$(modifiedDir)
             if [[ "${{github.event_name}}" == "workflow_dispatch" && !${{inputs.dev_build}} ]]; then
               MODIFIED_DIRECTORIES=${DIRECTORIES[@]}
@@ -1020,6 +1022,7 @@ jobs:
           BRANCH_COVERAGE=""
           STATEMENT_COVERAGE=""
           configureGoVersionIfRequired
+          configurePythonVersionIfRequired
           set -e; bash -c "$(yq ".ci.${CI_PHASE}.cmd // \"\"" convoy.yaml)"; set +e
           build "artifacts"
           build "dockerImages"
@@ -1054,7 +1057,7 @@ jobs:
 
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4679
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}
@@ -1238,7 +1241,7 @@ jobs:
                     
       - name: Slack Notification
         if: failure()
-        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@main
+        uses: TessellDevelopment/convoy-ci/.github/actions/slack-notify@TDEVOPS-4679
         with:
           steps: ${{ toJson(steps) }}
           channel: ${{ secrets.SLACK_DEVOPS_CHANNEL }}

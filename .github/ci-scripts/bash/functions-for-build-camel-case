@@ -60,6 +60,14 @@ configureGoVersionIfRequired() {
   configure_go_version_if_required "$@"
 }
 
+configurePythonVersionIfRequired() {
+  configure_python_version_if_required "$@"
+}
+
+createPythonVenv() {
+  create_python_venv "$@"
+}
+
 configureNpmrc() {
   configure_npmrc "$@"
 }
