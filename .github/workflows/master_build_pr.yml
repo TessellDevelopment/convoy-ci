@@ -425,6 +425,7 @@ jobs:
             ARTIFACT="$1"
             requiredInputs="1"
             validateInputs "$requiredInputs" "$@"
+            createPythonVenv
             installPythonDependencies "$ARTIFACT"
             lintCheck
             gradlewPackagePlugin

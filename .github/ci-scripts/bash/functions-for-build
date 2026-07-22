@@ -147,6 +147,15 @@ check_flyway() {
   fi
 }
 
+resolve_pyenv_python() {
+  local version="${1}"
+  local resolved
+  resolved=$(pyenv latest "${version}" 2>/dev/null) || \
+    resolved=$(pyenv versions --bare | grep -E "^${version}([.]|$)" | tail -1)
+  [[ -n "${resolved}" ]] || resolved="${version}"
+  echo "$(pyenv root)/versions/${resolved}/bin/python"
+}
+
 configure_python_version_if_required() {
   check_convoy_yaml
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
@@ -157,7 +166,7 @@ configure_python_version_if_required() {
     echo "Python ${required_python_version} not found. Installing..."
     pyenv install "${required_python_version}"
   fi
-  "$(pyenv root)/versions/${required_python_version}/bin/python" --version
+  "$(resolve_pyenv_python "${required_python_version}")" --version
 }
 
 create_python_venv() {
@@ -165,7 +174,7 @@ create_python_venv() {
   required_python_version=$(yq e '.pythonVersion // ""' convoy.yaml 2>/dev/null)
   local venv_name="${1:-venv}"
   if [[ -n "${required_python_version:-}" ]]; then
-    "$(pyenv root)/versions/${required_python_version}/bin/python" -m venv "${venv_name}"
+    "$(resolve_pyenv_python "${required_python_version}")" -m venv "${venv_name}"
   else
     python3 -m venv "${venv_name}"
   fi

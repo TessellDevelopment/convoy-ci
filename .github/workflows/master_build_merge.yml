@@ -669,6 +669,7 @@ jobs:
             EXTENSION="$2"
             requiredInputs="1 2"
             validateInputs "$requiredInputs" "$@"
+            createPythonVenv
             installPythonDependencies "$ARTIFACT"
             gradlewUploadPlugin
             PLUGIN_NAME=$(echo "$ARTIFACT" | tr '-' '_')
@@ -781,7 +782,7 @@ jobs:
               DIR='.'
             fi
             python -m pip install --upgrade pip
-            python -m pip install flake8 pytest twine wheel
+            python -m pip install flake8 pytest twine wheel setuptools
             if [ -f "${DIR}/requirements.txt" ]; then
               python -m pip install -r "${DIR}/requirements.txt" --trusted-host ${{env.NEXUS_SERVER_ENDPOINT}} --extra-index-url=${{env.NEXUS_PROTOCOL}}://${{ secrets.CIPIPELINE_NEXUS_USERNAME }}:${{ secrets.CIPIPELINE_NEXUS_PASSWORD }}@${{env.NEXUS_SERVER_ENDPOINT}}/repository/${{ env.NEXUS_PULL_REPOS_PY }}/simple;
             fi
